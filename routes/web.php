@@ -266,6 +266,7 @@ use App\Http\Controllers\Monitoring\DeleteMaintenanceWindowController;
 use App\Http\Controllers\Monitoring\DeleteOnCallOverrideController;
 use App\Http\Controllers\Monitoring\DeleteOnCallScheduleController;
 use App\Http\Controllers\Monitoring\DeleteStatusPageController;
+use App\Http\Controllers\Monitoring\DeleteThirdPartyServiceController;
 use App\Http\Controllers\Monitoring\EditAlertRuleController;
 use App\Http\Controllers\Monitoring\EditDashboardController;
 use App\Http\Controllers\Monitoring\EditMonitorController;
@@ -305,6 +306,7 @@ use App\Http\Controllers\Monitoring\StoreOnCallOverrideController;
 use App\Http\Controllers\Monitoring\StoreOnCallScheduleController;
 use App\Http\Controllers\Monitoring\StoreStatusPageController;
 use App\Http\Controllers\Monitoring\StoreStatusUpdateController;
+use App\Http\Controllers\Monitoring\StoreThirdPartyServiceController;
 use App\Http\Controllers\Monitoring\UpdateAlertDestinationController;
 use App\Http\Controllers\Monitoring\UpdateAlertEscalationsController;
 use App\Http\Controllers\Monitoring\UpdateAlertRoutingController;
@@ -782,6 +784,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
 
         Route::prefix('/monitoring')->middleware('service:monitoring')->name('monitoring.')->group(function (): void {
             Route::get('/', ShowMonitorsController::class)->name('monitors');
+            Route::post('/third-party', StoreThirdPartyServiceController::class)->middleware(['can:create,App\\Models\\Monitor,project', 'throttle:30,1'])->name('third-party.store');
+            Route::delete('/third-party/{service}', DeleteThirdPartyServiceController::class)->whereNumber('service')->middleware(['can:create,App\\Models\\Monitor,project', 'throttle:30,1'])->name('third-party.destroy');
             Route::get('/monitors/create', CreateMonitorController::class)->middleware('can:create,App\\Models\\Monitor,project')->name('monitors.create');
             Route::post('/monitors', StoreMonitorController::class)->middleware(['can:create,App\\Models\\Monitor,project', 'throttle:30,1'])->name('monitors.store');
             Route::get('/monitors/{monitor}', ShowMonitorController::class)->whereNumber('monitor')->name('monitors.show');

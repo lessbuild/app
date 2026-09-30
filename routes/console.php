@@ -121,6 +121,11 @@ Artisan::command('analytics:check-spikes', function (SiteNotifier $notifier): vo
 })->purpose('Alert sites whose current visitors reached their spike threshold');
 Schedule::command('analytics:check-spikes')->everyFiveMinutes()->withoutOverlapping();
 
+Artisan::command('monitoring:third-party', function (App\Services\Monitoring\ThirdPartyStatusChecker $checker): void {
+    $this->info("Checked {$checker->checkAll()} third-party status pages.");
+})->purpose('Read the status pages of the services projects depend on');
+Schedule::command('monitoring:third-party')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+
 Artisan::command('analytics:check-anomalies', function (SiteNotifier $notifier): void {
     $this->info("Sent {$notifier->checkAnomalies()} unusual traffic alerts.");
 })->purpose('Alert sites whose visitors or conversions yesterday were far from normal');

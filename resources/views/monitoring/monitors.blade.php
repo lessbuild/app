@@ -33,6 +33,48 @@
         </div>
     @endif
 
+    <x-signal.ui.settings-section id="third-party" :title="__('Services you depend on')" :description="__('The public status of the services your apps rely on, checked every five minutes, beside your own monitors.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @forelse ($thirdParty as $service)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <div class="min-w-0">
+                        <a href="{{ $service->url }}" class="font-bold text-ink hover:underline" rel="noopener noreferrer" target="_blank">{{ $service->name }}</a>
+                        <p class="text-xs text-muted">
+                            {{ $service->incident ?? $service->description ?? '' }}@if ($service->affected) · {{ __('Affected: :components', ['components' => implode(', ', $service->affected)]) }}@endif
+                            @if ($service->checked_at) · {{ __('checked :time', ['time' => $service->checked_at->diffForHumans()]) }}@endif
+                        </p>
+                        @if ($service->last_error)<p class="text-xs text-danger">{{ $service->last_error }}</p>@endif
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <x-signal.ui.badge :tone="$service->tone()">{{ $service->label() }}</x-signal.ui.badge>
+                        @if ($canManage)
+                            <form method="POST" action="{{ route('monitoring.third-party.destroy', [$project, $service->id]) }}">
+                                @csrf @method('DELETE')
+                                <x-signal.ui.button type="submit" variant="quiet" size="sm" :aria-label="__('Stop following :name', ['name' => $service->name])">{{ __('Remove') }}</x-signal.ui.button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <p class="text-sm text-muted">{{ __('Not following any services yet.') }}</p>
+            @endforelse
+            @if ($canManage)
+                <form method="POST" action="{{ route('monitoring.third-party.store', $project) }}" class="grid gap-3 sm:grid-cols-3 sm:items-end">
+                    @csrf
+                    <x-signal.ui.select-field name="provider" :label="__('Service')">
+                        @foreach (\App\Support\Monitoring\StatusProviders::LIST as $key => $provider)
+                            <option value="{{ $key }}">{{ $provider['name'] }}</option>
+                        @endforeach
+                        <option value="custom">{{ __('Another status page…') }}</option>
+                    </x-signal.ui.select-field>
+                    <x-signal.ui.input-field name="name" :label="__('Name (another status page)')" maxlength="80" />
+                    <x-signal.ui.input-field name="url" type="url" :label="__('Status page address')" maxlength="255" placeholder="https://status.example.com" :description="__('Any status page built on Atlassian Statuspage.')" />
+                    <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary">{{ __('Follow') }}</x-signal.ui.button></div>
+                </form>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+
     @if ($canManage)
         <x-signal.overlays.page-modal id="add-monitor" :title="__('Add a monitor')" :src="route('monitoring.monitors.create', $project)" size="wide" />
     @endif

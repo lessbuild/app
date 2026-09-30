@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Monitoring;
 
 use App\Models\Monitor;
 use App\Models\Project;
+use App\Models\ThirdPartyService;
 use App\Models\User;
 use App\Queries\Monitoring\ProjectMonitorsQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -15,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowMonitorsController
 {
     /**
-     * Show the project's monitors.
+     * Show the project's monitors, and the status of the third-party services it depends on.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -29,6 +30,7 @@ final class ShowMonitorsController
             'overview' => $overview->handle($project, $user),
             'monitors' => $monitors->handle($project),
             'canManage' => $user->can('create', [Monitor::class, $project]),
+            'thirdParty' => ThirdPartyService::query()->where('project_id', $project->id)->orderBy('name')->get(),
         ]);
     }
 }

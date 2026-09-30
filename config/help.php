@@ -216,6 +216,7 @@ return [
                 ['Add a monitor', 'Monitoring → Monitors → Add a monitor. Choose HTTP, DNS, TLS, TCP, a heartbeat for scheduled jobs, or a queue.'],
                 ['Choose where alerts go', 'Monitoring → Alerts → Destinations. Add email, Slack, Microsoft Teams, PagerDuty, Discord or a webhook.'],
                 ['Planned work', 'Add a maintenance window before planned work, so expected downtime doesn’t open an incident.'],
+                ['Services you depend on', 'Under Services you depend on, follow GitHub, Cloudflare, DigitalOcean, Twilio and others, or any status page built on Atlassian Statuspage. Their status is checked every five minutes and shown beside your monitors, with the affected components and the provider’s incident.'],
             ],
         ],
         'send-telemetry' => [
