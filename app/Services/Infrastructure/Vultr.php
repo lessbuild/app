@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Infrastructure;
 
 use App\Contracts\Infrastructure\ServerProvider;
+use App\Contracts\Infrastructure\SnapshotsServers;
 use App\Data\Infrastructure\CloudServerData;
 use App\Data\Infrastructure\CloudSshKeyData;
 use Illuminate\Http\Client\PendingRequest;
@@ -12,7 +13,7 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
-class Vultr implements ServerProvider
+class Vultr implements ServerProvider, SnapshotsServers
 {
     private const API = 'https://api.vultr.com/v2';
 
@@ -242,5 +243,33 @@ class Vultr implements ServerProvider
     private function exception(Response $response, string $operation): RuntimeException
     {
         return new RuntimeException("Vultr {$operation} failed with HTTP {$response->status()}.");
+    }
+
+    /**
+     * Create a snapshot of the instance; returns the snapshot's ID.
+     *
+     * @param  int|string  $identifier
+     * @param  string  $name
+     * @return string
+     */
+    public function snapshotServer(int|string $identifier, string $name): string
+    {
+        $response = $this->request()->post(self::API.'/snapshots', ['instance_id' => (string) $identifier, 'description' => $name]);
+        if (! $response->successful() || ! is_scalar($response->json('snapshot.id'))) {
+            throw $this->exception($response, 'snapshot');
+        }
+
+        return (string) $response->json('snapshot.id');
+    }
+
+    /**
+     * Delete a snapshot.
+     *
+     * @param  string  $snapshot
+     * @return bool
+     */
+    public function deleteSnapshot(string $snapshot): bool
+    {
+        return in_array($this->request()->delete(self::API.'/snapshots/'.rawurlencode($snapshot))->status(), [204, 404], true);
     }
 }

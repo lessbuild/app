@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Tests\Feature\Infrastructure;
 
 use App\Contracts\Infrastructure\ServerProvider;
+use App\Contracts\Infrastructure\SnapshotsServers;
 use App\Data\Infrastructure\CloudServerData;
 use App\Data\Infrastructure\CloudSshKeyData;
 use RuntimeException;
 
 /** A cloud that records what it was asked to do. Set `$failCreate` or `$failDelete` to make it refuse. */
-final class FakeServerProvider implements ServerProvider
+final class FakeServerProvider implements ServerProvider, SnapshotsServers
 {
     /** @var list<array<string, mixed>> */
     public array $created = [];
@@ -85,5 +86,46 @@ final class FakeServerProvider implements ServerProvider
     public function images(): array
     {
         return [];
+    }
+
+    /**
+     * The snapshots taken, as [server, name].
+     *
+     * @var list<array{0: int|string, 1: string}>
+     */
+    public array $snapshots = [];
+
+    /**
+     * The snapshots deleted.
+     *
+     * @var list<string>
+     */
+    public array $deletedSnapshots = [];
+
+    /**
+     * Record a snapshot and return its ID.
+     *
+     * @param  int|string  $identifier
+     * @param  string  $name
+     * @return string
+     */
+    public function snapshotServer(int|string $identifier, string $name): string
+    {
+        $this->snapshots[] = [$identifier, $name];
+
+        return 'snap-'.count($this->snapshots);
+    }
+
+    /**
+     * Record a deleted snapshot.
+     *
+     * @param  string  $snapshot
+     * @return bool
+     */
+    public function deleteSnapshot(string $snapshot): bool
+    {
+        $this->deletedSnapshots[] = $snapshot;
+
+        return true;
     }
 }

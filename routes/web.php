@@ -261,6 +261,7 @@ use App\Http\Controllers\Infrastructure\UpdatePrivateNetworkController;
 use App\Http\Controllers\Infrastructure\UpdateServerLogShippingController;
 use App\Http\Controllers\Infrastructure\UpdateServerMonthlyCostController;
 use App\Http\Controllers\Infrastructure\UpdateServerNodeVersionController;
+use App\Http\Controllers\Infrastructure\UpdateServerSnapshotsController;
 use App\Http\Controllers\Infrastructure\UpdateServerTaskController;
 use App\Http\Controllers\Infrastructure\UpdateWebsiteCaddyDirectivesController;
 use App\Http\Controllers\Infrastructure\UpdateWebsiteController;
@@ -738,6 +739,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::get('/servers', ShowServersController::class)->name('servers');
             Route::get('/servers/create', CreateServerController::class)->middleware('can:create,App\\Models\\Server,project')->name('servers.create');
             Route::post('/servers', StoreServerController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:10,1'])->name('servers.store');
+            Route::match(['PUT', 'POST'], '/servers/{server}/snapshots', UpdateServerSnapshotsController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.snapshots');
             Route::post('/servers/{server}/disk', ScanServerDiskController::class)->whereNumber('server')->middleware(['can:runCommands,server', 'throttle:10,1'])->name('servers.disk');
             Route::match(['PUT', 'DELETE'], '/servers/{server}/log-shipping', UpdateServerLogShippingController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.log-shipping');
             Route::get('/servers/{server}', ShowServerController::class)->whereNumber('server')->middleware('can:view,server')->name('servers.show');

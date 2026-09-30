@@ -17,6 +17,7 @@ use App\Models\ServerFirewallRule;
 use App\Models\ServerLogShipping;
 use App\Models\ServerProcess;
 use App\Models\ServerService;
+use App\Models\ServerSnapshot;
 use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Services\Infrastructure\ServerLogs;
@@ -80,6 +81,7 @@ final class ShowServerController
             'firewallRules' => ServerFirewallRule::query()->where('server_id', $server->id)->orderBy('name')->get(),
             'services' => ServerService::query()->where('server_id', $server->id)->get()->keyBy('kind'),
             'processPreset' => ServerProcess::PRESETS[(string) $request->query('preset')] ?? null,
+            'snapshots' => ServerSnapshot::query()->where('server_id', $server->id)->where('status', '!=', 'deleted')->latest('id')->limit(5)->get(),
             'diskScan' => ServerDiskScan::query()->where('server_id', $server->id)->first(),
             'logShipping' => ServerLogShipping::query()->with('environment.project')->where('server_id', $server->id)->first(),
             // Environments of the account's projects with Monitoring, for sending the server's logs.

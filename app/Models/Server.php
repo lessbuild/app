@@ -61,6 +61,7 @@ use Illuminate\Support\Str;
  * @property string|null $provisioning_process_path
  * @property CarbonImmutable|null $provisioned_at
  * @property list<array{name: string, description: string|null, script: string}>|null $recipe_snapshot
+ * @property bool $snapshot_before_changes take a provider snapshot before updates, security fixes and runtime switches
  * @property int|null $patch_day the day of the week updates are installed (0 Sunday to 6 Saturday, UTC); null for no window
  * @property int $patch_hour the hour (UTC) the update window starts
  * @property bool $patch_reboot whether the window reboots the server when updates need it
@@ -276,7 +277,7 @@ class Server extends Model
         return [
             'type' => ServerType::class,
             'ssh_port' => 'integer',
-            'trust_private_network' => 'boolean',
+            'trust_private_network' => 'boolean', 'snapshot_before_changes' => 'boolean',
             'patch_day' => 'integer',
             'patch_hour' => 'integer',
             'patch_reboot' => 'boolean',

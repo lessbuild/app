@@ -309,6 +309,21 @@
 
     @if ($canManage)
     <x-signal.ui.page-tab-panel name="settings" :current="$tab">
+        @if ($server->provider_id !== null && $server->provisioning_status === \App\Models\Server::STATUS_ACTIVE)
+            <x-signal.ui.settings-section id="snapshots" :title="__('Snapshots before risky changes')" :description="__('Take a provider snapshot before updates are installed, security fixes run or the Node.js version changes, keeping the three newest. Restore one from your provider’s dashboard if a change goes wrong. Your provider charges for snapshot storage.')">
+                <div class="grid gap-3 p-4 sm:p-6">
+                    <form method="POST" action="{{ route('infrastructure.servers.snapshots', [$project, $server->id]) }}" class="flex flex-wrap items-end gap-3">
+                        @csrf @method('PUT')
+                        <x-signal.ui.checkbox name="snapshot_before_changes" value="1" unchecked-value="0" :checked="$server->snapshot_before_changes">{{ __('Snapshot before risky changes') }}</x-signal.ui.checkbox>
+                        <x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Save') }}</x-signal.ui.button>
+                    </form>
+                    @foreach ($snapshots as $snapshot)
+                        <p class="text-sm"><x-signal.ui.badge :tone="$snapshot->status === 'taken' ? 'success' : 'danger'">{{ $snapshot->status === 'taken' ? __('Taken') : __('Failed') }}</x-signal.ui.badge> <span class="text-muted">{{ $snapshot->reason }} · {{ $snapshot->created_at?->diffForHumans() }}</span>@if ($snapshot->error) <span class="text-xs text-danger">{{ $snapshot->error }}</span>@endif</p>
+                    @endforeach
+                    <form method="POST" action="{{ route('infrastructure.servers.snapshots', [$project, $server->id]) }}">@csrf<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Take a snapshot now') }}</x-signal.ui.button></form>
+                </div>
+            </x-signal.ui.settings-section>
+        @endif
         @if (in_array('node', $server->type->installs(), true) && $server->provisioning_status === \App\Models\Server::STATUS_ACTIVE)
             <x-signal.ui.settings-section id="node-version" :title="__('Node.js version')" :description="__('Node.js is installed for the whole server, so switching changes it for every website and build on it.')">
                 <form method="POST" action="{{ route('infrastructure.servers.node-version', [$project, $server->id]) }}" class="flex flex-wrap items-end gap-3 p-4 sm:p-6">

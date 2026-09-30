@@ -6,6 +6,7 @@ namespace App\Jobs\Security;
 
 use App\Models\Server;
 use App\Services\Infrastructure\ServerShell;
+use App\Services\Infrastructure\ServerSnapshots;
 use App\Services\Security\HardeningScripts;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -47,14 +48,16 @@ final class PatchServer implements ShouldQueue
      *
      * @param  ServerShell  $shell
      * @param  HardeningScripts  $scripts
+     * @param  ServerSnapshots  $snapshots
      * @return void
      */
-    public function handle(ServerShell $shell, HardeningScripts $scripts): void
+    public function handle(ServerShell $shell, HardeningScripts $scripts, ServerSnapshots $snapshots): void
     {
         $server = Server::query()->find($this->serverId);
         if ($server === null || $server->provisioning_status !== Server::STATUS_ACTIVE) {
             return;
         }
+        $snapshots->before($server, 'Before installing updates');
         $result = $shell->run($server, $scripts->updates($this->reboot));
         if (! $result->successful()) {
             throw new RuntimeException(str(trim($result->errorOutput ?: $result->output))->limit(500)->toString() ?: 'Updating failed.');

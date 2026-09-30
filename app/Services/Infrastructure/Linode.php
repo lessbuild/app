@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Infrastructure;
 
 use App\Contracts\Infrastructure\ServerProvider;
+use App\Contracts\Infrastructure\SnapshotsServers;
 use App\Data\Infrastructure\CloudServerData;
 use App\Data\Infrastructure\CloudSshKeyData;
 use Illuminate\Http\Client\PendingRequest;
@@ -17,7 +18,7 @@ use RuntimeException;
  * Linode (Akamai Cloud) servers over its v4 API with a personal access token. Instances get the SSH key through
  * `authorized_keys` and the provisioning script through Metadata user data.
  */
-class Linode implements ServerProvider
+class Linode implements ServerProvider, SnapshotsServers
 {
     private const API = 'https://api.linode.com/v4';
 
@@ -244,5 +245,34 @@ class Linode implements ServerProvider
     private function exception(Response $response, string $operation): RuntimeException
     {
         return new RuntimeException("Linode {$operation} failed with HTTP {$response->status()}.");
+    }
+
+    /**
+     * Take a manual backup snapshot of the Linode (it needs the Backup service on the Linode); returns its ID, with the
+     * Linode's, as "linode/backup".
+     *
+     * @param  int|string  $identifier
+     * @param  string  $name
+     * @return string
+     */
+    public function snapshotServer(int|string $identifier, string $name): string
+    {
+        $response = $this->request()->post(self::API.'/linode/instances/'.rawurlencode((string) $identifier).'/backups', ['label' => mb_substr($name, 0, 255)]);
+        if (! $response->successful() || ! is_scalar($response->json('id'))) {
+            throw $this->exception($response, 'snapshot');
+        }
+
+        return $identifier.'/'.$response->json('id');
+    }
+
+    /**
+     * Linode keeps one manual snapshot per Linode and replaces it with the next, so there's nothing to delete.
+     *
+     * @param  string  $snapshot
+     * @return bool
+     */
+    public function deleteSnapshot(string $snapshot): bool
+    {
+        return true;
     }
 }

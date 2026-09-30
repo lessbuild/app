@@ -139,6 +139,7 @@ return [
             'steps' => [
                 ['Costs', 'Infrastructure → Costs lists each server’s monthly price from your provider, its recent CPU and the projects on it, with totals.'],
                 ['Budget', 'Set a monthly budget there to be told when your servers go over it.'],
+                ['Snapshots', 'On a server’s Settings tab, tick Snapshot before risky changes (DigitalOcean, Hetzner, Vultr, Linode and Lightsail servers). A provider snapshot is then taken before updates are installed, security fixes run or Node.js changes, and the three newest are kept; restore one from your provider’s dashboard if a change goes wrong. Take a snapshot now takes one straight away. Your provider charges for the storage.'],
                 ['Disk clean-up', 'On a server’s Diagnostics tab, choose Measure the disk to see how much space old releases, old logs, package caches, unused Docker images and old temporary files take, then Clear any of them. The live release and the releases each website keeps stay, and logs from the last two weeks stay.'],
                 ['Right-sizing', 'Once a server has a few days of readings, Costs suggests a smaller size when even its busiest 5% of the time leaves most of it idle (with the monthly saving), or a bigger one when it runs hot. Suggestions keep headroom: at most 60% CPU and 70% memory at the same load. Resize in your provider’s dashboard.'],
             ],

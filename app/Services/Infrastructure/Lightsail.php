@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Infrastructure;
 
 use App\Contracts\Infrastructure\ServerProvider;
+use App\Contracts\Infrastructure\SnapshotsServers;
 use App\Data\Infrastructure\CloudServerData;
 use App\Data\Infrastructure\CloudSshKeyData;
 use App\Support\AwsSignature;
@@ -18,7 +19,7 @@ use stdClass;
  * per region, so an instance's ID is "region/name", the SSH key is added by the launch script, and HTTPS (443) is
  * opened once the instance runs, since Lightsail only allows 22 and 80 at first.
  */
-class Lightsail implements ServerProvider
+class Lightsail implements ServerProvider, SnapshotsServers
 {
     /** The region catalogue calls go to; bundles and blueprints are the same everywhere. */
     private const CATALOG_REGION = 'us-east-1';
@@ -284,5 +285,38 @@ class Lightsail implements ServerProvider
     private function exception(Response $response, string $operation): RuntimeException
     {
         return new RuntimeException("Lightsail {$operation} failed with HTTP {$response->status()}.");
+    }
+
+    /**
+     * Create an instance snapshot; returns it as "region/snapshot-name".
+     *
+     * @param  int|string  $identifier
+     * @param  string  $name
+     * @return string
+     */
+    public function snapshotServer(int|string $identifier, string $name): string
+    {
+        [$region, $instance] = $this->split((string) $identifier);
+        $snapshot = substr(preg_replace('/[^A-Za-z0-9_.-]+/', '-', $name) ?? 'snapshot', 0, 200);
+        $response = $this->call($region, 'CreateInstanceSnapshot', ['instanceName' => $instance, 'instanceSnapshotName' => $snapshot]);
+        if (! $response->successful()) {
+            throw $this->exception($response, 'snapshot');
+        }
+
+        return $region.'/'.$snapshot;
+    }
+
+    /**
+     * Delete an instance snapshot.
+     *
+     * @param  string  $snapshot
+     * @return bool
+     */
+    public function deleteSnapshot(string $snapshot): bool
+    {
+        [$region, $name] = $this->split($snapshot);
+        $response = $this->call($region, 'DeleteInstanceSnapshot', ['instanceSnapshotName' => $name]);
+
+        return $response->successful() || str_contains((string) $response->json('__type', ''), 'NotFound');
     }
 }

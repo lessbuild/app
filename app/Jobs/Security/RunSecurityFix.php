@@ -8,6 +8,7 @@ use App\Actions\Security\QueueSecurityScan;
 use App\Models\SecurityFinding;
 use App\Models\Server;
 use App\Services\Infrastructure\ServerShell;
+use App\Services\Infrastructure\ServerSnapshots;
 use App\Services\Security\HardeningScripts;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -51,15 +52,17 @@ final class RunSecurityFix implements ShouldQueue
      * @param  ServerShell  $shell
      * @param  HardeningScripts  $scripts
      * @param  QueueSecurityScan  $scan
+     * @param  ServerSnapshots  $snapshots
      * @return void
      */
-    public function handle(ServerShell $shell, HardeningScripts $scripts, QueueSecurityScan $scan): void
+    public function handle(ServerShell $shell, HardeningScripts $scripts, QueueSecurityScan $scan, ServerSnapshots $snapshots): void
     {
         $finding = SecurityFinding::query()->with('project')->find($this->findingId);
         $server = Server::query()->find($this->serverId);
         if ($finding === null || $server === null) {
             return;
         }
+        $snapshots->before($server, 'Before a security fix: '.$this->action);
         $result = $shell->run($server, $scripts->script($this->action, $server));
         if (! $result->successful()) {
             throw new RuntimeException(str(trim($result->errorOutput ?: $result->output))->limit(500)->toString() ?: 'The fix failed.');

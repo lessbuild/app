@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace App\Services\Infrastructure;
 
 use App\Contracts\Infrastructure\ServerProvider;
+use App\Contracts\Infrastructure\SnapshotsServers;
 use App\Data\Infrastructure\CloudServerData;
 use App\Data\Infrastructure\CloudSshKeyData;
 use Exception;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
+use RuntimeException;
 
-class DigitalOcean implements ServerProvider
+class DigitalOcean implements ServerProvider, SnapshotsServers
 {
     private const DROPLETS = 'https://api.digitalocean.com/v2/droplets';
 
@@ -493,5 +495,40 @@ class DigitalOcean implements ServerProvider
         return $status === $readyStatus && filled($publicIp)
             ? CloudServerData::READINESS_READY
             : CloudServerData::READINESS_NOT_READY;
+    }
+
+    /**
+     * Take a live snapshot of the droplet; returns it as "droplet/name", since DigitalOcean only gives the snapshot an
+     * ID once it's done.
+     *
+     * @param  int|string  $identifier
+     * @param  string  $name
+     * @return string
+     */
+    public function snapshotServer(int|string $identifier, string $name): string
+    {
+        $response = $this->post(self::DROPLETS.'/'.rawurlencode((string) $identifier).'/actions', ['type' => 'snapshot', 'name' => $name]);
+        if (! $response->successful()) {
+            throw new RuntimeException('DigitalOcean snapshot failed with HTTP '.$response->status().'.');
+        }
+
+        return $identifier.'/'.$name;
+    }
+
+    /**
+     * Delete a droplet's snapshot, found by its name.
+     *
+     * @param  string  $snapshot  "droplet/name"
+     * @return bool
+     */
+    public function deleteSnapshot(string $snapshot): bool
+    {
+        [$droplet, $name] = array_pad(explode('/', $snapshot, 2), 2, '');
+        $found = collect((array) $this->get(self::DROPLETS.'/'.rawurlencode($droplet).'/snapshots')->json('snapshots', []))->firstWhere('name', $name);
+        if (! is_array($found) || ! isset($found['id'])) {
+            return true;
+        }
+
+        return in_array($this->delete('https://api.digitalocean.com/v2/snapshots/'.rawurlencode((string) $found['id']))->status(), [204, 404], true);
     }
 }
