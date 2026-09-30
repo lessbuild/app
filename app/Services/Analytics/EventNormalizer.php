@@ -63,6 +63,8 @@ final class EventNormalizer
                 'event' => CollectionRequest::safeProperties($event['properties'] ?? [], $site->custom_properties ?? []),
                 'vitals' => CollectionRequest::safeVitals($event['properties'] ?? []) ?: null,
                 'engagement' => CollectionRequest::safeEngagement($event['properties'] ?? []),
+                'click' => CollectionRequest::safeClick($event['properties'] ?? []),
+                'form' => CollectionRequest::safeForm($event['properties'] ?? []),
                 'pageview' => ($search = CollectionRequest::searchTerm($event['search'] ?? null)) === null ? null : ['search' => $search],
                 default => null,
             },

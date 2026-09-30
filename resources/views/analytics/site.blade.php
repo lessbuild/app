@@ -20,6 +20,8 @@
                     <li><code class="font-mono text-ink">data-downloads</code> · {{ __('file downloads (PDFs, zips, documents and more), or list your own: data-downloads="pdf,zip"') }}</li>
                     <li><code class="font-mono text-ink">data-vitals</code> · {{ __('page speed (Core Web Vitals) as real visitors experience it') }}</li>
                     <li><code class="font-mono text-ink">data-not-found</code> · {{ __('on your 404 page only, to see which missing pages people reach') }}</li>
+                    <li><code class="font-mono text-ink">data-clicks</code> · {{ __('click maps: where people click on each page') }}</li>
+                    <li><code class="font-mono text-ink">data-forms</code> · {{ __('form analytics: which fields people reach and leave on (never what they type)') }}</li>
                     <li><code class="font-mono text-ink">data-hash</code> · {{ __('count #/pages as separate pages, for sites that route with the URL’s hash') }}</li>
                     <li><code class="font-mono text-ink">data-retention</code> · {{ __('recognise returning browsers for retention reports (keeps a random ID in the browser)') }}</li>
                 </ul>

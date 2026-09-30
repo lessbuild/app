@@ -216,6 +216,43 @@ final class CollectionRequest
     }
 
     /**
+     * Keep a click's position (percent of the page's width and height) and a short description of what was clicked.
+     * Null when it isn't usable.
+     *
+     * @param  mixed  $properties
+     * @return array{target: string, x: float, y: float}|null
+     */
+    public static function safeClick(mixed $properties): ?array
+    {
+        $target = is_array($properties) ? self::cleanValue($properties['target'] ?? null, 80) : null;
+        $x = is_array($properties) ? ($properties['x'] ?? null) : null;
+        $y = is_array($properties) ? ($properties['y'] ?? null) : null;
+        if ($target === null || ! is_numeric($x) || ! is_numeric($y)) {
+            return null;
+        }
+
+        return ['target' => $target, 'x' => round(max(0, min(100, (float) $x)), 1), 'y' => round(max(0, min(100, (float) $y)), 1)];
+    }
+
+    /**
+     * Keep a form event: the form's name, and for focus events the field's name. Never a value.
+     *
+     * @param  mixed  $properties
+     * @return array{form: string, action: string, field?: string}|null
+     */
+    public static function safeForm(mixed $properties): ?array
+    {
+        $form = is_array($properties) ? self::cleanValue($properties['form'] ?? null, 80) : null;
+        $action = is_array($properties) ? ($properties['action'] ?? null) : null;
+        $field = is_array($properties) ? self::cleanValue($properties['field'] ?? null, 80) : null;
+        if ($form === null || ! in_array($action, ['focus', 'submit'], true) || ($action === 'focus' && $field === null)) {
+            return null;
+        }
+
+        return $action === 'focus' ? ['form' => $form, 'action' => 'focus', 'field' => (string) $field] : ['form' => $form, 'action' => 'submit'];
+    }
+
+    /**
      * Keep an engagement event's measurements: how far down the page the visitor scrolled (0–100%) and how long the
      * page was visible, in whole milliseconds up to 30 minutes. Null when neither is usable.
      *

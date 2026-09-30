@@ -1,5 +1,5 @@
 @php($project = $overview->project)
-@php($tabs = ['insights' => __('Insights'), 'paths' => __('Paths'), 'properties' => __('Properties'), 'items' => __('Items'), 'retention' => __('Retention')])
+@php($tabs = ['insights' => __('Insights'), 'paths' => __('Paths'), 'properties' => __('Properties'), 'items' => __('Items'), 'attribution' => __('Attribution'), 'clicks' => __('Clicks'), 'forms' => __('Forms'), 'retention' => __('Retention')])
 @php($here = fn (array $params = []): string => route('analytics.explore', [$project, 'site' => $site?->id, 'tab' => $tab, ...($period?->query() ?? []), ...$params]))
 @php($money = fn (float $amount, string $currency): string => $currency.' '.number_format($amount, 2))
 
@@ -21,8 +21,13 @@
                     <input type="hidden" name="site" value="{{ $site->id }}">
                     <input type="hidden" name="tab" value="{{ $tab }}">
                     @include('analytics._period-fields')
-                    @if ($tab === 'paths')
+                    @if ($tab === 'paths' || $tab === 'clicks')
                         <x-signal.ui.input-field name="path" :label="__('Page')" :value="$path" placeholder="/pricing" :restore="false" :show-errors="false" />
+                    @elseif ($tab === 'attribution')
+                        <x-signal.ui.select-field name="by" :label="__('By')" :show-errors="false">
+                            <option value="channel" @selected($by === 'channel')>{{ __('Channel') }}</option>
+                            <option value="campaign" @selected($by === 'campaign')>{{ __('Campaign') }}</option>
+                        </x-signal.ui.select-field>
                     @elseif ($tab === 'properties')
                         <x-signal.ui.select-field name="event" :label="__('Event')" :show-errors="false">
                             <option value="">{{ __('Choose an event') }}</option>
@@ -129,6 +134,83 @@
                         @endforeach
                     </x-signal.ui.table>
                 @endif
+            </x-signal.ui.card>
+        @elseif ($tab === 'attribution')
+            <x-signal.ui.card as="section" class="grid gap-4 p-5 sm:p-6" aria-labelledby="attribution-heading">
+                <div>
+                    <h2 id="attribution-heading" class="text-lg font-extrabold text-ink">{{ __('Who gets the credit') }}</h2>
+                    <p class="text-sm text-muted">{{ __('Last touch credits where the converting visit came from; first touch credits where the visitor first came from. First touch needs data-retention on the snippet to look past a single visit.') }}</p>
+                </div>
+                @if ($result === [])
+                    <p class="text-sm text-muted">{{ __('No goal completions in this period.') }}</p>
+                @else
+                    <x-signal.ui.table :caption="__('Attribution')" :framed="false">
+                        <x-slot:head><tr><th scope="col">{{ $by === 'campaign' ? __('Campaign') : __('Channel') }}</th><th scope="col" class="text-right">{{ __('First touch') }}</th><th scope="col" class="text-right">{{ __('Last touch') }}</th><th scope="col" class="text-right">{{ __('Revenue (first)') }}</th><th scope="col" class="text-right">{{ __('Revenue (last)') }}</th></tr></x-slot:head>
+                        @foreach ($result as $row)
+                            <tr><td class="font-bold text-ink">{{ $row['label'] }}</td><td class="text-right tabular-nums">{{ number_format($row['first']) }}</td><td class="text-right tabular-nums">{{ number_format($row['last']) }}</td><td class="text-right tabular-nums">{{ $row['first_revenue'] ?? '—' }}</td><td class="text-right tabular-nums">{{ $row['last_revenue'] ?? '—' }}</td></tr>
+                        @endforeach
+                    </x-signal.ui.table>
+                @endif
+            </x-signal.ui.card>
+        @elseif ($tab === 'clicks')
+            <x-signal.ui.card as="section" class="grid gap-4 p-5 sm:p-6" aria-labelledby="clicks-heading">
+                <div>
+                    <h2 id="clicks-heading" class="text-lg font-extrabold text-ink">{{ $path ? __('Clicks on :path', ['path' => $path]) : __('Pages with the most clicks') }}</h2>
+                    <p class="text-sm text-muted">{{ __('Add data-clicks to the snippet to record where people click. Only a short description of the element and its position are kept.') }}</p>
+                </div>
+                @if ($path === null)
+                    <ul class="grid gap-2 text-sm">
+                        @forelse ($result['pages'] as $row)
+                            <li class="flex justify-between gap-4"><a class="truncate text-primary hover:underline" href="{{ $here(['path' => $row['label']]) }}">{{ $row['label'] }}</a><strong class="tabular-nums text-ink">{{ number_format($row['value']) }}</strong></li>
+                        @empty
+                            <li class="text-muted">{{ __('No clicks recorded in this period.') }}</li>
+                        @endforelse
+                    </ul>
+                @else
+                    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                        <figure class="grid gap-2">
+                            <svg viewBox="0 0 100 160" class="w-full rounded-control border border-line bg-surface-muted" role="img" aria-label="{{ __('Where people clicked on the page, top to bottom') }}">
+                                @foreach ($result['points'] as $point)
+                                    <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] * 1.6 }}" r="1.2" fill="var(--product-analytics)" fill-opacity="0.35" />
+                                @endforeach
+                            </svg>
+                            <figcaption class="text-xs text-muted">{{ trans_choice(':count click, placed by its position on the page (top to bottom).|:count clicks, placed by their position on the page (top to bottom).', count($result['points']), ['count' => number_format(count($result['points']))]) }}</figcaption>
+                        </figure>
+                        <div>
+                            <h3 class="text-sm font-extrabold text-ink">{{ __('Most clicked') }}</h3>
+                            <ul class="mt-2 grid gap-2 text-sm">
+                                @forelse ($result['targets'] as $row)
+                                    <li class="flex justify-between gap-4"><span class="truncate font-mono text-xs text-muted">{{ $row['label'] }}</span><strong class="tabular-nums text-ink">{{ number_format($row['value']) }}</strong></li>
+                                @empty
+                                    <li class="text-muted">{{ __('No clicks on this page in the period.') }}</li>
+                                @endforelse
+                            </ul>
+                        </div>
+                    </div>
+                @endif
+            </x-signal.ui.card>
+        @elseif ($tab === 'forms')
+            <x-signal.ui.card as="section" class="grid gap-4 p-5 sm:p-6" aria-labelledby="forms-heading">
+                <div>
+                    <h2 id="forms-heading" class="text-lg font-extrabold text-ink">{{ __('Forms') }}</h2>
+                    <p class="text-sm text-muted">{{ __('Add data-forms to the snippet to see who starts each form, who sends it, and which field people leave on. What people type is never recorded.') }}</p>
+                </div>
+                @forelse ($result as $form)
+                    <div class="grid gap-2 border-t border-line pt-4">
+                        <p class="flex flex-wrap items-baseline justify-between gap-2">
+                            <span class="font-mono font-bold text-ink">{{ $form['form'] }}</span>
+                            <span class="text-sm text-muted">{{ __(':started started · :submitted sent · :rate% completed', ['started' => number_format($form['started']), 'submitted' => number_format($form['submitted']), 'rate' => $form['started'] > 0 ? round($form['submitted'] / $form['started'] * 100) : 0]) }}</span>
+                        </p>
+                        <x-signal.ui.table :caption="__('Fields of :form', ['form' => $form['form']])" :framed="false">
+                            <x-slot:head><tr><th scope="col">{{ __('Field') }}</th><th scope="col" class="text-right">{{ __('Reached') }}</th><th scope="col" class="text-right">{{ __('Left here') }}</th></tr></x-slot:head>
+                            @foreach ($form['fields'] as $field)
+                                <tr><td class="font-mono text-xs">{{ $field['field'] }}</td><td class="text-right tabular-nums">{{ number_format($field['reached']) }}</td><td @class(['text-right tabular-nums', 'font-bold text-danger' => $field['left'] > 0])>{{ number_format($field['left']) }}</td></tr>
+                            @endforeach
+                        </x-signal.ui.table>
+                    </div>
+                @empty
+                    <p class="text-sm text-muted">{{ __('No form activity in this period.') }}</p>
+                @endforelse
             </x-signal.ui.card>
         @else
             <x-signal.ui.card as="section" class="grid gap-4 p-5 sm:p-6" aria-labelledby="retention-heading">

@@ -226,10 +226,10 @@
     if (script.dataset.notFound !== undefined) {
         window.buildpusher.track('not_found');
     }
-    // Link, download and page speed tracking live in a second file, loaded only when the snippet asks for them.
+    // Link, download, page speed, click and form tracking live in a second file, loaded only when the snippet asks.
     window.buildpusher._push = push;
     window.buildpusher._script = script;
-    if (script.dataset.outbound !== undefined || script.dataset.downloads !== undefined || script.dataset.vitals !== undefined) {
+    if (['outbound', 'downloads', 'vitals', 'clicks', 'forms'].some(function (name) { return script.dataset[name] !== undefined; })) {
         var extras = document.createElement('script');
         extras.async = true;
         extras.src = new URL('v1-extras.js', script.src).toString();

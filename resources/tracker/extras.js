@@ -1,5 +1,6 @@
-// BuildPusher Analytics extras: outbound links, file downloads (data-outbound, data-downloads) and page speed
-// (data-vitals). Loaded by v1.js only when its snippet has one of those attributes.
+// BuildPusher Analytics extras: outbound links, file downloads (data-outbound, data-downloads), page speed
+// (data-vitals), click maps (data-clicks) and form analytics (data-forms). Loaded by v1.js only when its snippet has
+// one of those attributes.
 (function () {
     'use strict';
 
@@ -80,4 +81,48 @@
         window.addEventListener('pagehide', function () { sendVitals(true); });
     }
 
+
+    // Click maps (data-clicks): where on the page people click, as a position and a short description of the element
+    // (its tag, id and first classes, or a few words of its text). No text people type is ever sent.
+    function describe(element) {
+        var tag = element.tagName.toLowerCase();
+        if (element.id) return tag + '#' + element.id;
+        var label = (element.getAttribute('aria-label') || element.innerText || element.value || '').trim().replace(/\s+/g, ' ');
+        if (label && tag !== 'input' && tag !== 'textarea') return tag + ' "' + label.slice(0, 40) + '"';
+        var classes = String(element.className || '').split(/\s+/).filter(Boolean).slice(0, 2);
+        return tag + (classes.length ? '.' + classes.join('.') : '');
+    }
+    if (script.dataset.clicks !== undefined) {
+        document.addEventListener('click', function (event) {
+            var target = event.target && event.target.closest ? event.target.closest('a, button, input, select, textarea, label, summary, [role="button"], [onclick]') || event.target : null;
+            if (!target || !target.tagName) return;
+            var root = document.documentElement;
+            var width = Math.max(root.scrollWidth, 1);
+            var height = Math.max(root.scrollHeight, 1);
+            push('click', {
+                target: describe(target).slice(0, 80),
+                x: Math.round(event.pageX / width * 1000) / 10,
+                y: Math.round(event.pageY / height * 1000) / 10
+            });
+        }, true);
+    }
+
+    // Form analytics (data-forms): which fields people reach and where they give up. Only the form's and fields'
+    // names are sent, never what's typed.
+    if (script.dataset.forms !== undefined) {
+        var formName = function (form) { return (form.getAttribute('name') || form.id || form.getAttribute('action') || 'form').slice(0, 80); };
+        var seen = {};
+        document.addEventListener('focusin', function (event) {
+            var field = event.target;
+            if (!field || !field.form || !/^(INPUT|SELECT|TEXTAREA)$/.test(field.tagName) || /^(hidden|submit|button)$/i.test(field.type || '')) return;
+            var form = formName(field.form);
+            var name = (field.getAttribute('name') || field.id || field.type || 'field').slice(0, 80);
+            if (seen[form + '|' + name]) return;
+            seen[form + '|' + name] = true;
+            push('form', { form: form, field: name, action: 'focus' });
+        }, true);
+        document.addEventListener('submit', function (event) {
+            if (event.target && event.target.tagName === 'FORM') push('form', { form: formName(event.target), action: 'submit' });
+        }, true);
+    }
 }());
