@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-01', 'title' => 'Deploy: monorepos, GitHub Actions and safer releases', 'changes' => [
+        'Monorepos: deploy one app from a subfolder, and only when a push changes its files.',
+        'The GitHub Action now comments each deploy’s result on the pull request and reports it in the job summary and outputs.',
+    ]],
     ['date' => '2026-10-01', 'title' => 'Monitoring: quieter, clearer alerts', 'changes' => [
         'Push notifications for on-call: turn them on for your phone or computer, add a Push destination for yourself or whoever is on call, and alerts arrive even with BuildPusher closed.',
         'Multi-step checks: script a login or checkout as a series of requests, with cookies, redirects and values carried between steps, and get told which step broke.',

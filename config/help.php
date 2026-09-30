@@ -148,6 +148,7 @@ return [
             'steps' => [
                 ['Connect the repository', 'Deploy → Repositories → Connect a repository. Choose the provider, the repository and branch, the environment, and the website it deploys to.'],
                 ['Set up the build', 'Add your build commands, and the environment’s variables (see Environments and variables).'],
+                ['Monorepos', 'For one app in a larger repository, set Subdirectory to its folder (such as apps/api), and under Push deploys only for these paths list its folder (apps/api/**) plus anything it shares (packages/**). A push that changes nothing there doesn’t deploy it; connect each app in the repository the same way.'],
                 ['Deploy', 'Deploy from the repository page, or turn on deploy on push. Each deploy is a new release, and the previous ones are kept.'],
                 ['Follow it', 'The deploy page shows each step’s log as it runs, and the release is marked in Monitoring and Analytics once it’s live.'],
             ],
@@ -162,7 +163,7 @@ return [
                 ['Deploy', 'Run buildpusher deploy <project> [environment] --wait to deploy and follow the log; add --ref=v1.4.0 to deploy a tag, branch or commit. It exits non-zero if the deploy fails, so CI jobs fail with it.'],
                 ['Follow and undo', 'buildpusher status lists recent deploys, buildpusher logs <id> --follow streams one, and buildpusher rollback <id> goes back to the release a deploy shipped.'],
                 ['Set defaults', 'Put {"project": "shop", "environment": "staging"} in .buildpusher.json at the root of your repository to leave them off each command.'],
-                ['In GitHub Actions or code', 'Deploy from a workflow with the BuildPusher GitHub Action, or from your own code with the PHP (buildpusher/sdk) and JavaScript (@buildpusher/sdk) SDKs.'],
+                ['In GitHub Actions or code', 'Deploy from a workflow with the BuildPusher GitHub Action (buildpusher/deploy-action), which waits for the result, fails the job if the deploy fails, and comments the result on the pull request; or from your own code with the PHP (buildpusher/sdk) and JavaScript (@buildpusher/sdk) SDKs.'],
             ],
         ],
         'environments-and-variables' => [

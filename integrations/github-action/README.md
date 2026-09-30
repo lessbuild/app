@@ -21,7 +21,14 @@ jobs:
 ```
 
 Inputs: `token` (required), `project` (required), `environment` (default `production`), `ref` (default: the pushed
-commit), `wait` (default `true`), `url` (default `https://buildpusher.com`).
+commit), `wait` (default `true`), `comment` (default `true`), `github-token` (default: the workflow's token) and `url`
+(default `https://buildpusher.com`).
+
+Outputs: `deployment-id`, `deployment-url` and `status` (`succeeded`, `failed`, or `queued` without waiting). The job
+summary shows the result too.
+
+On pull requests the action adds a comment with the result and a link, and updates the same comment on later runs (one
+per environment). Give the job `permissions: pull-requests: write` for that, or set `comment: false`.
 
 Create the token under **Account → API tokens** with the Deploy scopes and save it as the `BUILDPUSHER_TOKEN`
 repository secret. The action installs the [BuildPusher CLI](https://buildpusher.com/help/use-the-cli), so the runner

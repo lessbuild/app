@@ -92,6 +92,8 @@ return [
                 ['label' => 'Integrate', 'title' => 'Keep your scripts working', 'description' => 'Everything the dashboard does is available to your pipeline.', 'features' => [
                     ['Deployer API v1', 'Deploy, roll back, promote, scale and manage variables from scripts, with scoped API tokens.'],
                     ['Signed webhooks', 'Push to deploy from GitHub, GitLab and Bitbucket, with every delivery verified.'],
+                    ['Monorepos', 'Deploy an app from its folder, and only when a push changes it.'],
+                    ['GitHub Actions', 'An official action that deploys, waits for the result and comments it on the pull request.'],
                 ]],
             ],
             'workflows_heading' => 'Connect. Release. Recover.',
