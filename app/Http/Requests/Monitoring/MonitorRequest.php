@@ -10,6 +10,7 @@ use App\Models\Project;
 use App\Services\Monitoring\DnsRecordSet;
 use App\Services\Monitoring\HeartbeatSchedule;
 use App\Services\Monitoring\PublicHttpTarget;
+use App\Support\Monitoring\FlowSteps;
 use App\Support\Monitoring\QueueMonitorSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
@@ -22,7 +23,7 @@ use RuntimeException;
 /** Every monitor type's fields; fields for other types are excluded. Authorisation happens in SaveMonitor. */
 final class MonitorRequest extends FormRequest
 {
-    public const TYPES = ['http' => 'HTTP uptime', 'dns' => 'DNS records', 'tls' => 'TLS certificate', 'tcp' => 'TCP port', 'heartbeat' => 'Cron / heartbeat', 'queue' => 'Queue / workers'];
+    public const TYPES = ['http' => 'HTTP uptime', 'dns' => 'DNS records', 'tls' => 'TLS certificate', 'tcp' => 'TCP port', 'flow' => 'Multi-step check', 'heartbeat' => 'Cron / heartbeat', 'queue' => 'Queue / workers'];
 
     public const INTERVALS = [1 => 'Every minute', 5 => 'Every 5 minutes', 15 => 'Every 15 minutes', 30 => 'Every 30 minutes', 60 => 'Every hour'];
 
@@ -50,6 +51,7 @@ final class MonitorRequest extends FormRequest
         $dns = $type === 'dns';
         $tls = $type === 'tls';
         $tcp = $type === 'tcp';
+        $flow = $type === 'flow';
         $heartbeat = $type === 'heartbeat';
         $queue = $type === 'queue';
         $signals = $heartbeat || $queue;
@@ -77,6 +79,7 @@ final class MonitorRequest extends FormRequest
             'tls_port' => [Rule::excludeIf(! $tls), 'required', 'integer', 'between:1,65535'],
             'tls_expiry_days' => [Rule::excludeIf(! $tls), 'required', 'integer', 'between:1,90'],
             'tcp_port' => [Rule::excludeIf(! $tcp), 'required', 'integer', 'between:1,65535'],
+            'flow_steps' => [Rule::excludeIf(! $flow), $monitor ? 'nullable' : 'required', 'string', 'max:10000'],
             'heartbeat_schedule' => [Rule::excludeIf(! $heartbeat), 'required', 'string', Rule::in(['interval', 'cron'])],
             'heartbeat_interval_minutes' => [Rule::excludeIf(! $heartbeat || $cron), 'required', 'integer', 'between:1,43200'],
             'heartbeat_cron' => [Rule::excludeIf(! $heartbeat || ! $cron), 'required', 'string', 'max:100', 'not_regex:/[\x00-\x1F\x7F]/u'],
@@ -135,6 +138,27 @@ final class MonitorRequest extends FormRequest
                         $schedules->nextCron((string) $data['heartbeat_cron'], (string) $data['heartbeat_timezone'], CarbonImmutable::now('UTC'));
                     } catch (InvalidArgumentException|RuntimeException) {
                         $validator->errors()->add('heartbeat_cron', __('Use a valid five-field cron expression with a future occurrence.'));
+                    }
+                }
+
+                return;
+            }
+            if ($this->checkType() === 'flow') {
+                if ($validator->errors()->has('flow_steps') || ! isset($data['flow_steps'])) {
+                    return;
+                }
+                $parsed = FlowSteps::parse((string) $data['flow_steps']);
+                if ($parsed['error'] !== null) {
+                    $validator->errors()->add('flow_steps', $parsed['error']);
+
+                    return;
+                }
+                foreach ($parsed['steps'] as $index => $step) {
+                    // Addresses built from extracted values are checked when the check runs.
+                    if (! str_contains($step['url'], '{{') && $targets->parse($step['url']) === null) {
+                        $validator->errors()->add('flow_steps', __('Step :step: use a public HTTP or HTTPS URL.', ['step' => $index + 1]));
+
+                        return;
                     }
                 }
 

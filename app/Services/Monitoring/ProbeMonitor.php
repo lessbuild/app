@@ -18,12 +18,14 @@ final class ProbeMonitor
      * @param  ProbeDnsMonitor  $dns  DNS checks.
      * @param  ProbeTlsMonitor  $tls  TLS certificate checks.
      * @param  ProbeTcpMonitor  $tcp  TCP port checks.
+     * @param  ProbeFlowMonitor  $flow  Runs multi-step checks.
      */
     public function __construct(
         private readonly ProbeHttpMonitor $http,
         private readonly ProbeDnsMonitor $dns,
         private readonly ProbeTlsMonitor $tls,
         private readonly ProbeTcpMonitor $tcp,
+        private readonly ProbeFlowMonitor $flow,
     ) {}
 
     /**
@@ -39,6 +41,7 @@ final class ProbeMonitor
             'dns' => $this->dns->probe($monitor),
             'tls' => $this->tls->probe($monitor),
             'tcp' => $this->tcp->probe($monitor),
+            'flow' => $this->flow->probe($monitor),
             default => new MonitorObservation('unknown', 'target_invalid'),
         };
     }

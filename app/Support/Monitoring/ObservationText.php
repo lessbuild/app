@@ -23,6 +23,7 @@ final class ObservationText
         $what = match ($snapshot['type'] ?? 'http') {
             'dns' => __('DNS :type · :match · :count expected records', ['type' => $value('dns_record_type'), 'match' => $value('dns_match'), 'count' => $value('expected_count')]),
             'tcp' => __('TCP port :port · connection only', ['port' => $value('tcp_port')]),
+            'flow' => __('Multi-step check · :count steps', ['count' => $value('step_count')]),
             'tls' => __('TLS certificate · expiry threshold :days days', ['days' => $value('tls_expiry_days')]),
             'queue' => __('Queue / workers · :queue · report timeout :seconds sec · at least :workers live workers', ['queue' => $value('queue_name'), 'seconds' => self::text($settings['report_timeout_seconds'] ?? null), 'workers' => self::text($settings['minimum_workers'] ?? null)]),
             'heartbeat' => __('Cron / heartbeat · :schedule · :grace minute grace', [
@@ -56,6 +57,7 @@ final class ObservationText
             'heartbeat' => [__('Heartbeat deadline: :deadline · observed :received', ['deadline' => self::text($details['deadline_at'] ?? null, __('not recorded')), 'received' => $value('received_at')])],
             'dns' => [__(':type · :observed observed / :expected expected · :missing missing · :unexpected additional records', ['type' => $value('record_type'), 'observed' => $value('observed_count'), 'expected' => $value('expected_count'), 'missing' => $value('missing_count'), 'unexpected' => $value('unexpected_count')])],
             'tcp' => [__('TCP port :port · connection only', ['port' => $value('port')])],
+            'flow' => isset($details['failed_step']) ? [__('Failed at step :step', ['step' => $value('failed_step')])] : [__(':count steps passed', ['count' => $value('steps')])],
             'tls' => [__('Certificate expires :until · :days complete days remaining', ['until' => $value('valid_until'), 'days' => $value('days_remaining')])],
             default => [],
         };

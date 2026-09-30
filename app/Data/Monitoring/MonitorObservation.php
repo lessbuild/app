@@ -76,6 +76,7 @@ final readonly class MonitorObservation
             'passed' => 'All assertions passed',
             'unexpected_status' => 'Unexpected HTTP status',
             'body_mismatch' => 'Required response text missing',
+            'extract_failed' => 'A value to carry to the next step wasn’t found',
             'too_slow' => 'Response exceeded duration threshold',
             'connection_failed' => 'Connection, TLS or timeout failure from this checker',
             'dns_unavailable' => 'DNS could not be resolved by this checker',

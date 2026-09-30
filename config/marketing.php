@@ -199,7 +199,7 @@ return [
             'headline' => 'See health, errors and changes together.',
             'summary' => 'Uptime, heartbeat and queue checks, application telemetry and traces, and alerts that turn the signals that matter into incidents.',
             'card_summary' => 'Understand uptime, application behaviour and incidents across every environment you run.',
-            'card_features' => ['HTTP, DNS, TLS, TCP, heartbeat and queue checks', 'Errors, traces, logs and metrics', 'Alerts, SLOs and escalations', 'Status pages with subscriptions'],
+            'card_features' => ['HTTP, multi-step, DNS, TLS, TCP, heartbeat and queue checks', 'Errors, traces, logs and metrics', 'Alerts, SLOs and escalations', 'Status pages with subscriptions'],
             'suite' => [
                 'title' => 'Detect and respond',
                 'description' => 'Bring scheduled checks, worker health and application telemetry into a response your team can follow.',
@@ -228,7 +228,7 @@ return [
             ],
             'groups' => [
                 ['label' => 'Checks', 'title' => 'Know when a service changes', 'description' => 'Scheduled checks with history, recovery and planned work in context.', 'features' => [
-                    ['Uptime and more', 'HTTP, DNS, TLS, TCP, cron heartbeats and queue workers, with maintenance windows.'],
+                    ['Uptime and more', 'HTTP, multi-step login and checkout flows, DNS, TLS, TCP, cron heartbeats and queue workers, with maintenance windows.'],
                     ['Status pages', 'Public status pages on your own domain, with component groups, incident and maintenance updates, subscriptions and monthly uptime reports.'],
                     ['Services you depend on', 'The status of GitHub, Cloudflare, DigitalOcean and other providers beside your own checks.'],
                 ]],

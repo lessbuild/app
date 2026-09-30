@@ -31,7 +31,7 @@ final class SaveMonitor
         'max_duration_ms', 'timeout_seconds', 'interval_minutes', 'trigger_checks', 'recovery_checks',
         'hostname', 'dns_record_type', 'dns_match', 'dns_expected', 'tls_port', 'tls_expiry_days', 'tcp_port',
         'heartbeat_schedule', 'heartbeat_interval_minutes', 'heartbeat_cron', 'heartbeat_timezone', 'heartbeat_grace_minutes',
-        'queue_name', 'queue_settings'];
+        'queue_name', 'queue_settings', 'flow_steps'];
 
     /**
      * Create a new SaveMonitor instance.
@@ -79,7 +79,7 @@ final class SaveMonitor
             }
             $monitor ??= new Monitor;
             $type = $data['check_type'] ?? ($monitor->type ?? 'http');
-            if (! in_array($type, ['http', 'dns', 'tls', 'tcp', 'heartbeat', 'queue'], true) || (! $isNew && $type !== $monitor->type)) {
+            if (! in_array($type, ['http', 'dns', 'tls', 'tcp', 'flow', 'heartbeat', 'queue'], true) || (! $isNew && $type !== $monitor->type)) {
                 throw ValidationException::withMessages(['check_type' => __('The monitor type can’t be changed. Create a separate monitor.')]);
             }
             $oldTarget = $isNew || $type !== 'http' || $monitor->request_url === null ? null : $this->targets->parse($monitor->request_url);
@@ -100,6 +100,11 @@ final class SaveMonitor
                     'heartbeat_cron' => $data['heartbeat_schedule'] === 'cron' ? preg_replace('/\s+/', ' ', trim($data['heartbeat_cron'])) : null,
                     'heartbeat_timezone' => $data['heartbeat_schedule'] === 'cron' ? $data['heartbeat_timezone'] : 'UTC',
                 ]);
+            } elseif ($type === 'flow') {
+                $values['request_url'] = null;
+                if (isset($data['flow_steps']) && $data['flow_steps'] !== '') {
+                    $values['flow_steps'] = trim(str_replace("\r\n", "\n", (string) $data['flow_steps']));
+                }
             } elseif ($type === 'http') {
                 $values += Arr::only($data, ['method', 'status_min', 'status_max', 'max_duration_ms']);
                 foreach (['request_url', 'bearer_token', 'body_contains'] as $secret) {

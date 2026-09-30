@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\Monitoring\FlowSteps;
 use App\Support\Monitoring\QueueMonitorSettings;
 use Carbon\CarbonImmutable;
 use Database\Factories\MonitorFactory;
@@ -52,6 +53,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $tls_port
  * @property int|null $tls_expiry_days
  * @property int|null $tcp_port
+ * @property string|null $flow_steps a multi-step check's steps (see App\Support\Monitoring\FlowSteps), encrypted
  * @property string|null $heartbeat_schedule
  * @property int|null $heartbeat_interval_minutes
  * @property string|null $heartbeat_cron
@@ -192,6 +194,11 @@ class Monitor extends Model
                 ? $this->heartbeat_cron.' · '.$this->heartbeat_timezone
                 : 'Heartbeat every '.$this->heartbeat_interval_minutes.' min';
         }
+        if ($this->type === 'flow') {
+            $steps = FlowSteps::parse((string) $this->flow_steps)['steps'];
+
+            return ($steps === [] ? 'hidden' : (parse_url($steps[0]['url'], PHP_URL_HOST) ?: 'hidden')).' · '.count($steps).' steps';
+        }
         if ($this->type !== 'http') {
             return ($this->hostname ?? 'hidden').(in_array($this->type, ['tls', 'tcp'], true) ? ':'.$this->{$this->type.'_port'} : '');
         }
@@ -241,6 +248,7 @@ class Monitor extends Model
             'dns' => 'DNS records',
             'tls' => 'TLS certificate',
             'tcp' => 'TCP port',
+            'flow' => 'Multi-step check',
             default => 'HTTP uptime',
         };
     }
@@ -288,6 +296,9 @@ class Monitor extends Model
             return $this->only(['name', 'type', 'heartbeat_schedule', 'heartbeat_interval_minutes',
                 'heartbeat_cron', 'heartbeat_timezone', 'heartbeat_grace_minutes', 'trigger_checks', 'recovery_checks']);
         }
+        if ($this->type === 'flow') {
+            return [...$this->only(['name', 'type', 'timeout_seconds', 'interval_minutes', 'trigger_checks', 'recovery_checks']), 'step_count' => count(FlowSteps::parse((string) $this->flow_steps)['steps'])];
+        }
         if ($this->type !== 'http') {
             return [...$this->only(['name', 'type', 'timeout_seconds', 'interval_minutes', 'trigger_checks', 'recovery_checks']),
                 ...($this->type === 'dns'
@@ -315,7 +326,7 @@ class Monitor extends Model
             'heartbeat_sequence' => 'integer', 'heartbeat_due_at' => 'immutable_datetime',
             'heartbeat_received_at' => 'immutable_datetime', 'heartbeat_succeeded_at' => 'immutable_datetime',
             'request_url' => 'encrypted', 'bearer_token' => 'encrypted', 'body_contains' => 'encrypted',
-            'hostname' => 'encrypted', 'dns_expected' => 'encrypted:array',
+            'hostname' => 'encrypted', 'dns_expected' => 'encrypted:array', 'flow_steps' => 'encrypted',
             'tls_port' => 'integer', 'tls_expiry_days' => 'integer',
             'tcp_port' => 'integer',
             'enabled' => 'boolean', 'state_version' => 'integer', 'config_revision' => 'integer',

@@ -5,6 +5,7 @@ declare(strict_types=1);
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
     ['date' => '2026-10-01', 'title' => 'Monitoring: quieter, clearer alerts', 'changes' => [
+        'Multi-step checks: script a login or checkout as a series of requests, with cookies, redirects and values carried between steps, and get told which step broke.',
         'Status pages: group components under headings, a public uptime report for every month, and an optional monthly email of it to subscribers.',
         'Send a server’s logs to Monitoring: system warnings and errors, and its websites’ Laravel errors with stack traces, searchable beside traces and ready for log alerts.',
         'Create a ticket for any issue in GitHub Issues, Linear or Jira, with the error’s details and a link back.',

@@ -59,6 +59,9 @@
                         <x-signal.ui.input-field name="heartbeat_timezone" :label="__('Cron time zone')" maxlength="64" :value="$monitor?->heartbeat_timezone ?? 'UTC'" placeholder="Europe/London" />
                     </div>
                     <p class="text-xs text-muted">{{ __('A completed run is expected by the scheduled time plus the grace period. A start signal also limits the run to the grace period. One failure or missed deadline opens an incident; the next successful run closes it.') }}</p>
+                @elseif ($checkType === 'flow')
+                    <x-signal.ui.textarea-field name="flow_steps" :label="__('Steps')" rows="12" maxlength="10000" :restore="false" :required="! $monitor" class="font-mono" :placeholder="\App\Support\Monitoring\FlowSteps::EXAMPLE"
+                        :description="($monitor ? __('Stored encrypted; leave blank to keep the current :count steps.', ['count' => count(\App\Support\Monitoring\FlowSteps::parse((string) $monitor->flow_steps)['steps'])]).' ' : '').__('Up to 10 steps, separated by a blank line. Each starts with a method and URL; then header Name: value, form a=1&b=2 or json {…}, expect 200 “text” and extract name (regex). Cookies carry from step to step, and :placeholder inserts an extracted value. Use a dedicated test account.', ['placeholder' => '{'.'{name}'.'}'])" />
                 @elseif ($checkType === 'http')
                     <x-signal.ui.input-field name="request_url" :label="__('URL')" type="password" autocomplete="off" maxlength="2048" :required="! $monitor" :restore="false"
                         :description="($monitor ? __('Now: :target. Leave blank to keep it.', ['target' => $monitor->targetLabel()]).' ' : '').__('Stored encrypted and never shown in check history. Redirects aren’t followed, so enter the final address.')" />
