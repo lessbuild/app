@@ -295,6 +295,16 @@ return [
                 ['Reminders', 'A finding appears when the last review is more than 90 days old, and for members without two-factor authentication and API tokens unused for 90 days.'],
             ],
         ],
+        'security-compliance' => [
+            'group' => 'security',
+            'title' => 'Compliance evidence',
+            'summary' => 'Download evidence for SOC 2, ISO 27001 and security questionnaires.',
+            'steps' => [
+                ['Download', 'On the Team plan, Security → Compliance downloads a ZIP covering the last 3, 6 or 12 months.'],
+                ['What’s inside', 'Spreadsheets of members and two-factor status, API tokens, access reviews, every deploy with who asked and who approved, vulnerabilities and how each was handled, scans, patching, blocked attacks, backups and restore tests, incidents, and the audit log, with a README mapping each to the controls it supports.'],
+                ['Keeping it complete', 'Review access every 90 days, fix or ignore findings with a reason, and keep backup verification on; each shows up in the next pack.'],
+            ],
+        ],
         'add-analytics' => [
             'group' => 'analytics',
             'title' => 'Add analytics to a website',
