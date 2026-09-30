@@ -78,7 +78,7 @@ return [
             ],
             'different' => [
                 'Your releases are marked on the chart, and the same account deploys and monitors the site.',
-                'Path exploration, automatic insights, items sold, opt-in retention, Slack reports and nightly raw exports ready for BigQuery.',
+                'Path exploration, automatic insights, attribution, click maps, form analytics, A/B tests, items sold, opt-in retention, Slack reports and nightly raw exports ready for BigQuery.',
                 'One bill with Deploy, Infrastructure and Monitoring, with a free tier for each.',
             ],
             'choose_them' => 'You only need analytics, or want an analytics product that’s independent of your hosting.',

@@ -215,6 +215,34 @@
         if (!term || typeof term !== 'string') return;
         push('event', { name: 'search', term: term.slice(0, 200), results: typeof results === 'number' ? Math.round(results) : undefined });
     };
+    // A/B tests: buildpusher.variant('headline', ['control', 'bold']) picks a variant for this browser session (the
+    // same every time it's asked), records that the visitor saw it, and returns it.
+    function sessionKey() {
+        try {
+            var stored = window.sessionStorage.getItem('buildpusher_session');
+            if (!stored) {
+                stored = id();
+                window.sessionStorage.setItem('buildpusher_session', stored);
+            }
+            return stored;
+        } catch (_) {
+            return lastPage;
+        }
+    }
+    window.buildpusher.variant = function (experiment, variants) {
+        if (!experiment || !variants || !variants.length) return undefined;
+        var seed = sessionKey() + '|' + experiment;
+        var hash = 0;
+        for (var i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+        var chosen = String(variants[Math.abs(hash) % variants.length]);
+        var seenKey = 'buildpusher_exp_' + experiment;
+        try {
+            if (window.sessionStorage.getItem(seenKey) === chosen) return chosen;
+            window.sessionStorage.setItem(seenKey, chosen);
+        } catch (_) {}
+        push('experiment', { experiment: String(experiment).slice(0, 60), variant: chosen.slice(0, 60) });
+        return chosen;
+    };
     window.buildpusher.pageview = function () {
         push('pageview');
         lastPage = window.location.href;

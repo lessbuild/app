@@ -1,5 +1,5 @@
 @php($project = $overview->project)
-@php($tabs = ['insights' => __('Insights'), 'paths' => __('Paths'), 'properties' => __('Properties'), 'items' => __('Items'), 'attribution' => __('Attribution'), 'clicks' => __('Clicks'), 'forms' => __('Forms'), 'retention' => __('Retention')])
+@php($tabs = ['insights' => __('Insights'), 'paths' => __('Paths'), 'properties' => __('Properties'), 'items' => __('Items'), 'attribution' => __('Attribution'), 'clicks' => __('Clicks'), 'forms' => __('Forms'), 'experiments' => __('Experiments'), 'retention' => __('Retention')])
 @php($here = fn (array $params = []): string => route('analytics.explore', [$project, 'site' => $site?->id, 'tab' => $tab, ...($period?->query() ?? []), ...$params]))
 @php($money = fn (float $amount, string $currency): string => $currency.' '.number_format($amount, 2))
 
@@ -15,7 +15,7 @@
             @endforeach
         </nav>
 
-        @if ($tab !== 'retention')
+        @if (! in_array($tab, ['retention', 'experiments'], true))
             <x-signal.ui.card class="p-4 sm:p-5">
                 <form method="GET" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
                     <input type="hidden" name="site" value="{{ $site->id }}">
@@ -212,6 +212,56 @@
                     <p class="text-sm text-muted">{{ __('No form activity in this period.') }}</p>
                 @endforelse
             </x-signal.ui.card>
+        @elseif ($tab === 'experiments')
+            @if ($canManage)
+                <x-signal.ui.settings-section :title="__('Start an A/B test')" :description="__('On the page, call buildpusher.variant(\'key\', [\'control\', \'b\']) and show whichever variant it returns. Each visitor keeps the same variant for their visit.')">
+                    <form method="POST" action="{{ route('analytics.experiments.store', [$project, $site->id]) }}" class="grid gap-3 p-4 sm:grid-cols-2 sm:p-6">
+                        @csrf
+                        <x-signal.ui.input-field name="name" :label="__('Name')" maxlength="120" required placeholder="Bolder headline" />
+                        <x-signal.ui.input-field name="key" :label="__('Key')" maxlength="60" required placeholder="headline" />
+                        <x-signal.ui.input-field name="variants" :label="__('Variants (control first)')" maxlength="400" required placeholder="control, bold" />
+                        <x-signal.ui.select-field name="goal_id" :label="__('Goal')">
+                            <option value="">{{ __('Choose a goal') }}</option>
+                            @foreach ($goals as $goal)
+                                <option value="{{ $goal->id }}">{{ $goal->name }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Start') }}</x-signal.ui.button></div>
+                    </form>
+                </x-signal.ui.settings-section>
+            @endif
+            @forelse ($result as $row)
+                @php($experiment = $row['experiment'])
+                <x-signal.ui.card as="section" class="grid gap-3 p-5 sm:p-6" aria-labelledby="experiment-{{ $experiment->id }}">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 id="experiment-{{ $experiment->id }}" class="text-lg font-extrabold text-ink">{{ $experiment->name }} <span class="font-mono text-sm font-normal text-muted">{{ $experiment->key }}</span></h2>
+                            <p class="text-sm text-muted">{{ __('Goal: :goal', ['goal' => $experiment->goal->name ?? __('none')]) }} · {{ $experiment->status === 'running' ? __('running since :date', ['date' => $experiment->started_at->toFormattedDateString()]) : __('stopped :date', ['date' => $experiment->stopped_at?->toFormattedDateString()]) }}</p>
+                        </div>
+                        @if ($canManage)
+                            <div class="flex gap-2">
+                                @if ($experiment->status === 'running')<form method="POST" action="{{ route('analytics.experiments.stop', [$project, $site->id, $experiment->id]) }}">@csrf @method('PUT')<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Stop') }}</x-signal.ui.button></form>@endif
+                                <form method="POST" action="{{ route('analytics.experiments.destroy', [$project, $site->id, $experiment->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Delete') }}</x-signal.ui.button></form>
+                            </div>
+                        @endif
+                    </div>
+                    <x-signal.ui.table :caption="__('Results of :name', ['name' => $experiment->name])" :framed="false">
+                        <x-slot:head><tr><th scope="col">{{ __('Variant') }}</th><th scope="col" class="text-right">{{ __('Visitors') }}</th><th scope="col" class="text-right">{{ __('Conversions') }}</th><th scope="col" class="text-right">{{ __('Rate') }}</th><th scope="col" class="text-right">{{ __('Lift') }}</th><th scope="col" class="text-right">{{ __('Confidence') }}</th></tr></x-slot:head>
+                        @foreach ($row['results'] as $variant)
+                            <tr>
+                                <td class="font-bold text-ink">{{ $variant['variant'] }}@if ($loop->first) <span class="text-xs font-normal text-muted">({{ __('control') }})</span>@endif</td>
+                                <td class="text-right tabular-nums">{{ number_format($variant['visitors']) }}</td>
+                                <td class="text-right tabular-nums">{{ number_format($variant['conversions']) }}</td>
+                                <td class="text-right tabular-nums">{{ $variant['rate'] }}%</td>
+                                <td class="text-right tabular-nums">{{ $variant['lift'] === null ? '—' : sprintf('%+.1f%%', $variant['lift']) }}</td>
+                                <td class="text-right">@if ($variant['p_value'] === null)—@elseif ($variant['significant'])<x-signal.ui.badge tone="success">{{ __('Significant') }}</x-signal.ui.badge>@else<span class="text-xs text-muted">{{ __('Not yet (p = :p)', ['p' => $variant['p_value']]) }}</span>@endif</td>
+                            </tr>
+                        @endforeach
+                    </x-signal.ui.table>
+                </x-signal.ui.card>
+            @empty
+                <x-signal.ui.empty-state icon="chart" :title="__('No experiments yet')" :description="__('Start one to compare two versions of a page against a goal.')" />
+            @endforelse
         @else
             <x-signal.ui.card as="section" class="grid gap-4 p-5 sm:p-6" aria-labelledby="retention-heading">
                 <div>

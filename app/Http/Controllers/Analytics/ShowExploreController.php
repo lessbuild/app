@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Analytics;
 
 use App\Http\Controllers\Analytics\Concerns\ReadsReportParameters;
+use App\Models\AnalyticsExperiment;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Analytics\AttributionQuery;
 use App\Queries\Analytics\ClickMapQuery;
+use App\Queries\Analytics\ExperimentResultsQuery;
 use App\Queries\Analytics\FormsQuery;
 use App\Queries\Analytics\InsightsQuery;
 use App\Queries\Analytics\ItemsQuery;
@@ -30,11 +32,11 @@ final class ShowExploreController
      *
      * @var list<string>
      */
-    public const TABS = ['insights', 'paths', 'properties', 'items', 'attribution', 'clicks', 'forms', 'retention'];
+    public const TABS = ['insights', 'paths', 'properties', 'items', 'attribution', 'clicks', 'forms', 'experiments', 'retention'];
 
     /**
      * Show a site's deeper reports, one tab at a time: automatic insights, path exploration, custom property
-     * breakdowns, e-commerce items, attribution, click maps, form analytics and retention cohorts. Only the open tab is
+     * breakdowns, e-commerce items, attribution, click maps, form analytics, A/B tests and retention cohorts. Only the open tab is
      * worked out.
      *
      * @param  Request  $request
@@ -50,9 +52,10 @@ final class ShowExploreController
      * @param  AttributionQuery  $attribution
      * @param  ClickMapQuery  $clicks
      * @param  FormsQuery  $forms
+     * @param  ExperimentResultsQuery  $experiments
      * @return View
      */
-    public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites, InsightsQuery $insights, PathExplorationQuery $paths, PropertyBreakdownQuery $properties, ItemsQuery $items, RetentionQuery $retention, AttributionQuery $attribution, ClickMapQuery $clicks, FormsQuery $forms): View
+    public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites, InsightsQuery $insights, PathExplorationQuery $paths, PropertyBreakdownQuery $properties, ItemsQuery $items, RetentionQuery $retention, AttributionQuery $attribution, ClickMapQuery $clicks, FormsQuery $forms, ExperimentResultsQuery $experiments): View
     {
         $site = $sites->selected($project, $request->query('site'));
         $tab = in_array($request->query('tab'), self::TABS, true) ? (string) $request->query('tab') : 'insights';
@@ -71,6 +74,8 @@ final class ShowExploreController
             'event' => $event === '' ? null : mb_substr($event, 0, 80),
             'property' => $property === '' ? null : $property,
             'by' => $request->query('by') === 'campaign' ? 'campaign' : 'channel',
+            'goals' => $site === null ? collect() : $site->goals()->orderBy('name')->get(),
+            'canManage' => $site !== null && $user->can('update', $site),
             'result' => $site === null || $period === null ? null : match ($tab) {
                 'paths' => $paths->handle($site, $period, $path === '' ? null : mb_substr($path, 0, 2048)),
                 'properties' => $properties->handle($site, $period, $event === '' ? null : $event, $property === '' ? null : $property),
@@ -79,6 +84,8 @@ final class ShowExploreController
                 'attribution' => $attribution->handle($site, $period, $request->query('by') === 'campaign' ? 'campaign' : 'channel'),
                 'clicks' => $clicks->handle($site, $period, $path === '' ? null : mb_substr($path, 0, 2048)),
                 'forms' => $forms->handle($site, $period),
+                'experiments' => AnalyticsExperiment::query()->where('site_id', $site->id)->with('goal')->latest('id')->get()
+                    ->map(fn (AnalyticsExperiment $experiment): array => ['experiment' => $experiment, 'results' => $experiments->handle($experiment)])->all(),
                 default => $insights->handle($site, $period),
             },
         ]);

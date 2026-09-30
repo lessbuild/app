@@ -328,7 +328,8 @@ return [
             'steps' => [
                 ['Pick a period', 'On the Analytics overview, choose a preset or set From and To dates, and compare with the previous period, the same period last year, or nothing.'],
                 ['Filter and save', 'Click any page, channel, country, city, browser or campaign to filter by it, then save the filters as a view (a segment) to come back to.'],
-                ['Explore', 'Analytics → Explore has Insights (the biggest changes), Paths (where people came from and went next), Properties, Items (e-commerce), Attribution, Clicks, Forms and Retention.'],
+                ['Explore', 'Analytics → Explore has Insights (the biggest changes), Paths (where people came from and went next), Properties, Items (e-commerce), Attribution, Clicks, Forms, Experiments and Retention.'],
+                ['A/B tests', 'Start an experiment in Explore → Experiments with a key, its variants (the control first) and a goal. On the page, buildpusher.variant(\'key\', [\'control\', \'b\']) returns the variant to show and keeps it the same for the whole visit. Results show each variant’s conversion rate, lift over the control and whether it’s significant (p below 0.05); wait for a few hundred visitors per variant before deciding.'],
                 ['Attribution', 'Attribution credits goals and revenue to the channel or campaign that brought the converting visit (last touch) and that first brought the visitor (first touch; needs data-retention to look past one visit).'],
                 ['Clicks and forms', 'Add data-clicks to the snippet for click maps, and data-forms for where people give up on forms. Only element descriptions, positions and field names are kept, never what people type.'],
                 ['Retention', 'Add data-retention to the script to recognise returning browsers. It keeps a random ID in the browser, so ask for consent where the law requires it.'],

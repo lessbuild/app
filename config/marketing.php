@@ -385,6 +385,8 @@ return [
                     ['Paths', 'Where visitors came from and went next, one page at a time.'],
                     ['Insights', 'The pages, channels and places that changed most, in plain sentences.'],
                     ['Properties, items and retention', 'Break events down by your own properties, see items sold, and follow weekly retention.'],
+                    ['Attribution, clicks and forms', 'First- and last-touch credit for conversions, click maps, and the form field people give up on.'],
+                    ['A/B tests', 'Split visitors between variants and see which one wins your goal, with lift and statistical significance.'],
                 ]],
                 ['label' => 'Share', 'title' => 'Keep the whole team in the loop', 'description' => 'Numbers where people already look.', 'features' => [
                     ['Reports and alerts', 'Weekly or monthly reports by email or Slack, and an alert when traffic spikes.'],

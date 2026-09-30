@@ -12,6 +12,7 @@
         <div class="grid gap-4 p-4 sm:p-6">
             <x-signal.ui.code-block :code="$snippet" class="whitespace-pre-wrap break-all" />
             <p class="text-xs text-muted">{{ __('Custom events: window.buildpusher.track(\'signup\'). Add revenue to measure what goals and campaigns earn: window.buildpusher.track(\'purchase\', {revenue: 49.99, currency: \'EUR\'}).') }}</p>
+            <p class="text-xs text-muted">{{ __('A/B tests: var headline = window.buildpusher.variant(\'headline\', [\'control\', \'bold\']) returns the variant to show; set up the experiment in Explore → Experiments.') }}</p>
             <p class="text-xs text-muted">{{ __('Without JavaScript: give a button or link the class bp-event-name=Signup (and bp-event-plan=pro for a property); clicking it sends the event.') }}</p>
             <div class="grid gap-2 text-sm">
                 <p class="font-bold text-ink">{{ __('Optional: count more automatically') }}</p>

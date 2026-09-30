@@ -253,6 +253,20 @@ final class CollectionRequest
     }
 
     /**
+     * Keep an experiment exposure: which experiment and which variant the visitor saw.
+     *
+     * @param  mixed  $properties
+     * @return array{experiment: string, variant: string}|null
+     */
+    public static function safeExperiment(mixed $properties): ?array
+    {
+        $experiment = is_array($properties) ? self::cleanValue($properties['experiment'] ?? null, 60) : null;
+        $variant = is_array($properties) ? self::cleanValue($properties['variant'] ?? null, 60) : null;
+
+        return $experiment === null || $variant === null ? null : ['experiment' => $experiment, 'variant' => $variant];
+    }
+
+    /**
      * Keep an engagement event's measurements: how far down the page the visitor scrolled (0–100%) and how long the
      * page was visible, in whole milliseconds up to 30 minutes. Null when neither is usable.
      *

@@ -10,6 +10,7 @@ return [
         'Give a client view-only access to one site with their own link, without adding them to your account.',
         'Send pageviews and events from your server through the API and SDKs, for things that happen outside the browser.',
         'New in Explore: first- and last-touch attribution for goals and revenue, click maps, and form analytics that show which field people give up on.',
+        'A/B tests: call buildpusher.variant() on your page, pick the goal that decides it, and Explore shows each variant’s conversion rate, lift and whether the difference is statistically significant.',
         'Group pages (such as everything under /blog), see what people search for on your site and which searches find nothing, and keep referrer spam and bots out, with a count of what was left out.',
     ]],
     ['date' => '2026-09-30', 'title' => 'Security, a fifth service', 'changes' => [
