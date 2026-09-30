@@ -37,4 +37,15 @@ final class BillingRuleViolation extends RuleViolation
     {
         return new self('tier', __('Payments aren’t set up in this environment, so paid plans can’t be bought.'));
     }
+
+    /**
+     * Build the violation for turning on pay-as-you-go without a monthly subscription to bill it on, or for a meter
+     * that has no usage price yet.
+     *
+     * @return BillingRuleViolation
+     */
+    public static function usageUnavailable(): self
+    {
+        return new self('usage', __('Pay as you go needs a paid monthly plan, and a usage price for this meter.'));
+    }
 }

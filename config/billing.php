@@ -42,6 +42,14 @@ return [
         ],
     ],
 
+    // Pay-as-you-go usage beyond a tier's allowance. Each meter needs a Stripe billing meter (its event name here) and a
+    // metered price on that meter (under prices.<service>.usage), charged per counted item: $0.50 per 100,000 events is
+    // 0.0005 per event, $1 per 10,000 pageviews is 0.01 per pageview. BuildPusher reports only usage beyond the allowance.
+    'meters' => [
+        'monitoring' => ['events' => env('STRIPE_METER_MONITORING_EVENTS')],
+        'analytics' => ['pageviews' => env('STRIPE_METER_ANALYTICS_PAGEVIEWS')],
+    ],
+
     'prices' => [
         'deploy' => [
             'tier' => [
@@ -58,12 +66,14 @@ return [
                 'team' => env('STRIPE_PRICE_MONITORING_TEAM'),
                 'scale' => env('STRIPE_PRICE_MONITORING_SCALE'),
             ],
+            'usage' => ['events' => env('STRIPE_PRICE_MONITORING_EVENTS_USAGE')],
         ],
         'analytics' => [
             'tier' => [
                 'pro' => env('STRIPE_PRICE_ANALYTICS_PRO'),
                 'business' => env('STRIPE_PRICE_ANALYTICS_BUSINESS'),
             ],
+            'usage' => ['pageviews' => env('STRIPE_PRICE_ANALYTICS_PAGEVIEWS_USAGE')],
         ],
     ],
 ];

@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int $quantity
  * @property string|null $stripe_item_id
  * @property string|null $legacy_price_id
+ * @property int|null $spend_cap_cents the monthly cap on pay-as-you-go spend for a usage selection; null for none
  * @property Carbon|null $ends_at
  */
 class BillingSelection extends Model
@@ -33,6 +34,6 @@ class BillingSelection extends Model
      */
     protected function casts(): array
     {
-        return ['kind' => SelectionKind::class, 'quantity' => 'integer', 'ends_at' => 'datetime'];
+        return ['kind' => SelectionKind::class, 'quantity' => 'integer', 'spend_cap_cents' => 'integer', 'ends_at' => 'datetime'];
     }
 }

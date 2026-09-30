@@ -127,6 +127,34 @@
                         @if ($meter->allowance)
                             <x-signal.ui.progress :value="min($meter->used, $meter->allowance)" :max="$meter->allowance" :label="__(':meter used this month', ['meter' => $meter->name])" />
                         @endif
+                        @if ($meter->unitCents > 0 && $meter->allowance !== null && ($meter->payAsYouGo || $meter->payAsYouGoAvailable || $canManage))
+                            <div class="mt-2 grid gap-2 rounded-control border border-line p-3 text-sm" id="pay-as-you-go-{{ $service->key }}">
+                                <p class="font-bold text-ink">{{ __('Pay as you go') }}
+                                    @if ($meter->payAsYouGo)<x-signal.ui.badge tone="success">{{ __('On') }}</x-signal.ui.badge>@else<x-signal.ui.badge>{{ __('Off') }}</x-signal.ui.badge>@endif
+                                </p>
+                                <p class="text-muted">
+                                    {{ __('Past your allowance, :price per :size :unit instead of stopping.', ['price' => $money($meter->unitCents), 'size' => number_format($meter->unitSize), 'unit' => $meter->unit]) }}
+                                    @if ($meter->payAsYouGo)
+                                        {{ __('So far this month: :cost.', ['cost' => $money($meter->overageCents)]) }}
+                                        {{ $meter->spendCapCents === null ? __('No spend cap.') : __('Stops at :cap a month.', ['cap' => $money($meter->spendCapCents)]) }}
+                                    @endif
+                                </p>
+                                @if ($canManage && ($meter->payAsYouGo || $meter->payAsYouGoAvailable))
+                                    <form method="POST" action="{{ route('account.billing.usage', $service->key) }}" class="flex flex-wrap items-end gap-3">
+                                        @csrf @method('PUT')
+                                        <input type="hidden" name="meter" value="{{ $meter->key }}">
+                                        <input type="hidden" name="enabled" value="{{ $meter->payAsYouGo ? '0' : '1' }}">
+                                        @unless ($meter->payAsYouGo)
+                                            <x-signal.ui.input-field :id="'usage-cap-'.$service->key" name="cap" type="number" min="1" max="100000" :label="__('Monthly spend cap in dollars (optional)')" />
+                                        @endunless
+                                        <x-signal.ui.button type="submit" :variant="$meter->payAsYouGo ? 'quiet' : 'secondary'" size="sm">{{ $meter->payAsYouGo ? __('Turn off') : __('Turn on') }}</x-signal.ui.button>
+                                    </form>
+                                @elseif ($canManage)
+                                    <p class="text-xs text-muted">{{ __('Available on a paid monthly plan once usage pricing is set up.') }}</p>
+                                @endif
+                                @error('usage')<p class="text-sm text-danger" role="alert">{{ $message }}</p>@enderror
+                            </div>
+                        @endif
                     </div>
                 @endforeach
 

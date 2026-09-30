@@ -8,4 +8,5 @@ enum SelectionKind: string
 {
     case Tier = 'tier';
     case AddOn = 'addon';
+    case Usage = 'usage';
 }

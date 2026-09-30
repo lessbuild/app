@@ -7,6 +7,7 @@ namespace App\Services\Telemetry;
 use App\Models\Account;
 use App\Models\TelemetryUsageEntry;
 use App\Services\Billing\Entitlements;
+use App\Services\Billing\Overage;
 use Carbon\CarbonImmutable;
 
 /**
@@ -23,8 +24,9 @@ final class TelemetryUsage
      * Counts telemetry against allowances.
      *
      * @param  Entitlements  $entitlements  Reads the account's allowance.
+     * @param  Overage  $overage  Lets pay-as-you-go accounts go past it.
      */
-    public function __construct(private readonly Entitlements $entitlements) {}
+    public function __construct(private readonly Entitlements $entitlements, private readonly Overage $overage) {}
 
     /**
      * Count the events recorded for the account from the start of the month up to the moment given.
@@ -55,7 +57,8 @@ final class TelemetryUsage
     }
 
     /**
-     * Determine whether a batch received at `$receivedAt` still fits in that month's allowance.
+     * Determine whether a batch received at `$receivedAt` still fits in that month's allowance, or beyond it when the
+     * account pays as it goes and hasn't reached its spend cap.
      *
      * @param  Account  $account
      * @param  int  $events
@@ -66,6 +69,11 @@ final class TelemetryUsage
     {
         $limit = $this->eventLimit($account);
 
-        return $limit === null || $this->eventsThisMonth($account, $receivedAt) + $events <= $limit;
+        if ($limit === null) {
+            return true;
+        }
+        $used = $this->eventsThisMonth($account, $receivedAt);
+
+        return $used + $events <= $limit || $this->overage->allows($account, self::METER, $used, $events);
     }
 }

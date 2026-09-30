@@ -13,11 +13,11 @@ final readonly class LineItem
      *
      * @param  string  $reference  `service:kind:item`, stored as Stripe item metadata so webhooks can map items back.
      * @param  string  $priceId  The provider's price ID.
-     * @param  int  $quantity  How many units (add-ons can be bought several times).
+     * @param  int|null  $quantity  How many units (add-ons can be bought several times); null for metered usage, which Stripe counts from meter events.
      */
     public function __construct(
         public string $reference,
         public string $priceId,
-        public int $quantity = 1,
+        public ?int $quantity = 1,
     ) {}
 }

@@ -21,7 +21,7 @@ final class AnalyticsCatalog
                 self::tier('pro', 'Pro', 9, __('For businesses that want to understand their visitors.'), [__('Unlimited sites'), __('100K pageviews / month'), __('1-year event history')], null, 100_000, 365),
                 self::tier('business', 'Business', 29, __('For busy sites and agencies.'), [__('Unlimited sites'), __('1M pageviews / month'), __('2-year event history')], null, 1_000_000, 730),
             ],
-            meters: [new Meter('analytics.pageviews', __('Pageviews'), __('pageviews'), 'analytics.pageviews.monthly')],
+            meters: [new Meter('analytics.pageviews', __('Pageviews'), __('pageviews'), 'analytics.pageviews.monthly', config('billing.meters.analytics.pageviews'), unitSize: 10_000, unitCents: 100)],
         );
     }
 

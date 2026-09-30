@@ -15,11 +15,25 @@ final readonly class MeterUsage
      * @param  string  $unit  What is counted.
      * @param  int  $used  How much has been used so far this month.
      * @param  ?int  $allowance  How much the tier includes; null when it's unlimited.
+     * @param  string  $key  The meter's key, for the pay-as-you-go form.
+     * @param  bool  $payAsYouGoAvailable  Whether usage past the allowance can be bought (a usage price exists and the subscription is monthly).
+     * @param  bool  $payAsYouGo  Whether the account has turned pay-as-you-go on.
+     * @param  ?int  $spendCapCents  The monthly cap on pay-as-you-go spend; null for none.
+     * @param  int  $overageCents  What usage past the allowance has cost so far this month.
+     * @param  int  $unitSize  How many items one unit of overage covers.
+     * @param  int  $unitCents  The price of each unit.
      */
     public function __construct(
         public string $name,
         public string $unit,
         public int $used,
         public ?int $allowance,
+        public string $key = '',
+        public bool $payAsYouGoAvailable = false,
+        public bool $payAsYouGo = false,
+        public ?int $spendCapCents = null,
+        public int $overageCents = 0,
+        public int $unitSize = 0,
+        public int $unitCents = 0,
     ) {}
 }

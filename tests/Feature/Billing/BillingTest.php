@@ -6,6 +6,7 @@ namespace Tests\Feature\Billing;
 
 use App\Actions\Accounts\InviteMember;
 use App\Actions\Billing\RecordUsage;
+use App\Actions\Billing\ReportUsage;
 use App\Contracts\PaymentProvider;
 use App\Data\Accounts\InviteMemberData;
 use App\Enums\AccountRole;
@@ -19,6 +20,7 @@ use App\Models\BillingSelection;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\Billing\Entitlements;
+use App\Services\Billing\Overage;
 use App\Services\Billing\UnavailablePaymentProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -187,6 +189,42 @@ final class BillingTest extends TestCase
 
         $this->assertSame(1500, (int) \App\Models\UsageRecord::query()->sole()->quantity);
         $this->actingAs($this->owner)->get('/account/billing')->assertOk()->assertSee('1,500 / 500,000 events');
+    }
+
+    public function test_pay_as_you_go_bills_usage_past_the_allowance_up_to_a_cap(): void
+    {
+        Project::factory()->for($this->account)->withServices(['monitoring'])->create();
+        $this->subscribe(['monitoring' => 'pro']);
+        $this->actingAs($this->owner)->put('/account/billing/monitoring/usage', ['meter' => 'monitoring.events', 'enabled' => '1'])->assertSessionHasErrors('usage');
+
+        config(['billing.meters.monitoring.events' => 'bp_events', 'billing.prices.monitoring.usage.events' => 'price_events_usage']);
+        $this->actingAs($this->owner)->get('/account/billing?tab=monitoring')->assertOk()->assertSee(__('Pay as you go'))->assertSee('$0.50 per 100,000 events', false);
+        $this->actingAs($this->owner)->put('/account/billing/monitoring/usage', ['meter' => 'deploy.nope', 'enabled' => '1'])->assertSessionHasErrors('meter');
+        $this->actingAs($this->owner)->put('/account/billing/monitoring/usage', ['meter' => 'monitoring.events', 'enabled' => '1', 'cap' => '1'])->assertRedirect('/account/billing?tab=monitoring');
+        $usageItem = collect($this->stripe->subscriptions['sub_1'])->firstWhere('priceId', 'price_events_usage');
+        $this->assertNotNull($usageItem);
+        $this->assertNull($usageItem->quantity, 'Metered items carry no quantity.');
+        $this->assertSame(100, BillingSelection::query()->where('kind', SelectionKind::Usage)->sole()->spend_cap_cents);
+
+        $allowance = (int) app(Entitlements::class)->for($this->account)->limit('monitoring.events.monthly');
+        $overage = app(Overage::class);
+        $this->assertTrue($overage->allows($this->account, 'monitoring.events', $allowance, 200_000), 'A $1 cap pays for 200,000 events.');
+        $this->assertFalse($overage->allows($this->account, 'monitoring.events', $allowance, 200_001));
+
+        app(RecordUsage::class)->handle($this->account->id, 'monitoring.events', $allowance + 250_000);
+        $this->assertSame(1, app(ReportUsage::class)->handle());
+        $this->assertSame([['event' => 'bp_events', 'quantity' => 250_000]], array_map(fn (array $sent): array => ['event' => $sent['event'], 'quantity' => $sent['quantity']], $this->stripe->usage));
+        $this->assertSame(0, app(ReportUsage::class)->handle(), 'Only new overage is reported.');
+        app(RecordUsage::class)->handle($this->account->id, 'monitoring.events', 1_000);
+        app(ReportUsage::class)->handle();
+        $this->assertSame(1_000, $this->stripe->usage[1]['quantity']);
+        $this->actingAs($this->owner)->get('/account/billing?tab=monitoring')->assertSee(__('So far this month: :cost.', ['cost' => '$1.50']));
+
+        $this->actingAs($this->owner)->put('/account/billing/monitoring/usage', ['meter' => 'monitoring.events', 'enabled' => '0'])->assertRedirect();
+        $this->assertFalse(BillingSelection::query()->where('kind', SelectionKind::Usage)->exists());
+        $this->assertNull(collect($this->stripe->subscriptions['sub_1'])->firstWhere('priceId', 'price_events_usage'));
+        $this->assertFalse($overage->allows($this->account, 'monitoring.events', $allowance, 1));
+        $this->assertSame(2, AuditEntry::query()->where('action', AuditAction::PayAsYouGoChanged)->count());
     }
 
     private function select(string $service, string $tier): void

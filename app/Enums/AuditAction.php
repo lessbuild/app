@@ -37,6 +37,7 @@ enum AuditAction: string
     case ServiceDisabled = 'service.disabled';
     case MemberServiceAccessChanged = 'member.service_access';
     case PlanChanged = 'billing.plan_changed';
+    case PayAsYouGoChanged = 'billing.pay_as_you_go';
     case ApiTokenCreated = 'api_token.created';
     case ApiTokenRevoked = 'api_token.revoked';
     case MonitorCreated = 'monitor.created';
@@ -166,6 +167,9 @@ enum AuditAction: string
             self::ServiceEnabled => __('Turned on :service for :project', ['service' => $value('service'), 'project' => $value('project')]),
             self::ServiceDisabled => __('Turned off :service for :project', ['service' => $value('service'), 'project' => $value('project')]),
             self::MemberServiceAccessChanged => __('Set :member’s services to :services', ['member' => $value('member'), 'services' => $value('services')]),
+            self::PayAsYouGoChanged => ($context['enabled'] ?? false)
+                ? __('Turned on pay as you go for :meter', ['meter' => $value('meter')])
+                : __('Turned off pay as you go for :meter', ['meter' => $value('meter')]),
             self::PlanChanged => ($context['effective_at'] ?? null) !== null
                 ? __('Scheduled :service to move from :from to :to on :date', ['service' => $value('service'), 'from' => $value('from'), 'to' => $value('to'), 'date' => $value('effective_at')])
                 : __('Changed :service from :from to :to', ['service' => $value('service'), 'from' => $value('from'), 'to' => $value('to')]),

@@ -81,8 +81,8 @@ Artisan::command('billing:apply-ended', function (ApplyEndedSelections $apply): 
     $this->info("Ended {$apply->handle()} plan selections.");
 })->purpose('Move services whose paid period has ended to their free tier');
 Artisan::command('billing:report-usage', function (ReportUsage $report): void {
-    $this->info("Reported {$report->handle()} usage buckets.");
-})->purpose('Send new metered usage to Stripe');
+    $this->info("Sent {$report->handle()} usage reports.");
+})->purpose('Send Stripe new pay-as-you-go usage beyond allowances');
 Schedule::command('billing:apply-ended')->hourly();
 Schedule::command('billing:report-usage')->hourlyAt(5);
 

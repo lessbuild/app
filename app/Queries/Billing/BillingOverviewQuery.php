@@ -14,6 +14,7 @@ use App\Models\Account;
 use App\Models\BillingAccount;
 use App\Models\BillingSelection;
 use App\Models\UsageRecord;
+use App\Platform\Catalog\Meter;
 use App\Platform\Catalog\Tier;
 use App\Platform\ServiceRegistry;
 use App\Queries\Projects\ServicesInUseQuery;
@@ -78,7 +79,22 @@ final class BillingOverviewQuery
                 endsAt: $selection?->ends_at !== null ? CarbonImmutable::instance($selection->ends_at) : null,
                 inUse: in_array($service->key(), $inUse, true),
                 options: array_map(fn (Tier $option): TierOption => new TierOption($option, $option->key === $tier->key, $this->prices->purchasable($service->key(), $option, $billing->interval ?? 'month')), $catalog->tiers),
-                meters: array_map(fn ($meter): MeterUsage => new MeterUsage($meter->name, $meter->unit, (int) ($usage[$meter->key] ?? 0), $entitlements->limit($meter->allowanceKey) ?? $tier->limits[$meter->allowanceKey] ?? null), $catalog->meters),
+                meters: array_map(function (Meter $meter) use ($usage, $entitlements, $tier, $selections, $service, $billing): MeterUsage {
+                    $used = (int) ($usage[$meter->key] ?? 0);
+                    $allowance = $entitlements->limit($meter->allowanceKey) ?? $tier->limits[$meter->allowanceKey] ?? null;
+                    $payAsYouGo = $selections->first(fn (BillingSelection $selection): bool => $selection->kind === SelectionKind::Usage && $selection->item_key === $meter->key);
+
+                    return new MeterUsage(
+                        $meter->name, $meter->unit, $used, $allowance, $meter->key,
+                        payAsYouGoAvailable: $meter->stripeEventName !== null && $billing?->hasLiveSubscription() === true
+                            && $this->prices->priceId($service->key(), SelectionKind::Usage, $meter->key, $billing->interval) !== null,
+                        payAsYouGo: $payAsYouGo !== null,
+                        spendCapCents: $payAsYouGo?->spend_cap_cents,
+                        overageCents: $payAsYouGo === null || $allowance === null ? 0 : $meter->costCents($used - $allowance),
+                        unitSize: $meter->unitSize,
+                        unitCents: $meter->unitCents,
+                    );
+                }, $catalog->meters),
             );
         }
 

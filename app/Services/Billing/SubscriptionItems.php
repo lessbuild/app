@@ -64,7 +64,7 @@ final class SubscriptionItems
         foreach (BillingSelection::query()->where('account_id', $accountId)->orderBy('service')->get() as $selection) {
             $price = $selection->legacy_price_id ?? $this->prices->priceId($selection->service, $selection->kind, $selection->item_key, $interval);
             if ($price !== null) {
-                $items[] = new LineItem(self::reference($selection->service, $selection->kind, $selection->item_key), $price, $selection->quantity);
+                $items[] = new LineItem(self::reference($selection->service, $selection->kind, $selection->item_key), $price, $selection->kind === SelectionKind::Usage ? null : $selection->quantity);
             }
         }
 

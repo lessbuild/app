@@ -22,7 +22,7 @@ final class MonitoringCatalog
                 self::tier('team', 'Team', 99, __('Shared observability for growing engineering teams.'), [__('50M events / month'), __('90-day retention'), __('15 seats'), __('SLO reports')], 50_000_000, 90, null, 15, 15, 120, 5, ['monitoring.issue_digest', 'monitoring.slo_burn_rate', 'monitoring.anomalies', 'monitoring.log_patterns', 'monitoring.guardrails', 'monitoring.slo_reports']),
                 self::tier('scale', 'Scale', 299, __('High-volume telemetry with a direct line to our team.'), [__('180M events / month'), __('180-day retention'), __('Unlimited seats'), __('Priority support')], 180_000_000, 180, null, null, null, 240, 10, ['monitoring.issue_digest', 'monitoring.slo_burn_rate', 'monitoring.anomalies', 'monitoring.log_patterns', 'monitoring.guardrails', 'monitoring.slo_reports']),
             ],
-            meters: [new Meter('monitoring.events', __('Events'), __('events'), 'monitoring.events.monthly')],
+            meters: [new Meter('monitoring.events', __('Events'), __('events'), 'monitoring.events.monthly', config('billing.meters.monitoring.events'), unitSize: 100_000, unitCents: 50)],
         );
     }
 

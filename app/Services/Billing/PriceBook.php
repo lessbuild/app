@@ -22,7 +22,9 @@ final class PriceBook
 
     /**
      * Get the Stripe price for a catalogue item, monthly or yearly, or null when it hasn't been set (which keeps it
-     * off sale at that interval).
+     * off sale at that interval). Usage prices are keyed by the meter's name within its service ("monitoring.events"
+     * reads prices.monitoring.usage.events) and are monthly only, since Stripe bills metered usage monthly and a
+     * subscription's items share one interval.
      *
      * @param  string  $service
      * @param  SelectionKind  $kind
@@ -33,6 +35,12 @@ final class PriceBook
     public function priceId(string $service, SelectionKind $kind, string $itemKey, string $interval = 'month'): ?string
     {
         $prices = $interval === 'year' ? 'prices_yearly' : 'prices';
+        if ($kind === SelectionKind::Usage) {
+            if ($interval === 'year') {
+                return null;
+            }
+            $itemKey = str_starts_with($itemKey, "{$service}.") ? substr($itemKey, strlen($service) + 1) : $itemKey;
+        }
         $id = $this->config->get("billing.{$prices}.{$service}.{$kind->value}.{$itemKey}");
 
         return is_string($id) && $id !== '' ? $id : null;

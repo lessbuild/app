@@ -36,6 +36,7 @@ use App\Http\Controllers\Account\UpdateAccountSecurityController;
 use App\Http\Controllers\Account\UpdateBillingIntervalController;
 use App\Http\Controllers\Account\UpdateMemberProjectsController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
+use App\Http\Controllers\Account\UpdatePayAsYouGoController;
 use App\Http\Controllers\Account\UpdateProviderController;
 use App\Http\Controllers\Account\UpdateSamlSettingsController;
 use App\Http\Controllers\Admin\ShowHealthReportController;
@@ -825,6 +826,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::put('/account/billing/interval', UpdateBillingIntervalController::class)->middleware('throttle:10,1')->name('account.billing.interval');
     Route::post('/account/billing/{service}', ChangePlanController::class)->middleware('throttle:20,1')->name('account.billing.change');
     Route::post('/account/billing/{service}/resume', ResumePlanController::class)->name('account.billing.resume');
+    Route::put('/account/billing/{service}/usage', UpdatePayAsYouGoController::class)->middleware('throttle:20,1')->name('account.billing.usage');
     Route::get('/account/security', ShowAccountSecurityController::class)->middleware('account.can:update')->name('account.security');
     Route::put('/account/security', UpdateAccountSecurityController::class)->middleware(['account.can:update', 'password.confirm', 'throttle:20,1'])->name('account.security.update');
     Route::put('/account/security/saml', UpdateSamlSettingsController::class)->middleware(['account.can:update', 'password.confirm', 'throttle:20,1'])->name('account.security.saml');

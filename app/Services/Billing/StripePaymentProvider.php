@@ -84,7 +84,7 @@ final class StripePaymentProvider implements PaymentProvider
             'mode' => 'subscription',
             'customer' => $customerId,
             'client_reference_id' => $accountId,
-            'line_items' => array_map(fn (LineItem $item): array => ['price' => $item->priceId, 'quantity' => $item->quantity], $items),
+            'line_items' => array_map(fn (LineItem $item): array => array_filter(['price' => $item->priceId, 'quantity' => $item->quantity], fn ($value): bool => $value !== null), $items),
             'subscription_data' => ['metadata' => ['account_id' => $accountId, self::REFERENCES => $this->referenceMap($items)], ...($trialDays > 0 ? ['trial_period_days' => $trialDays] : [])],
             'success_url' => $successUrl,
             'cancel_url' => $cancelUrl,
@@ -113,7 +113,7 @@ final class StripePaymentProvider implements PaymentProvider
             foreach ($items as $item) {
                 $slot = self::slot($item->reference);
                 $wanted[$slot] = true;
-                $change = ['price' => $item->priceId, 'quantity' => $item->quantity, 'metadata' => ['reference' => $item->reference]];
+                $change = array_filter(['price' => $item->priceId, 'quantity' => $item->quantity, 'metadata' => ['reference' => $item->reference]], fn ($value): bool => $value !== null);
                 $changes[] = isset($existing[$slot]) ? ['id' => $existing[$slot]] + $change : $change;
             }
             foreach ($existing as $slot => $itemId) {
