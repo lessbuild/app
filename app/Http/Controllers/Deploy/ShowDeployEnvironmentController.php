@@ -9,6 +9,7 @@ use App\Models\AlertDestination;
 use App\Models\Environment;
 use App\Models\Project;
 use App\Models\Recipe;
+use App\Models\SecretSync;
 use App\Models\User;
 use App\Queries\Deploy\EnvironmentAutomationQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -37,6 +38,7 @@ final class ShowDeployEnvironmentController
 
         return view('deploy.environment', [
             'tabs' => $tabs,
+            'secretSyncs' => SecretSync::query()->where('environment_id', $environment->id)->orderBy('name')->get(),
             'tab' => PageTabs::current($request->query('tab'), $tabs),
             'overview' => $overview->handle($project, $user),
             'environment' => $environment->load(['variables' => fn ($query) => $query->orderBy('key'), 'processes', 'resources']),

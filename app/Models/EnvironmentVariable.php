@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property string $value
  * @property bool $is_secret
  * @property string $scope runtime, build or all
+ * @property int|null $secret_sync_id the password manager sync that manages it, if any
  * @property int $current_version
  * @property CarbonImmutable|null $rotated_at
  * @property CarbonImmutable|null $rotation_due_at

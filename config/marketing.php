@@ -71,6 +71,7 @@ return [
                 ['label' => 'Release', 'title' => 'Make every deployment traceable', 'description' => 'From the first commit to a verified release, every step stays visible and recoverable.', 'features' => [
                     ['Release per build', 'Each deploy is its own release directory; the previous ones stay for instant rollbacks.'],
                     ['Safe strategies', 'Blue-green, canary and rolling deploys, with health observation and automatic rollback.'],
+                    ['Secrets from your vault', 'Sync secrets from Doppler, 1Password or AWS Secrets Manager into each environment.'],
                     ['Branch environments', 'A temporary environment for any branch, with a closing date, as well as for pull requests.'],
                     ['Pipelines', 'Deploy several apps in order, such as the API and then the frontend, and stop if one fails.'],
                     ['Approvals in Slack', 'Approve or reject a waiting deploy from buttons in Slack or Teams.'],

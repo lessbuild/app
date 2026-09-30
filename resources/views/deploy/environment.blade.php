@@ -166,6 +166,44 @@
             </div>
         </x-signal.ui.settings-section>
     @endif
+    <x-signal.ui.settings-section id="secret-syncs" :title="__('Secrets from a password manager')" :description="__('Keep secrets in Doppler, 1Password or AWS Secrets Manager and sync them in as secret variables every hour (or now). Variables you set here by hand are never overwritten; keys removed from the source are removed here. The next deploy uses the new values.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @foreach ($secretSyncs as $sync)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <div class="min-w-0">
+                        <p><span class="font-bold text-ink">{{ $sync->name }}</span> <span class="text-muted">· {{ \App\Models\SecretSync::PROVIDERS[$sync->provider] ?? $sync->provider }}@if ($sync->last_synced_at) · {{ __('synced :time', ['time' => $sync->last_synced_at->diffForHumans()]) }}@endif</span></p>
+                        @if ($sync->last_error)<p class="text-xs text-danger">{{ $sync->last_error }}</p>@elseif ($sync->last_result)<p class="text-xs text-muted">{{ __(':added added, :updated updated, :removed removed', ['added' => $sync->last_result['added'], 'updated' => $sync->last_result['updated'], 'removed' => $sync->last_result['removed']]) }}@if ($sync->last_result['skipped'] !== []) · {{ __('left alone: :keys', ['keys' => implode(', ', $sync->last_result['skipped'])]) }}@endif</p>@endif
+                    </div>
+                    @if ($canManage)
+                        <span class="flex gap-2">
+                            <form method="POST" action="{{ route('deploy.environments.secret-syncs.update', [$project, $environment, $sync->id]) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Sync now') }}</x-signal.ui.button></form>
+                            <form method="POST" action="{{ route('deploy.environments.secret-syncs.update', [$project, $environment, $sync->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Disconnect') }}</x-signal.ui.button></form>
+                        </span>
+                    @endif
+                </div>
+            @endforeach
+            @if ($canManage)
+                <form method="POST" action="{{ route('deploy.environments.secret-syncs.store', [$project, $environment]) }}" class="grid gap-3 sm:grid-cols-2">
+                    @csrf
+                    <x-signal.ui.select-field name="provider" :label="__('Source')">
+                        @foreach (\App\Models\SecretSync::PROVIDERS as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
+                    <x-signal.ui.input-field name="name" :label="__('Name')" maxlength="80" placeholder="Production secrets" />
+                    <x-signal.ui.input-field name="token" type="password" autocomplete="off" :label="__('Doppler service token or 1Password Connect token')" maxlength="500" />
+                    <x-signal.ui.input-field name="host" type="url" :label="__('1Password: Connect server')" placeholder="https://connect.example.com" maxlength="255" />
+                    <x-signal.ui.input-field name="vault" :label="__('1Password: vault ID')" maxlength="100" />
+                    <x-signal.ui.input-field name="item" :label="__('1Password: item ID')" maxlength="100" />
+                    <x-signal.ui.input-field name="region" :label="__('AWS: region')" placeholder="eu-west-2" maxlength="30" />
+                    <x-signal.ui.input-field name="secret_id" :label="__('AWS: secret name or ARN')" maxlength="512" />
+                    <x-signal.ui.input-field name="access_key" :label="__('AWS: access key ID')" autocomplete="off" maxlength="128" />
+                    <x-signal.ui.input-field name="secret_key" type="password" autocomplete="off" :label="__('AWS: secret access key')" maxlength="256" />
+                    <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="secondary">{{ __('Connect and sync') }}</x-signal.ui.button></div>
+                </form>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
     <x-signal.ui.settings-section id="variables" :title="__('Variables')" :description="__('Written into .env on each deploy (runtime), exported while building (build), or both. Secrets aren’t shown again.')">
         <div class="grid gap-4 p-4 sm:p-6">
             @if ($environment->variables->isNotEmpty())

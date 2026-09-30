@@ -121,6 +121,12 @@ Artisan::command('analytics:check-spikes', function (SiteNotifier $notifier): vo
 })->purpose('Alert sites whose current visitors reached their spike threshold');
 Schedule::command('analytics:check-spikes')->everyFiveMinutes()->withoutOverlapping();
 
+Artisan::command('secrets:sync', function (): void {
+    App\Models\SecretSync::query()->pluck('id')->each(fn (int $id) => App\Jobs\Deploy\RunSecretSync::dispatch($id));
+    $this->info('Queued the secret syncs.');
+})->purpose('Sync environments’ secrets from their password managers');
+Schedule::command('secrets:sync')->hourlyAt(15)->withoutOverlapping()->onOneServer();
+
 Artisan::command('status-pages:monthly-reports', function (App\Actions\Monitoring\SendMonthlyStatusReports $send): void {
     $this->info("Sent {$send->handle()} monthly uptime reports.");
 })->purpose('Email last month’s uptime to status page subscribers who asked for it');
