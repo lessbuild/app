@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-09-30', 'title' => 'Security, a fifth service', 'changes' => [
+        'A security score for each project, with every finding explained and a fix beside it.',
+        'Vulnerable Composer and npm packages, leaked keys in code and logs, and weak domains (certificates, TLS, headers, SPF, DMARC, and DNS records that could be taken over).',
+        'A deploy gate that stops releases with known critical vulnerabilities before they go live.',
+        'Server hardening with one-click fixes, weekly security update windows, and SSH access with each person’s own keys.',
+        'Attackers blocked automatically from access logs, plus Cloudflare security level, bot fight mode and under attack mode.',
+        'Access reviews and a compliance evidence pack for SOC 2 and ISO 27001.',
+    ]],
     ['date' => '2026-09-30', 'title' => 'Analytics: explore, compare and share', 'changes' => [
         'Pick any dates and compare with the period before or the same period last year. Save filter sets as segments.',
         'New in reports: channels, regions and cities, screen sizes, browser and system versions, UTM term and content, and time on page and scroll depth for each page.',

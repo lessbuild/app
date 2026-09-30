@@ -299,7 +299,7 @@ return [
             'groups' => [
                 ['label' => 'Code', 'title' => 'Ship without known holes', 'description' => 'Problems in what you deploy, found before and after it goes live.', 'features' => [
                     ['Dependency scanning', 'Composer and npm lock files checked against the OSV vulnerability database, with the version that fixes each one.'],
-                    ['Deploy gate', 'Stop a deploy that would ship a critical vulnerability, until someone approves it.'],
+                    ['Deploy gate', 'Stop a deploy that would ship a critical vulnerability, unless you’ve accepted the risk.'],
                     ['Secret scanning', 'API keys, passwords and private keys committed to your code or leaked into logs and error reports.'],
                 ]],
                 ['label' => 'Servers', 'title' => 'Hardened and patched', 'description' => 'The servers you run here, checked like an auditor would.', 'features' => [
@@ -328,7 +328,7 @@ return [
             'guardrails_description' => 'Checks read what they need and change nothing unless you choose a fix. Findings about secrets never show the secret itself.',
             'guardrails' => ['Read-only checks', 'Fixes only when you choose', 'Secrets never displayed', 'Ignored with a reason', 'Recorded in the audit log', 'Your servers and accounts'],
             'together' => [
-                ['Deploy', 'Every deploy is scanned, and risky ones can wait for approval.'],
+                ['Deploy', 'Every deploy is scanned, and risky ones are stopped before they go live.'],
                 ['Infrastructure', 'Server hardening, patching and SSH keys apply to the servers you manage here.'],
                 ['Monitoring', 'Findings and blocked attacks use the same alerts and incidents.'],
             ],
