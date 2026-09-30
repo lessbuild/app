@@ -33,9 +33,9 @@ final class ShowReportController
     {
         $account = $request->attributes->get('account');
         abort_unless($account instanceof Account && $site->project->account_id === $account->id && $user->can('view', $site), 404);
-        $days = $this->reportDays($request);
+        $period = $this->reportPeriod($request, $site);
         $filters = $this->reportFilters($request);
-        $summary = $report->handle($site, $days, $filters);
+        $summary = $report->handle($site, $period, $filters);
         $metrics = [];
         foreach ($summary['metrics'] as $metric) {
             $metrics[Str::snake($metric['label'])] = ['value' => $metric['raw'] ?? null, 'change' => $metric['change']];
@@ -47,7 +47,7 @@ final class ShowReportController
 
         return response()->json(['data' => [
             'site_id' => $site->id,
-            'period' => ['days' => $days, 'start' => $summary['range']['start']->toIso8601String(), 'end' => $summary['range']['end']->toIso8601String(), 'timezone' => $site->timezone],
+            'period' => ['days' => $period->days, 'compare' => $period->compare, 'start' => $summary['range']['start']->toIso8601String(), 'end' => $summary['range']['end']->toIso8601String(), 'timezone' => $site->timezone],
             'filters' => array_filter($filters),
             'metrics' => $metrics,
             'series' => ['granularity' => $summary['granularity'] ?? 'day', 'points' => $summary['series']],

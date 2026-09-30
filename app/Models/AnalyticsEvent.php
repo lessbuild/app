@@ -109,7 +109,9 @@ class AnalyticsEvent extends Model
             }))
             ->when($filters['campaign'] ?? null, fn (Builder $query, string $campaign) => $query->where('utm_campaign', $campaign))
             ->when($filters['device'] ?? null, fn (Builder $query, string $device) => $query->where('device_category', $device))
-            ->when($filters['country'] ?? null, fn (Builder $query, string $country) => $query->where('country_code', $country));
+            ->when($filters['country'] ?? null, fn (Builder $query, string $country) => $query->where('country_code', $country))
+            ->when($filters['browser'] ?? null, fn (Builder $query, string $browser) => $query->where('browser', $browser))
+            ->when($filters['os'] ?? null, fn (Builder $query, string $os) => $query->where('operating_system', $os));
     }
 
     /**

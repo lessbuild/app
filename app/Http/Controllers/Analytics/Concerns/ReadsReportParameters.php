@@ -4,11 +4,34 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Analytics\Concerns;
 
+use App\Data\Analytics\ReportPeriod;
+use App\Models\AnalyticsSite;
 use Illuminate\Http\Request;
 
 /** Reads a report's period and filters from the query string, the same way everywhere a report is shown. */
 trait ReadsReportParameters
 {
+    /**
+     * Get the period asked for: custom dates (`from` and `to`, Y-m-d) when both are given and valid, otherwise a
+     * preset number of days; compared as `compare` says (previous period, same period last year, or none).
+     *
+     * @param  Request  $request
+     * @param  AnalyticsSite  $site
+     * @return ReportPeriod
+     */
+    private function reportPeriod(Request $request, AnalyticsSite $site): ReportPeriod
+    {
+        $compare = $request->string('compare', 'previous')->toString();
+        if ($request->filled(['from', 'to'])) {
+            $custom = ReportPeriod::between($site->timezone, $request->string('from')->toString(), $request->string('to')->toString(), $compare);
+            if ($custom !== null) {
+                return $custom;
+            }
+        }
+
+        return ReportPeriod::lastDays($site->timezone, $this->reportDays($request), $compare);
+    }
+
     /**
      * Get the period asked for: today (1) or 7, 30, 90 or 365 days, else 30.
      *
@@ -29,7 +52,7 @@ trait ReadsReportParameters
     private function reportFilters(Request $request): array
     {
         $filters = [];
-        foreach (['path' => 2048, 'source' => 255, 'campaign' => 150, 'device' => 32] as $key => $max) {
+        foreach (['path' => 2048, 'source' => 255, 'campaign' => 150, 'device' => 32, 'browser' => 64, 'os' => 64] as $key => $max) {
             $value = trim($request->string($key)->toString());
             $filters[$key] = $value !== '' ? mb_substr($value, 0, $max) : null;
         }

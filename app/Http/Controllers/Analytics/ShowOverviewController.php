@@ -39,6 +39,7 @@ final class ShowOverviewController
     {
         $site = $sites->selected($project, $request->query('site'));
         $days = $this->reportDays($request);
+        $period = $site === null ? null : $this->reportPeriod($request, $site);
         $filters = $this->reportFilters($request);
 
         // The "right now" panel refreshes itself; answer it with just that panel instead of the whole report.
@@ -46,13 +47,14 @@ final class ShowOverviewController
             return view('analytics._live', ['recent' => $live->handle($site, $filters)]);
         }
 
-        $summary = $site !== null ? $report->handle($site, $days, $filters) : null;
+        $summary = $site !== null && $period !== null ? $report->handle($site, $period, $filters) : null;
 
         return view('analytics.overview', [
             'overview' => $overview->handle($project, $user),
             'sites' => $sites->handle($project),
             'site' => $site,
             'days' => $days,
+            'period' => $period,
             'filters' => $filters,
             'summary' => $summary,
             'releases' => $site !== null && $summary !== null ? $releases->handle($site, $summary['range']['start'], $summary['range']['end']) : collect(),

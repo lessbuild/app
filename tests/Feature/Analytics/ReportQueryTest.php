@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Analytics;
 
 use App\Actions\Analytics\RebuildSiteReports;
+use App\Data\Analytics\ReportPeriod;
 use App\Models\Account;
 use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsSite;
@@ -128,5 +129,34 @@ final class ReportQueryTest extends TestCase
         $series = array_column($report['series'], 'value', 'date');
         $this->assertSame([1, 1, 0], [$series['09:00'], $series['11:00'], $series['12:00']]);
         $this->assertSame(['2', '+100.0%'], [$report['metrics'][0]['value'], $report['metrics'][0]['change']], 'Yesterday after 12:30 is left out.');
+    }
+
+    /**
+     * Check custom date ranges, comparing with the same dates a year earlier or not at all, and the browser filter.
+     *
+     * @return void
+     */
+    public function test_custom_ranges_compare_with_last_year_or_nothing(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-20 12:00', 'UTC'));
+        $site = $this->site();
+        $this->event($site, CarbonImmutable::parse('2026-09-02 10:00', 'UTC'), ['visitor_hash' => 'a']);
+        $this->event($site, CarbonImmutable::parse('2026-09-03 10:00', 'UTC'), ['visitor_hash' => 'b', 'browser' => 'Safari']);
+        $this->event($site, CarbonImmutable::parse('2026-09-09 10:00', 'UTC'), ['visitor_hash' => 'outside']);
+        $this->event($site, CarbonImmutable::parse('2025-09-02 10:00', 'UTC'), ['visitor_hash' => 'last-year']);
+
+        $period = ReportPeriod::between('UTC', '2026-09-05', '2026-09-01', 'year');
+        $this->assertNotNull($period);
+        $this->assertSame(['2026-09-01', '2026-09-05', 5], [$period->start->toDateString(), $period->end->toDateString(), $period->days], 'Dates in the wrong order are swapped.');
+        $report = app(AnalyticsReportQuery::class)->handle($site, $period);
+        $this->assertSame(['2', '+100.0%'], [$report['metrics'][0]['value'], $report['metrics'][0]['change']]);
+        $this->assertCount(5, $report['series']);
+        $this->assertSame(['from' => '2026-09-01', 'to' => '2026-09-05', 'compare' => 'year'], $period->query());
+
+        $none = app(AnalyticsReportQuery::class)->handle($site, ReportPeriod::between('UTC', '2026-09-01', '2026-09-05', 'none') ?? 30);
+        $this->assertNull($none['metrics'][0]['change']);
+        $this->assertSame('1', app(AnalyticsReportQuery::class)->handle($site, $period, ['browser' => 'Safari'])['metrics'][0]['value']);
+        $this->assertNull(ReportPeriod::between('UTC', 'yesterday', '2026-09-05'));
+        $this->assertSame('2026-09-20', ReportPeriod::between('UTC', '2026-09-19', '2030-01-01')?->end->toDateString(), 'The end stops at today.');
     }
 }

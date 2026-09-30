@@ -18,6 +18,7 @@ final class SavedViewPages
      * @var array<string, array{route: string, parameters: list<string>, keys: list<string>}>
      */
     public const PAGES = [
+        'analytics.overview' => ['route' => 'analytics.overview', 'parameters' => ['project'], 'keys' => ['site', 'days', 'from', 'to', 'compare', 'path', 'source', 'campaign', 'country', 'device', 'browser', 'os']],
         'audit-log' => ['route' => 'account.audit-log', 'parameters' => [], 'keys' => ['project', 'person', 'category', 'from', 'to']],
         'notifications' => ['route' => 'notifications.index', 'parameters' => [], 'keys' => ['filter', 'type', 'q']],
         'monitoring.events' => ['route' => 'monitoring.events', 'parameters' => ['project'], 'keys' => ['environment', 'q', 'range', 'severity', 'sort', 'trace', 'type']],

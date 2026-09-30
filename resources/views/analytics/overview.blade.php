@@ -9,7 +9,7 @@
         </x-signal.ui.empty-state>
     @else
         <x-signal.ui.card class="p-4 sm:p-5">
-            <form method="GET" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto] lg:items-end">
+            <form method="GET" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
                 @if (count($sites) > 1)
                     <x-signal.ui.select-field name="site" :label="__('Site')" :show-errors="false">
                         @foreach ($sites as $option)
@@ -19,12 +19,9 @@
                 @else
                     <input type="hidden" name="site" value="{{ $site->id }}">
                 @endif
-                <x-signal.ui.select-field name="days" :label="__('Period')" :show-errors="false">
-                    @foreach ([1 => __('Today'), 7 => __('Last 7 days'), 30 => __('Last 30 days'), 90 => __('Last 90 days'), 365 => __('Last 12 months')] as $value => $label)
-                        <option value="{{ $value }}" @selected($days === $value)>{{ $label }}</option>
-                    @endforeach
-                </x-signal.ui.select-field>
+                @include('analytics._period-fields')
                 @if ($filters['country'])<input type="hidden" name="country" value="{{ $filters['country'] }}">@endif
+                @if ($filters['campaign'])<input type="hidden" name="campaign" value="{{ $filters['campaign'] }}">@endif
                 <x-signal.ui.input-field name="path" :label="__('Page')" :value="$filters['path']" placeholder="/pricing" :restore="false" :show-errors="false" />
                 <x-signal.ui.input-field name="source" :label="__('Source')" :value="$filters['source']" :placeholder="__('newsletter or google.com')" :restore="false" :show-errors="false" />
                 <x-signal.ui.select-field name="device" :label="__('Device')" :show-errors="false">
@@ -33,13 +30,16 @@
                         <option value="{{ $device }}" @selected($filters['device'] === $device)>{{ $device }}</option>
                     @endforeach
                 </x-signal.ui.select-field>
-                <div class="flex gap-2">
+                <x-signal.ui.input-field name="browser" :label="__('Browser')" :value="$filters['browser']" placeholder="Firefox" :restore="false" :show-errors="false" />
+                <x-signal.ui.input-field name="os" :label="__('Operating system')" :value="$filters['os']" placeholder="iOS" :restore="false" :show-errors="false" />
+                <div class="flex gap-2 sm:col-span-2 lg:col-span-5">
                     <x-signal.ui.button type="submit" variant="primary">{{ __('Apply') }}</x-signal.ui.button>
                     @if (array_filter($filters))
-                        <x-signal.ui.button :href="route('analytics.overview', [$project, 'site' => $site->id, 'days' => $days])" variant="quiet">{{ __('Clear') }}</x-signal.ui.button>
+                        <x-signal.ui.button :href="route('analytics.overview', [$project, 'site' => $site->id, ...$period->query()])" variant="quiet">{{ __('Clear filters') }}</x-signal.ui.button>
                     @endif
                 </div>
             </form>
+            <x-signal.ui.saved-views page="analytics.overview" :parameters="['project' => $project->id]" class="mt-4 border-t border-line pt-4" />
         </x-signal.ui.card>
 
         @if (! $site->isVerified())
@@ -57,7 +57,7 @@
             <p>{{ __('Visitors are cookieless daily estimates; visits end after 30 minutes without activity. Raw detail is kept :days days.', ['days' => config('analytics.event_retention_days')]) }} {{ __('Last processed :time.', ['time' => $summary['lastProcessedAt']?->diffForHumans() ?? __('never')]) }}</p>
             <form method="POST" action="{{ route('analytics.exports.store', [$project, $site->id]) }}">
                 @csrf
-                <input type="hidden" name="days" value="{{ $days }}">
+                @foreach ($period->query() as $key => $value)<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endforeach
                 @foreach ($filters as $key => $value)
                     @if ($value !== null)<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endif
                 @endforeach

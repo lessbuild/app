@@ -56,6 +56,12 @@ final class ReportPagesTest extends TestCase
 
         $this->actingAs($this->owner)->get("{$base}?days=7&path=/thank-you")->assertOk()->assertSee('/thank-you')->assertSee(__('Clear'));
         $this->actingAs($this->owner)->get("{$base}?days=9999&site=999")->assertOk()->assertSee('Shop');
+
+        $from = now()->subDays(3)->toDateString();
+        $to = now()->toDateString();
+        $this->actingAs($this->owner)->get("{$base}?from={$from}&to={$to}&compare=year&browser=Nope")->assertOk()
+            ->assertSee('value="'.$from.'"', false)->assertSee(__('Same period last year'))->assertSee(__('No pageviews in this period yet.'))
+            ->assertSee('data-modal-trigger="save-view-analytics-overview"', false);
     }
 
     public function test_today_shows_pageviews_per_hour_and_the_live_panel_refreshes_on_its_own(): void

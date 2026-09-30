@@ -10,7 +10,9 @@
     [__('Sources'), $summary['sources'], __('Sources appear once visitors arrive.'), null],
     [__('Countries'), $summary['countries'], __('Countries appear once visitors arrive.'), 'country'],
     [__('Campaigns'), $summary['campaigns'], __('Campaigns appear after visits tagged with utm_campaign.'), null],
-    [__('Devices'), $summary['devices'], __('Devices appear once visitors arrive.'), null],
+    [__('Devices'), $summary['devices'], __('Devices appear once visitors arrive.'), 'device'],
+    [__('Browsers'), $summary['browsers'], __('Browsers appear once visitors arrive.'), 'browser'],
+    [__('Operating systems'), $summary['operatingSystems'], __('Operating systems appear once visitors arrive.'), 'os'],
     [__('Outbound links'), $summary['outboundLinks'], '', null],
     [__('File downloads'), $summary['fileDownloads'], '', null],
     [__('Pages not found'), $summary['notFound'], '', null],
@@ -24,7 +26,7 @@
                 <p class="text-xs font-bold text-muted">{{ __($metric['label']) }}</p>
                 <p class="mt-2 text-2xl font-extrabold tracking-tight text-ink tabular-nums">{{ $metric['value'] }}</p>
                 <p @class(['mt-1 text-xs', 'text-muted' => $metric['change'] === null, 'font-bold text-danger' => $metric['change'] !== null && str_starts_with($metric['change'], '-'), 'font-bold text-success' => $metric['change'] !== null && ! str_starts_with($metric['change'], '-')])>
-                    {{ match (true) { $metric['change'] === null => __('This period'), $metric['change'] === 'New' => __('New this period'), $hourly => __(':change vs this time yesterday', ['change' => $metric['change']]), default => __(':change vs previous period', ['change' => $metric['change']]) } }}
+                    {{ match (true) { $metric['change'] === null => __('This period'), $metric['change'] === 'New' => __('New this period'), $summary['period']->compare === 'year' => __(':change vs last year', ['change' => $metric['change']]), $hourly => __(':change vs the day before', ['change' => $metric['change']]), default => __(':change vs previous period', ['change' => $metric['change']]) } }}
                 </p>
             </x-signal.ui.card>
         @endforeach
@@ -82,7 +84,7 @@
                     <ul class="mt-2 grid gap-2 text-sm">
                         @foreach ($vitals['slowPages'] as $page)
                             <li class="flex items-center justify-between gap-4">
-                                <a class="truncate text-muted hover:text-ink hover:underline" href="{{ $reportUrl(['days' => $days, ...array_filter($filters), 'path' => $page['path']]) }}">{{ $page['path'] }}</a>
+                                <a class="truncate text-muted hover:text-ink hover:underline" href="{{ $reportUrl([...$summary['period']->query(), ...array_filter($filters), 'path' => $page['path']]) }}">{{ $page['path'] }}</a>
                                 <span class="shrink-0 tabular-nums"><strong class="text-ink">{{ $formatVital('lcp', $page['lcp']) }}</strong> <span class="text-xs text-muted">· {{ trans_choice(':count load|:count loads', $page['samples'], ['count' => $page['samples']]) }}</span></span>
                             </li>
                         @endforeach
@@ -129,7 +131,7 @@
                         <li class="flex items-center justify-between gap-4">
                             @php($label = $filterKey === 'country' ? \App\Support\Country::label($item['label']) : $item['label'])
                             @if ($filterKey !== null && $item['label'] !== 'Unknown')
-                                <a class="truncate text-muted hover:text-ink hover:underline" href="{{ $reportUrl(['days' => $days, ...array_filter($filters), $filterKey => $item['label']]) }}">{{ $label }}</a>
+                                <a class="truncate text-muted hover:text-ink hover:underline" href="{{ $reportUrl([...$summary['period']->query(), ...array_filter($filters), $filterKey => $item['label']]) }}">{{ $label }}</a>
                             @else
                                 <span class="truncate text-muted">{{ $label }}</span>
                             @endif

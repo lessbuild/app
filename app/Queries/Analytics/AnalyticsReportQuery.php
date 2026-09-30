@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries\Analytics;
 
+use App\Data\Analytics\ReportPeriod;
 use App\Models\AnalyticsDailyAggregate;
 use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsGoal;
@@ -29,33 +30,31 @@ final class AnalyticsReportQuery
     public function __construct(private readonly LiveVisitorsQuery $live, private readonly PageSpeedQuery $pageSpeed, private readonly SearchTermsQuery $searchTerms) {}
 
     /**
-     * Build an analytics site's report for today (`$days` = 1, per hour, compared with yesterday up to the same time)
-     * or the last `$days` days (clamped to 7–395) compared with the period before: headline metrics, a pageview series, top pages, entry and exit pages, sources, devices, browsers, systems,
-     * campaigns, recent activity and goal counts. Unfiltered reports longer than 90 days read the daily aggregates
-     * (raw events may be past retention by then); the rest is counted in the database from events and visits. Only
-     * events whose batch has been processed are counted.
+     * Build an analytics site's report for a period (a number of days ending today, or a ReportPeriod with custom dates
+     * and a comparison): headline metrics against the comparison period, a pageview series (per hour for a single day),
+     * top pages, entry and exit pages, sources, devices, browsers, systems, campaigns, recent activity and goal
+     * counts. Unfiltered reports longer than 90 days read the daily aggregates (raw events may be past retention by
+     * then); the rest is counted in the database from events and visits. Only events whose batch has been processed
+     * are counted.
      *
      * @param  AnalyticsSite  $site
-     * @param  int  $days
+     * @param  int|ReportPeriod  $period
      * @param  array<string, string|null>  $filters
      * @return array<string, mixed>
      */
-    public function handle(AnalyticsSite $site, int $days = 30, array $filters = []): array
+    public function handle(AnalyticsSite $site, int|ReportPeriod $period = 30, array $filters = []): array
     {
-        $days = $days === 1 ? 1 : min(max($days, 7), 395);
-        $end = CarbonImmutable::now($site->timezone)->endOfDay();
-        $start = $end->subDays($days - 1)->startOfDay();
-        $comparisonStart = $start->subDays($days);
+        $period = is_int($period) ? ReportPeriod::lastDays($site->timezone, $period) : $period;
 
-        if ($days > 90 && ! array_filter($filters)) {
-            $aggregateSummary = $this->fromAggregates($site, $days, $start, $end, $comparisonStart, $filters);
+        if ($period->days > 90 && ! array_filter($filters)) {
+            $aggregateSummary = $this->fromAggregates($site, $period, $filters);
 
             if ($aggregateSummary !== null) {
                 return $aggregateSummary;
             }
         }
 
-        return $this->fromEvents($site, $days, $start, $end, $comparisonStart, $filters);
+        return $this->fromEvents($site, $period, $filters);
     }
 
     /**
@@ -63,66 +62,48 @@ final class AnalyticsReportQuery
      * memory use doesn't grow with a site's traffic.
      *
      * @param  AnalyticsSite  $site
-     * @param  int  $days
-     * @param  CarbonImmutable  $start
-     * @param  CarbonImmutable  $end
-     * @param  CarbonImmutable  $comparisonStart
+     * @param  ReportPeriod  $period
      * @param  array<string, string|null>  $filters
      * @return array<string, mixed>
      */
-    private function fromEvents(AnalyticsSite $site, int $days, CarbonImmutable $start, CarbonImmutable $end, CarbonImmutable $comparisonStart, array $filters): array
+    private function fromEvents(AnalyticsSite $site, ReportPeriod $period, array $filters): array
     {
-        $startUtc = $start->utc();
-        $endUtc = $end->utc();
-        // Today is compared with yesterday up to the same time, not all of yesterday.
-        $previousEndUtc = $days === 1 ? CarbonImmutable::now()->subDay()->utc() : $startUtc;
-        $totals = $this->events($site, $comparisonStart->utc(), $endUtc, $filters)->toBase()
-            ->selectRaw("COUNT(CASE WHEN type = 'pageview' AND occurred_at >= ? THEN 1 END) AS pageviews", [$startUtc])
-            ->selectRaw("COUNT(CASE WHEN type = 'pageview' AND occurred_at < ? THEN 1 END) AS previous_pageviews", [$previousEndUtc])
-            ->selectRaw('COUNT(DISTINCT CASE WHEN occurred_at >= ? THEN visitor_hash END) AS visitors', [$startUtc])
-            ->selectRaw('COUNT(DISTINCT CASE WHEN occurred_at < ? THEN visitor_hash END) AS previous_visitors', [$previousEndUtc])
-            ->selectRaw('COUNT(CASE WHEN occurred_at >= ? THEN 1 END) AS events', [$startUtc])
-            ->first();
-        $bounceCutoff = CarbonImmutable::now()->subMinutes(30)->utc();
-        $visitTotals = $this->visits($site, $comparisonStart->utc(), $endUtc, $filters)->toBase()
-            ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? THEN 1 END) AS visits', [$startUtc])
-            ->selectRaw('COUNT(CASE WHEN last_seen_at < ? THEN 1 END) AS previous_visits', [$previousEndUtc])
-            ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? AND conversion_count > 0 THEN 1 END) AS converted', [$startUtc])
-            ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? AND last_seen_at <= ? AND pageviews > 0 THEN 1 END) AS eligible', [$startUtc, $bounceCutoff])
-            ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? AND last_seen_at <= ? AND pageviews = 1 AND conversion_count = 0 THEN 1 END) AS bounces', [$startUtc, $bounceCutoff])
-            ->selectRaw('SUM(CASE WHEN last_seen_at >= ? THEN '.$this->visitSeconds().' ELSE 0 END) AS duration', [$startUtc])
-            ->selectRaw('SUM(CASE WHEN last_seen_at < ? THEN '.$this->visitSeconds().' ELSE 0 END) AS previous_duration', [$previousEndUtc])
-            ->first();
-        $number = fn (?object $row, string $column): int => (int) ($row->{$column} ?? 0);
+        $days = $period->days;
+        $startUtc = $period->start->utc();
+        $endUtc = $period->end->utc();
+        $totals = $this->totals($site, $startUtc, $endUtc, $filters);
+        $previous = $period->previousStart !== null && $period->previousEnd !== null
+            ? $this->totals($site, $period->previousStart->utc(), $period->previousEnd->utc(), $filters) : null;
         $goals = AnalyticsGoal::query()->where('site_id', $site->id)->where('active', true)->orderBy('id')->get();
         $conversions = $this->conversions($site, $goals, $startUtc, $endUtc, $filters);
 
-        $currentPageviews = $number($totals, 'pageviews');
-        $previousPageviews = $number($totals, 'previous_pageviews');
-        $currentVisitors = $this->averageVisitors($number($totals, 'visitors'), $days);
-        $previousVisitors = $this->averageVisitors($number($totals, 'previous_visitors'), $days);
-        $hasVisits = $number($visitTotals, 'visits') > 0;
-        $currentVisitCount = $hasVisits ? $number($visitTotals, 'visits') : $this->estimateVisits($site, $startUtc, $endUtc, $filters);
-        $previousVisitCount = $number($visitTotals, 'previous_visits') ?: $this->estimateVisits($site, $comparisonStart->utc(), $previousEndUtc->subSecond(), $filters);
-        $convertedVisits = $hasVisits ? $number($visitTotals, 'converted') : $conversions['visitors'];
+        $currentVisitors = $this->averageVisitors($totals['visitors'], $days);
+        $previousVisitors = $previous === null ? null : $this->averageVisitors($previous['visitors'], $days);
+        $hasVisits = $totals['visits'] > 0;
+        $currentVisitCount = $hasVisits ? $totals['visits'] : $this->estimateVisits($site, $startUtc, $endUtc, $filters);
+        $previousVisitCount = null;
+        if ($previous !== null) {
+            $previousVisitCount = $previous['visits'] ?: $this->estimateVisits($site, $period->previousStart->utc(), $period->previousEnd->utc(), $filters);
+        }
+        $convertedVisits = $hasVisits ? $totals['converted'] : $conversions['visitors'];
         $conversionRate = $currentVisitCount > 0 ? round(($convertedVisits / $currentVisitCount) * 100, 1) : 0;
-        $eligible = $number($visitTotals, 'eligible');
-        $bounceRate = $eligible > 0 ? round(($number($visitTotals, 'bounces') / $eligible) * 100, 1) : null;
+        $bounceRate = $totals['eligible'] > 0 ? round(($totals['bounces'] / $totals['eligible']) * 100, 1) : null;
         $currentEvents = fn () => $this->events($site, $startUtc, $endUtc, $filters);
         $currentVisits = fn () => $this->visits($site, $startUtc, $endUtc, $filters);
 
         return [
-            'range' => ['days' => $days, 'start' => $start, 'end' => $end],
+            'range' => ['days' => $days, 'start' => $period->start, 'end' => $period->end],
+            'period' => $period,
             'metrics' => [
-                ['label' => 'Pageviews', 'value' => number_format($currentPageviews), 'raw' => $currentPageviews, 'change' => $this->change($currentPageviews, $previousPageviews), 'tone' => 'primary'],
+                ['label' => 'Pageviews', 'value' => number_format($totals['pageviews']), 'raw' => $totals['pageviews'], 'change' => $this->change($totals['pageviews'], $previous['pageviews'] ?? null), 'tone' => 'primary'],
                 ['label' => 'Visitors', 'value' => number_format($currentVisitors), 'raw' => $currentVisitors, 'change' => $this->change($currentVisitors, $previousVisitors), 'tone' => 'info'],
                 ['label' => 'Visits', 'value' => number_format($currentVisitCount), 'raw' => $currentVisitCount, 'change' => $this->change($currentVisitCount, $previousVisitCount), 'tone' => 'info'],
                 ['label' => 'Conversion rate', 'value' => number_format($conversionRate, 1).'%', 'raw' => (float) $conversionRate, 'change' => null, 'tone' => 'success'],
                 ['label' => 'Bounce rate', 'value' => $bounceRate === null ? '—' : number_format($bounceRate, 1).'%', 'raw' => $bounceRate, 'change' => null, 'tone' => 'warning'],
-                $this->durationMetric($number($visitTotals, 'duration'), $number($visitTotals, 'visits'), $number($visitTotals, 'previous_duration'), $number($visitTotals, 'previous_visits')),
+                $this->durationMetric($totals['duration'], $totals['visits'], $previous['duration'] ?? null, $previous['visits'] ?? null),
             ],
-            'granularity' => $days === 1 ? 'hour' : 'day',
-            'series' => $days === 1 ? $this->hourSeries($site, $start, $filters) : $this->series($site, $start, $end, $filters),
+            'granularity' => $period->hourly() ? 'hour' : 'day',
+            'series' => $period->hourly() ? $this->hourSeries($site, $period->start, $filters) : $this->series($site, $period->start, $period->end, $filters),
             'pages' => $this->rank($currentEvents()->where('type', 'pageview'), $this->labelOf('path')),
             'entryPages' => $this->rank($currentVisits(), $this->labelOf('landing_path')),
             'exitPages' => $this->rank($currentVisits(), $this->labelOf('exit_path')),
@@ -142,7 +123,7 @@ final class AnalyticsReportQuery
             'fileDownloads' => $this->rank($this->automaticEvents($currentEvents(), 'file_download'), $this->labelOf($this->property('file'))),
             'notFound' => $this->rank($this->automaticEvents($currentEvents(), 'not_found'), $this->labelOf('path')),
             'vitals' => $this->pageSpeed->handle($site, $startUtc, $endUtc, $filters),
-            'searchTerms' => $this->searchTerms->handle($site, $start, $end, $filters['path'] ?? null),
+            'searchTerms' => $this->searchTerms->handle($site, $period->start, $period->end, $filters['path'] ?? null),
             'recent' => $this->live->handle($site, $filters),
             'filters' => $filters,
             'goals' => $goals->map(fn (AnalyticsGoal $goal): array => [
@@ -152,7 +133,41 @@ final class AnalyticsReportQuery
                 'revenue' => Revenue::format($conversions['revenue'][$goal->id] ?? []),
             ])->values()->all(),
             'lastProcessedAt' => $site->last_processed_at,
-            'hasData' => $number($totals, 'events') > 0,
+            'hasData' => $totals['events'] > 0,
+        ];
+    }
+
+    /**
+     * Count a stretch of time's pageviews, daily visitors and events, and its visits, conversions, bounces and time
+     * spent, with the report's filters applied. Visits still open in the last 30 minutes don't count towards bounces.
+     *
+     * @param  AnalyticsSite  $site
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
+     * @param  array<string, string|null>  $filters
+     * @return array{pageviews: int, visitors: int, events: int, visits: int, converted: int, eligible: int, bounces: int, duration: int}
+     */
+    private function totals(AnalyticsSite $site, CarbonImmutable $from, CarbonImmutable $until, array $filters): array
+    {
+        $events = $this->events($site, $from, $until, $filters)->toBase()
+            ->selectRaw("COUNT(CASE WHEN type = 'pageview' THEN 1 END) AS pageviews")
+            ->selectRaw('COUNT(DISTINCT visitor_hash) AS visitors')
+            ->selectRaw('COUNT(*) AS events')
+            ->first();
+        $bounceCutoff = CarbonImmutable::now()->subMinutes(30)->utc();
+        $visits = $this->visits($site, $from, $until, $filters)->toBase()
+            ->selectRaw('COUNT(*) AS visits')
+            ->selectRaw('COUNT(CASE WHEN conversion_count > 0 THEN 1 END) AS converted')
+            ->selectRaw('COUNT(CASE WHEN last_seen_at <= ? AND pageviews > 0 THEN 1 END) AS eligible', [$bounceCutoff])
+            ->selectRaw('COUNT(CASE WHEN last_seen_at <= ? AND pageviews = 1 AND conversion_count = 0 THEN 1 END) AS bounces', [$bounceCutoff])
+            ->selectRaw('SUM('.$this->visitSeconds().') AS duration')
+            ->first();
+        $number = fn (?object $row, string $column): int => (int) ($row->{$column} ?? 0);
+
+        return [
+            'pageviews' => $number($events, 'pageviews'), 'visitors' => $number($events, 'visitors'), 'events' => $number($events, 'events'),
+            'visits' => $number($visits, 'visits'), 'converted' => $number($visits, 'converted'), 'eligible' => $number($visits, 'eligible'),
+            'bounces' => $number($visits, 'bounces'), 'duration' => $number($visits, 'duration'),
         ];
     }
 
@@ -176,7 +191,7 @@ final class AnalyticsReportQuery
 
     /**
      * Start a query for the site's visits last seen between two times, with the report's filters applied. Source and
-     * campaign filters match where the visit started; path and device filters keep visits with a matching event.
+     * campaign filters match where the visit started; path, device, browser and system filters keep visits with a matching event.
      *
      * @param  AnalyticsSite  $site
      * @param  CarbonImmutable  $from
@@ -188,6 +203,8 @@ final class AnalyticsReportQuery
     {
         $path = $filters['path'] ?? null;
         $device = $filters['device'] ?? null;
+        $browser = $filters['browser'] ?? null;
+        $os = $filters['os'] ?? null;
 
         return AnalyticsVisit::query()
             ->where('site_id', $site->id)
@@ -197,7 +214,7 @@ final class AnalyticsReportQuery
             }))
             ->when($filters['campaign'] ?? null, fn (Builder $query, string $campaign) => $query->where('entry_utm_campaign', $campaign))
             ->when($filters['country'] ?? null, fn (Builder $query, string $country) => $query->where('country_code', $country))
-            ->when($path !== null || $device !== null, fn (Builder $query) => $query->whereExists(function (QueryBuilder $events) use ($path, $device): void {
+            ->when($path !== null || $device !== null || $browser !== null || $os !== null, fn (Builder $query) => $query->whereExists(function (QueryBuilder $events) use ($path, $device, $browser, $os): void {
                 $events->selectRaw('1')->from('analytics_events as visit_events')
                     ->whereColumn('visit_events.site_id', 'analytics_visits.site_id')
                     ->where(function (QueryBuilder $identity): void {
@@ -207,7 +224,9 @@ final class AnalyticsReportQuery
                     ->whereColumn('visit_events.occurred_at', '>=', 'analytics_visits.started_at')
                     ->whereColumn('visit_events.occurred_at', '<=', 'analytics_visits.last_seen_at')
                     ->when($path, fn (QueryBuilder $query, string $path) => $query->where('visit_events.path', $path))
-                    ->when($device, fn (QueryBuilder $query, string $device) => $query->where('visit_events.device_category', $device));
+                    ->when($device, fn (QueryBuilder $query, string $device) => $query->where('visit_events.device_category', $device))
+                    ->when($browser, fn (QueryBuilder $query, string $browser) => $query->where('visit_events.browser', $browser))
+                    ->when($os, fn (QueryBuilder $query, string $os) => $query->where('visit_events.operating_system', $os));
             }));
     }
 
@@ -430,14 +449,14 @@ final class AnalyticsReportQuery
      *
      * @param  int  $seconds  total length of the period's visits
      * @param  int  $visits
-     * @param  int  $previousSeconds
-     * @param  int  $previousVisits
+     * @param  int|null  $previousSeconds  null when not comparing
+     * @param  int|null  $previousVisits
      * @return array{label: string, value: string, raw: int|null, change: string|null, tone: string}
      */
-    private function durationMetric(int $seconds, int $visits, int $previousSeconds, int $previousVisits): array
+    private function durationMetric(int $seconds, int $visits, ?int $previousSeconds, ?int $previousVisits): array
     {
         $average = $visits > 0 ? (int) round($seconds / $visits) : 0;
-        $previous = $previousVisits > 0 ? (int) round($previousSeconds / $previousVisits) : 0;
+        $previous = $previousVisits === null ? null : ($previousVisits > 0 ? (int) round((int) $previousSeconds / $previousVisits) : 0);
 
         return ['label' => 'Visit duration', 'value' => $visits > 0 ? $this->duration($average) : '—', 'raw' => $visits > 0 ? $average : null, 'change' => $visits > 0 ? $this->change($average, $previous) : null, 'tone' => 'warning'];
     }
@@ -474,11 +493,14 @@ final class AnalyticsReportQuery
      * null when there's nothing either time.
      *
      * @param  int  $current
-     * @param  int  $previous
+     * @param  int|null  $previous  null when not comparing
      * @return string|null
      */
-    private function change(int $current, int $previous): ?string
+    private function change(int $current, ?int $previous): ?string
     {
+        if ($previous === null) {
+            return null;
+        }
         if ($previous === 0) {
             return $current > 0 ? 'New' : null;
         }
@@ -491,34 +513,34 @@ final class AnalyticsReportQuery
      * activity and goals aren't aggregated, so they're left empty.
      *
      * @param  AnalyticsSite  $site
-     * @param  int  $days
-     * @param  CarbonImmutable  $start
-     * @param  CarbonImmutable  $end
-     * @param  CarbonImmutable  $comparisonStart
+     * @param  ReportPeriod  $period
      * @param  array<string, string|null>  $filters
      * @return array<string, mixed>|null
      */
-    private function fromAggregates(AnalyticsSite $site, int $days, CarbonImmutable $start, CarbonImmutable $end, CarbonImmutable $comparisonStart, array $filters): ?array
+    private function fromAggregates(AnalyticsSite $site, ReportPeriod $period, array $filters): ?array
     {
-        $rows = AnalyticsDailyAggregate::query()
+        $days = $period->days;
+        $start = $period->start;
+        $end = $period->end;
+        $daysBetween = fn (CarbonImmutable $from, CarbonImmutable $until) => AnalyticsDailyAggregate::query()
             ->where('site_id', $site->id)
             ->where('dimension', 'all')
-            ->whereBetween('local_date', [$comparisonStart->toDateString(), $end->toDateString()])
+            ->whereBetween('local_date', [$from->toDateString(), $until->toDateString()])
             ->orderBy('local_date')
             ->get();
+        $current = $daysBetween($start, $end);
 
-        if ($rows->isEmpty()) {
+        if ($current->isEmpty()) {
             return null;
         }
 
-        $current = $rows->filter(fn (AnalyticsDailyAggregate $row): bool => CarbonImmutable::parse($row->local_date)->betweenIncluded($start->toDateString(), $end->toDateString()));
-        $previous = $rows->filter(fn (AnalyticsDailyAggregate $row): bool => CarbonImmutable::parse($row->local_date)->betweenIncluded($comparisonStart->toDateString(), $start->subDay()->toDateString()));
+        $previous = $period->previousStart !== null && $period->previousEnd !== null ? $daysBetween($period->previousStart, $period->previousEnd) : null;
         $currentPageviews = $this->aggregateSum($current, 'pageviews');
-        $previousPageviews = $this->aggregateSum($previous, 'pageviews');
+        $previousPageviews = $previous === null ? null : $this->aggregateSum($previous, 'pageviews');
         $currentVisitors = $this->aggregateAverageVisitors($current, $days);
-        $previousVisitors = $this->aggregateAverageVisitors($previous, $days);
+        $previousVisitors = $previous === null ? null : $this->aggregateAverageVisitors($previous, $days);
         $currentVisits = $this->aggregateSum($current, 'visits');
-        $previousVisits = $this->aggregateSum($previous, 'visits');
+        $previousVisits = $previous === null ? null : $this->aggregateSum($previous, 'visits');
         $convertedVisits = $this->aggregateSum($current, 'converted_visits');
         $conversionRate = $currentVisits > 0 ? round(($convertedVisits / $currentVisits) * 100, 1) : 0;
         $eligible = $this->aggregateSum($current, 'bounce_eligible');
@@ -527,13 +549,14 @@ final class AnalyticsReportQuery
 
         return [
             'range' => ['days' => $days, 'start' => $start, 'end' => $end],
+            'period' => $period,
             'metrics' => [
                 ['label' => 'Pageviews', 'value' => number_format($currentPageviews), 'raw' => $currentPageviews, 'change' => $this->change($currentPageviews, $previousPageviews), 'tone' => 'primary'],
                 ['label' => 'Visitors', 'value' => number_format($currentVisitors), 'raw' => $currentVisitors, 'change' => $this->change($currentVisitors, $previousVisitors), 'tone' => 'info'],
                 ['label' => 'Visits', 'value' => number_format($currentVisits), 'raw' => $currentVisits, 'change' => $this->change($currentVisits, $previousVisits), 'tone' => 'info'],
                 ['label' => 'Conversion rate', 'value' => number_format($conversionRate, 1).'%', 'raw' => (float) $conversionRate, 'change' => null, 'tone' => 'success'],
                 ['label' => 'Bounce rate', 'value' => $bounceRate === null ? '—' : number_format($bounceRate, 1).'%', 'raw' => $bounceRate, 'change' => null, 'tone' => 'warning'],
-                $this->durationMetric($this->aggregateSum($current, 'duration_seconds'), $currentVisits, $this->aggregateSum($previous, 'duration_seconds'), $previousVisits),
+                $this->durationMetric($this->aggregateSum($current, 'duration_seconds'), $currentVisits, $previous === null ? null : $this->aggregateSum($previous, 'duration_seconds'), $previousVisits),
             ],
             'granularity' => 'day',
             'series' => $this->aggregateSeries($current, $start, $end),

@@ -9,14 +9,10 @@
             </div>
             <form method="GET" class="flex flex-wrap items-end gap-2">
                 @foreach (array_filter($filters) as $key => $value)<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endforeach
-                <x-signal.ui.select-field name="days" :label="__('Period')" :show-errors="false">
-                    @foreach ([1 => __('Today'), 7 => __('Last 7 days'), 30 => __('Last 30 days'), 90 => __('Last 90 days'), 365 => __('Last 12 months')] as $value => $label)
-                        <option value="{{ $value }}" @selected($days === $value)>{{ $label }}</option>
-                    @endforeach
-                </x-signal.ui.select-field>
+                @include('analytics._period-fields')
                 <x-signal.ui.button type="submit" variant="secondary">{{ __('Show') }}</x-signal.ui.button>
                 @if (array_filter($filters))
-                    <x-signal.ui.button :href="route('analytics.shared', [$token, 'days' => $days])" variant="quiet">{{ __('Clear filters') }}</x-signal.ui.button>
+                    <x-signal.ui.button :href="route('analytics.shared', [$token, ...$period->query()])" variant="quiet">{{ __('Clear filters') }}</x-signal.ui.button>
                 @endif
             </form>
         </header>

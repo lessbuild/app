@@ -33,6 +33,7 @@ final class ShowSharedReportController
             return view('analytics.shared-locked', ['site' => $site, 'token' => $token]);
         }
         $days = $this->reportDays($request);
+        $period = $this->reportPeriod($request, $site);
         $filters = $this->reportFilters($request);
         if ($request->hasHeader('X-Live-Region')) {
             return view('analytics._live', ['recent' => $live->handle($site, $filters)]);
@@ -42,8 +43,9 @@ final class ShowSharedReportController
             'site' => $site,
             'token' => $token,
             'days' => $days,
+            'period' => $period,
             'filters' => $filters,
-            'summary' => $report->handle($site, $days, $filters),
+            'summary' => $report->handle($site, $period, $filters),
             'releases' => collect(),
         ]);
     }
