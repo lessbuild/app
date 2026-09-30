@@ -86,6 +86,17 @@
                             <p class="font-bold text-ink">{{ $domain->hostname }} <span class="text-xs font-normal text-muted">{{ __(ucfirst($domain->type)) }}@if ($domain->redirect_url) → {{ $domain->redirect_url }}@endif @if ($domain->is_temporary) · {{ __('temporary') }}@endif</span></p>
                             <p class="text-xs text-muted">{{ __('DNS :dns · certificate :ssl', ['dns' => __($domain->dns_status), 'ssl' => __($domain->ssl_status)]) }}@if ($domain->certificate_expires_at) · {{ __('expires :date', ['date' => $domain->certificate_expires_at->toFormattedDayDateString()]) }}@endif @if ($domain->dnsProvider) · {{ $domain->dnsProvider->name }}@endif</p>
                         </div>
+                        @if ($domain->edge_error)<p class="w-full text-xs text-danger">{{ $domain->edge_error }}</p>@endif
+                        @if ($canManage && $domain->dnsProvider && $domain->dns_record_id)
+                            @php($edgeId = 'edge-'.$domain->id)
+                            <x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => $edgeId, 'tab' => 'domains'])" variant="quiet" size="sm" :data-modal-trigger="$edgeId">{{ $domain->cdn_proxied ? __('CDN and firewall · on') : __('CDN and firewall') }}</x-signal.ui.button>
+                            <x-signal.overlays.form-modal :id="$edgeId" :title="__('CDN and firewall for :domain', ['domain' => $domain->hostname])" :description="__('Set at Cloudflare, which manages this domain’s DNS. Rules you made yourself in Cloudflare are left alone.')" :action="route('infrastructure.websites.domains.edge', [$project, $website->id, $domain->id])" method="PUT" :submit="__('Save')" form-class="grid items-start gap-5">
+                                <x-signal.ui.checkbox :id="$edgeId.'-cdn'" name="cdn_proxied" :checked="$domain->cdn_proxied" :description="__('Visitors reach the site through Cloudflare’s network: static files are cached near them, attacks are absorbed, and the cache is purged after every deploy. Set Cloudflare’s SSL mode to Full (strict).')">{{ __('Serve through Cloudflare’s CDN') }}</x-signal.ui.checkbox>
+                                <x-signal.ui.input-field :id="$edgeId.'-countries'" name="blocked_countries" :label="__('Block countries')" :value="implode(', ', $domain->blocked_countries ?? [])" placeholder="KP, RU" :description="__('Two-letter country codes.')" />
+                                <x-signal.ui.textarea-field :id="$edgeId.'-ips'" name="blocked_ips" :label="__('Block addresses')" :value="implode(PHP_EOL, $domain->blocked_ips ?? [])" rows="3" placeholder="203.0.113.7&#10;198.51.100.0/24" :description="__('One IP address or network a line.')" />
+                                <x-signal.ui.input-field :id="$edgeId.'-rate'" name="rate_limit_requests" type="number" min="1" max="10000" :label="__('Rate limit (requests per visitor per 10 seconds)')" :value="$domain->rate_limit_requests" :description="__('Visitors over it are blocked for 10 seconds. Leave empty for no limit.')" />
+                            </x-signal.overlays.form-modal>
+                        @endif
                         @if ($canManage && $domain->type !== 'primary')
                             <div class="flex gap-1">
                                 @if ($domain->dnsProvider)

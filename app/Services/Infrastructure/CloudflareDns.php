@@ -31,7 +31,7 @@ class CloudflareDns
         $zoneId = $this->zone($token, $domain->hostname);
         $payload = [
             'type' => filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false ? 'AAAA' : 'A',
-            'name' => $domain->hostname, 'content' => $address, 'ttl' => 1, 'proxied' => false, 'comment' => 'Managed by '.config('app.name'),
+            'name' => $domain->hostname, 'content' => $address, 'ttl' => 1, 'proxied' => (bool) $domain->cdn_proxied, 'comment' => 'Managed by '.config('app.name'),
         ];
         $existing = $this->reference($domain->dns_record_id);
         $response = $existing !== null && $existing[0] === $zoneId

@@ -29,6 +29,11 @@ use Illuminate\Support\Carbon;
  * @property CarbonImmutable|null $certificate_expires_at
  * @property CarbonImmutable|null $last_checked_at
  * @property string|null $last_error
+ * @property bool $cdn_proxied whether traffic goes through Cloudflare's CDN
+ * @property list<string>|null $blocked_countries ISO country codes Cloudflare blocks
+ * @property list<string>|null $blocked_ips addresses and networks Cloudflare blocks
+ * @property int|null $rate_limit_requests requests one visitor may make per 10 seconds before being blocked
+ * @property string|null $edge_error why Cloudflare refused the last edge change
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Website $website
@@ -69,6 +74,6 @@ class WebsiteDomain extends Model
      */
     protected function casts(): array
     {
-        return ['is_temporary' => 'boolean', 'certificate_expires_at' => 'immutable_datetime', 'last_checked_at' => 'immutable_datetime'];
+        return ['is_temporary' => 'boolean', 'cdn_proxied' => 'boolean', 'blocked_countries' => 'array', 'blocked_ips' => 'array', 'rate_limit_requests' => 'integer', 'certificate_expires_at' => 'immutable_datetime', 'last_checked_at' => 'immutable_datetime'];
     }
 }

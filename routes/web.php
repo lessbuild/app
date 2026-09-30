@@ -220,6 +220,7 @@ use App\Http\Controllers\Infrastructure\StoreWebsiteDomainController;
 use App\Http\Controllers\Infrastructure\StoreWebsiteImportController;
 use App\Http\Controllers\Infrastructure\SyncWebsiteDomainController;
 use App\Http\Controllers\Infrastructure\UpdateBackupDestinationController;
+use App\Http\Controllers\Infrastructure\UpdateDomainEdgeController;
 use App\Http\Controllers\Infrastructure\UpdateInfrastructureBudgetController;
 use App\Http\Controllers\Infrastructure\UpdateLoadBalancerController;
 use App\Http\Controllers\Infrastructure\UpdateLoadBalancerNodeController;
@@ -655,6 +656,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/websites/{website}/domains', StoreWebsiteDomainController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:20,1'])->name('websites.domains.store');
             Route::post('/websites/{website}/domains/temporary', IssueTemporaryDomainController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:10,1'])->name('websites.domains.temporary');
             Route::post('/websites/{website}/domains/{domain}/sync', SyncWebsiteDomainController::class)->whereNumber(['website', 'domain'])->middleware(['can:update,website', 'throttle:20,1'])->name('websites.domains.sync');
+            Route::put('/websites/{website}/domains/{domain}/edge', UpdateDomainEdgeController::class)->whereNumber(['website', 'domain'])->middleware(['can:update,website', 'throttle:20,1'])->name('websites.domains.edge');
             Route::delete('/websites/{website}/domains/{domain}', DeleteWebsiteDomainController::class)->whereNumber(['website', 'domain'])->middleware(['can:update,website', 'throttle:20,1'])->name('websites.domains.destroy');
             Route::post('/websites/{website}/backups', StoreWebsiteBackupController::class)->whereNumber('website')->middleware(['can:backUp,website', 'throttle:10,1'])->name('websites.backups.store');
             Route::post('/websites/{website}/backups/{backup}/restore', RestoreWebsiteBackupController::class)->whereNumber(['website', 'backup'])->middleware(['can:restore,website', 'password.confirm', 'throttle:5,1'])->name('websites.backups.restore');
