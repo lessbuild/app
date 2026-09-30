@@ -7,7 +7,7 @@ return [
     ['date' => '2026-10-01', 'title' => 'Monitoring: quieter, clearer alerts', 'changes' => [
         'Send a server’s logs to Monitoring: system warnings and errors, and its websites’ Laravel errors with stack traces, searchable beside traces and ready for log alerts.',
         'Create a ticket for any issue in GitHub Issues, Linear or Jira, with the error’s details and a link back.',
-        'A Laravel package: composer require buildpusher/laravel, set one key, and requests, exceptions, slow queries, queue jobs and logs arrive linked by trace, with releases marked from your pipeline.',
+        'A Laravel package: composer require buildpusher/laravel, set one key, and every request arrives with a timeline of its queries, mail and notifications, plus exceptions with the number of people affected, slow and N+1 queries, jobs, scheduled tasks, commands and logs.',
         'Browser error tracking: a script tag catches JavaScript errors and unhandled promise rejections in visitors’ browsers and groups them into issues beside your server errors.',
         'Follow the status of the services you depend on, such as GitHub, Cloudflare and DigitalOcean, beside your own monitors.',
         'Post-mortems start as a draft written from the incident: its length, what the check saw, who responded, your notes, and the deploys just before it as leads.',

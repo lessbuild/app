@@ -9,6 +9,7 @@ use App\Models\Environment;
 use App\Models\Issue;
 use App\Models\TelemetryEvent;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class RecordIssueOccurrence
@@ -30,13 +31,14 @@ final class RecordIssueOccurrence
         $title = Str::limit((string) ($event['title'] ?? $event['name'] ?? 'Unhandled exception'), 255, '');
         $fingerprint = (string) ($event['fingerprint'] ?? hash('sha256', Str::lower($title.'|'.($event['route'] ?? ''))));
         $occurredAt = $record->occurred_at->toImmutable();
+        $user = is_string($event['attributes']['user.id'] ?? null) && $event['attributes']['user.id'] !== '' ? $event['attributes']['user.id'] : null;
         $issue = Issue::query()->lockForUpdate()->firstOrCreate(
             ['project_id' => $environment->project_id, 'fingerprint' => $fingerprint],
             [
                 'environment_id' => $environment->id, 'type' => 'exception', 'severity' => $event['severity'] ?? 'error',
                 'status' => IssueStatus::Open, 'title' => $title,
                 'location' => isset($event['route']) ? Str::substr($event['route'], 0, 255) : null,
-                'occurrences' => 1, 'affected_users' => (int) ($event['affected_users'] ?? 0),
+                'occurrences' => 1, 'affected_users' => $user !== null ? 1 : (int) ($event['affected_users'] ?? 0),
                 'first_seen_at' => $occurredAt, 'last_seen_at' => $occurredAt,
                 'details' => $event['details'] ?? null, 'metadata' => $event['attributes'] ?? null,
             ],
@@ -51,6 +53,7 @@ final class RecordIssueOccurrence
             $expired = $issue->status === IssueStatus::Snoozed && $issue->snoozed_until?->lessThanOrEqualTo(CarbonImmutable::now('UTC'));
             $issue->forceFill([
                 'occurrences' => $issue->occurrences + 1,
+                'affected_users' => $issue->affected_users + ($user !== null && ! $this->seen($issue, $user) ? 1 : 0),
                 'environment_id' => $latest ? $environment->id : $issue->environment_id,
                 'first_seen_at' => $occurredAt->min($issue->first_seen_at),
                 'last_seen_at' => $latest ? $occurredAt : $issue->last_seen_at,
@@ -70,5 +73,19 @@ final class RecordIssueOccurrence
         if ($activity !== null) {
             $issue->activities()->create(['action' => $activity, 'metadata' => ['event_id' => $record->id, 'status' => $issue->status->value]]);
         }
+    }
+
+    /**
+     * Determine whether the issue already has an occurrence for this (hashed) user, so each person counts once.
+     *
+     * @param  Issue  $issue
+     * @param  string  $user
+     * @return bool
+     */
+    private function seen(Issue $issue, string $user): bool
+    {
+        $path = DB::getDriverName() === 'pgsql' ? "attributes->>'user.id' = ?" : "json_extract(attributes, '$.\"user.id\"') = ?";
+
+        return TelemetryEvent::query()->where('issue_id', $issue->id)->whereRaw($path, [$user])->exists();
     }
 }

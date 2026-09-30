@@ -1,6 +1,12 @@
 # BuildPusher for Laravel
 
-Sends a Laravel app's requests, exceptions, slow queries, queue jobs and warning-level logs to BuildPusher Monitoring, linked by trace, and marks each release.
+Sends a Laravel app's work to BuildPusher Monitoring, linked by trace, and marks each release:
+
+- requests, with a timeline of their queries, mail and notifications, and query, cache and mail counts;
+- exceptions, with the (hashed) signed-in user, so issues show how many people were affected;
+- slow queries, and N+1 queries (the same query five or more times in one request);
+- queue jobs, scheduled tasks and artisan commands;
+- warning-level logs.
 
 ```bash
 composer require buildpusher/laravel

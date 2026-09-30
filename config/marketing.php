@@ -234,7 +234,7 @@ return [
                 ]],
                 ['label' => 'Telemetry', 'title' => 'Follow a request through the system', 'description' => 'The application signals that explain what users see.', 'features' => [
                     ['Errors and issues', 'Exceptions grouped into issues with their releases, assignments and a daily digest, and tickets in GitHub, Linear or Jira.'],
-                    ['Laravel package', 'One composer package records requests, exceptions, slow queries, jobs and logs, linked by trace.'],
+                    ['Laravel package', 'One composer package records requests with their timeline, exceptions, slow and N+1 queries, jobs, scheduled tasks and logs.'],
                     ['Browser errors', 'JavaScript errors from your visitors’ browsers, grouped into issues beside server errors.'],
                     ['Traces and metrics', 'OpenTelemetry traces, logs and metrics, a service map, a metrics explorer and dashboards.'],
                     ['Server logs', 'System and Laravel logs from your servers, sent by a small agent and searchable beside traces.'],

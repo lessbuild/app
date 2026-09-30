@@ -13,7 +13,8 @@ return [
     'service' => env('BUILDPUSHER_SERVICE', env('APP_NAME', 'laravel')),
     'release' => env('BUILDPUSHER_RELEASE'),
 
-    // The share of requests recorded (0 to 1). Exceptions, slow queries, failed jobs and logs are always recorded.
+    // The share of requests recorded with their timeline (0 to 1). Failed requests, exceptions, slow and N+1 queries,
+    // jobs, scheduled tasks and logs are always recorded.
     'request_sample_rate' => (float) env('BUILDPUSHER_REQUEST_SAMPLE_RATE', 1.0),
 
     // Queries at least this slow, in milliseconds, are recorded.
