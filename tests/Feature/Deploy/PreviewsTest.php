@@ -137,6 +137,47 @@ final class PreviewsTest extends TestCase
         $this->actingAs($this->owner)->get("{$this->base}/environments")->assertOk()->assertDontSee('PR #12');
     }
 
+    /**
+     * Check any branch can get a preview that deploys its latest commit and closes on its own date: the same stack as
+     * a pull request's, named for the branch, no pull request comment, reopening it moves the date, and it closes once
+     * the date passes.
+     *
+     * @return void
+     */
+    public function test_a_branch_gets_a_preview_that_closes_on_its_date(): void
+    {
+        Http::fake();
+        $this->actingAs($this->owner)->post("{$this->base}/previews/branch", ['repository_id' => $this->source->id, 'branch' => 'bad..name', 'days' => 3])->assertSessionHasErrors('branch');
+        $this->actingAs($this->owner)->post("{$this->base}/previews/branch", ['repository_id' => $this->source->id, 'branch' => 'feature/new-cart', 'days' => 3])->assertRedirect();
+
+        $preview = Preview::query()->sole();
+        $this->assertSame([null, 'feature/new-cart', 'br-feature-new-cart-shop.preview.example.com', 'Branch feature/new-cart'], [$preview->pull_request_number, $preview->source_branch, $preview->url, $preview->label()]);
+        $this->assertSame(['br-feature-new-cart', 'Branch feature/new-cart'], [$preview->environment?->slug, $preview->environment?->name]);
+        $this->assertTrue($preview->expiresAt()->between(now()->addDays(3)->subMinute(), now()->addDays(3)->addMinute()));
+        $this->assertStringContainsString('BUILDPUSHER_PREVIEW="feature/new-cart"', (string) $preview->website?->env_file);
+
+        $website = $preview->website;
+        $this->assertNotNull($website);
+        foreach (range(1, WebsiteProvisioner::finalStage()) as $stage) {
+            $this->post(ProvisioningCallbackUrl::websiteStatus($website), ['status' => $stage])->assertNoContent();
+        }
+        $build = Build::query()->where('repository_id', $preview->repository_id)->sole();
+        $this->assertSame(['preview', null], [$build->trigger_source, $build->revision], 'It deploys the branch’s latest commit.');
+        Http::assertNothingSent();
+        $this->actingAs($this->owner)->get("{$this->base}/previews")->assertOk()->assertSee('shop · Branch feature/new-cart')->assertSee(__('Preview a branch'));
+
+        $this->finish($build);
+        $this->actingAs($this->owner)->post("{$this->base}/previews/branch", ['repository_id' => $this->source->id, 'branch' => 'feature/new-cart', 'days' => 14])->assertRedirect();
+        $this->assertSame(1, Preview::query()->count(), 'Opening it again moves the date.');
+        $this->assertTrue($preview->refresh()->expiresAt()->isAfter(now()->addDays(13)));
+
+        $this->travel(15)->days();
+        $expire = $this->artisan('previews:expire');
+        $this->assertInstanceOf(\Illuminate\Testing\PendingCommand::class, $expire);
+        $expire->assertSuccessful()->run();
+        $this->assertSame(Preview::STATUS_CLOSED, $preview->refresh()->status);
+    }
+
     public function test_a_new_revision_deploys_after_the_running_one_and_the_initialisation_runs_until_it_succeeds(): void
     {
         [$preview, $build] = $this->readyToDeploy();

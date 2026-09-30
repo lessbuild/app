@@ -48,7 +48,7 @@ final class PreviewConfiguration
             'APP_DEBUG' => false,
             'APP_KEY' => $key,
             'APP_URL' => 'https://'.$website->url,
-            'BUILDPUSHER_PREVIEW' => $preview->pull_request_number,
+            'BUILDPUSHER_PREVIEW' => $preview->pull_request_number ?? $preview->source_branch,
             'DB_CONNECTION' => 'mysql',
             'DB_HOST' => '127.0.0.1',
             'DB_PORT' => 3306,

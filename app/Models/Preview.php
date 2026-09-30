@@ -23,7 +23,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $environment_id
  * @property int|null $website_id
  * @property int|null $repository_id
- * @property int $pull_request_number
+ * @property int|null $pull_request_number null for a branch preview
+ * @property CarbonImmutable|null $expires_at a branch preview closes then
  * @property string|null $title
  * @property string $source_branch
  * @property string $revision the pull request's head commit, which the preview deploys
@@ -193,13 +194,24 @@ class Preview extends Model
     }
 
     /**
-     * Get when the preview expires: its source repository's lifetime after the last activity.
+     * Get when the preview expires: a branch preview's own expiry, or its source repository's lifetime after the last
+     * activity.
      *
      * @return CarbonImmutable
      */
     public function expiresAt(): CarbonImmutable
     {
-        return $this->last_activity_at->addHours($this->sourceRepository->preview_ttl_hours);
+        return $this->expires_at ?? $this->last_activity_at->addHours($this->sourceRepository->preview_ttl_hours);
+    }
+
+    /**
+     * Name the preview as people read it: the pull request, or the branch for a branch preview.
+     *
+     * @return string
+     */
+    public function label(): string
+    {
+        return $this->pull_request_number !== null ? 'PR #'.$this->pull_request_number : __('Branch :branch', ['branch' => $this->source_branch]);
     }
 
     /**
@@ -209,7 +221,7 @@ class Preview extends Model
      */
     public function shortRevision(): string
     {
-        return substr($this->revision, 0, 12);
+        return $this->revision === '' ? __('latest') : substr($this->revision, 0, 12);
     }
 
     /**
@@ -222,7 +234,7 @@ class Preview extends Model
     protected function casts(): array
     {
         return [
-            'pull_request_number' => 'integer', 'cleanup_attempts' => 'integer', 'initialized_at' => 'immutable_datetime', 'database_copied_at' => 'immutable_datetime',
+            'pull_request_number' => 'integer', 'cleanup_attempts' => 'integer', 'initialized_at' => 'immutable_datetime', 'database_copied_at' => 'immutable_datetime', 'expires_at' => 'immutable_datetime',
             'last_activity_at' => 'immutable_datetime', 'closed_at' => 'immutable_datetime',
         ];
     }

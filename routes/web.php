@@ -115,6 +115,7 @@ use App\Http\Controllers\Deploy\DeleteEnvironmentSettingController;
 use App\Http\Controllers\Deploy\DeletePipelineController;
 use App\Http\Controllers\Deploy\DeleteRepositoryController;
 use App\Http\Controllers\Deploy\MoveEnvironmentRecipeController;
+use App\Http\Controllers\Deploy\OpenBranchPreviewController;
 use App\Http\Controllers\Deploy\PlanConfigurationController;
 use App\Http\Controllers\Deploy\PromoteBuildController;
 use App\Http\Controllers\Deploy\RecordBuildCallbackController;
@@ -669,6 +670,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::delete('/repositories/{repository}/webhook', UpdateRepositoryWebhookController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:10,1'])->name('repositories.webhook.destroy');
             Route::put('/repositories/{repository}/previews', UpdateRepositoryPreviewsController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:20,1'])->name('repositories.previews');
             Route::get('/previews', ShowPreviewsController::class)->name('previews');
+            Route::post('/previews/branch', OpenBranchPreviewController::class)->middleware('throttle:10,1')->name('previews.branch');
             Route::post('/previews/{preview}/close', ClosePreviewController::class)->whereNumber('preview')->middleware(['can:operate,preview', 'throttle:20,1'])->name('previews.close');
             Route::post('/previews/{preview}/cleanup', RetryPreviewCleanupController::class)->whereNumber('preview')->middleware(['can:operate,preview', 'throttle:10,1'])->name('previews.cleanup');
             Route::post('/previews/{preview}/secrets', ApprovePreviewSecretsController::class)->whereNumber('preview')->middleware(['can:approveSecrets,preview', 'throttle:20,1'])->name('previews.secrets');

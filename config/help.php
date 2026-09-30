@@ -202,6 +202,7 @@ return [
                 ['Secrets', 'Previews start without secrets; approve the ones a preview needs for its exact revision.'],
                 ['Start with data', 'On the repository’s page, choose a website to copy the database from, and each preview starts with a copy of it.'],
                 ['Clean-up', 'A preview is removed when its pull request is closed or merged.'],
+                ['Any branch', 'On Previews, use Preview a branch to open one for any branch, not only a pull request, and choose when it closes (1 to 30 days). It deploys the branch’s latest commit; open it again to deploy newer commits or move the date.'],
             ],
         ],
         'rollback-and-promotion' => [

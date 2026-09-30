@@ -24,6 +24,7 @@ use App\Models\Website;
 use App\Services\Billing\AccountEntitlements;
 use App\Services\Billing\Entitlements;
 use App\Support\Deploy\PreviewTrust;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -96,6 +97,45 @@ final class Previews
         ReportPreviewToGitHub::dispatch($preview->id);
 
         return $preview->refresh()->status;
+    }
+
+    /**
+     * Open a preview of any branch of the source repository, deploying its latest commit, that closes at the expiry
+     * date. Opening a branch that already has an open preview moves its expiry instead. Returns the preview, or why it
+     * couldn't open: previews off, not on the plan, or no room.
+     *
+     * @param  Repository  $source
+     * @param  string  $branch
+     * @param  CarbonImmutable  $expiresAt
+     * @return Preview|string
+     */
+    public function openBranch(Repository $source, string $branch, CarbonImmutable $expiresAt): Preview|string
+    {
+        $source->loadMissing(['project.account', 'provider', 'website', 'environment']);
+        if (! $source->previews_enabled || $source->preview_domain === null) {
+            return 'preview_ignored';
+        }
+        if (! $this->entitlements->for($source->project->account)->has('deploy.previews')) {
+            return 'preview_plan_required';
+        }
+        $preview = DB::transaction(function () use ($source, $branch, $expiresAt): ?Preview {
+            $account = Account::query()->lockForUpdate()->findOrFail($source->project->account_id);
+            $open = Preview::query()->where('source_repository_id', $source->id)->whereNull('pull_request_number')->where('source_branch', $branch)
+                ->where('status', '!=', Preview::STATUS_CLOSED)->lockForUpdate()->first();
+            if ($open !== null) {
+                $open->forceFill(['expires_at' => $expiresAt, 'last_activity_at' => now()])->save();
+
+                return $open;
+            }
+            $entitlements = $this->entitlements->for($account);
+            if (! $this->hasRoom($account, $entitlements, true)) {
+                return null;
+            }
+
+            return $this->create($source, null, $branch, '', __('Branch :branch', ['branch' => $branch]), $entitlements, $expiresAt);
+        }, attempts: 3);
+
+        return $preview ?? 'preview_limit_reached';
     }
 
     /**
@@ -288,7 +328,7 @@ final class Previews
             return null;
         }
         if ($preview === null) {
-            return $this->create($source, $webhook, $entitlements);
+            return $this->create($source, (int) $webhook->pullRequestNumber, (string) $webhook->sourceBranch, (string) $webhook->revision, $webhook->pullRequestTitle, $entitlements);
         }
 
         $reopening = ! $preview->isOpen();
@@ -335,33 +375,38 @@ final class Previews
 
     /**
      * Make a new preview's stack: a `preview` environment copying the source environment's runtime, processes and
-     * managed caches (as the plan allows), a website on the source website's server, and a repository on the pull
-     * request's branch. The website starts setting up after commit.
+     * managed caches (as the plan allows), a website on the source website's server, and a repository on the branch.
+     * The website starts setting up after commit. Pull request previews carry the number and head commit; branch
+     * previews deploy the branch's latest commit until they expire.
      *
      * @param  Repository  $source
-     * @param  VerifiedRepositoryWebhook  $webhook
+     * @param  int|null  $number  the pull request, or null for a branch preview
+     * @param  string  $branch
+     * @param  string  $revision  the commit to deploy; empty for the branch's latest
+     * @param  string|null  $title
      * @param  AccountEntitlements  $entitlements
+     * @param  CarbonImmutable|null  $expiresAt  a branch preview's expiry
      * @return Preview
      */
-    private function create(Repository $source, VerifiedRepositoryWebhook $webhook, AccountEntitlements $entitlements): Preview
+    private function create(Repository $source, ?int $number, string $branch, string $revision, ?string $title, AccountEntitlements $entitlements, ?CarbonImmutable $expiresAt = null): Preview
     {
         $project = $source->project;
-        $number = (int) $webhook->pullRequestNumber;
-        $label = "PR #{$number}";
-        $environment = $this->environment($project, $source->environment, $number, $entitlements);
+        $label = $number !== null ? "PR #{$number}" : "Branch {$branch}";
+        $prefix = $number !== null ? "pr-{$number}" : substr('br-'.Str::slug(str_replace('/', '-', $branch)), 0, 40);
+        $environment = $this->environment($project, $source->environment, $prefix, $label, $entitlements);
 
         $website = new Website;
         $website->forceFill([
             'account_id' => $project->account_id, 'server_id' => $source->website->server_id, 'environment_id' => $environment->id,
             'name' => Str::limit("{$project->name} {$label}", 250, ''), 'description' => __('Preview of :repository :label', ['repository' => $source->name, 'label' => $label]),
-            'url' => $this->hostname($source, $number), 'database_password' => Str::random(32), 'provisioning_status' => Website::STATUS_QUEUED,
+            'url' => $this->hostname($source, $prefix), 'database_password' => Str::random(32), 'provisioning_status' => Website::STATUS_QUEUED,
             'release_retention' => min(3, $source->website->release_retention), 'health_check_enabled' => false, 'health_monitoring_enabled' => false,
         ])->save();
 
         $repository = new Repository;
         $repository->forceFill([
             'project_id' => $project->id, 'provider_id' => $source->provider_id, 'website_id' => $website->id, 'environment_id' => $environment->id,
-            'name' => Str::limit("{$source->name} {$label}", 120, ''), 'url' => $source->url, 'branch' => (string) $webhook->sourceBranch,
+            'name' => Str::limit("{$source->name} {$label}", 120, ''), 'url' => $source->url, 'branch' => $branch,
             'deployment_root' => $source->deployment_root, 'build_commands' => $source->build_commands, 'post_deployment_commands' => $source->post_deployment_commands,
             'webhook_enabled' => false,
         ])->save();
@@ -370,7 +415,7 @@ final class Previews
         $preview->forceFill([
             'project_id' => $project->id, 'source_repository_id' => $source->id, 'source_environment_id' => $source->environment_id,
             'environment_id' => $environment->id, 'website_id' => $website->id, 'repository_id' => $repository->id, 'pull_request_number' => $number,
-            'title' => $webhook->pullRequestTitle, 'source_branch' => (string) $webhook->sourceBranch, 'revision' => (string) $webhook->revision,
+            'title' => $title, 'source_branch' => $branch, 'revision' => $revision, 'expires_at' => $expiresAt,
             'status' => Preview::STATUS_PROVISIONING, 'url' => $website->url, 'last_activity_at' => now(),
         ])->save();
         $website->forceFill(['env_file' => $this->configuration->environmentFile($preview, $website)])->save();
@@ -380,26 +425,27 @@ final class Previews
     }
 
     /**
-     * Create the preview's environment (`pr-{number}`, with a suffix if taken) from the source environment's runtime
+     * Create the preview's environment (`pr-{number}` or `br-{branch}`, with a suffix if taken) from the source environment's runtime
      * and its recipes (with their run-on-new-websites setting), plus, as the plan allows, its enabled processes and
      * managed Redis/Valkey. External resources are left out: their
      * variables point at the source's own services.
      *
      * @param  Project  $project
      * @param  Environment|null  $source
-     * @param  int  $number
+     * @param  string  $slug  such as pr-12 or br-feature-cart
+     * @param  string  $name  such as PR #12 or Branch feature/cart
      * @param  AccountEntitlements  $entitlements
      * @return Environment
      */
-    private function environment(Project $project, ?Environment $source, int $number, AccountEntitlements $entitlements): Environment
+    private function environment(Project $project, ?Environment $source, string $slug, string $name, AccountEntitlements $entitlements): Environment
     {
-        $slug = "pr-{$number}";
+        $base = $slug;
         for ($suffix = 2; $project->environments()->where('slug', $slug)->exists(); $suffix++) {
-            $slug = "pr-{$number}-{$suffix}";
+            $slug = "{$base}-{$suffix}";
         }
         $environment = new Environment;
         $environment->forceFill([
-            'project_id' => $project->id, 'name' => "PR #{$number}", 'slug' => $slug, 'kind' => EnvironmentKind::Preview,
+            'project_id' => $project->id, 'name' => mb_substr($name, 0, 60), 'slug' => $slug, 'kind' => EnvironmentKind::Preview,
             ...($source === null ? [] : [
                 'runtime_type' => $source->runtime_type, 'runtime_version' => $source->runtime_version, 'build_command' => $source->build_command,
                 'start_command' => $source->start_command, 'container_port' => $source->container_port, 'dockerfile_path' => $source->dockerfile_path,
@@ -438,16 +484,16 @@ final class Previews
     }
 
     /**
-     * Choose the preview's hostname: `pr-{number}-{project}.{domain}`, or with the source repository's ID added when
-     * another repository's preview already has it.
+     * Choose the preview's hostname: `pr-{number}-{project}.{domain}` (or `br-{branch}-…` for a branch), or with the
+     * source repository's ID added when another repository's preview already has it.
      *
      * @param  Repository  $source
-     * @param  int  $number
+     * @param  string  $prefix  such as pr-12 or br-feature-cart
      * @return string
      */
-    private function hostname(Repository $source, int $number): string
+    private function hostname(Repository $source, string $prefix): string
     {
-        $label = substr(Str::slug("pr-{$number}-{$source->project->slug}"), 0, 63);
+        $label = trim(substr(Str::slug("{$prefix}-{$source->project->slug}"), 0, 63), '-');
         $hostname = strtolower("{$label}.{$source->preview_domain}");
         if (Website::withTrashed()->where('url', $hostname)->exists()) {
             $label = rtrim(substr($label, 0, 62 - strlen((string) $source->id)), '-')."-{$source->id}";
@@ -498,7 +544,7 @@ final class Previews
         if ($preview->initialized_at === null && $command !== '') {
             $payload['preview_initialization'] = ['command' => $command, 'attempt' => 1, 'revision' => $preview->revision];
         }
-        $build = $this->deployments->queue($repository, ['trigger_source' => 'preview', 'revision' => $preview->revision, 'commit_message' => $preview->title, 'environment_payload' => $payload]);
+        $build = $this->deployments->queue($repository, ['trigger_source' => 'preview', 'revision' => $preview->revision !== '' ? $preview->revision : null, 'commit_message' => $preview->title, 'environment_payload' => $payload]);
         if ($build !== null) {
             $preview->forceFill(['status' => Preview::STATUS_DEPLOYING])->save();
         }

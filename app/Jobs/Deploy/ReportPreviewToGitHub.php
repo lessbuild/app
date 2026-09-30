@@ -48,8 +48,8 @@ final class ReportPreviewToGitHub implements ShouldBeUnique, ShouldQueue
     }
 
     /**
-     * Post the preview's state to its pull request. Other Git hosts, repositories outside the App and GitHub's errors
-     * are skipped (errors are reported): the preview works without it.
+     * Post the preview's state to its pull request. Branch previews, other Git hosts, repositories outside the App and
+     * GitHub's errors are skipped (errors are reported): the preview works without it.
      *
      * @param  GitHubApp  $github
      * @return void
@@ -57,8 +57,12 @@ final class ReportPreviewToGitHub implements ShouldBeUnique, ShouldQueue
     public function handle(GitHubApp $github): void
     {
         $preview = Preview::query()->with('sourceRepository.provider')->find($this->previewId);
-        $provider = $preview?->sourceRepository->provider;
-        if ($preview === null || $provider === null || ! $provider->isGitHubApp() || $provider->external_id === null
+        // Branch previews have no pull request to comment on.
+        if ($preview?->pull_request_number === null) {
+            return;
+        }
+        $provider = $preview->sourceRepository->provider;
+        if ($provider === null || ! $provider->isGitHubApp() || $provider->external_id === null
             || preg_match('#\Agithub\.com/([^/]+/[^/]+?)(?:\.git)?\z#i', $preview->sourceRepository->url, $match) !== 1) {
             return;
         }
