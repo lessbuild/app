@@ -351,7 +351,7 @@ return [
                 'description' => 'Explore traffic, sources and goals, with the releases you shipped marked on the same reports.',
                 'features' => ['Pages, channels, campaigns, places and devices', 'Goals, funnels, revenue and items sold', 'Releases and notes on the chart'],
             ],
-            'capabilities' => ['Cookieless', 'UTM campaigns', 'Ad spend and ROAS', 'Goals and funnels', 'Core Web Vitals', 'Google Search Console', 'Google Analytics import', 'Slack', 'BigQuery', 'CSV exports'],
+            'capabilities' => ['Cookieless', 'UTM campaigns', 'Ad spend and ROAS', 'Goals and funnels', 'Core Web Vitals', 'Google Search Console', 'Google Analytics import', 'Slack', 'BigQuery', 'Looker Studio', 'CSV exports'],
             'preview' => [
                 'title' => 'Site overview',
                 'context' => 'storefront.example · last 30 days',
@@ -392,7 +392,7 @@ return [
                 ['label' => 'Share', 'title' => 'Keep the whole team in the loop', 'description' => 'Numbers where people already look.', 'features' => [
                     ['Reports and alerts', 'Weekly or monthly reports and CSV exports, an alert when traffic spikes, and another when a day is far from normal.'],
                     ['Shared and embedded reports', 'A read-only link, with or without a password, that you can also embed on another site.'],
-                    ['Your data, your way', 'CSV exports, the API, a Google Analytics import, and nightly raw exports ready for BigQuery.'],
+                    ['Your data, your way', 'CSV exports, the API, a Looker Studio connector, a Google Analytics import, and nightly raw exports ready for BigQuery.'],
                 ]],
                 ['label' => 'Privacy', 'title' => 'Learn from trends, not people', 'description' => 'Useful numbers without building a profile of anyone.', 'features' => [
                     ['No cookies', 'Visitor hashes rotate daily, so nobody is followed from one day to the next. Retention is opt-in.'],

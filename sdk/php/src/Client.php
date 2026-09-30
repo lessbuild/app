@@ -93,6 +93,28 @@ final class Client
     }
 
     /**
+     * Get a site's daily totals as flat rows, one per day and value of a breakdown (path, source, channel, campaign,
+     * country, city, device, browser, operating_system or screen_size; all for the whole site), fetching every page.
+     *
+     * @param  int  $siteId
+     * @param  string  $from  YYYY-MM-DD
+     * @param  string  $to  YYYY-MM-DD
+     * @param  string  $dimension
+     * @return list<array<string, mixed>>
+     */
+    public function analyticsRows(int $siteId, string $from, string $to, string $dimension = 'all'): array
+    {
+        $rows = [];
+        for ($page = 1; ; $page++) {
+            $batch = array_values($this->data('GET', '/analytics/sites/'.$siteId.'/rows?'.http_build_query(['from' => $from, 'to' => $to, 'dimension' => $dimension, 'page' => $page])));
+            array_push($rows, ...$batch);
+            if (count($batch) < 5000) {
+                return $rows;
+            }
+        }
+    }
+
+    /**
      * Send pageviews and custom events from your server (needs the analytics:write scope). Pass each visitor's IP
      * address and User-Agent so they're counted like browser visits; both are discarded after hashing.
      *

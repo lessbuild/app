@@ -10,6 +10,7 @@ return [
         'Give a client view-only access to one site with their own link, without adding them to your account.',
         'Send pageviews and events from your server through the API and SDKs, for things that happen outside the browser.',
         'New in Explore: first- and last-touch attribution for goals and revenue, click maps, and form analytics that show which field people give up on.',
+        'A Looker Studio connector, and an API of daily rows by page, source, channel, campaign, country, device and more, for spreadsheets and dashboards.',
         'Import ad spend from Google Ads, Meta or any ad platform’s CSV, and Campaigns shows each campaign’s cost, cost per conversion and return on ad spend.',
         'Scheduled CSV exports of any saved view, by email every week or month, and alerts when yesterday’s visitors or conversions were far from normal for that day of the week.',
         'A/B tests: call buildpusher.variant() on your page, pick the goal that decides it, and Explore shows each variant’s conversion rate, lift and whether the difference is statistically significant.',

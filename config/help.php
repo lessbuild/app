@@ -348,6 +348,7 @@ return [
                 ['Share', 'Under Share the report, create a read-only link, with a password if you like.'],
                 ['View-only people', 'Under View-only access, invite someone by email; they get their own link to the report without joining the account, and you can remove it on its own.'],
                 ['Embed', 'A link without a password comes with an iframe snippet to put the report on another page.'],
+                ['Looker Studio', 'Download the connector (/connectors/looker-studio/Code.gs and appsscript.json), paste both into a new Apps Script project, deploy it as a community connector and open it in Looker Studio. Sign in with an API token that has analytics:read, enter the site ID and choose a breakdown. It reads the same daily rows as the API’s /analytics/sites/{site}/rows, which also suits spreadsheets and other dashboards.'],
                 ['Export', 'Export a report as CSV from the overview, or read it through the API.'],
             ],
         ],

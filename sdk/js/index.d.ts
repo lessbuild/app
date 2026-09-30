@@ -81,6 +81,7 @@ export declare class BuildPusher {
     project(projectId: string): Promise<Project>;
     analyticsSites(): Promise<AnalyticsSite[]>;
     analyticsReport(siteId: number, options?: { days?: 1 | 7 | 30 | 90 | 365; path?: string; source?: string; campaign?: string; device?: string; country?: string }): Promise<AnalyticsReport>;
+    analyticsRows(siteId: number, options: { from: string; to: string; dimension?: 'all' | 'path' | 'source' | 'channel' | 'campaign' | 'country' | 'city' | 'device' | 'browser' | 'operating_system' | 'screen_size' }): Promise<Array<{ date: string; value: string | null; pageviews: number; visits: number; visitors: number; conversions: number; converted_visits: number; bounces: number; bounce_eligible: number }>>;
     analyticsEvents(siteId: number, events: Array<{ type: 'pageview' | 'event'; path: string; name?: string; properties?: Record<string, unknown>; ip?: string; user_agent?: string; referrer?: string; utm_source?: string; utm_medium?: string; utm_campaign?: string; utm_term?: string; utm_content?: string }>): Promise<{ batch_id: string | null; accepted: number; skipped: number }>;
     deployments(options?: { limit?: number }): Promise<Deployment[]>;
     deployment(deploymentId: number): Promise<Deployment>;

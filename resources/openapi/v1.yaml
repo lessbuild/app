@@ -172,6 +172,23 @@ paths:
         '200': { description: The report. }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '404': { description: No such site in the token's account. }
+  /v1/analytics/sites/{site}/rows:
+    get:
+      tags: [Analytics]
+      summary: A site's daily totals as flat rows
+      description: "One row per day (in the site's time zone) and value of a breakdown, for spreadsheets and dashboards such as Looker Studio: pageviews, visits, visitors, conversions, converted_visits, bounces and bounce_eligible (bounce rate is bounces divided by bounce_eligible). Up to 400 days per request and 5,000 rows per page; follow meta.next_page."
+      security: [{ apiToken: [analytics:read] }]
+      parameters:
+        - { name: site, in: path, required: true, schema: { type: integer } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: dimension, in: query, description: "What each row breaks down by; all (the default) is the whole site.", schema: { type: string, enum: [all, path, source, channel, campaign, country, city, device, browser, operating_system, screen_size] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: "The rows, with meta.next_page (null on the last page)." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { description: No such site in the token's account. }
+        '422': { description: "Missing or invalid dates, or more than 400 days." }
   /v1/me:
     get:
       tags: [Deploy]

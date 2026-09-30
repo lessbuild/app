@@ -51,3 +51,14 @@ test('reads an analytics report with filters', async () => {
     assert.equal(report.metrics.pageviews.value, 12);
     assert.equal(calls[0].url, 'https://bp.test/api/v1/analytics/sites/4/report?days=7&country=DE');
 });
+
+test('reads every page of daily rows', async () => {
+    const { fetch, calls } = fakeFetch({
+        'GET /api/v1/analytics/sites/4/rows': (init) => [200, { data: calls.length === 1 ? Array.from({ length: 5000 }, () => ({ date: '2026-09-01', pageviews: 1 })) : [{ date: '2026-09-02', pageviews: 2 }] }],
+    });
+    const client = new BuildPusher({ token: 'bp_test', baseUrl: 'https://bp.test', fetch });
+
+    const rows = await client.analyticsRows(4, { from: '2026-09-01', to: '2026-09-02', dimension: 'source' });
+    assert.equal(rows.length, 5001);
+    assert.equal(calls[1].url, 'https://bp.test/api/v1/analytics/sites/4/rows?from=2026-09-01&to=2026-09-02&dimension=source&page=2');
+});

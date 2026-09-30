@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Analytics;
 
+use App\Actions\Analytics\RebuildSiteReports;
 use App\Actions\ApiTokens\CreateApiToken;
 use App\Data\ApiTokens\CreateApiTokenData;
 use App\Enums\ApiScope;
@@ -55,6 +56,18 @@ final class AnalyticsApiTest extends TestCase
         $this->withToken($read)->getJson("/api/v1/analytics/sites/{$site->id}/report?days=1&path=/pricing")->assertOk()
             ->assertJsonPath('data.metrics.pageviews.value', 2)->assertJsonPath('data.filters', ['path' => '/pricing'])->assertJsonPath('data.series.granularity', 'hour');
         $this->withToken($read)->getJson("/api/v1/analytics/sites/{$other->id}/report")->assertNotFound();
+
+        app(RebuildSiteReports::class)->handle($site);
+        $today = now($site->timezone)->toDateString();
+        $this->withToken($read)->getJson("/api/v1/analytics/sites/{$site->id}/rows?from={$today}&to={$today}&dimension=path")->assertOk()
+            ->assertJsonCount(2, 'data')->assertJsonPath('meta.next_page', null)->assertJsonPath('meta.dimension', 'path')
+            ->assertJsonPath('data.1', ['date' => $today, 'value' => '/pricing', 'pageviews' => 2, 'visits' => 1, 'visitors' => 1, 'conversions' => 0, 'converted_visits' => 0, 'bounces' => 0, 'bounce_eligible' => 1]);
+        $this->withToken($read)->getJson("/api/v1/analytics/sites/{$site->id}/rows?from={$today}&to={$today}")->assertOk()->assertJsonPath('data.0.pageviews', 3)->assertJsonPath('data.0.value', null);
+        $this->withToken($read)->getJson("/api/v1/analytics/sites/{$site->id}/rows?from=2025-01-01&to={$today}")->assertStatus(422);
+        $this->withToken($read)->getJson("/api/v1/analytics/sites/{$site->id}/rows?from={$today}&to={$today}&dimension=secret")->assertUnprocessable();
+        $this->withToken($read)->getJson("/api/v1/analytics/sites/{$other->id}/rows?from={$today}&to={$today}")->assertNotFound();
+        $this->assertIsArray(json_decode((string) file_get_contents(public_path('connectors/looker-studio/appsscript.json')), true), 'The connector manifest is valid JSON.');
+        $this->assertStringContainsString('/rows?from=', (string) file_get_contents(public_path('connectors/looker-studio/Code.gs')));
     }
 
     /**

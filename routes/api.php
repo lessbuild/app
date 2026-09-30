@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Analytics\CollectEventsController;
 use App\Http\Controllers\Analytics\PreflightCollectController;
+use App\Http\Controllers\Api\V1\Analytics\ListDailyRowsController;
 use App\Http\Controllers\Api\V1\Analytics\ListSitesController as AnalyticsSitesController;
 use App\Http\Controllers\Api\V1\Analytics\ShowReportController as AnalyticsReportController;
 use App\Http\Controllers\Api\V1\Analytics\StoreServerEventsController;
@@ -50,6 +51,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'token.account', 'throttle:api'
     Route::middleware('abilities:analytics:read')->prefix('analytics')->group(function (): void {
         Route::get('/sites', AnalyticsSitesController::class)->name('api.v1.analytics.sites');
         Route::get('/sites/{site}/report', AnalyticsReportController::class)->whereNumber('site')->name('api.v1.analytics.report');
+        Route::get('/sites/{site}/rows', ListDailyRowsController::class)->whereNumber('site')->name('api.v1.analytics.rows');
     });
 
     // Deployer API v1 (a public contract): the same paths, fields and status codes, over v2 tokens with Deploy scopes.

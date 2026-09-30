@@ -67,6 +67,21 @@ export class BuildPusher {
     }
 
     /**
+     * A site's daily totals as flat rows, one per day and value of a breakdown (path, source, channel, campaign,
+     * country, city, device, browser, operating_system or screen_size; all for the whole site), fetching every page.
+     * @param {number} siteId
+     * @param {{ from: string, to: string, dimension?: string }} options dates as YYYY-MM-DD
+     */
+    async analyticsRows(siteId, { from, to, dimension = 'all' }) {
+        const rows = [];
+        for (let page = 1; ; page++) {
+            const batch = await this.#data('GET', `/analytics/sites/${Number(siteId)}/rows?${new URLSearchParams({ from, to, dimension, page: String(page) })}`);
+            rows.push(...batch);
+            if (batch.length < 5000) return rows;
+        }
+    }
+
+    /**
      * Send pageviews and custom events from your server (needs the analytics:write scope). Pass each visitor's IP
      * address and User-Agent so they're counted like browser visits.
      * @param {number} siteId
