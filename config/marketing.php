@@ -234,6 +234,7 @@ return [
                 ]],
                 ['label' => 'Telemetry', 'title' => 'Follow a request through the system', 'description' => 'The application signals that explain what users see.', 'features' => [
                     ['Errors and issues', 'Exceptions grouped into issues with their releases, assignments and a daily digest.'],
+                    ['Browser errors', 'JavaScript errors from your visitors’ browsers, grouped into issues beside server errors.'],
                     ['Traces and metrics', 'OpenTelemetry traces, logs and metrics, a service map, a metrics explorer and dashboards.'],
                     ['Releases', 'Deploys from Deploy (or your pipeline) mark releases, and every trace shows the deploy that served it.'],
                 ]],

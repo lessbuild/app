@@ -227,6 +227,7 @@ return [
                 ['Get a key', 'Monitoring → Setup. Create an ingestion key for the environment.'],
                 ['Send data', 'Use the SDK snippet on the setup page, or send OpenTelemetry traces, logs and metrics to the OTLP endpoint shown there.'],
                 ['Investigate', 'Errors are grouped into Issues; Events, Metrics and Traces let you dig in, and Releases show what changed.'],
+                ['Browser errors', 'Monitoring → Setup → Browser errors. List the origins your pages are served from and turn it on, then add the script tag it shows to every page. JavaScript errors and unhandled promise rejections become issues from the “browser” service, with the browser, operating system and release. Query strings are dropped from page addresses.'],
                 ['Link to deploys', 'Every trace shows the deploy that was live when it ran, and each deploy links to its requests and traces, so you can see what a release changed.'],
             ],
         ],

@@ -82,4 +82,35 @@
             <x-signal.ui.code-block :code="$otlp" class="overflow-x-auto text-xs" />
         </div>
     </x-signal.ui.settings-section>
+
+    <x-signal.ui.settings-section id="browser-errors" :title="__('Browser errors')" :description="__('Catch JavaScript errors and unhandled promise rejections in your visitors’ browsers. They become issues from the “browser” service, beside your server errors. The key in the snippet is public; errors are only accepted from the origins you list.')">
+        <div class="grid gap-6 p-4 sm:p-6">
+            @foreach ($health['environments'] as $item)
+                @php($environment = $item['environment'])
+                <div class="grid gap-3">
+                    <p class="font-extrabold text-ink">{{ $environment->name }} <x-signal.ui.badge :tone="$environment->browser_key ? 'success' : 'neutral'">{{ $environment->browser_key ? __('On') : __('Off') }}</x-signal.ui.badge></p>
+                    @if ($environment->browser_key)
+                        @php($browserSnippet = '<script src="'.asset('monitoring/browser.js').'" data-key="'.$environment->browser_key.'" data-release="YOUR_RELEASE" defer></script>')
+                        <x-signal.ui.code-block :code="$browserSnippet" class="whitespace-pre-wrap break-all text-xs" />
+                        <p class="text-xs text-muted">{{ __('Put it in the <head> of every page. Set data-release to the version you deployed, so errors are tied to releases. Report caught errors with window.buildpusherError(error).') }}</p>
+                    @endif
+                    @if ($canManage)
+                        <form method="POST" action="{{ route('monitoring.browser-errors', [$project, $environment->id]) }}" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                            @csrf @method('PUT')
+                            <input type="hidden" name="enabled" value="1">
+                            <x-signal.ui.input-field name="origins" :id="'browser-origins-'.$environment->id" :label="__('Origins (space or comma separated)')" :value="implode(' ', $environment->browser_origins ?? [])" maxlength="2000" placeholder="https://example.com https://www.example.com" :restore="false" />
+                            <x-signal.ui.button type="submit" variant="secondary">{{ $environment->browser_key ? __('Save origins') : __('Turn on') }}</x-signal.ui.button>
+                        </form>
+                        @if ($environment->browser_key)
+                            <form method="POST" action="{{ route('monitoring.browser-errors', [$project, $environment->id]) }}">
+                                @csrf @method('PUT')
+                                <input type="hidden" name="enabled" value="0">
+                                <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Turn off') }}</x-signal.ui.button>
+                            </form>
+                        @endif
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    </x-signal.ui.settings-section>
 </x-signal.layouts.project>

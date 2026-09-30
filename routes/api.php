@@ -33,6 +33,7 @@ use App\Http\Controllers\Docs\ShowOpenApiController;
 use App\Http\Controllers\Monitoring\RecordHeartbeatController;
 use App\Http\Controllers\Monitoring\RecordQueueSnapshotController;
 use App\Http\Controllers\Monitoring\RecordQueueWorkerController;
+use App\Http\Controllers\Telemetry\CollectBrowserErrorsController;
 use App\Http\Controllers\Telemetry\IngestEventsController;
 use App\Http\Controllers\Telemetry\IngestOtlpController;
 use App\Http\Controllers\Telemetry\RecordDeploymentApiController;
@@ -86,6 +87,9 @@ Route::get('/openapi.json', ShowOpenApiController::class)->name('docs.openapi');
 // Public contract from the old Analytics app: the tracker posts here without a token.
 Route::post('/v1/collect/{publicId}', CollectEventsController::class)->middleware('throttle:collect')->where('publicId', '[A-Za-z0-9]+')->name('analytics.collect');
 Route::options('/v1/collect/{publicId}', PreflightCollectController::class)->middleware('throttle:collect')->where('publicId', '[A-Za-z0-9]+');
+
+// Browser errors from customers' pages (/monitoring/browser.js), with the environment's public browser key.
+Route::match(['POST', 'OPTIONS'], '/v1/browser/{key}/errors', CollectBrowserErrorsController::class)->middleware('throttle:collect')->where('key', 'bpb_[A-Za-z0-9]+')->name('api.browser-errors');
 
 // Public contracts from the old Monitor app: each monitor has its own bearer key.
 Route::middleware(['throttle:queue-ingress', AuthenticateQueueToken::class])->group(function (): void {

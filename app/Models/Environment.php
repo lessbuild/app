@@ -50,6 +50,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $desired_replicas
  * @property \Carbon\CarbonImmutable|null $maintenance_at when its websites went into maintenance mode; null while they're up
  * @property string|null $maintenance_secret the path segment that lets the team past maintenance mode (encrypted)
+ * @property string|null $browser_key the public key the browser error script sends with; null when it's off
+ * @property list<string>|null $browser_origins the origins (https://example.com) browser errors are accepted from
  * @property string|null $maintenance_error why the last maintenance mode change failed
  * @property string|null $security_gate the lowest vulnerability severity that stops a deploy: critical or high; null for none
  * @property bool $autoscale_enabled whether replicas follow the servers' CPU
@@ -85,7 +87,7 @@ class Environment extends Model
             'requires_deployment_approval' => 'boolean', 'protected' => 'boolean', 'require_variable_approval' => 'boolean', 'deployment_locked_at' => 'immutable_datetime', 'deployment_window_days' => 'array',
             'rolling_pause_seconds' => 'integer', 'automatic_rollback' => 'boolean', 'post_deployment_observation_minutes' => 'integer', 'rollback_error_rate_percent' => 'integer',
             'container_port' => 'integer', 'minimum_replicas' => 'integer', 'maximum_replicas' => 'integer', 'desired_replicas' => 'integer', 'autoscale_enabled' => 'boolean', 'autoscale_cpu_target' => 'integer', 'autoscaled_at' => 'immutable_datetime', 'maintenance_at' => 'immutable_datetime', 'maintenance_secret' => 'encrypted',
-            'hibernate_after_minutes' => 'integer', 'last_activity_at' => 'immutable_datetime', 'hibernated_at' => 'immutable_datetime', 'recipes_run_on_new_websites' => 'boolean',
+            'hibernate_after_minutes' => 'integer', 'last_activity_at' => 'immutable_datetime', 'hibernated_at' => 'immutable_datetime', 'recipes_run_on_new_websites' => 'boolean', 'browser_origins' => 'array',
         ];
     }
 

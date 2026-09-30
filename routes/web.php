@@ -450,6 +450,7 @@ use App\Http\Controllers\Telemetry\ShowReleasesController;
 use App\Http\Controllers\Telemetry\ShowTelemetrySetupController;
 use App\Http\Controllers\Telemetry\ShowTraceController;
 use App\Http\Controllers\Telemetry\StoreDeploymentController;
+use App\Http\Controllers\Telemetry\UpdateBrowserErrorsController;
 use App\Http\Controllers\Telemetry\UpdateIssueController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -873,6 +874,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/deployments', StoreDeploymentController::class)->middleware(['can:create,App\\Models\\IngestToken,project', 'throttle:60,1'])->name('deployments.store');
             Route::get('/deployments/{deployment}', ShowDeploymentController::class)->whereNumber('deployment')->name('deployments.show');
             Route::get('/setup', ShowTelemetrySetupController::class)->name('setup');
+            Route::put('/environments/{environment}/browser', UpdateBrowserErrorsController::class)->middleware(['can:create,App\\Models\\IngestToken,project', 'throttle:30,1'])->name('browser-errors');
             Route::post('/environments/{environment}/keys', CreateIngestTokenController::class)->middleware(['can:create,App\\Models\\IngestToken,project', 'throttle:30,1'])->name('keys.store');
             Route::post('/keys/{token}/rotate', RotateIngestTokenController::class)->whereNumber('token')->middleware(['can:update,token', 'throttle:30,1'])->name('keys.rotate');
             Route::delete('/keys/{token}', RevokeIngestTokenController::class)->whereNumber('token')->middleware(['can:delete,token', 'throttle:30,1'])->name('keys.revoke');
