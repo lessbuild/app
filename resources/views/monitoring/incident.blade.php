@@ -80,9 +80,9 @@
 
         {{-- Outside the live region, so a refresh never clears what's being typed. --}}
             @if ($canRespond)
-                <x-signal.overlays.form-modal id="postmortem" :title="__('Post-mortem')" :description="__('Blameless and specific: what happened and what changes because of it.')" :action="route('monitoring.incidents.postmortem', [$project, $incident->id])" method="PUT" :submit="__('Save post-mortem')">
+                <x-signal.overlays.form-modal id="postmortem" :title="__('Post-mortem')" :description="$incident->postmortem ? __('Blameless and specific: what happened and what changes because of it.') : __('Drafted from the timeline, the alert and the deploys before it. Check each section and make it yours before saving.')" :action="route('monitoring.incidents.postmortem', [$project, $incident->id])" method="PUT" :submit="__('Save post-mortem')">
                     @foreach ($sections as $key => $heading)
-                        <x-signal.ui.textarea-field :id="'postmortem-'.$key" :name="$key" :label="__($heading)" :value="old($key, $incident->postmortem[$key] ?? null)" rows="3" maxlength="5000"
+                        <x-signal.ui.textarea-field :id="'postmortem-'.$key" :name="$key" :label="__($heading)" :value="old($key, $incident->postmortem[$key] ?? $draft[$key] ?? null)" rows="5" maxlength="5000"
                             :description="match ($key) { 'summary' => __('A few sentences anyone can follow.'), 'impact' => __('Who was affected, how, and for how long.'), 'root_cause' => __('Why it happened, not who.'), 'resolution' => __('What was done to fix it.'), default => __('The changes that stop it happening again, with owners.') }" />
                     @endforeach
                 </x-signal.overlays.form-modal>

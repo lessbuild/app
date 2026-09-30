@@ -248,6 +248,7 @@ return [
             'steps' => [
                 ['Respond', 'Monitoring → Incidents. Acknowledge, assign, and add notes; the timeline records it all.'],
                 ['Escalate', 'Set escalation steps on an alert rule, so someone else is told if nobody responds.'],
+                ['Post-mortems', 'On a resolved incident, choose Write a post-mortem. It starts as a draft built from the incident: how long it lasted, what the check or rule saw, who responded, your notes, and any deploys in the two hours before it opened as leads. Edit each section, save, and publish it to a status page if you like.'],
                 ['Publish a status page', 'Monitoring → Status pages → Create. Choose the monitors to show, post updates, and let people subscribe by email.'],
             ],
         ],

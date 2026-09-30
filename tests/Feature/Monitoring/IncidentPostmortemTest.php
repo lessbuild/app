@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Monitoring;
 
+use App\Models\Deployment;
 use App\Models\Incident;
 use App\Models\Monitor;
 use App\Models\Project;
+use App\Models\Release;
 use App\Models\StatusPage;
 use App\Models\StatusUpdate;
+use App\Services\Monitoring\IncidentSummary;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -58,5 +62,41 @@ final class IncidentPostmortemTest extends TestCase
 
         $other = StatusPage::factory()->create();
         $this->actingAs($owner)->post("{$base}/postmortem/publish", [...$publish, 'status_page_id' => $other->id])->assertNotFound();
+    }
+
+    /**
+     * Check a new post-mortem is drafted from the incident: how long it lasted, what the check saw, the deploy just
+     * before it as a lead, the notes and the timeline, while a written post-mortem is shown instead of a draft.
+     *
+     * @return void
+     */
+    public function test_a_postmortem_is_drafted_from_the_timeline(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-23 12:00', 'UTC'));
+        $project = Project::factory()->withServices(['monitoring'])->create();
+        $owner = $this->ownerOf($project);
+        $environment = $project->environments()->firstOrFail();
+        $monitor = Monitor::factory()->create(['environment_id' => $environment->id, 'name' => 'Checkout API']);
+        Deployment::factory()->create(['environment_id' => $environment->id, 'release_id' => Release::factory()->create(['project_id' => $project->id, 'version' => 'v2.4.0'])->id, 'commit_sha' => 'abcdef1234567', 'deployed_at' => now()->subMinutes(30)]);
+        Deployment::factory()->create(['environment_id' => $environment->id, 'release_id' => Release::factory()->create(['project_id' => $project->id, 'version' => 'v2.3.0'])->id, 'deployed_at' => now()->subDays(2)]);
+        $incident = Incident::factory()->for($monitor)->create(['title' => 'Checkout API is down', 'opened_at' => now()->subMinutes(10), 'rule_snapshot' => $monitor->snapshot()]);
+        $base = "/projects/{$project->id}/monitoring/incidents/{$incident->id}";
+        $this->actingAs($owner)->patch($base, ['action' => 'acknowledge', 'version' => $incident->refresh()->state_version])->assertRedirect();
+        $this->actingAs($owner)->patch($base, ['action' => 'note', 'note' => 'Pool exhausted after the deploy', 'version' => $incident->refresh()->state_version])->assertRedirect();
+        $incident->forceFill(['status' => 'resolved', 'resolved_at' => now()->addMinutes(30), 'closure_reason' => 'recovered', 'active_slot' => null])->save();
+
+        $draft = app(IncidentSummary::class)->draft($incident->refresh());
+        $this->assertStringContainsString('Checkout API is down. It opened on 23 Sep 2026, 11:50 UTC and closed 40 minutes later (recovered).', $draft['summary']);
+        $this->assertStringContainsString('after 10 minutes', $draft['summary']);
+        $this->assertSame('Checkout API was down for 40 minutes; it answered HTTP 503.', $draft['impact']);
+        $this->assertStringContainsString('Release v2.4.0 (abcdef1) went live 20 minutes before it opened.', $draft['root_cause']);
+        $this->assertStringNotContainsString('v2.3.0', $draft['root_cause']);
+        $this->assertStringContainsString('Pool exhausted after the deploy', $draft['root_cause']);
+        $this->assertStringContainsString('Acknowledged ('.$owner->name.')', $draft['resolution']);
+        $this->assertStringContainsString('add a check or test', $draft['follow_ups']);
+
+        $this->actingAs($owner)->get($base)->assertOk()->assertSee('Drafted from the timeline')->assertSee('Release v2.4.0 (abcdef1)');
+        $incident->forceFill(['postmortem' => ['summary' => 'Written by us.']])->save();
+        $this->actingAs($owner)->get($base)->assertOk()->assertSee('Written by us.')->assertDontSee('Drafted from the timeline');
     }
 }

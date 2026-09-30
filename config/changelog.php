@@ -5,6 +5,7 @@ declare(strict_types=1);
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
     ['date' => '2026-10-01', 'title' => 'Monitoring: quieter, clearer alerts', 'changes' => [
+        'Post-mortems start as a draft written from the incident: its length, what the check saw, who responded, your notes, and the deploys just before it as leads.',
         'An alert noise report ranks the rules and monitors that fired most, shows which flap or get ignored, and suggests how to tune them.',
     ]],
     ['date' => '2026-10-01', 'title' => 'Analytics: lighter, and more in your control', 'changes' => [
