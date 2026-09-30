@@ -12,6 +12,25 @@
     <x-signal.ui.page-tabs :tabs="$tabs" :current="$tab" :url="route('deploy.environments.show', [$project, $environment])" />
 
     <x-signal.ui.page-tab-panel name="controls" :current="$tab">
+    @php($regions = $placements->map(fn ($website) => $website->server ? ($website->server->provider->name ?? '?').' · '.($website->server->region ?? '?') : null)->filter()->unique()->values())
+    <x-signal.ui.settings-section id="regions" :title="__('Regions')" :description="__('Where this environment runs: each website it deploys to, and the provider region of its server. Add a website in another region, then connect this environment’s repository to it, to run in more than one.')">
+        <div class="grid gap-3 p-4 sm:p-6">
+            @if ($regions->count() > 1)
+                <x-signal.ui.alert tone="info">{{ trans_choice('Runs in :count regions. Keep each region’s database close to its servers, or requests pay for the distance.|Runs in :count regions. Keep each region’s database close to its servers, or requests pay for the distance.', $regions->count(), ['count' => $regions->count()]) }}</x-signal.ui.alert>
+            @endif
+            <ul class="divide-y divide-line text-sm">
+                @forelse ($placements as $website)
+                    <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+                        <span class="font-bold text-ink">{{ $website->name }}</span>
+                        <span class="text-muted">@if ($website->server){{ $website->server->provider->name ?? __('Imported server') }} · <span class="font-mono">{{ $website->server->region ?? '—' }}</span> · {{ $website->server->label() }}@else{{ __('No server') }}@endif</span>
+                    </li>
+                @empty
+                    <li class="py-2 text-muted">{{ __('Not deployed to a website yet.') }}</li>
+                @endforelse
+            </ul>
+            @if ($canManage)<div><x-signal.ui.button :href="route('infrastructure.websites.create', $project)" variant="secondary" size="sm">{{ __('Add a website in another region') }}</x-signal.ui.button></div>@endif
+        </div>
+    </x-signal.ui.settings-section>
     <x-signal.ui.settings-section id="controls" :title="__('Deployment controls')" :description="__('Lock deploys during an incident or freeze, or allow them only in a weekly window.')">
         <form method="POST" action="{{ route('deploy.environments.controls', [$project, $environment]) }}" class="grid items-start gap-4 p-4 sm:grid-cols-2 sm:p-6">
             @csrf

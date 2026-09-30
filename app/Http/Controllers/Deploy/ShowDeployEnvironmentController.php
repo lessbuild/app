@@ -40,6 +40,7 @@ final class ShowDeployEnvironmentController
             'tab' => PageTabs::current($request->query('tab'), $tabs),
             'overview' => $overview->handle($project, $user),
             'environment' => $environment->load(['variables' => fn ($query) => $query->orderBy('key'), 'processes', 'resources']),
+            'placements' => $environment->deployedWebsites()->load('server.provider'),
             'blockReason' => $environment->deploymentBlockReason(),
             'canManage' => $user->can('configureDeploy', $environment),
             ...$automation->handle($environment),
