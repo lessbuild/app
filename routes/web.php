@@ -1011,6 +1011,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::put('/account/clients/{client}', SaveClientController::class)->whereNumber('client')->middleware(['account.can:update', 'throttle:30,1'])->name('account.clients.update');
     Route::delete('/account/clients/{client}', DeleteClientController::class)->whereNumber('client')->middleware(['account.can:update', 'throttle:30,1'])->name('account.clients.destroy');
     Route::get('/account/clients/{client}/report', ShowClientReportController::class)->whereNumber('client')->middleware('account.can:update')->name('account.clients.report');
+    Route::get('/assistant', App\Http\Controllers\Assistant\ShowAssistantController::class)->name('assistant');
+    Route::post('/assistant', App\Http\Controllers\Assistant\AskAssistantController::class)->middleware('throttle:20,1')->name('assistant.ask');
     Route::get('/account/webhooks', ShowWebhooksController::class)->middleware('account.can:update')->name('account.webhooks');
     Route::post('/account/webhooks', StoreWebhookEndpointController::class)->middleware(['account.can:update', 'throttle:20,1'])->name('account.webhooks.store');
     Route::put('/account/webhooks/{endpoint}', UpdateWebhookEndpointController::class)->whereNumber('endpoint')->middleware(['account.can:update', 'throttle:30,1'])->name('account.webhooks.update');

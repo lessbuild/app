@@ -26,7 +26,7 @@ return [
         ['Deploy → Monitoring and Analytics', 'Every live deploy becomes a release marker: issues and incidents point at the release that caused them, and Analytics reports list it beside the traffic.'],
         ['Infrastructure → Deploy', 'Repositories deploy to the websites and servers you manage here, with backups, domains and load balancers beside them.'],
         ['Monitoring → everyone', 'Alerts, incidents and status pages are shared by every service, with one set of destinations and escalations.'],
-        ['One account', 'Members, roles, single sign-on with SCIM provisioning, white-label client reports, per-service access, API tokens, webhooks, audit history and billing are set once for all five services, and the app speaks English, Spanish, French, German and Portuguese.'],
+        ['One account', 'Members, roles, single sign-on with SCIM provisioning, white-label client reports, per-service access, API tokens, webhooks, audit history and billing are set once for all five services; an assistant answers questions across them, in the app or from your AI tools over MCP; projects, servers, websites and monitors can be managed with Terraform; and the app speaks English, Spanish, French, German and Portuguese.'],
     ],
 
     // One entry per service, laid out like the Signal product pages: a card and explorer panel for the home page's

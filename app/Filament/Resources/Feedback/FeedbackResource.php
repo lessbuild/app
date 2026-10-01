@@ -121,13 +121,13 @@ final class FeedbackResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'problem' => 'danger', 'question' => 'warning', 'praise' => 'success', default => 'info'
                     }),
-                TextColumn::make('message')->label(__('Message'))->wrap()->description(fn (Feedback $record): ?string => $record->page ? __('From :page', ['page' => $record->page]) : null),
+                TextColumn::make('message')->label(__('Message'))->wrap()->description(fn (Feedback $record): ?string => $record->page ? (string) __('From :page', ['page' => $record->page]) : null),
                 TextColumn::make('user.name')->label(__('From'))->placeholder(__('Deleted user'))
                     ->url(fn (Feedback $record): ?string => $record->user ? UserResource::getUrl('view', ['record' => $record->user]) : null)
                     ->description(fn (Feedback $record): ?string => $record->account?->name),
                 TextColumn::make('featureRequest.title')->label(__('On the roadmap'))->placeholder('—')->url(fn (Feedback $record): ?string => $record->featureRequest ? FeatureRequestResource::getUrl() : null),
                 TextColumn::make('created_at')->label(__('Sent'))->since()->sortable()
-                    ->description(fn (Feedback $record): ?string => $record->resolved_at ? __('Resolved by :name :when', ['name' => $record->resolver->name ?? __('someone'), 'when' => $record->resolved_at->diffForHumans()]) : null),
+                    ->description(fn (Feedback $record): ?string => $record->resolved_at ? (string) __('Resolved by :name :when', ['name' => $record->resolver->name ?? __('someone'), 'when' => $record->resolved_at->diffForHumans()]) : null),
             ])
             ->filters([
                 SelectFilter::make('kind')->label(__('Kind'))->options(array_map(__(...), Feedback::KINDS)),

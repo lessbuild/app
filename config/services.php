@@ -47,6 +47,13 @@ return [
         'client_secret' => env('BITBUCKET_CLIENT_SECRET'),
     ],
 
+    // The in-app assistant answers with Claude. Without a key the Ask page explains how to use the MCP endpoint instead.
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-opus-5-5'),
+        'questions_per_day' => (int) env('ASSISTANT_QUESTIONS_PER_DAY', 100),
+    ],
+
     'stripe' => [
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),

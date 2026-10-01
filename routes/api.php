@@ -61,6 +61,9 @@ Route::prefix('scim/v2')->middleware(['scim', 'throttle:120,1'])->name('scim.')-
     Route::get('/Groups', ListScimGroupsController::class)->name('groups.index');
 });
 
+// Model Context Protocol: people's AI tools read the account through the assistant's tools, within the token's scopes.
+Route::post('/mcp', App\Http\Controllers\Api\Mcp\HandleMcpRequestController::class)->middleware(['auth:sanctum', 'token.account', 'throttle:api'])->name('api.mcp');
+
 Route::prefix('v1')->middleware(['auth:sanctum', 'token.account', 'throttle:api'])->group(function (): void {
     Route::get('/account', ShowAccountController::class)->middleware('abilities:account:read')->name('api.v1.account');
 
@@ -96,6 +99,41 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'token.account', 'throttle:api'
         Route::post('/projects/{project}/configuration/reviews/{review}/apply', ApplyConfigurationReviewController::class)->whereNumber('review')->name('api.v1.configuration.apply');
         Route::post('/projects/{project}/configuration/applications/{application}/operations/{operation}/{action}', UpdateConfigurationOperationController::class)
             ->whereNumber(['application', 'operation'])->whereIn('action', ['cancel', 'retry'])->name('api.v1.configuration.operations');
+    });
+});
+
+// The resources API: projects, servers, websites and monitors as resources, for infrastructure as code (Terraform).
+Route::prefix('v2')->middleware(['auth:sanctum', 'token.account', 'throttle:api'])->group(function (): void {
+    Route::middleware('abilities:projects:read')->group(function (): void {
+        Route::get('/projects', App\Http\Controllers\Api\V2\ListProjectsController::class)->name('api.v2.projects');
+        Route::get('/projects/{projectId}', App\Http\Controllers\Api\V2\ShowProjectController::class)->name('api.v2.projects.show');
+    });
+    Route::middleware('abilities:projects:write')->group(function (): void {
+        Route::post('/projects', App\Http\Controllers\Api\V2\StoreProjectController::class)->name('api.v2.projects.store');
+        Route::put('/projects/{projectId}', App\Http\Controllers\Api\V2\UpdateProjectController::class)->name('api.v2.projects.update');
+        Route::delete('/projects/{projectId}', App\Http\Controllers\Api\V2\DestroyProjectController::class)->name('api.v2.projects.destroy');
+    });
+    Route::middleware('abilities:infrastructure:read')->group(function (): void {
+        Route::get('/servers', App\Http\Controllers\Api\V2\ListServersController::class)->name('api.v2.servers');
+        Route::get('/servers/{serverId}', App\Http\Controllers\Api\V2\ShowServerController::class)->whereNumber('serverId')->name('api.v2.servers.show');
+        Route::get('/websites', App\Http\Controllers\Api\V2\ListWebsitesController::class)->name('api.v2.websites');
+        Route::get('/websites/{websiteId}', App\Http\Controllers\Api\V2\ShowWebsiteController::class)->whereNumber('websiteId')->name('api.v2.websites.show');
+    });
+    Route::middleware('abilities:infrastructure:write')->group(function (): void {
+        Route::post('/servers', App\Http\Controllers\Api\V2\StoreServerController::class)->name('api.v2.servers.store');
+        Route::delete('/servers/{serverId}', App\Http\Controllers\Api\V2\DestroyServerController::class)->whereNumber('serverId')->name('api.v2.servers.destroy');
+        Route::post('/websites', App\Http\Controllers\Api\V2\StoreWebsiteController::class)->name('api.v2.websites.store');
+        Route::put('/websites/{websiteId}', App\Http\Controllers\Api\V2\UpdateWebsiteController::class)->whereNumber('websiteId')->name('api.v2.websites.update');
+        Route::delete('/websites/{websiteId}', App\Http\Controllers\Api\V2\DestroyWebsiteController::class)->whereNumber('websiteId')->name('api.v2.websites.destroy');
+    });
+    Route::middleware('abilities:monitoring:read')->group(function (): void {
+        Route::get('/projects/{projectId}/monitors', App\Http\Controllers\Api\V2\ListMonitorsController::class)->name('api.v2.monitors');
+        Route::get('/projects/{projectId}/monitors/{monitorId}', App\Http\Controllers\Api\V2\ShowMonitorController::class)->whereNumber('monitorId')->name('api.v2.monitors.show');
+    });
+    Route::middleware('abilities:monitoring:write')->group(function (): void {
+        Route::post('/projects/{projectId}/monitors', App\Http\Controllers\Api\V2\StoreMonitorController::class)->name('api.v2.monitors.store');
+        Route::put('/projects/{projectId}/monitors/{monitorId}', App\Http\Controllers\Api\V2\UpdateMonitorController::class)->whereNumber('monitorId')->name('api.v2.monitors.update');
+        Route::delete('/projects/{projectId}/monitors/{monitorId}', App\Http\Controllers\Api\V2\DestroyMonitorController::class)->whereNumber('monitorId')->name('api.v2.monitors.destroy');
     });
 });
 

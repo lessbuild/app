@@ -112,7 +112,7 @@ final class AccessRequestResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'invited' => 'info', 'accepted' => 'success', 'declined' => 'gray', 'contacted' => 'warning', default => 'primary'
                     })
-                    ->description(fn (AccessRequest $record): ?string => $record->reviewed_at ? __('by :name :when', ['name' => $record->reviewer->name ?? __('someone'), 'when' => $record->reviewed_at->diffForHumans()]) : null),
+                    ->description(fn (AccessRequest $record): ?string => $record->reviewed_at ? (string) __('by :name :when', ['name' => $record->reviewer->name ?? __('someone'), 'when' => $record->reviewed_at->diffForHumans()]) : null),
                 TextColumn::make('created_at')->label(__('Asked'))->since()->sortable(),
             ])
             ->recordActions([

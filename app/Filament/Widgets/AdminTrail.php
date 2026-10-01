@@ -30,7 +30,7 @@ final class AdminTrail extends TableWidget
     /**
      * It spans the dashboard's width.
      *
-     * @var int|string|array<string, int|string|null>
+     * @var int|string|array<string, int|null>
      */
     protected int|string|array $columnSpan = 'full';
 

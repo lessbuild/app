@@ -70,6 +70,8 @@ return [
                 ['Create a token', 'Account → API tokens → Create an API token. Choose only the abilities it needs and an expiry date. The token is shown once, so copy it straight away.'],
                 ['Call the API', 'Send it as a bearer token. The API reference lists every endpoint, and the OpenAPI document can generate a client for you.'],
                 ['Old scripts', 'Deployer API v1 scripts keep working unchanged, including old numeric IDs.'],
+                ['Resources', 'The resources API (/api/v2) creates, reads, changes and deletes projects (with their services), servers, websites and monitors. Servers and websites answer at once and set up in the background; read them until their status is active or failed.'],
+                ['Terraform', 'The BuildPusher Terraform provider manages projects, servers, websites and monitors as code with the resources API. Give its token projects, infrastructure and monitoring read and write scopes, set BUILDPUSHER_TOKEN, and declare buildpusher_project, buildpusher_server, buildpusher_website and buildpusher_monitor resources; existing ones can be imported by ID.'],
             ],
         ],
         'agencies' => [
@@ -82,6 +84,17 @@ return [
                 ['Monthly reports', 'On the 1st, each client gets last month’s uptime, incidents, releases and visitors for their projects, with what they cost including your markup, sent in your name.'],
                 ['Pass costs on', 'Download costs by client gives a CSV of each client’s projects with your plan share and server costs, marked up, ready for your invoices.'],
                 ['Give clients access', 'To let a client look around, invite them as a Viewer on the Members page and limit them to their projects.'],
+            ],
+        ],
+        'assistant' => [
+            'group' => 'platform',
+            'title' => 'Ask the assistant',
+            'summary' => 'Ask about deploys, errors, checks, incidents, Analytics and servers in plain language, in the app or from your AI tools.',
+            'steps' => [
+                ['Ask in the app', 'Open Ask from the account menu and type a question, such as “why did errors go up after the last deploy?” or “which pages lost visitors this week?”. It looks at your deploys and their before-and-after numbers, error issues, uptime checks, incidents, Analytics and servers, and answers with the figures it used. Ask follow-ups in the same conversation; conversations are kept for 30 days.'],
+                ['What it can see', 'Only what you can see yourself: projects you can open and services your membership includes. It reads; it never changes anything.'],
+                ['From your AI tools', 'Connect Claude, Cursor or another tool that speaks the Model Context Protocol to the MCP address on the Ask page, with an API token (Account → API tokens) as the bearer token. Give the token the read scopes for what it should see: projects:read, deploy:read, monitoring:read, analytics:read and infrastructure:read.'],
+                ['Limits', 'Each account can ask a set number of questions a day in the app. The MCP address follows the API’s rate limits.'],
             ],
         ],
         'webhooks' => [

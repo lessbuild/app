@@ -185,7 +185,10 @@ final class ShellComposer
      */
     private function accountLinks(User $user, Account $account): array
     {
-        $links = [new NavLink(__('Members'), route('account.members'), $this->request->routeIs('account.members'), 'user')];
+        $links = [
+            new NavLink(__('Ask'), route('assistant'), $this->request->routeIs('assistant*'), 'information-circle'),
+            new NavLink(__('Members'), route('account.members'), $this->request->routeIs('account.members'), 'user'),
+        ];
         if ($user->can('manageApiTokens', $account)) {
             $links[] = new NavLink(__('API tokens'), route('account.api-tokens'), $this->request->routeIs('account.api-tokens'), 'key');
         }

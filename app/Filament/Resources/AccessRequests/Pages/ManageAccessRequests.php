@@ -8,7 +8,6 @@ use App\Filament\Resources\AccessRequests\AccessRequestResource;
 use App\Models\AccessRequest;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Schemas\Components\Tabs\Tab;
-use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 
 final class ManageAccessRequests extends ManageRecords
@@ -23,13 +22,13 @@ final class ManageAccessRequests extends ManageRecords
     /**
      * Say whether registration is open, which decides whether requests still come in.
      *
-     * @return string|Htmlable|null
+     * @return string
      */
-    public function getSubheading(): string|Htmlable|null
+    public function getSubheading(): string
     {
-        return config('platform.registration.open')
+        return (string) (config('platform.registration.open')
             ? __('Registration is open (REGISTRATION_OPEN), so new requests only come from the old form.')
-            : __('Registration is by invitation. Inviting someone emails them a one-time sign-up link.');
+            : __('Registration is by invitation. Inviting someone emails them a one-time sign-up link.'));
     }
 
     /**

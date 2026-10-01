@@ -58,7 +58,7 @@ final class PublishBuildArtifact implements ShouldQueue
             return;
         }
         $server = $build->website->server ?? throw new RuntimeException('The website has no server.');
-        $bucket = $build->environment?->artifactBucket ?? throw new RuntimeException('The environment no longer has a storage bucket for builds.');
+        $bucket = $build->environment->artifactBucket ?? throw new RuntimeException('The environment no longer has a storage bucket for builds.');
         $process = $runner->start($server, $script->renderRelease($build, $buildServers->downloadUrl($bucket, (string) $build->artifact_key)), "lessbuild-deployment-{$build->id}");
         Build::query()->whereKey($build->id)->where('status', Build::STATUS_RUNNING)
             ->update(['remote_process_id' => $process['id'], 'remote_process_path' => $process['path'], 'last_heartbeat_at' => now()]);

@@ -15,6 +15,10 @@ tags:
   - name: Monitoring
   - name: Analytics
   - name: Webhooks
+  - name: Resources
+    description: Projects, servers, websites and monitors as resources, for infrastructure as code such as the Terraform provider. Servers and websites are set up in the background; poll them until their status is active or failed.
+  - name: Assistant
+    description: A Model Context Protocol server for AI tools such as Claude and Cursor. Its read-only tools only return what the token's scopes and the person's access allow.
   - name: SCIM
     description: SCIM 2.0 user provisioning for Okta and Microsoft Entra ID. Responses are application/scim+json.
 components:
@@ -708,6 +712,269 @@ paths:
         '403': { description: "The origin isn't allowed for the environment." }
         '404': { description: "Unknown key." }
         '422': { $ref: '#/components/responses/Invalid' }
+  /v2/projects:
+    get:
+      tags: [Resources]
+      summary: List projects
+      security: [{ apiToken: [projects:read] }]
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Resources]
+      summary: Create a project with its services
+      security: [{ apiToken: [projects:write] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [name], properties: { name: { type: string }, description: { type: [string, 'null'] }, services: { type: array, items: { type: string, enum: [deploy, infrastructure, monitoring, security, analytics] }, description: 'The services that should be on; on update, omitted means unchanged.' } } }
+      responses:
+        '201': { description: "Created." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v2/projects/{projectId}:
+    get:
+      tags: [Resources]
+      summary: Show a project
+      security: [{ apiToken: [projects:read] }]
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Resources]
+      summary: Change a project and its services
+      security: [{ apiToken: [projects:write] }]
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [name], properties: { name: { type: string }, description: { type: [string, 'null'] }, services: { type: array, items: { type: string, enum: [deploy, infrastructure, monitoring, security, analytics] }, description: 'The services that should be on; on update, omitted means unchanged.' } } }
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Invalid' }
+    delete:
+      tags: [Resources]
+      summary: Delete a project
+      security: [{ apiToken: [projects:write] }]
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { description: "Deleted." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v2/projects/{projectId}/monitors:
+    get:
+      tags: [Resources]
+      summary: List a project's monitors
+      security: [{ apiToken: [monitoring:read] }]
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Resources]
+      summary: Create a monitor
+      security: [{ apiToken: [monitoring:write] }]
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [name, environment_id, enabled], properties: { name: { type: string }, environment_id: { type: string }, check_type: { type: string, enum: [http, dns, tls, tcp, flow, heartbeat, queue] }, request_url: { type: string }, method: { type: string, enum: [GET, HEAD] }, status_min: { type: integer }, status_max: { type: integer }, hostname: { type: string }, timeout_seconds: { type: integer }, interval_minutes: { type: integer }, trigger_checks: { type: integer }, recovery_checks: { type: integer }, enabled: { type: boolean }, version: { type: integer, description: 'On update, the version read; omitted uses the current one.' } }, description: 'The same fields as the monitor form for each check type.' }
+      responses:
+        '201': { description: "Created." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v2/projects/{projectId}/monitors/{monitorId}:
+    get:
+      tags: [Resources]
+      summary: Show a monitor
+      security: [{ apiToken: [monitoring:read] }]
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+        - { name: monitorId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Resources]
+      summary: Change a monitor
+      security: [{ apiToken: [monitoring:write] }]
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+        - { name: monitorId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [name, environment_id, enabled], properties: { name: { type: string }, environment_id: { type: string }, check_type: { type: string, enum: [http, dns, tls, tcp, flow, heartbeat, queue] }, request_url: { type: string }, method: { type: string, enum: [GET, HEAD] }, status_min: { type: integer }, status_max: { type: integer }, hostname: { type: string }, timeout_seconds: { type: integer }, interval_minutes: { type: integer }, trigger_checks: { type: integer }, recovery_checks: { type: integer }, enabled: { type: boolean }, version: { type: integer, description: 'On update, the version read; omitted uses the current one.' } }, description: 'The same fields as the monitor form for each check type.' }
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Invalid' }
+    delete:
+      tags: [Resources]
+      summary: Archive a monitor
+      security: [{ apiToken: [monitoring:write] }]
+      parameters:
+        - { name: projectId, in: path, required: true, schema: { type: string } }
+        - { name: monitorId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '204': { description: "Deleted." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v2/servers:
+    get:
+      tags: [Resources]
+      summary: List servers
+      security: [{ apiToken: [infrastructure:read] }]
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Resources]
+      summary: Create a server in one of the account's cloud providers
+      security: [{ apiToken: [infrastructure:write] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [provider_id, type, name, region, size, image], properties: { provider_id: { type: integer }, type: { type: string, enum: [app, web, worker, cache, database, load-balancer] }, database_engine: { type: [string, 'null'], enum: [mysql, postgres, null] }, name: { type: string }, region: { type: string }, size: { type: string }, image: { type: string }, recipe_ids: { type: array, items: { type: integer } } } }
+      responses:
+        '201': { description: "Created." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v2/servers/{serverId}:
+    get:
+      tags: [Resources]
+      summary: Show a server and its status
+      security: [{ apiToken: [infrastructure:read] }]
+      parameters:
+        - { name: serverId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Resources]
+      summary: Delete a server, at the provider too
+      security: [{ apiToken: [infrastructure:write] }]
+      parameters:
+        - { name: serverId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '204': { description: "Deleted." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v2/websites:
+    get:
+      tags: [Resources]
+      summary: List websites
+      security: [{ apiToken: [infrastructure:read] }]
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Resources]
+      summary: Create a website on an app server
+      security: [{ apiToken: [infrastructure:write] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [name, server_id, url], properties: { name: { type: string }, server_id: { type: integer }, url: { type: string }, description: { type: [string, 'null'] }, environment_id: { type: [string, 'null'] }, env_file: { type: [string, 'null'] }, release_retention: { type: integer }, health_check_enabled: { type: boolean }, health_check_path: { type: string }, health_monitoring_enabled: { type: boolean }, self_healing: { type: boolean } } }
+      responses:
+        '201': { description: "Created." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v2/websites/{websiteId}:
+    get:
+      tags: [Resources]
+      summary: Show a website and its status
+      security: [{ apiToken: [infrastructure:read] }]
+      parameters:
+        - { name: websiteId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Resources]
+      summary: Change a website
+      security: [{ apiToken: [infrastructure:write] }]
+      parameters:
+        - { name: websiteId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [name, server_id, url], properties: { name: { type: string }, server_id: { type: integer }, url: { type: string }, description: { type: [string, 'null'] }, environment_id: { type: [string, 'null'] }, env_file: { type: [string, 'null'] }, release_retention: { type: integer }, health_check_enabled: { type: boolean }, health_check_path: { type: string }, health_monitoring_enabled: { type: boolean }, self_healing: { type: boolean } } }
+      responses:
+        '200': { description: "The resource." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Invalid' }
+    delete:
+      tags: [Resources]
+      summary: Delete a website
+      security: [{ apiToken: [infrastructure:write] }]
+      parameters:
+        - { name: websiteId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '204': { description: "Deleted." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /mcp:
+    post:
+      tags: [Assistant]
+      summary: Model Context Protocol (JSON-RPC 2.0) for AI tools
+      description: >-
+        Send one JSON-RPC message per request: initialize, ping, tools/list or tools/call. Tools: list_projects
+        (projects:read), recent_deploys (deploy:read), deploy_impact, error_issues, monitors and incidents
+        (monitoring:read), list_analytics_sites and analytics_summary (analytics:read), servers (infrastructure:read).
+        tools/list only lists the tools the token's scopes allow. Notifications are accepted with 202.
+      security: [{ apiToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [jsonrpc, method], properties: { jsonrpc: { type: string, enum: ['2.0'] }, id: {}, method: { type: string }, params: { type: object } } }
+      responses:
+        '200': { description: "A JSON-RPC result or error." }
+        '202': { description: "A notification was received." }
+        '401': { description: "Missing or invalid token." }
   /scim/v2/ServiceProviderConfig:
     get:
       tags: [SCIM]
