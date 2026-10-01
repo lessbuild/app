@@ -15,6 +15,8 @@ tags:
   - name: Monitoring
   - name: Analytics
   - name: Webhooks
+  - name: SCIM
+    description: SCIM 2.0 user provisioning for Okta and Microsoft Entra ID. Responses are application/scim+json.
 components:
   securitySchemes:
     apiToken:
@@ -29,6 +31,10 @@ components:
       type: http
       scheme: bearer
       description: A heartbeat or queue monitor's own key.
+    scimToken:
+      type: http
+      scheme: bearer
+      description: The account's SCIM token (Account → Security → SCIM provisioning).
   parameters:
     project:
       name: project
@@ -678,6 +684,118 @@ paths:
         '202': { description: "Accepted." }
         '403': { description: "The origin isn't registered for the site." }
         '422': { $ref: '#/components/responses/Invalid' }
+  /v1/browser/{key}/errors:
+    options:
+      tags: [Monitoring]
+      summary: CORS preflight for the browser error script
+      security: []
+      parameters: [{ name: key, in: path, required: true, schema: { type: string } }]
+      responses:
+        '204': { description: "The origin is allowed." }
+        '403': { description: "The origin isn't allowed for the environment." }
+    post:
+      tags: [Monitoring]
+      summary: JavaScript errors from visitors' browsers (/monitoring/browser.js)
+      security: []
+      parameters: [{ name: key, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '202': { description: "Accepted." }
+        '403': { description: "The origin isn't allowed for the environment." }
+        '404': { description: "Unknown key." }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /scim/v2/ServiceProviderConfig:
+    get:
+      tags: [SCIM]
+      summary: What the SCIM service supports
+      security: [{ scimToken: [] }]
+      responses:
+        '200': { description: "The service provider configuration." }
+        '401': { description: "Missing or invalid SCIM token." }
+  /scim/v2/Users:
+    get:
+      tags: [SCIM]
+      summary: List provisioned people, filtered by userName eq or externalId eq
+      security: [{ scimToken: [] }]
+      parameters:
+        - { name: filter, in: query, schema: { type: string } }
+        - { name: startIndex, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: count, in: query, schema: { type: integer, maximum: 200 } }
+      responses:
+        '200': { description: "A ListResponse." }
+        '400': { description: "Unsupported filter." }
+        '401': { description: "Missing or invalid SCIM token." }
+    post:
+      tags: [SCIM]
+      summary: Provision someone (userName is their email address)
+      security: [{ scimToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema: { type: object }
+      responses:
+        '201': { description: "The new User." }
+        '400': { description: "userName isn't an email address, or its domain isn't allowed." }
+        '403': { description: "The account's member limit is reached." }
+        '409': { description: "Already provisioned." }
+  /scim/v2/Users/{id}:
+    get:
+      tags: [SCIM]
+      summary: One provisioned person
+      security: [{ scimToken: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: "The User." }
+        '404': { description: "No such user." }
+    put:
+      tags: [SCIM]
+      summary: Replace a person (active false removes their membership)
+      security: [{ scimToken: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema: { type: object }
+      responses:
+        '200': { description: "The User." }
+        '404': { description: "No such user." }
+        '409': { description: "The last owner can't be removed." }
+    patch:
+      tags: [SCIM]
+      summary: Change a person with PatchOp operations (active, externalId)
+      security: [{ scimToken: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema: { type: object }
+      responses:
+        '200': { description: "The User." }
+        '404': { description: "No such user." }
+        '409': { description: "The last owner can't be removed." }
+    delete:
+      tags: [SCIM]
+      summary: Deprovision a person
+      security: [{ scimToken: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '204': { description: "Removed." }
+        '404': { description: "No such user." }
+        '409': { description: "The last owner can't be removed." }
+  /scim/v2/Groups:
+    get:
+      tags: [SCIM]
+      summary: Groups (always empty; roles are set in the app)
+      security: [{ scimToken: [] }]
+      responses:
+        '200': { description: "An empty ListResponse." }
   /repositories/{repository}/webhook:
     post:
       tags: [Webhooks]

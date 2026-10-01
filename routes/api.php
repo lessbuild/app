@@ -33,6 +33,13 @@ use App\Http\Controllers\Docs\ShowOpenApiController;
 use App\Http\Controllers\Monitoring\RecordHeartbeatController;
 use App\Http\Controllers\Monitoring\RecordQueueSnapshotController;
 use App\Http\Controllers\Monitoring\RecordQueueWorkerController;
+use App\Http\Controllers\Scim\DeleteScimUserController;
+use App\Http\Controllers\Scim\ListScimGroupsController;
+use App\Http\Controllers\Scim\ListScimUsersController;
+use App\Http\Controllers\Scim\ShowScimConfigController;
+use App\Http\Controllers\Scim\ShowScimUserController;
+use App\Http\Controllers\Scim\StoreScimUserController;
+use App\Http\Controllers\Scim\UpdateScimUserController;
 use App\Http\Controllers\Telemetry\CollectBrowserErrorsController;
 use App\Http\Controllers\Telemetry\IngestEventsController;
 use App\Http\Controllers\Telemetry\IngestOtlpController;
@@ -43,6 +50,17 @@ use App\Http\Middleware\AuthenticateQueueToken;
 use Illuminate\Support\Facades\Route;
 
 // Token API. Every route needs a token (auth:sanctum), resolves the token's account and checks scopes.
+// SCIM 2.0 provisioning (Okta, Microsoft Entra ID): the account's SCIM token authenticates.
+Route::prefix('scim/v2')->middleware(['scim', 'throttle:120,1'])->name('scim.')->group(function (): void {
+    Route::get('/ServiceProviderConfig', ShowScimConfigController::class)->name('config');
+    Route::get('/Users', ListScimUsersController::class)->name('users.index');
+    Route::post('/Users', StoreScimUserController::class)->name('users.store');
+    Route::get('/Users/{id}', ShowScimUserController::class)->name('users.show');
+    Route::match(['put', 'patch'], '/Users/{id}', UpdateScimUserController::class)->name('users.update');
+    Route::delete('/Users/{id}', DeleteScimUserController::class)->name('users.destroy');
+    Route::get('/Groups', ListScimGroupsController::class)->name('groups.index');
+});
+
 Route::prefix('v1')->middleware(['auth:sanctum', 'token.account', 'throttle:api'])->group(function (): void {
     Route::get('/account', ShowAccountController::class)->middleware('abilities:account:read')->name('api.v1.account');
 

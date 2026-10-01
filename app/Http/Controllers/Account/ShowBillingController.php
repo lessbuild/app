@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Models\BillingAccount;
 use App\Models\User;
 use App\Queries\Billing\BillingOverviewQuery;
+use App\Queries\Billing\CostViewQuery;
 use App\Queries\Billing\InvoicesQuery;
 use App\Services\Billing\Referrals;
 use Illuminate\Container\Attributes\CurrentUser;
@@ -25,10 +26,11 @@ final class ShowBillingController
      * @param  User  $user
      * @param  BillingOverviewQuery  $overview
      * @param  InvoicesQuery  $invoices
+     * @param  CostViewQuery  $costs
      * @param  Referrals  $referrals
      * @return View
      */
-    public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, BillingOverviewQuery $overview, InvoicesQuery $invoices, Referrals $referrals): View
+    public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, BillingOverviewQuery $overview, InvoicesQuery $invoices, CostViewQuery $costs, Referrals $referrals): View
     {
         $summary = $overview->handle($account);
         // One tab for the account's plan as a whole, one per service, and one for invoices and referrals.
@@ -36,6 +38,7 @@ final class ShowBillingController
         foreach ($summary->services as $service) {
             $tabs[$service->key] = $service->name;
         }
+        $tabs['costs'] = __('Costs by project');
         $tabs['invoices'] = __('Invoices');
         $tab = is_string($request->query('tab')) && isset($tabs[$request->query('tab')]) ? $request->query('tab') : 'overview';
 
@@ -45,6 +48,7 @@ final class ShowBillingController
             'tabs' => $tabs,
             'tab' => $tab,
             'invoices' => $invoices->handle($account),
+            'costs' => $costs->handle($account, $summary),
             'canManage' => $user->can('manageBilling', $account),
             'checkout' => $request->query('checkout'),
             'referrals' => $referrals->summary($account),

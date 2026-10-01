@@ -31,6 +31,7 @@ use App\Listeners\NotificationSubscriber;
 use App\Listeners\OnboardingSubscriber;
 use App\Listeners\PreviewWebsiteSubscriber;
 use App\Listeners\SshAccessSubscriber;
+use App\Listeners\WebhookSubscriber;
 use App\Models\ApiToken;
 use App\Services\Admin\FeatureFlags;
 use App\Services\Analytics\DbIpCountryLookup;
@@ -102,8 +103,10 @@ class AppServiceProvider extends ServiceProvider
         Event::subscribe(PreviewWebsiteSubscriber::class);
         Event::subscribe(EnvironmentRecipeSubscriber::class);
         Event::subscribe(CdnPurgeSubscriber::class);
+        Event::subscribe(WebhookSubscriber::class);
         Event::subscribe(DeployPipelineSubscriber::class);
         View::composer('components.signal.layouts.app', ShellComposer::class);
+        View::composer(['status-pages.show', 'status-pages.month', 'analytics.shared'], \App\Http\View\BrandingComposer::class);
 
         Sanctum::usePersonalAccessTokenModel(ApiToken::class);
 

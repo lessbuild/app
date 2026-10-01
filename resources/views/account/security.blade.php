@@ -60,4 +60,34 @@
             </form>
         </div>
     </x-signal.ui.settings-section>
+    <x-signal.ui.settings-section id="scim" :title="__('SCIM provisioning')" :description="__('Let Okta or Microsoft Entra ID add people when they’re assigned the app and remove them when they’re unassigned or leave. Use it with single sign-on so new people can sign in.')">
+        <div class="grid gap-5 p-4 sm:p-6">
+            @if (is_string(session('scim_token')))
+                <x-signal.ui.alert tone="warning">{{ __('Copy this token now; it isn’t shown again.') }}</x-signal.ui.alert>
+                <x-signal.ui.code-block :code="session('scim_token')" class="break-all whitespace-pre-wrap" />
+            @endif
+            <div class="grid gap-2 rounded-lg border border-line p-4 text-sm">
+                <p><span class="font-semibold text-ink">{{ __('SCIM base URL') }}</span><span class="mt-1 block break-all font-mono text-xs text-muted">{{ url('/api/scim/v2') }}</span></p>
+                <p class="text-xs text-muted">{{ __('Authentication: HTTP header (bearer token). Unique identifier: userName, the person’s email address. Supported: creating, updating, deactivating and deleting users. Roles are set here, not in groups.') }}</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <x-signal.ui.badge :tone="$account->scim_token_hash ? 'success' : 'neutral'">{{ $account->scim_token_hash ? __('On') : __('Off') }}</x-signal.ui.badge>
+                <form method="POST" action="{{ route('account.security.scim') }}">@csrf @method('PUT')<input type="hidden" name="change" value="token"><x-signal.ui.button type="submit" variant="secondary" size="sm">{{ $account->scim_token_hash ? __('Replace the token') : __('Turn on and create a token') }}</x-signal.ui.button></form>
+                @if ($account->scim_token_hash)
+                    <form method="POST" action="{{ route('account.security.scim') }}">@csrf @method('PUT')<input type="hidden" name="change" value="off"><x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Turn off') }}</x-signal.ui.button></form>
+                @endif
+            </div>
+            <form method="POST" action="{{ route('account.security.scim') }}" class="flex flex-wrap items-end gap-3">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="change" value="role">
+                <x-signal.ui.select-field id="scim-default-role" name="scim_default_role" :label="__('New people join as')">
+                    @foreach (['viewer' => __('Viewer'), 'member' => __('Member'), 'admin' => __('Admin')] as $value => $label)
+                        <option value="{{ $value }}" @selected($account->scim_default_role === $value)>{{ $label }}</option>
+                    @endforeach
+                </x-signal.ui.select-field>
+                <x-signal.ui.button type="submit" variant="secondary">{{ __('Save') }}</x-signal.ui.button>
+            </form>
+        </div>
+    </x-signal.ui.settings-section>
 </x-signal.layouts.account>

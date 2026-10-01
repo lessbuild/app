@@ -486,6 +486,10 @@ Artisan::command('providers:sync-bills', function (App\Services\Infrastructure\C
         });
     $this->info("Stored {$months} months of cloud bills.");
 })->purpose('Import what cloud providers actually charged');
+Artisan::command('clients:send-reports', function (App\Actions\Agency\SendClientReports $send): void {
+    $this->info('Sent reports to '.$send->handle().' clients.');
+})->purpose('Email clients last month’s report');
+Schedule::command('clients:send-reports')->monthlyOn(1, '07:00')->withoutOverlapping(60)->onOneServer();
 Schedule::command('providers:sync-bills')->dailyAt('05:40')->withoutOverlapping(60)->onOneServer();
 
 Artisan::command('builds:reap', function (FinishBuild $finish): int {

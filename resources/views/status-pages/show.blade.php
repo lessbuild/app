@@ -1,16 +1,20 @@
 @php($tone = fn (string $state): string => match ($state) { 'operational' => 'success', 'major_outage' => 'danger', 'maintenance' => 'info', default => 'warning' })
 
 <x-signal.layouts.base :title="$page->name" :description="$page->description ?: __('Live service status and recent incident history.')" indexable :canonical="$page->publicUrl()">
-    <main id="main-content" tabindex="-1" class="mx-auto grid max-w-4xl gap-6 px-4 py-10 sm:px-8 sm:py-14">
+    <main id="main-content" tabindex="-1" class="mx-auto grid max-w-4xl gap-6 px-4 py-10 sm:px-8 sm:py-14" @if ($branding['color'] ?? null) style="--ui-primary: {{ $branding['color'] }}" @endif>
         <header class="flex items-start justify-between gap-4">
             <div class="min-w-0">
-                <p class="ui-eyebrow">{{ $page->account->name }}</p>
+                <p class="ui-eyebrow">{{ $branding['name'] ?? $page->account->name }}</p>
                 <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">{{ $page->name }}</h1>
                 @if ($page->description)
                     <p class="mt-3 max-w-2xl whitespace-pre-line text-sm leading-6 text-muted">{{ $page->description }}</p>
                 @endif
             </div>
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-ink text-surface" aria-hidden="true">↗</span>
+            @if ($branding)
+                <x-signal.ui.brand :branding="$branding" class="shrink-0" />
+            @else
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-ink text-surface" aria-hidden="true">↗</span>
+            @endif
         </header>
 
         @if (session('status'))
@@ -170,7 +174,7 @@
         @endif
 
         <footer class="flex flex-wrap justify-between gap-3 text-xs text-muted">
-            <span>{{ __('Powered by :app', ['app' => config('app.name')]) }}</span>
+            <span>@unless ($branding){{ __('Powered by :app', ['app' => config('app.name')]) }}@endunless</span>
             <span class="flex gap-3">
                 <a href="{{ route('status.month', [$page->slug, now('UTC')->format('Y-m')]) }}" class="hover:underline">{{ __('Monthly uptime') }}</a>
                 <a href="{{ route('status.report', $page->slug) }}" class="hover:underline">{{ __('JSON') }}</a>

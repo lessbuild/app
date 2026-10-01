@@ -26,7 +26,7 @@ return [
         ['Deploy → Monitoring and Analytics', 'Every live deploy becomes a release marker: issues and incidents point at the release that caused them, and Analytics reports list it beside the traffic.'],
         ['Infrastructure → Deploy', 'Repositories deploy to the websites and servers you manage here, with backups, domains and load balancers beside them.'],
         ['Monitoring → everyone', 'Alerts, incidents and status pages are shared by every service, with one set of destinations and escalations.'],
-        ['One account', 'Members, roles, per-service access, API tokens, audit history and billing are set once for all five services.'],
+        ['One account', 'Members, roles, single sign-on with SCIM provisioning, white-label client reports, per-service access, API tokens, webhooks, audit history and billing are set once for all five services.'],
     ],
 
     // One entry per service, laid out like the Signal product pages: a card and explorer panel for the home page's

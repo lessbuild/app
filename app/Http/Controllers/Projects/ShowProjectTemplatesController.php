@@ -10,6 +10,7 @@ use App\Http\Attributes\CurrentAccount;
 use App\Models\Account;
 use App\Models\Provider;
 use App\Models\Server;
+use App\Services\Projects\ProjectTemplates;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -20,11 +21,12 @@ final class ShowProjectTemplatesController
      *
      * @param  Account  $account
      * @param  Request  $request
+     * @param  ProjectTemplates  $registry
      * @return View
      */
-    public function __invoke(#[CurrentAccount] Account $account, Request $request): View
+    public function __invoke(#[CurrentAccount] Account $account, Request $request, ProjectTemplates $registry): View
     {
-        $templates = (array) config('templates');
+        $templates = $registry->all($account->id);
         $chosen = is_string($request->query('template')) && isset($templates[$request->query('template')]) ? $request->query('template') : null;
 
         return view('projects.templates', [

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Projects;
 
+use App\Models\User;
 use App\Rules\Hostname;
+use App\Services\Projects\ProjectTemplates;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +22,14 @@ final class ProjectTemplateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'template' => ['required', Rule::in(array_keys((array) config('templates')))],
+            // Built-in, or saved in the person's current account.
+            'template' => ['required', 'string', 'max:40', function (string $attribute, mixed $value, Closure $fail): void {
+                $user = $this->user();
+                $accountId = $user instanceof User ? $user->current_account_id : null;
+                if (! is_string($value) || ! is_string($accountId) || app(ProjectTemplates::class)->find($accountId, $value) === null) {
+                    $fail(__('Choose one of the templates.'));
+                }
+            }],
             'name' => ['required', 'string', 'max:100'],
             'server_id' => ['required', 'integer', 'min:1'],
             'domain' => ['required', 'string', 'max:255', new Hostname, Rule::unique('websites', 'url'), Rule::unique('website_domains', 'hostname')],

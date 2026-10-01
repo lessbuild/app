@@ -56,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'service' => EnsureServiceEnabled::class,
             'ingest.token' => AuthenticateIngestToken::class,
             'platform.admin' => EnsurePlatformAdmin::class,
+            'scim' => App\Http\Middleware\AuthenticateScim::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -63,6 +64,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->report(function (Throwable $exception): void {
             app(App\Services\Admin\SelfMonitoring::class)->report($exception);
         });
+        // A SCIM request the identity provider got wrong is answered, not an error of ours.
+        $exceptions->dontReport(App\Exceptions\ScimException::class);
         // OTLP clients expect google.rpc.Status bodies.
         $exceptions->render((new OtlpErrorResponse)->render(...));
         $exceptions->dontFlash(['endpoint_url', 'signing_secret', 'request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected']);

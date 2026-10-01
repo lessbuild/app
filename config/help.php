@@ -22,6 +22,7 @@ return [
             'steps' => [
                 ['Create a project', 'From Projects, choose New project. A project is one application or site; it gets production, staging and development environments to start with.'],
                 ['Turn on services', 'In the project’s settings, switch on Deploy, Infrastructure, Monitoring or Analytics. Each appears in the project’s sidebar once it’s on.'],
+                ['Start from a template', 'Projects → From a template sets up a project in one go: Laravel, Next.js, WordPress or a static site, or one of your own. To make your own, open a project’s Settings → Save as a template; it keeps the services, other environments, release settings, uptime checks on its domain and Analytics goals, and variable names with empty values.'],
                 ['Find anything', 'Press Ctrl K (or ⌘ K) to open search from any page, and jump straight to a project, server or page.'],
                 ['Follow what happens', 'The bell opens your notifications. Choose which ones you get in Your settings → Notifications.'],
             ],
@@ -45,6 +46,7 @@ return [
                 ['Pay', 'Checkout and card details are handled by Stripe. Invoices and payment methods are in the billing portal, linked from the billing page.'],
                 ['Change or cancel', 'Change a plan whenever you like. A cancelled plan stays active until the end of the period you’ve paid for, then moves to the free tier.'],
                 ['Pay as you go', 'On a paid monthly plan, open the service’s tab on the billing page and turn on Pay as you go. Usage past your allowance is billed per unit instead of stopping, and you can set a monthly spend cap.'],
+                ['Costs by project', 'Account → Billing → Costs by project puts what we charge beside what your servers cost, for each project: each service’s charge is split across the projects using it, and each server’s cost across the projects with websites on it. Last month’s cloud invoices are shown beside the estimate.'],
             ],
         ],
         'account-security' => [
@@ -56,6 +58,7 @@ return [
                 ['Add a passkey', 'On the same page, add a passkey to sign in with your device’s fingerprint, face or PIN.'],
                 ['Check your sessions', 'Your settings → Sessions lists where you’re signed in and your recent sign-ins. Sign out anything you don’t recognise.'],
                 ['Set rules for everyone', 'Owners can require two-factor authentication, limit sign-in to certain email domains or IP addresses, sign people out after a period of inactivity, and set up single sign-on, all from Account → Security.'],
+                ['Provision people from your identity provider', 'On Account → Security, turn on SCIM provisioning and copy the base URL and token into Okta or Microsoft Entra ID. People you assign the app to join with the role you choose; unassigning or deactivating them removes them, and reactivating brings them back. The last owner is never removed.'],
             ],
         ],
         'api' => [
@@ -66,6 +69,29 @@ return [
                 ['Create a token', 'Account → API tokens → Create an API token. Choose only the abilities it needs and an expiry date. The token is shown once, so copy it straight away.'],
                 ['Call the API', 'Send it as a bearer token. The API reference lists every endpoint, and the OpenAPI document can generate a client for you.'],
                 ['Old scripts', 'Deployer API v1 scripts keep working unchanged, including old numeric IDs.'],
+            ],
+        ],
+        'agencies' => [
+            'group' => 'platform',
+            'title' => 'Run client work (agencies)',
+            'summary' => 'Your branding on what clients see, a monthly report for each client, and costs passed on with your markup.',
+            'steps' => [
+                ['White label', 'Account → Clients → White label. Set your name, an HTTPS logo and a colour; status pages, shared Analytics reports and client reports then show them instead of ours, without “Powered by”. It comes with the Deploy Team plan and above.'],
+                ['Add clients', 'Add a client with the projects you run for them, who gets their report and your markup on costs. Preview last month’s report from the client’s card.'],
+                ['Monthly reports', 'On the 1st, each client gets last month’s uptime, incidents, releases and visitors for their projects, with what they cost including your markup, sent in your name.'],
+                ['Pass costs on', 'Download costs by client gives a CSV of each client’s projects with your plan share and server costs, marked up, ready for your invoices.'],
+                ['Give clients access', 'To let a client look around, invite them as a Viewer on the Members page and limit them to their projects.'],
+            ],
+        ],
+        'webhooks' => [
+            'group' => 'platform',
+            'title' => 'Webhooks',
+            'summary' => 'Send deploys, incidents, servers, backups, findings and billing changes to your own automation.',
+            'steps' => [
+                ['Add an endpoint', 'Account → Webhooks → Add an endpoint. Give a public HTTPS address and choose the events, or Everything to get new kinds of event as they’re added. The signing secret is shown once.'],
+                ['What arrives', 'A POST with JSON: id, event (such as deploy.succeeded, incident.opened, server.ready, backup.failed, security.finding or billing.plan_changed), created_at, account_id and data about what happened.'],
+                ['Check it came from us', 'X-BuildPusher-Signature is v1= followed by HMAC-SHA256 of the X-BuildPusher-Timestamp header, a dot and the raw body, using the secret. The Webhooks page has a code sample. Ignore repeats of an X-BuildPusher-Delivery ID you’ve already handled.'],
+                ['Retries', 'Answer with any 2xx within 10 seconds. Otherwise the delivery is tried up to six times over about three hours; after 20 failed deliveries in a row the endpoint is paused until you turn it back on. Send a test and Send again are on the same page, with the last deliveries’ results.'],
             ],
         ],
         'connect-a-provider' => [

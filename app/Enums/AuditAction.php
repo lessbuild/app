@@ -15,6 +15,8 @@ enum AuditAction: string
     case InvitationAccepted = 'invitation.accepted';
     case MemberRemoved = 'member.removed';
     case MemberRoleChanged = 'member.role_changed';
+    case MemberProvisioned = 'member.provisioned';
+    case ScimChanged = 'sso.scim_changed';
     case ProfileUpdated = 'profile.updated';
     case PasswordChanged = 'password.changed';
     case TwoFactorEnabled = 'two_factor.enabled';
@@ -155,6 +157,8 @@ enum AuditAction: string
             self::MemberRemoved => ($context['left'] ?? false) === true
                 ? __('Left the account')
                 : __('Removed :member (:role)', ['member' => $value('member'), 'role' => $value('role')]),
+            self::MemberProvisioned => __('Added :member as :role through SCIM', ['member' => $value('member'), 'role' => $value('role')]),
+            self::ScimChanged => __('Changed SCIM provisioning: :change', ['change' => $value('change')]),
             self::MemberRoleChanged => __('Changed :member from :from to :to', ['member' => $value('member'), 'from' => $value('from'), 'to' => $value('to')]),
             self::ProfileUpdated => __('Updated their profile'),
             self::PasswordChanged => __('Changed their password'),

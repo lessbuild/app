@@ -197,6 +197,39 @@
         </x-signal.ui.page-tab-panel>
     @endforeach
 
+    <x-signal.ui.page-tab-panel name="costs" :current="$tab">
+        @php($amount = fn (float $value, string $currency): string => \Illuminate\Support\Number::currency($value, $currency))
+        @php($cloudText = fn (array $amounts): string => $amounts === [] ? '—' : collect($amounts)->map(fn ($value, $currency) => $amount($value, $currency))->implode(' + '))
+        <div class="grid gap-4 sm:grid-cols-3">
+            <x-signal.ui.stat :label="__(':app a month', ['app' => config('app.name')])" :value="$amount($costs['platform_total'], $costs['currency'])" :description="__('Plans, add-ons and usage past allowances this month')" />
+            <x-signal.ui.stat :label="__('Servers a month')" :value="$cloudText($costs['cloud_total'])" :description="$costs['unpriced'] > 0 ? trans_choice(':count server has no known price|:count servers have no known price', $costs['unpriced']) : __('From your providers’ list prices')" />
+            <x-signal.ui.stat :label="__('Cloud invoices last month')" :value="$cloudText($costs['billed'])" :description="__('What DigitalOcean, Vultr, Linode and Lightsail billed')" />
+        </div>
+        <x-signal.ui.settings-section id="by-project" :title="__('Costs by project')" :description="__('Each service’s charge is split evenly across the projects that use it, and add-ons across all projects. A server’s cost goes to the projects with websites on it, split evenly when several share it. Servers run in your own cloud accounts, so their cost is billed by your provider, not by us.')">
+            @if ($costs['projects'] === [])
+                <p class="p-4 text-sm text-muted sm:p-6">{{ __('No projects yet.') }}</p>
+            @else
+                <x-signal.ui.table :caption="__('Costs by project')" :framed="false">
+                    <x-slot:head><tr><th scope="col">{{ __('Project') }}</th><th scope="col" class="text-right">{{ config('app.name') }}</th><th scope="col" class="text-right">{{ __('Servers') }}</th></tr></x-slot:head>
+                    @foreach ($costs['projects'] as $row)
+                        <tr>
+                            <td class="font-bold text-ink">{{ $row['project']->name }}</td>
+                            <td class="text-right tabular-nums">{{ $amount($row['platform'], $costs['currency']) }}</td>
+                            <td class="text-right tabular-nums">{{ $cloudText($row['cloud']) }}</td>
+                        </tr>
+                    @endforeach
+                    @if ($costs['unassigned'] !== [])
+                        <tr>
+                            <td class="text-muted">{{ __('Servers no project uses') }}</td>
+                            <td class="text-right">—</td>
+                            <td class="text-right tabular-nums">{{ $cloudText($costs['unassigned']) }}</td>
+                        </tr>
+                    @endif
+                </x-signal.ui.table>
+            @endif
+        </x-signal.ui.settings-section>
+    </x-signal.ui.page-tab-panel>
+
     <x-signal.ui.page-tab-panel name="invoices" :current="$tab">
         @php($money = fn (int $cents): string => '$'.number_format($cents / 100, $cents % 100 === 0 ? 0 : 2))
         <x-signal.ui.settings-section id="refer" :title="__('Refer a friend')" :description="__('Share your link. When an account that signs up through it starts paying, you both get :amount of credit off your next invoices.', ['amount' => $money($referrals['credit_cents'])])">

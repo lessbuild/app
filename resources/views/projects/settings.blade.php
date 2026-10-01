@@ -65,6 +65,15 @@
     </x-signal.ui.settings-section>
     </div>
 
+    <x-signal.ui.settings-section id="template" :title="__('Save as a template')" :description="__('Start new projects set up like this one: its services, other environments, how production builds, runs and releases, its uptime checks on its own domain and its Analytics goals. Variable names come along with empty values; secrets, domains and servers never do.')">
+        <form method="POST" action="{{ route('projects.template.store', $project) }}" class="grid items-end gap-4 p-4 sm:grid-cols-[1fr_2fr_auto] sm:p-6">
+            @csrf
+            <x-signal.ui.input-field id="template-name" name="name" :label="__('Template name')" :value="$project->name" maxlength="100" required />
+            <x-signal.ui.input-field id="template-description" name="description" :label="__('Description')" maxlength="500" :placeholder="__('What projects made from it are for')" />
+            <x-signal.ui.button type="submit" variant="secondary">{{ __('Save template') }}</x-signal.ui.button>
+        </form>
+    </x-signal.ui.settings-section>
+
     <x-signal.ui.settings-section :title="__('Delete this project')" :description="__('Deletes its environments and service settings. Services remove their data for this project. This can’t be undone.')">
         <form method="POST" action="{{ route('projects.destroy', $project) }}" class="grid gap-4 p-4 sm:p-6">
             @csrf

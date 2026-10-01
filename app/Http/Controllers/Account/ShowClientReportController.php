@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Account;
+
+use App\Http\Attributes\CurrentAccount;
+use App\Models\Account;
+use App\Models\Client;
+use App\Queries\Agency\ClientReportQuery;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
+
+final class ShowClientReportController
+{
+    /**
+     * Preview a client's report for a month (last month unless ?month=YYYY-MM).
+     *
+     * @param  Account  $account
+     * @param  Request  $request
+     * @param  Client  $client
+     * @param  ClientReportQuery  $reports
+     * @return View
+     */
+    public function __invoke(#[CurrentAccount] Account $account, Request $request, Client $client, ClientReportQuery $reports): View
+    {
+        abort_if($client->account_id !== $account->id, 404);
+        $month = $request->string('month')->toString();
+        $month = preg_match('/\A\d{4}-(0[1-9]|1[0-2])\z/', $month) === 1 ? $month : now('UTC')->subMonthNoOverflow()->format('Y-m');
+
+        return view('account.client-report', ['account' => $account, 'client' => $client, 'report' => $reports->handle($client, $month)]);
+    }
+}

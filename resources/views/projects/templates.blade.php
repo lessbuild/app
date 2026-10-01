@@ -3,11 +3,22 @@
 
     <ul class="grid gap-4 sm:grid-cols-2" aria-label="{{ __('Templates') }}">
         @foreach ($templates as $key => $template)
-            <li>
+            @php($saved = $template['saved'] ?? null)
+            <li class="grid gap-2">
                 <x-signal.ui.card as="a" tone="interactive" :href="route('projects.templates', ['template' => $key])" @class(['block h-full p-5', 'ring-2 ring-primary' => $chosen === $key]) :aria-current="$chosen === $key ? 'true' : null">
-                    <p class="text-base font-extrabold text-ink">{{ __($template['name']) }}</p>
-                    <p class="mt-1 text-sm text-muted">{{ __($template['description']) }}</p>
+                    <p class="text-base font-extrabold text-ink">{{ $saved ? $template['name'] : __($template['name']) }} @if ($saved)<x-signal.ui.badge tone="neutral">{{ __('Yours') }}</x-signal.ui.badge>@endif</p>
+                    <p class="mt-1 text-sm text-muted">{{ $saved ? $template['description'] : __($template['description']) }}</p>
+                    @if ($saved)
+                        <p class="mt-2 text-xs text-muted">{{ collect([
+                            trans_choice(':count other environment|:count other environments', count($template['environments'] ?? [])),
+                            trans_choice(':count uptime check|:count uptime checks', count($template['monitors'] ?? [])),
+                            trans_choice(':count goal|:count goals', count($template['goals'] ?? [])),
+                        ])->implode(' · ') }}</p>
+                    @endif
                 </x-signal.ui.card>
+                @if ($saved)
+                    <form method="POST" action="{{ route('projects.templates.destroy', $saved) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove template') }}</x-signal.ui.button></form>
+                @endif
             </li>
         @endforeach
     </ul>

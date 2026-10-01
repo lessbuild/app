@@ -36,10 +36,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $saml_idp_entity_id the SAML identity provider's entity ID
  * @property string|null $saml_idp_sso_url where SAML sign-in requests go (HTTP-Redirect binding)
  * @property string|null $saml_idp_certificate the identity provider's X.509 signing certificate (PEM)
+ * @property string|null $scim_token_hash SHA-256 of the SCIM bearer token; null when provisioning is off
+ * @property string|null $brand_name the name clients see instead of ours (white label)
+ * @property string|null $brand_logo_url an HTTPS image shown on client-facing pages
+ * @property string|null $brand_color #rrggbb accent for client-facing pages
+ * @property string $scim_default_role the role people added through SCIM get
  * @property bool $sso_enforced members must sign in through the identity provider to use the account
  */
 #[Fillable(['name', 'slug'])]
-#[Hidden(['sso_client_secret'])]
+#[Hidden(['sso_client_secret', 'scim_token_hash'])]
 #[UseFactory(AccountFactory::class)]
 #[UsePolicy(AccountPolicy::class)]
 class Account extends Model

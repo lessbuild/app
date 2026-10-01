@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-01', 'title' => 'Platform: webhooks, SCIM, agency tools, costs by project and your own templates', 'changes' => [
+        'For agencies: white-label status pages and shared reports with your name, logo and colour; clients with a monthly report in your name; and costs by client with your markup as a CSV.',
+        'SCIM provisioning: Okta and Microsoft Entra ID add people when they’re assigned the app and remove them when they leave, alongside single sign-on.',
+        'Your own project templates: save a project’s services, environments, release settings, uptime checks and goals, and start new projects from it.',
+        'One cost view: Billing → Costs by project shows each project’s share of your plans beside the servers it runs on, with last month’s cloud invoices.',
+        'Webhooks: send deploys, incidents, servers, websites, backups, security findings, members and plan changes to your own address as signed JSON, with retries, a delivery log and Send again.',
+    ]],
     ['date' => '2026-10-01', 'title' => 'Infrastructure: servers that fit', 'changes' => [
         'More DNS providers: domains’ records are managed at DigitalOcean DNS, Hetzner DNS and AWS Route 53 as well as Cloudflare.',
         'Database tools: the week’s slowest queries on each website’s database, and tuning suggestions from the server’s own counters.',
