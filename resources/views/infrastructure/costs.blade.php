@@ -55,7 +55,7 @@
                     </tr>
                 @endforeach
             </x-signal.ui.table>
-            <p class="px-4 pb-4 text-xs text-muted sm:px-6">{{ __('Invoices include bandwidth, backups, snapshots, volumes and anything else in the provider account, so they’re usually higher than the servers alone. Lightsail reads AWS Cost Explorer, which needs ce:GetCostAndUsage on the key.') }}</p>
+            <p class="px-4 pb-4 text-xs text-muted sm:px-6">{{ __('Invoices include bandwidth, backups, snapshots, volumes and anything else in the provider account, so they’re usually higher than the servers alone. Lightsail and EC2 read AWS Cost Explorer, which needs ce:GetCostAndUsage on the key.') }}</p>
         </x-signal.ui.settings-section>
     @endif
 

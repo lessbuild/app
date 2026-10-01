@@ -16,7 +16,7 @@ use Throwable;
 
 /**
  * Imports what cloud providers actually charged: this month's usage so far and past invoices, from DigitalOcean,
- * Vultr and Linode, and Lightsail's costs from AWS Cost Explorer. Hetzner Cloud has no billing API.
+ * Vultr and Linode, and Lightsail's and EC2's costs from AWS Cost Explorer. Hetzner Cloud has no billing API.
  */
 final class CloudBills
 {
@@ -25,7 +25,7 @@ final class CloudBills
      *
      * @var list<ProviderType>
      */
-    public const SUPPORTED = [ProviderType::DigitalOcean, ProviderType::Vultr, ProviderType::Linode, ProviderType::Lightsail];
+    public const SUPPORTED = [ProviderType::DigitalOcean, ProviderType::Vultr, ProviderType::Linode, ProviderType::Lightsail, ProviderType::Ec2];
 
     /**
      * Read the provider's bills and store them by month; a failure is noted on the provider (a token without billing
@@ -44,7 +44,8 @@ final class CloudBills
                 ProviderType::DigitalOcean => $this->digitalOcean($provider->token),
                 ProviderType::Vultr => $this->vultr($provider->token),
                 ProviderType::Linode => $this->linode($provider->token),
-                default => $this->lightsail($provider->token),
+                ProviderType::Ec2 => $this->aws($provider->token, ['Amazon Elastic Compute Cloud - Compute', 'EC2 - Other']),
+                default => $this->aws($provider->token, ['Amazon Lightsail']),
             };
         } catch (Throwable $exception) {
             $provider->forceFill(['billing_error' => mb_substr($exception->getMessage(), 0, 300), 'billing_checked_at' => now()])->save();
@@ -131,19 +132,21 @@ final class CloudBills
     }
 
     /**
-     * Read Lightsail's cost by month for the last six months from AWS Cost Explorer (the key needs ce:GetCostAndUsage).
+     * Read the cost of some AWS services by month for the last six months from AWS Cost Explorer (the key needs
+     * ce:GetCostAndUsage): Lightsail, or EC2 instances with their disks and addresses.
      *
      * @param  string  $credential  "ACCESS_KEY_ID:SECRET"
+     * @param  list<string>  $services  Cost Explorer service names
      * @return array<string, array{float, bool}>
      */
-    private function lightsail(string $credential): array
+    private function aws(string $credential, array $services): array
     {
         [$key, $secret] = array_pad(explode(':', $credential, 2), 2, '');
         $url = 'https://ce.us-east-1.amazonaws.com/';
         $body = (string) json_encode([
             'TimePeriod' => ['Start' => now()->startOfMonth()->subMonths(5)->toDateString(), 'End' => now()->addDay()->toDateString()],
             'Granularity' => 'MONTHLY', 'Metrics' => ['UnblendedCost'],
-            'Filter' => ['Dimensions' => ['Key' => 'SERVICE', 'Values' => ['Amazon Lightsail']]],
+            'Filter' => ['Dimensions' => ['Key' => 'SERVICE', 'Values' => $services]],
         ]);
         $headers = AwsSignature::headers($key, $secret, 'us-east-1', 'ce', 'POST', $url, ['Content-Type' => 'application/x-amz-json-1.1', 'X-Amz-Target' => 'AWSInsightsIndexService.GetCostAndUsage'], $body);
         unset($headers['Host']);

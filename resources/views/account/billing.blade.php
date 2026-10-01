@@ -203,7 +203,7 @@
         <div class="grid gap-4 sm:grid-cols-3">
             <x-signal.ui.stat :label="__(':app a month', ['app' => config('app.name')])" :value="$amount($costs['platform_total'], $costs['currency'])" :description="__('Plans, add-ons and usage past allowances this month')" />
             <x-signal.ui.stat :label="__('Servers a month')" :value="$cloudText($costs['cloud_total'])" :description="$costs['unpriced'] > 0 ? trans_choice(':count server has no known price|:count servers have no known price', $costs['unpriced']) : __('From your providers’ list prices')" />
-            <x-signal.ui.stat :label="__('Cloud invoices last month')" :value="$cloudText($costs['billed'])" :description="__('What DigitalOcean, Vultr, Linode and Lightsail billed')" />
+            <x-signal.ui.stat :label="__('Cloud invoices last month')" :value="$cloudText($costs['billed'])" :description="__('What DigitalOcean, Vultr, Linode and AWS billed')" />
         </div>
         <x-signal.ui.settings-section id="by-project" :title="__('Costs by project')" :description="__('Each service’s charge is split evenly across the projects that use it, and add-ons across all projects. A server’s cost goes to the projects with websites on it, split evenly when several share it. Servers run in your own cloud accounts, so their cost is billed by your provider, not by us.')">
             @if ($costs['projects'] === [])

@@ -3,7 +3,7 @@
      regions, sizes and images. --}}
 @error('plan')<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
 @if ($providers->isEmpty())
-    <x-signal.ui.empty-state icon="server" :title="__('Connect a cloud provider first')" :description="__('Add a DigitalOcean, Hetzner Cloud, Vultr, Linode, AWS Lightsail, Scaleway or UpCloud token on the account’s Providers page.')">
+    <x-signal.ui.empty-state icon="server" :title="__('Connect a cloud provider first')" :description="__('Add a DigitalOcean, Hetzner Cloud, Vultr, Linode, AWS, Google Cloud, Azure, OVHcloud, Scaleway or UpCloud credential on the account’s Providers page.')">
         <x-slot:action><x-signal.ui.button :href="route('account.providers')" variant="secondary">{{ __('Providers') }}</x-signal.ui.button></x-slot:action>
     </x-signal.ui.empty-state>
 @else

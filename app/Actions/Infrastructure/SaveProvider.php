@@ -10,6 +10,9 @@ use App\Enums\ProviderType;
 use App\Models\Account;
 use App\Models\Provider;
 use App\Models\User;
+use App\Services\Infrastructure\Azure;
+use App\Services\Infrastructure\GoogleCompute;
+use App\Services\Infrastructure\Ovh;
 use App\Support\Hostname;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -49,8 +52,17 @@ final class SaveProvider
             if ($isNew && $token === '') {
                 throw ValidationException::withMessages(['token' => __('Enter the API token.')]);
             }
-            if (in_array($type, [ProviderType::Lightsail, ProviderType::Route53], true) && $token !== '' && preg_match('/\A[A-Z0-9]{16,128}:[A-Za-z0-9\/+=]{20,128}\z/', $token) !== 1) {
+            if (in_array($type, [ProviderType::Lightsail, ProviderType::Ec2, ProviderType::Route53], true) && $token !== '' && preg_match('/\A[A-Z0-9]{16,128}:[A-Za-z0-9\/+=]{20,128}\z/', $token) !== 1) {
                 throw ValidationException::withMessages(['token' => __('For :provider, enter the access key ID and secret access key as ACCESS_KEY_ID:SECRET.', ['provider' => $type->label()])]);
+            }
+            if ($type === ProviderType::Ovh && $token !== '' && ! Ovh::validCredential($token)) {
+                throw ValidationException::withMessages(['token' => __('For OVHcloud, enter ENDPOINT:APPLICATION_KEY:APPLICATION_SECRET:CONSUMER_KEY:PROJECT_ID, with eu or ca as the endpoint.')]);
+            }
+            if ($type === ProviderType::Azure && $token !== '' && ! Azure::validCredential($token)) {
+                throw ValidationException::withMessages(['token' => __('For Azure, enter the service principal as TENANT_ID:CLIENT_ID:SUBSCRIPTION_ID:CLIENT_SECRET.')]);
+            }
+            if ($type === ProviderType::GoogleCompute && $token !== '' && ! GoogleCompute::validKey($token)) {
+                throw ValidationException::withMessages(['token' => __('For Google Compute Engine, paste the service account’s JSON key.')]);
             }
             if ($type === ProviderType::Scaleway && $token !== '' && preg_match('/\A[0-9a-f-]{36}:[0-9a-f-]{36}\z/i', $token) !== 1) {
                 throw ValidationException::withMessages(['token' => __('For Scaleway, enter the project ID and secret key as PROJECT_ID:SECRET_KEY.')]);

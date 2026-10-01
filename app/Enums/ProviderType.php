@@ -12,6 +12,10 @@ enum ProviderType: string
     case Vultr = 'vultr';
     case Linode = 'linode';
     case Lightsail = 'lightsail';
+    case Ec2 = 'ec2';
+    case GoogleCompute = 'gce';
+    case Azure = 'azure';
+    case Ovh = 'ovh';
     case Scaleway = 'scaleway';
     case UpCloud = 'upcloud';
     case Cloudflare = 'cloudflare';
@@ -34,6 +38,10 @@ enum ProviderType: string
             self::Vultr => 'Vultr',
             self::Linode => 'Linode (Akamai)',
             self::Lightsail => 'AWS Lightsail',
+            self::Ec2 => 'AWS EC2',
+            self::GoogleCompute => 'Google Compute Engine',
+            self::Azure => 'Microsoft Azure',
+            self::Ovh => 'OVHcloud',
             self::Scaleway => 'Scaleway',
             self::UpCloud => 'UpCloud',
             self::Cloudflare => 'Cloudflare',
@@ -53,7 +61,7 @@ enum ProviderType: string
     public function purpose(): string
     {
         return match ($this) {
-            self::DigitalOcean, self::Hetzner, self::Vultr, self::Linode, self::Lightsail, self::Scaleway, self::UpCloud => __('Servers'),
+            self::DigitalOcean, self::Hetzner, self::Vultr, self::Linode, self::Lightsail, self::Ec2, self::GoogleCompute, self::Azure, self::Ovh, self::Scaleway, self::UpCloud => __('Servers'),
             self::Cloudflare, self::HetznerDns, self::Route53 => __('DNS'),
             self::GitHub, self::GitLab, self::Bitbucket => __('Git repositories'),
         };
@@ -77,7 +85,7 @@ enum ProviderType: string
      */
     public function hostsServers(): bool
     {
-        return in_array($this, [self::DigitalOcean, self::Hetzner, self::Vultr, self::Linode, self::Lightsail, self::Scaleway, self::UpCloud], true);
+        return in_array($this, [self::DigitalOcean, self::Hetzner, self::Vultr, self::Linode, self::Lightsail, self::Ec2, self::GoogleCompute, self::Azure, self::Ovh, self::Scaleway, self::UpCloud], true);
     }
 
     /**

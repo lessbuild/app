@@ -26,7 +26,7 @@ class ServerCatalog
             ProviderType::Linode => $this->linode($client),
             ProviderType::Lightsail => $this->lightsail($client),
             // Their adapters return DigitalOcean-shaped catalogues, priced in euros.
-            ProviderType::Scaleway, ProviderType::UpCloud => $this->digitalOcean($client, '€'),
+            ProviderType::Scaleway, ProviderType::UpCloud, ProviderType::Ovh => $this->digitalOcean($client, '€'),
             default => $this->digitalOcean($client),
         };
     }
@@ -50,12 +50,12 @@ class ServerCatalog
             'sizes' => $this->sort(collect($client->sizes())->map(fn (array $size): array => [
                 'id' => (string) ($size['slug'] ?? ''),
                 'label' => sprintf(
-                    '%s · %s GB RAM · %s vCPU · %s%s/month',
+                    '%s · %s GB RAM · %s vCPU%s',
                     (string) ($size['description'] ?? $size['slug'] ?? ''),
                     $this->number(((float) ($size['memory'] ?? 0)) / 1024),
                     (string) ($size['vcpus'] ?? '?'),
-                    $symbol,
-                    $this->number((float) ($size['price_monthly'] ?? 0)),
+                    // A size without a listed price (OVHcloud's catalogue can miss one) shows no price rather than 0.
+                    is_numeric($size['price_monthly'] ?? null) ? ' · '.$symbol.$this->number((float) $size['price_monthly']).'/month' : '',
                 ),
             ])),
             'images' => $this->sort(collect($client->images())
