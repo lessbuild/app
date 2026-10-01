@@ -143,6 +143,13 @@
                     <input type="hidden" name="_modal" value="new-project">
                     <x-signal.ui.input-field id="new-project-name" name="name" :label="__('Project name')" maxlength="100" autocomplete="off" required />
                     <x-signal.ui.textarea-field id="new-project-description" name="description" :label="__('Description')" :description="__('Optional. What this project is, for your teammates.')" maxlength="500" rows="3" />
+                    <fieldset class="grid gap-2">
+                        <legend class="text-sm font-bold text-ink">{{ __('What do you need?') }}</legend>
+                        <p class="text-xs text-muted">{{ __('Use one service or several. Analytics and Monitoring work with any site, wherever it’s hosted, with no server here. You can change this later.') }}</p>
+                        @foreach (app(\App\Platform\ServiceRegistry::class)->all() as $service)
+                            <x-signal.ui.checkbox name="services[]" :id="'new-project-service-'.$service->key()" :value="$service->key()" :restore="false" :show-errors="false">{{ $service->name() }}</x-signal.ui.checkbox>
+                        @endforeach
+                    </fieldset>
                     <div class="flex justify-end"><x-signal.ui.button type="submit" variant="primary">{{ __('Create project') }}</x-signal.ui.button></div>
                 </form>
             </x-signal.overlays.modal>
