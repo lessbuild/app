@@ -36,6 +36,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property bool $weekly_report_emails whether they get the Monday report on their accounts' projects
  * @property \Illuminate\Support\Carbon|null $onboarding_nudged_at when the setup reminder was sent
  * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property string|null $locale the language they chose for the app; null follows their browser
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property bool $is_platform_admin operates the platform: opens /admin (granted with `platform:admin`)
  * @property \Illuminate\Support\Carbon|null $platform_admin_granted_at

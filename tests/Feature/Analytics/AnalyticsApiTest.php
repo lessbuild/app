@@ -29,6 +29,8 @@ final class AnalyticsApiTest extends TestCase
      */
     public function test_a_token_reads_sites_and_reports(): void
     {
+        // Midday, so "an hour ago" is still today whenever the suite runs.
+        $this->travelTo(now()->setTime(12, 0));
         $owner = User::factory()->create();
         $account = Account::factory()->withMember($owner)->create();
         $project = Project::factory()->for($account)->withServices(['analytics'])->create();

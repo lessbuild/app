@@ -23,10 +23,10 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
     public function __construct(private readonly UpdateProfile $updateProfile) {}
 
     /**
-     * Validate the profile form (the email must stay unique) and saves it.
+     * Validate the profile form (the email must stay unique, the language must be supported) and save it.
      *
      * @param  User  $user
-     * @param  array<string, string>  $input
+     * @param  array<string, string|null>  $input
      * @return void
      */
     public function update(User $user, array $input): void
@@ -34,8 +34,9 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
         $validated = Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
+            'locale' => ['nullable', 'string', Rule::in(array_keys((array) config('app.supported_locales', [])))],
         ])->validateWithBag('updateProfileInformation');
 
-        $this->updateProfile->handle($user, new UpdateProfileData($validated['name'], $validated['email']));
+        $this->updateProfile->handle($user, new UpdateProfileData($validated['name'], $validated['email'], $validated['locale'] ?? null));
     }
 }

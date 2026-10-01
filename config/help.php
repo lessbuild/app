@@ -25,6 +25,7 @@ return [
                 ['Start from a template', 'Projects → From a template sets up a project in one go: Laravel, Next.js, WordPress or a static site, or one of your own. To make your own, open a project’s Settings → Save as a template; it keeps the services, other environments, release settings, uptime checks on its domain and Analytics goals, and variable names with empty values.'],
                 ['Find anything', 'Press Ctrl K (or ⌘ K) to open search from any page, and jump straight to a project, server or page.'],
                 ['Follow what happens', 'The bell opens your notifications. Choose which ones you get in Your settings → Notifications.'],
+                ['Choose your language', 'The app follows your browser’s language when it’s English, Spanish, French, German or Portuguese. To pick one yourself, open Your settings → Profile and choose a Language.'],
             ],
         ],
         'team-and-access' => [
@@ -194,6 +195,18 @@ return [
                 ['Restore', 'Infrastructure → Backups lists every backup. Choose Restore and follow its progress.'],
                 ['A second copy', 'When scheduling backups, choose Also copy to for a second destination (another provider or region). Each backup is sent there too, for a 3-2-1 setup; the backup list shows whether the second copy was made.'],
                 ['Restore drills', 'Leave Monthly restore drill ticked and, once a month, the latest backup is restored into a scratch area on the server and checked (the database loads and the app starts), then cleaned up. If it fails, the account’s owners are emailed.'],
+            ],
+        ],
+        'read-replicas' => [
+            'group' => 'infrastructure',
+            'title' => 'Add a read replica',
+            'summary' => 'Copy a database server continuously to another one that serves reads, and promote it if the primary fails.',
+            'steps' => [
+                ['Create the replica server', 'Create another database server with the same engine (MySQL or PostgreSQL), ideally with the same provider and region so the copy uses the private network. Anything already on it is moved aside.'],
+                ['Add it', 'Open the primary database server → Replicas, choose the new server under Add a read replica, and type its name to confirm. The primary gets a replication login for that server only and opens its database port to it; the replica takes a full copy and then follows every change.'],
+                ['Send reads to it', 'Once the replica shows Streaming, point read-only queries and reports at it. In Laravel, the Replicas tab shows the read and write hosts to put in config/database.php.'],
+                ['Watch the lag', 'Every five minutes the replica is checked and the tab shows how many seconds it’s behind. If it stops copying, the account’s owners are emailed with the reason.'],
+                ['Promote it', 'If the primary fails, open the replica → Replicas → Promote to a standalone server. It stops following the primary and accepts writes, keeping everything copied; then point your applications at it.'],
             ],
         ],
         'deploy-from-git' => [

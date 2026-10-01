@@ -84,6 +84,25 @@ return [
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Supported Locales
+    |--------------------------------------------------------------------------
+    |
+    | The languages people can pick in their profile, by code, with each
+    | language's own name. Without a choice, the browser's preferred language
+    | among these is used, then the default locale.
+    |
+    */
+
+    'supported_locales' => [
+        'en' => 'English',
+        'es' => 'Español',
+        'fr' => 'Français',
+        'de' => 'Deutsch',
+        'pt' => 'Português',
+    ],
+
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     /*

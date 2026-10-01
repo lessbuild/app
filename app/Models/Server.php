@@ -67,6 +67,12 @@ use Illuminate\Support\Str;
  * @property bool $patch_reboot whether the window reboots the server when updates need it
  * @property Carbon|null $last_patched_at
  * @property string|null $last_patch_error
+ * @property int|null $replica_of_server_id the database server this one copies, while it's a read replica
+ * @property string|null $replication_status setting_up, streaming, broken or failed, while it's a read replica
+ * @property string|null $replication_password the primary's replication login for this replica
+ * @property int|null $replication_lag_seconds how far behind the primary it was when last checked
+ * @property CarbonImmutable|null $replication_checked_at
+ * @property string|null $replication_error why setting up or copying stopped
  * @property int|null $legacy_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -76,7 +82,7 @@ use Illuminate\Support\Str;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, ServerLogSnapshot> $logSnapshots
  * @property-read ServerDiagnosticSnapshot|null $diagnosticSnapshot
  */
-#[Hidden(['password', 'mysql_root_password', 'ssh_private_key', 'ssh_host_key', 'provisioning_token', 'initialization_token', 'recipe_snapshot'])]
+#[Hidden(['password', 'mysql_root_password', 'replication_password', 'ssh_private_key', 'ssh_host_key', 'provisioning_token', 'initialization_token', 'recipe_snapshot'])]
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 #[UseFactory(ServerFactory::class)]
 class Server extends Model
@@ -161,6 +167,26 @@ class Server extends Model
     public function logSnapshots(): HasMany
     {
         return $this->hasMany(ServerLogSnapshot::class);
+    }
+
+    /**
+     * Get the database server this one copies, while it's a read replica.
+     *
+     * @return BelongsTo<Server, $this>
+     */
+    public function replicaOf(): BelongsTo
+    {
+        return $this->belongsTo(Server::class, 'replica_of_server_id');
+    }
+
+    /**
+     * Get the read replicas copying this database server.
+     *
+     * @return HasMany<Server, $this>
+     */
+    public function replicas(): HasMany
+    {
+        return $this->hasMany(Server::class, 'replica_of_server_id');
     }
 
     /**
@@ -293,6 +319,9 @@ class Server extends Model
             'provisioned_at' => 'immutable_datetime',
             'monthly_cost' => 'float',
             'monthly_cost_checked_at' => 'immutable_datetime',
+            'replication_password' => 'encrypted',
+            'replication_lag_seconds' => 'integer',
+            'replication_checked_at' => 'immutable_datetime',
         ];
     }
 }

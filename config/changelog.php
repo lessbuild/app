@@ -9,6 +9,7 @@ return [
         'SCIM provisioning: Okta and Microsoft Entra ID add people when they’re assigned the app and remove them when they leave, alongside single sign-on.',
         'Your own project templates: save a project’s services, environments, release settings, uptime checks and goals, and start new projects from it.',
         'One cost view: Billing → Costs by project shows each project’s share of your plans beside the servers it runs on, with last month’s cloud invoices.',
+        'The app in your language: Spanish, French, German and Portuguese as well as English, following your browser or the language you pick in your profile.',
         'Webhooks: send deploys, incidents, servers, websites, backups, security findings, members and plan changes to your own address as signed JSON, with retries, a delivery log and Send again.',
     ]],
     ['date' => '2026-10-01', 'title' => 'Infrastructure: servers that fit', 'changes' => [
@@ -23,6 +24,7 @@ return [
         'Scaleway and UpCloud: create servers in your Scaleway or UpCloud account, with prices in euros on the Costs page.',
         'Move from Forge or Ploi: read your servers and sites with an API token and recreate each site here with its environment file, cron jobs and daemons.',
         'Actual cloud bills: Costs shows what DigitalOcean, Vultr, Linode and Lightsail really charged last month and so far this month, beside the estimate from list prices.',
+        'Read replicas: another MySQL or PostgreSQL server in your account copies a database server continuously over the private network (or TLS), with its lag checked every five minutes and one-click promotion.',
         'Right-sizing: Costs suggests a smaller server when yours is mostly idle (with the saving) and a bigger one when it runs hot, from two weeks of CPU and memory.',
     ]],
     ['date' => '2026-10-01', 'title' => 'Deploy: monorepos, GitHub Actions and safer releases', 'changes' => [

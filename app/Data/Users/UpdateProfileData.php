@@ -13,9 +13,11 @@ final readonly class UpdateProfileData
      *
      * @param  string  $name  Their new name.
      * @param  string  $email  Their new email. Changing it asks them to verify it again.
+     * @param  string|null  $locale  The language they want the app in; null follows their browser.
      */
     public function __construct(
         public string $name,
         public string $email,
+        public ?string $locale = null,
     ) {}
 }

@@ -51,6 +51,7 @@ final class ShowServerController
         $tabs = array_filter([
             'overview' => __('Overview'), 'alerts' => $active ? __('Alerts') : null, 'diagnostics' => $active ? __('Diagnostics') : null,
             'recovery' => $active && $server->type === ServerType::Database && $server->database_engine !== null ? __('Recovery') : null,
+            'replicas' => $active && $server->type === ServerType::Database && $server->database_engine !== null ? __('Replicas') : null,
             'cron' => $active && $user->can('runCommands', $server) ? __('Cron jobs') : null,
             'processes' => $active && $user->can('runCommands', $server) ? __('Processes') : null,
             'firewall' => $active && $user->can('runCommands', $server) ? __('Firewall') : null,
@@ -76,6 +77,12 @@ final class ShowServerController
             'recoveryPlan' => DatabaseBackupPlan::query()->with(['destination', 'setupExecution'])->where('server_id', $server->id)->first(),
             'backupDestinations' => $server->type === ServerType::Database ? BackupDestination::query()->where('account_id', $server->account_id)->orderBy('name')->get(['id', 'name', 'account_id']) : collect(),
             'canRunCommands' => $user->can('runCommands', $server),
+            'replicas' => $server->type === ServerType::Database ? $server->replicas()->orderBy('name')->get() : collect(),
+            'replicaCandidates' => $server->type === ServerType::Database && $server->replica_of_server_id === null ? Server::query()
+                ->where('account_id', $server->account_id)->whereKeyNot($server->id)->where('type', ServerType::Database->value)
+                ->where('database_engine', $server->database_engine)->where('provisioning_status', Server::STATUS_ACTIVE)
+                ->where(fn ($query) => $query->whereNull('replica_of_server_id')->orWhere(fn ($failed) => $failed->where('replica_of_server_id', $server->id)->where('replication_status', 'failed')))
+                ->whereDoesntHave('replicas')->orderBy('name')->get() : collect(),
             'cronJobs' => ServerCronJob::query()->where('server_id', $server->id)->orderBy('id')->get(),
             'processes' => ServerProcess::query()->where('server_id', $server->id)->orderBy('name')->get(),
             'firewallRules' => ServerFirewallRule::query()->where('server_id', $server->id)->orderBy('name')->get(),

@@ -8,6 +8,12 @@
             @endif
             <x-signal.ui.input-field name="name" :label="__('Name')" :value="$user->name" autocomplete="name" required error-bag="updateProfileInformation" />
             <x-signal.ui.input-field name="email" :label="__('Email address')" type="email" :value="$user->email" autocomplete="email" required error-bag="updateProfileInformation" />
+            <x-signal.ui.select-field name="locale" :label="__('Language')" :description="__('Automatic follows your browser’s language.')" :error-key="false">
+                <option value="" @selected($user->locale === null)>{{ __('Automatic') }}</option>
+                @foreach (config('app.supported_locales') as $code => $language)
+                    <option value="{{ $code }}" lang="{{ $code }}" @selected($user->locale === $code)>{{ $language }}</option>
+                @endforeach
+            </x-signal.ui.select-field>
             <div><x-signal.ui.button type="submit" variant="primary">{{ __('Save profile') }}</x-signal.ui.button></div>
         </form>
     </x-signal.ui.settings-section>

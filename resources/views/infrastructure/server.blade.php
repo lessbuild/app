@@ -240,6 +240,12 @@
         </x-signal.ui.page-tab-panel>
     @endif
 
+    @if (isset($tabs['replicas']))
+        <x-signal.ui.page-tab-panel name="replicas" :current="$tab">
+            @include('infrastructure.server._replicas')
+        </x-signal.ui.page-tab-panel>
+    @endif
+
     @foreach (['cron' => '_cron', 'processes' => '_processes', 'firewall' => '_firewall', 'services' => '_services'] as $name => $partial)
         @if (isset($tabs[$name]))
             <x-signal.ui.page-tab-panel :name="$name" :current="$tab">

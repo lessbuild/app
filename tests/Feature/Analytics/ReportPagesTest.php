@@ -66,6 +66,8 @@ final class ReportPagesTest extends TestCase
 
     public function test_today_shows_pageviews_per_hour_and_the_live_panel_refreshes_on_its_own(): void
     {
+        // Midday, so "a minute ago" is still today whenever the suite runs.
+        $this->travelTo(now()->setTime(12, 0));
         $base = "/projects/{$this->project->id}/analytics";
 
         $this->actingAs($this->owner)->get("{$base}?days=1")->assertOk()

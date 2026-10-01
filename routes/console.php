@@ -489,6 +489,24 @@ Artisan::command('providers:sync-bills', function (App\Services\Infrastructure\C
 Artisan::command('clients:send-reports', function (App\Actions\Agency\SendClientReports $send): void {
     $this->info('Sent reports to '.$send->handle().' clients.');
 })->purpose('Email clients last month’s report');
+Artisan::command('lang:missing', function (App\Support\Localization\MissingTranslations $translations): int {
+    $missing = array_filter($translations->find());
+    foreach ($missing as $locale => $strings) {
+        $this->warn($locale.': '.count($strings).' untranslated');
+        foreach ($strings as $string) {
+            $this->line('  '.$string);
+        }
+    }
+    if ($missing === []) {
+        $this->info('Every supported language translates every string.');
+    }
+
+    return $missing === [] ? 0 : 1;
+})->purpose('List interface strings a supported language has no translation for');
+Artisan::command('databases:check-replicas', function (App\Actions\Infrastructure\CheckReadReplicas $check): void {
+    $this->info('Checked '.$check->handle().' read replicas.');
+})->purpose('Follow read replica setups and record how far each replica is behind');
+Schedule::command('databases:check-replicas')->everyFiveMinutes()->withoutOverlapping(10)->onOneServer();
 Schedule::command('clients:send-reports')->monthlyOn(1, '07:00')->withoutOverlapping(60)->onOneServer();
 Schedule::command('providers:sync-bills')->dailyAt('05:40')->withoutOverlapping(60)->onOneServer();
 
