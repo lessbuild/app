@@ -22,6 +22,6 @@ final class CreateProjectController
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user): View
     {
 
-        return view('projects.create', ['account' => $account]);
+        return view('projects.create', ['account' => $account, 'services' => app(\App\Platform\ServiceRegistry::class)->all(), 'chosen' => (array) request()->query('services', [])]);
     }
 }

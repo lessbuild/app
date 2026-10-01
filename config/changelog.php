@@ -6,6 +6,7 @@ declare(strict_types=1);
 return [
     ['date' => '2026-10-01', 'title' => 'Platform: webhooks, SCIM, agency tools, costs by project and your own templates', 'changes' => [
         'Infrastructure as code: a resources API for projects, servers, websites and monitors, and a Terraform provider built on it.',
+        'Analytics on its own: choose only the services a new project needs; with just Analytics (or Monitoring) the setup guide skips servers and deploys.',
         'Ask: an assistant that answers questions about your deploys, errors, checks, incidents, Analytics and servers with the numbers behind them, in the app or from Claude, Cursor and other AI tools over MCP.',
         'For agencies: white-label status pages and shared reports with your name, logo and colour; clients with a monthly report in your name; and costs by client with your markup as a CSV.',
         'SCIM provisioning: Okta and Microsoft Entra ID add people when they’re assigned the app and remove them when they leave, alongside single sign-on.',

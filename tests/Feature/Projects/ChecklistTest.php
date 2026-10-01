@@ -79,6 +79,24 @@ final class ChecklistTest extends TestCase
         $this->actingAs($owner)->post('/projects', ['name' => 'Blog'])->assertRedirect(route('projects.setup', Project::query()->where('name', 'Blog')->sole()));
     }
 
+    public function test_an_analytics_only_project_skips_servers_and_deploys(): void
+    {
+        $owner = User::factory()->create();
+        $account = Account::factory()->withMember($owner)->create();
+        $owner->forceFill(['current_account_id' => $account->id])->save();
+
+        $form = $this->actingAs($owner)->get('/projects/create?services[]=analytics')->assertOk()->assertSee('What do you need?')->getContent();
+        $this->assertMatchesRegularExpression('/value="analytics"\s+checked/', (string) $form);
+        $this->assertDoesNotMatchRegularExpression('/value="deploy"\s+checked/', (string) $form);
+        $this->actingAs($owner)->post('/projects', ['name' => 'Blog', 'services' => ['nope']])->assertSessionHasErrors('services.0');
+        $this->actingAs($owner)->post('/projects', ['name' => 'Blog', 'services' => ['analytics']])->assertRedirect();
+        $project = Project::query()->where('name', 'Blog')->sole();
+        $this->assertSame(['analytics'], $project->enabledServices()->pluck('service')->all());
+
+        $this->actingAs($owner)->get(route('projects.setup', $project))->assertOk()
+            ->assertSee('Measure visits')->assertDontSee('Connect a cloud provider')->assertDontSee('Create a server')->assertDontSee('Monitor it');
+    }
+
     public function test_it_can_be_hidden_and_viewers_never_see_it(): void
     {
         $owner = User::factory()->create();

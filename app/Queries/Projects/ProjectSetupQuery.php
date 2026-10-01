@@ -39,15 +39,20 @@ final class ProjectSetupQuery
             ->where(fn ($query) => $query->whereIn('environment_id', $environmentIds)->orWhereIn('id', $repositories->pluck('website_id')->filter()->all()))
             ->orderByDesc('id')->get();
 
-        return new ProjectSetup([
-            $this->provider($project),
-            $this->server($project),
-            $this->website($project, $websites),
-            $this->repository($project, $repositories),
-            $this->deploy($project, $repositories),
-            $this->monitoring($project, $environmentIds),
-            $this->analytics($project),
-        ]);
+        // The guide follows the services the project uses: Analytics on its own, say, needs no server. A project
+        // with no services yet gets the whole path.
+        $services = $project->enabledServices()->pluck('service')->all();
+        $wants = fn (string ...$needed): bool => $services === [] || array_intersect($needed, $services) !== [];
+
+        return new ProjectSetup(array_values(array_filter([
+            $wants('infrastructure', 'deploy') ? $this->provider($project) : null,
+            $wants('infrastructure', 'deploy') ? $this->server($project) : null,
+            $wants('infrastructure', 'deploy') ? $this->website($project, $websites) : null,
+            $wants('deploy') ? $this->repository($project, $repositories) : null,
+            $wants('deploy') ? $this->deploy($project, $repositories) : null,
+            $wants('monitoring') ? $this->monitoring($project, $environmentIds) : null,
+            $wants('analytics') ? $this->analytics($project) : null,
+        ])));
     }
 
     /**
@@ -62,7 +67,7 @@ final class ProjectSetupQuery
             ->whereIn('type', array_map(fn (ProviderType $type): string => $type->value, array_filter(ProviderType::cases(), fn (ProviderType $type): bool => $type->hostsServers())))->first();
         $imported = $provider === null && Server::query()->where('account_id', $project->account_id)->exists();
 
-        return new SetupStep('provider', __('Connect a cloud provider'), __('Add a DigitalOcean, Hetzner Cloud or Vultr token so servers can be created in your own account. Already have a server? You can import it instead.'),
+        return new SetupStep('provider', __('Connect a cloud provider'), __('Connect your cloud account (DigitalOcean, Hetzner, AWS, Google Cloud, Azure and more) so servers are created in it. Already have a server? You can import it instead.'),
             $provider !== null || $imported ? SetupStep::DONE : SetupStep::TODO,
             $provider !== null ? $this->text(':name is connected.', ['name' => $provider->name]) : ($imported ? $this->text('Using an imported server.') : null),
             __('Add a provider'), route('account.providers', ['dialog' => 'add-provider']), 'layers');

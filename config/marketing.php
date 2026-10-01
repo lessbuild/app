@@ -372,13 +372,13 @@ return [
             'headline' => 'Understand the work your website is doing.',
             'summary' => 'A privacy-friendly view of visitors, pages, sources and goals, with the depth to explore paths, retention and revenue when you need it.',
             'card_summary' => 'See how visitors find your site, what they read, and which visits turn into outcomes.',
-            'card_features' => ['No cookies', 'Custom ranges, comparisons and segments', 'Funnels, paths and retention', 'Email and Slack reports'],
+            'card_features' => ['No cookies', 'Works on its own: any site, no server needed', 'Custom ranges, comparisons and segments', 'Funnels, paths and retention', 'Email and Slack reports'],
             'suite' => [
                 'title' => 'Measure what changed',
                 'description' => 'Explore traffic, sources and goals, with the releases you shipped marked on the same reports.',
                 'features' => ['Pages, channels, campaigns, places and devices', 'Goals, funnels, revenue and items sold', 'Releases and notes on the chart'],
             ],
-            'capabilities' => ['Cookieless', 'UTM campaigns', 'Ad spend and ROAS', 'Goals and funnels', 'Core Web Vitals', 'Google Search Console', 'Google Analytics import', 'Slack', 'BigQuery', 'Looker Studio', 'CSV exports'],
+            'capabilities' => ['Cookieless', 'Standalone', 'UTM campaigns', 'Ad spend and ROAS', 'Goals and funnels', 'Core Web Vitals', 'Google Search Console', 'Google Analytics import', 'Slack', 'BigQuery', 'Looker Studio', 'CSV exports'],
             'preview' => [
                 'title' => 'Site overview',
                 'context' => 'storefront.example · last 30 days',

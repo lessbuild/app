@@ -20,7 +20,7 @@ return [
             'title' => 'Get started',
             'summary' => 'Create a project, turn on the services it needs, and find your way around.',
             'steps' => [
-                ['Create a project', 'From Projects, choose New project. A project is one application or site; it gets production, staging and development environments to start with.'],
+                ['Create a project', 'From Projects, choose New project. A project is one application or site; it gets production, staging and development environments to start with. Tick the services it needs; Analytics or Monitoring on their own work with any site, wherever it’s hosted, and the setup guide then skips servers and deploys.'],
                 ['Turn on services', 'In the project’s settings, switch on Deploy, Infrastructure, Monitoring or Analytics. Each appears in the project’s sidebar once it’s on.'],
                 ['Start from a template', 'Projects → From a template sets up a project in one go: Laravel, Next.js, WordPress or a static site, or one of your own. To make your own, open a project’s Settings → Save as a template; it keeps the services, other environments, release settings, uptime checks on its domain and Analytics goals, and variable names with empty values.'],
                 ['Find anything', 'Press Ctrl K (or ⌘ K) to open search from any page, and jump straight to a project, server or page.'],
