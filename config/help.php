@@ -70,6 +70,7 @@ return [
                 ['Create a token', 'Account → API tokens → Create an API token. Choose only the abilities it needs and an expiry date. The token is shown once, so copy it straight away.'],
                 ['Call the API', 'Send it as a bearer token. The API reference lists every endpoint, and the OpenAPI document can generate a client for you.'],
                 ['Old scripts', 'Deployer API v1 scripts keep working unchanged, including old numeric IDs.'],
+                ['Spreadsheets', 'Servers, Websites, Repositories, Account → Providers and Account → Recipes each have Export CSV: the inventory as a spreadsheet, with what you can see and never any secrets.'],
                 ['Resources', 'The resources API (/api/v2) creates, reads, changes and deletes projects (with their services), servers, websites and monitors. Servers and websites answer at once and set up in the background; read them until their status is active or failed.'],
                 ['Terraform', 'The BuildPusher Terraform provider manages projects, servers, websites and monitors as code with the resources API. Give its token projects, infrastructure and monitoring read and write scopes, set BUILDPUSHER_TOKEN, and declare buildpusher_project, buildpusher_server, buildpusher_website and buildpusher_monitor resources; existing ones can be imported by ID.'],
             ],

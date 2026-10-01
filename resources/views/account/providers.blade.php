@@ -30,6 +30,7 @@
     @endif
 
     <x-slot:actions>
+        <x-signal.ui.button :href="route('account.inventory', 'providers')" variant="quiet" size="sm">{{ __('Export CSV') }}</x-signal.ui.button>
         <x-signal.ui.button :href="route('account.providers', ['dialog' => 'add-provider'])" variant="primary" data-modal-trigger="add-provider">{{ __('Connect a provider') }}</x-signal.ui.button>
     </x-slot:actions>
     <x-signal.overlays.form-modal id="add-provider" :title="__('Connect a provider')" :description="__('Use an API token scoped to what we need. We check it straight away and then on a schedule.')" :action="route('account.providers.store')" :submit="__('Connect provider')" form-class="grid items-start gap-5 sm:grid-cols-2">

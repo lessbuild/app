@@ -1,5 +1,6 @@
 <x-signal.layouts.account :account="$account" :title="__('Recipes')" :description="__('Scripts that run on new servers at the end of provisioning. Choose them when you create a server, or install one from the gallery.')">
     @include('recipes._nav')
+    <div class="flex justify-end"><x-signal.ui.button :href="route('account.inventory', 'recipes')" variant="quiet" size="sm">{{ __('Export CSV') }}</x-signal.ui.button></div>
     @if (session('status'))
         <x-signal.ui.alert tone="success" role="status">{{ session('status') }}</x-signal.ui.alert>
     @endif

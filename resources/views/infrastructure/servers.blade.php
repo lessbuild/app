@@ -1,6 +1,7 @@
 @php($project = $overview->project)
 
 <x-signal.layouts.project :overview="$overview" :title="__('Servers')" :description="__('Servers belong to :account, so every project can deploy to them.', ['account' => $project->account->name])">
+    <div class="flex justify-end"><x-signal.ui.button :href="route('account.inventory', 'servers')" variant="quiet" size="sm">{{ __('Export CSV') }}</x-signal.ui.button></div>
     @if ($canManage)
         <div class="flex flex-wrap items-center justify-end gap-3">
             @if ($limit !== null)

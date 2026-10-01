@@ -1,6 +1,7 @@
 @php($project = $overview->project)
 
 <x-signal.layouts.project :overview="$overview" :title="__('Websites')" :description="__('Sites on your app servers: a Caddy site with HTTPS, a MySQL database and a .env file each.')">
+    <div class="flex justify-end"><x-signal.ui.button :href="route('account.inventory', 'websites')" variant="quiet" size="sm">{{ __('Export CSV') }}</x-signal.ui.button></div>
     @if ($canManage)
         <div class="flex flex-wrap items-center justify-end gap-3">
             @if ($limit !== null)

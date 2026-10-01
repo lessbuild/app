@@ -1011,6 +1011,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::get('/account/audit-log/export', ExportAuditLogController::class)->middleware(['account.can:viewAuditLog', 'throttle:10,1'])->name('account.audit-log.export');
     Route::get('/account/clients', ShowClientsController::class)->middleware('account.can:update')->name('account.clients');
     Route::put('/account/clients/branding', UpdateBrandingController::class)->middleware(['account.can:update', 'throttle:20,1'])->name('account.clients.branding');
+    Route::get('/account/inventory/{kind}.csv', App\Http\Controllers\Account\ExportInventoryController::class)->whereIn('kind', App\Queries\Accounts\InventoryQuery::KINDS)->middleware('throttle:20,1')->name('account.inventory');
     Route::get('/account/clients/costs.csv', ExportClientCostsController::class)->middleware(['account.can:update', 'throttle:10,1'])->name('account.clients.costs');
     Route::post('/account/clients', SaveClientController::class)->middleware(['account.can:update', 'throttle:30,1'])->name('account.clients.store');
     Route::put('/account/clients/{client}', SaveClientController::class)->whereNumber('client')->middleware(['account.can:update', 'throttle:30,1'])->name('account.clients.update');

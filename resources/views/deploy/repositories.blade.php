@@ -1,6 +1,7 @@
 @php($project = $overview->project)
 
 <x-signal.layouts.project :overview="$overview" :title="__('Repositories')" :description="__('Git repositories that deploy to your websites. Each deploy is a new release; the previous ones stay on the server for rollbacks.')">
+    <div class="flex justify-end"><x-signal.ui.button :href="route('account.inventory', 'repositories')" variant="quiet" size="sm">{{ __('Export CSV') }}</x-signal.ui.button></div>
     @if ($canCreate)
         <div class="flex justify-end"><x-signal.ui.button :href="route('deploy.repositories.create', $project)" data-modal-trigger="connect-repository" :data-modal-history-url="route('deploy.repositories', [$project, 'dialog' => 'connect-repository'])" variant="primary">{{ __('Connect a repository') }}</x-signal.ui.button></div>
     @endif
