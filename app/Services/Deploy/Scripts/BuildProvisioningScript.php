@@ -17,7 +17,7 @@ abstract class BuildProvisioningScript implements BuildScript
      * @param  Build  $build  The build supplying the callback identity.
      * @return string A curl command; rendering does not send the callback.
      */
-    protected function progress(int $step, Build $build): string
+    public function progress(int $step, Build $build): string
     {
         $callback = escapeshellarg(ProvisioningCallbackUrl::buildStatus($build));
         $payload = escapeshellarg(http_build_query([

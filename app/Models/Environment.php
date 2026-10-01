@@ -67,6 +67,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property \Carbon\CarbonImmutable|null $last_activity_at the last request or deploy seen, for hibernation
  * @property bool $recipes_run_on_new_websites run the environment's recipes on a website's server when it finishes setting up
  * @property \Carbon\CarbonImmutable|null $hibernated_at when it went to sleep; null while running
+ * @property int|null $build_server_id the server deploys build on before their result goes to the websites; null to build on each website's server
+ * @property int|null $artifact_bucket_id the storage bucket builds pass through on their way from the build server
  * @property int|null $legacy_id Deployer's numeric ID, which the Deployer API v1 still accepts
  * @property-read Project $project
  * @property-read \Illuminate\Database\Eloquent\Collection<int, EnvironmentVariable> $variables
@@ -118,6 +120,26 @@ class Environment extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    /**
+     * Get the server its deploys build on, if any.
+     *
+     * @return BelongsTo<Server, $this>
+     */
+    public function buildServer(): BelongsTo
+    {
+        return $this->belongsTo(Server::class, 'build_server_id');
+    }
+
+    /**
+     * Get the storage bucket builds pass through from the build server.
+     *
+     * @return BelongsTo<StorageBucket, $this>
+     */
+    public function artifactBucket(): BelongsTo
+    {
+        return $this->belongsTo(StorageBucket::class, 'artifact_bucket_id');
     }
 
     /**

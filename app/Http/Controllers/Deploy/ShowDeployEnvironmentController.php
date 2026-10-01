@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Deploy;
 
 use App\Enums\AlertDestinationType;
+use App\Enums\ServerType;
 use App\Models\AlertDestination;
 use App\Models\Environment;
 use App\Models\Project;
 use App\Models\Recipe;
 use App\Models\SecretSync;
+use App\Models\Server;
+use App\Models\StorageBucket;
 use App\Models\User;
 use App\Queries\Deploy\EnvironmentAutomationQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
+use App\Services\Deploy\BuildServers;
 use App\Support\PageTabs;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
@@ -52,6 +56,9 @@ final class ShowDeployEnvironmentController
             'freezes' => $environment->freezes()->where('ends_at', '>', now())->orderBy('starts_at')->get(),
             'deployRoutes' => $environment->deployNotifications()->get()->keyBy('alert_destination_id'),
             'libraryRecipes' => Recipe::query()->where('account_id', $project->account_id)->orderBy('name')->get(['id', 'name']),
+            'buildServers' => Server::query()->where('account_id', $project->account_id)->whereIn('type', array_map(fn (ServerType $type): string => $type->value, BuildServers::TYPES))
+                ->where('provisioning_status', Server::STATUS_ACTIVE)->orderBy('name')->get(['id', 'name', 'display_name', 'type', 'account_id']),
+            'storageBuckets' => StorageBucket::query()->where('project_id', $project->id)->orderBy('name')->get(['id', 'name', 'project_id']),
         ]);
     }
 }

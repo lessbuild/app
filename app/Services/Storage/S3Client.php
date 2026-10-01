@@ -49,6 +49,45 @@ final class S3Client
     }
 
     /**
+     * Build a presigned URL that lets whoever holds it GET or PUT one object, without the keys, until it expires.
+     *
+     * @param  S3Location  $location  Where the bucket is and how to sign in to it.
+     * @param  string  $method  GET or PUT
+     * @param  string  $key  The object's key inside the bucket.
+     * @param  int  $seconds  How long it works, at most a week.
+     * @return string
+     */
+    public function presignedUrl(S3Location $location, string $method, string $key, int $seconds): string
+    {
+        [$base, $host, $basePath] = $this->endpoint($location->endpoint);
+        if (preg_match('/\A[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]\z/iD', $location->bucket) !== 1) {
+            throw new RuntimeException('The bucket name is invalid.');
+        }
+        $region = trim($location->region);
+        if ($location->accessKey === '' || $location->secretKey === '' || $region === '') {
+            throw new RuntimeException('The storage credentials are incomplete.');
+        }
+        $uri = $this->path($basePath, $location->bucket, $key);
+        $amzDate = gmdate('Ymd\THis\Z');
+        $date = substr($amzDate, 0, 8);
+        $scope = "{$date}/{$region}/s3/aws4_request";
+        $query = [
+            'X-Amz-Algorithm' => 'AWS4-HMAC-SHA256', 'X-Amz-Credential' => "{$location->accessKey}/{$scope}", 'X-Amz-Date' => $amzDate,
+            'X-Amz-Expires' => (string) max(1, min(604800, $seconds)), 'X-Amz-SignedHeaders' => 'host',
+        ];
+        ksort($query);
+        $canonicalQuery = http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        $canonicalRequest = strtoupper($method)."\n{$uri}\n{$canonicalQuery}\nhost:{$host}\n\nhost\nUNSIGNED-PAYLOAD";
+        $stringToSign = "AWS4-HMAC-SHA256\n{$amzDate}\n{$scope}\n".hash('sha256', $canonicalRequest);
+        $signingKey = 'AWS4'.$location->secretKey;
+        foreach ([$date, $region, 's3', 'aws4_request'] as $part) {
+            $signingKey = hash_hmac('sha256', $part, $signingKey, true);
+        }
+
+        return "{$base}{$uri}?{$canonicalQuery}&X-Amz-Signature=".hash_hmac('sha256', $stringToSign, $signingKey);
+    }
+
+    /**
      * Throw when a request failed, with the status and S3's error code but never the response body.
      *
      * @param  string  $operation  What was attempted, e.g. "upload".

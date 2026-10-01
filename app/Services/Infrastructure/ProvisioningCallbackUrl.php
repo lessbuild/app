@@ -114,6 +114,17 @@ final class ProvisioningCallbackUrl
     }
 
     /**
+     * Build the URL a build server reports a built release uploaded to.
+     *
+     * @param  Build  $build
+     * @return string
+     */
+    public static function buildArtifact(Build $build): string
+    {
+        return self::build('callbacks.build.artifact', $build);
+    }
+
+    /**
      * Build the URL it reports the deployed commit to.
      *
      * @param  Build  $build

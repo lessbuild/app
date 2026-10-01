@@ -29,6 +29,7 @@ return [
         'Right-sizing: Costs suggests a smaller server when yours is mostly idle (with the saving) and a bigger one when it runs hot, from two weeks of CPU and memory.',
     ]],
     ['date' => '2026-10-01', 'title' => 'Deploy: monorepos, GitHub Actions and safer releases', 'changes' => [
+        'Build servers: build on another of your servers and pass the built release to the websites through your own storage bucket, so builds don’t slow the websites down.',
         'Release analysis: after each deploy, errors, request time and the conversion rate are compared with before it, and a release that’s worse past your limits is rolled back automatically.',
         'Docker Compose deploys: ship an app as a Compose stack to your own server, with the web service behind Caddy and volumes kept between deploys.',
         'Preview database branches: previews can start from a quick sample of each table, or the schema only, instead of a full copy.',

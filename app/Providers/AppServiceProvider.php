@@ -21,6 +21,7 @@ use App\Contracts\Telemetry\TelemetryPayloadMapper;
 use App\Http\HttpRequestOrigin;
 use App\Http\View\ShellComposer;
 use App\Listeners\AuditSubscriber;
+use App\Listeners\BuildArtifactSubscriber;
 use App\Listeners\CdnPurgeSubscriber;
 use App\Listeners\DeployNotificationSubscriber;
 use App\Listeners\DeployPipelineSubscriber;
@@ -103,6 +104,7 @@ class AppServiceProvider extends ServiceProvider
         Event::subscribe(PreviewWebsiteSubscriber::class);
         Event::subscribe(EnvironmentRecipeSubscriber::class);
         Event::subscribe(CdnPurgeSubscriber::class);
+        Event::subscribe(BuildArtifactSubscriber::class);
         Event::subscribe(WebhookSubscriber::class);
         Event::subscribe(DeployPipelineSubscriber::class);
         View::composer('components.signal.layouts.app', ShellComposer::class);

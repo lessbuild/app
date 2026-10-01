@@ -26,6 +26,27 @@ class InstallDependenciesScript extends BuildProvisioningScript
     public function __construct(private readonly ManagedResourceScript $resources = new ManagedResourceScript) {}
 
     /**
+     * Whether the stage prepares managed resources first; not on a build server, where nothing runs afterwards.
+     *
+     * @var bool
+     */
+    private bool $prepareResources = true;
+
+    /**
+     * Get a copy for a build server, which installs and builds without preparing the environment's resources (the
+     * website's server prepares them before the release goes live).
+     *
+     * @return self
+     */
+    public function onBuildServer(): self
+    {
+        $copy = clone $this;
+        $copy->prepareResources = false;
+
+        return $copy;
+    }
+
+    /**
      * Render the stage that prepares managed resources, installs the release's dependencies for its runtime, runs
      * its build command, passes the Security gate when the environment has one, and reports progress.
      *
@@ -46,7 +67,7 @@ class InstallDependenciesScript extends BuildProvisioningScript
         $composeFile = escapeshellarg((string) (($runtime['dockerfile_path'] ?? null) ?: 'compose.yaml'));
         $composeProject = escapeshellarg("buildpusher-{$repository->website->deployment_slug}");
         $runtimeVersion = escapeshellarg((string) ($runtime['version'] ?? ''));
-        $resourcePreparation = $this->resources->render($build->environment_payload['resources'] ?? []);
+        $resourcePreparation = $this->prepareResources ? $this->resources->render($build->environment_payload['resources'] ?? []) : '';
         $progress = $this->progress($step, $build);
         $cache = $this->cache($build);
         $gate = app(SecurityGate::class)->commands($build);

@@ -134,6 +134,7 @@ use App\Http\Controllers\Deploy\RecordBuildCallbackController;
 use App\Http\Controllers\Deploy\RecordDestructiveMigrationsController;
 use App\Http\Controllers\Deploy\RedeployBuildController;
 use App\Http\Controllers\Deploy\RefreshEnvironmentRecipeController;
+use App\Http\Controllers\Deploy\ReleaseBuildArtifactController;
 use App\Http\Controllers\Deploy\ReplaceEnvironmentVariablesController;
 use App\Http\Controllers\Deploy\RetryPreviewCleanupController;
 use App\Http\Controllers\Deploy\ReviewBuildController;
@@ -174,6 +175,7 @@ use App\Http\Controllers\Deploy\StoreSecretSyncController;
 use App\Http\Controllers\Deploy\UpdateBuildCacheController;
 use App\Http\Controllers\Deploy\UpdateConfigurationOperationController;
 use App\Http\Controllers\Deploy\UpdateDeploymentControlsController;
+use App\Http\Controllers\Deploy\UpdateEnvironmentBuildServerController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentDeployNotificationsController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentDeploySettingsController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentHibernationController;
@@ -565,6 +567,8 @@ foreach (['status', 'failed', 'log', 'revision'] as $event) {
         ->middleware(['signed', 'throttle:1200,1'])->name("callbacks.build.{$event}");
 }
 
+Route::post('/builds/{build}/deployment/callback/artifact', ReleaseBuildArtifactController::class)->whereNumber('build')
+    ->middleware(['signed', 'throttle:600,1'])->name('callbacks.build.artifact');
 Route::post('/builds/{build}/deployment/callback/security', EvaluateSecurityGateController::class)->whereNumber('build')
     ->middleware(['signed', 'throttle:600,1'])->name('callbacks.build.security');
 Route::post('/environments/{environment}/wake', WakeEnvironmentController::class)->middleware(['signed', 'throttle:60,1'])->name('callbacks.environment.wake');
@@ -710,6 +714,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::middleware(['can:configureDeploy,environment', 'throttle:30,1'])->group(function (): void {
                 Route::put('/environments/{environment}/settings', UpdateEnvironmentDeploySettingsController::class)->name('environments.settings');
                 Route::put('/environments/{environment}/controls', UpdateDeploymentControlsController::class)->name('environments.controls');
+                Route::put('/environments/{environment}/build-server', UpdateEnvironmentBuildServerController::class)->name('environments.build-server');
                 Route::post('/environments/{environment}/freezes', StoreEnvironmentFreezeController::class)->name('environments.freezes.store');
                 Route::post('/environments/{environment}/variables', StoreEnvironmentVariableController::class)->name('environments.variables.store');
                 Route::post('/environments/{environment}/secret-syncs', StoreSecretSyncController::class)->middleware('throttle:10,1')->name('environments.secret-syncs.store');

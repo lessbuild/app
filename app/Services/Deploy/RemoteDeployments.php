@@ -54,7 +54,8 @@ class RemoteDeployments
         tail -c {$limit} -- {$log} 2>/dev/null || true
         sudo rm -f -- {$log} {$upload} {$script} {$pidFile}
         BASH;
-        $server = $build->website->server ?? throw new RuntimeException('The website has no server.');
+        // While a build server is building, the script runs there rather than on the website's server.
+        $server = ($build->build_phase === 'build' ? $build->buildServer : $build->website->server) ?? throw new RuntimeException('The website has no server.');
         $result = $this->shell->run($server, $command);
         if (! $result->successful()) {
             throw new RuntimeException('The deployment couldn’t be stopped on the server.');

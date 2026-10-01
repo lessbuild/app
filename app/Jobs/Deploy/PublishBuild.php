@@ -7,6 +7,7 @@ namespace App\Jobs\Deploy;
 use App\Actions\Deploy\FinishBuild;
 use App\Events\Deploy\DeployStarted;
 use App\Models\Build;
+use App\Services\Deploy\BuildServers;
 use App\Services\Deploy\DeploymentScript;
 use App\Services\Infrastructure\RemoteScriptRunner;
 use Carbon\CarbonImmutable;
@@ -16,7 +17,11 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Throwable;
 
-/** Uploads a queued build's deployment script to the website's server and starts it; the script then reports in by callback. */
+/**
+ * Uploads a queued build's deployment script to the website's server and starts it; the script then reports in by
+ * callback. When the environment builds on a build server, the build part starts there instead and the release part
+ * follows on the website's server once the built release is uploaded.
+ */
 final class PublishBuild implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
@@ -51,11 +56,12 @@ final class PublishBuild implements ShouldQueue
      *
      * @param  RemoteScriptRunner  $runner
      * @param  DeploymentScript  $script
+     * @param  BuildServers  $buildServers
      * @return void
      */
-    public function handle(RemoteScriptRunner $runner, DeploymentScript $script): void
+    public function handle(RemoteScriptRunner $runner, DeploymentScript $script, BuildServers $buildServers): void
     {
-        $build = Build::query()->with(['website.server', 'repository.provider'])->find($this->buildId);
+        $build = Build::query()->with(['website.server', 'repository.provider', 'environment.buildServer', 'environment.artifactBucket'])->find($this->buildId);
         if ($build === null || $build->status !== Build::STATUS_QUEUED) {
             return;
         }
@@ -74,11 +80,18 @@ final class PublishBuild implements ShouldQueue
 
             return;
         }
+        $builder = $buildServers->for($build);
         try {
-            $process = $runner->start($server, $script->render($build), "lessbuild-deployment-{$build->id}");
+            if ($builder !== null) {
+                $key = $buildServers->key($build);
+                $build->forceFill(['build_server_id' => $builder['server']->id, 'build_phase' => 'build', 'artifact_key' => $key])->save();
+                $process = $runner->start($builder['server'], $script->renderBuild($build, $buildServers->uploadUrl($builder['bucket'], $key)), "lessbuild-deployment-{$build->id}");
+            } else {
+                $process = $runner->start($server, $script->render($build), "lessbuild-deployment-{$build->id}");
+            }
         } catch (Throwable $exception) {
             // Uploading can fail on a busy server: put the build back so the retry starts it cleanly.
-            Build::query()->whereKey($build->id)->where('status', Build::STATUS_DEPLOYING)->update(['status' => Build::STATUS_QUEUED, 'started_at' => null, 'release_name' => null, 'release_path' => null]);
+            Build::query()->whereKey($build->id)->where('status', Build::STATUS_DEPLOYING)->update(['status' => Build::STATUS_QUEUED, 'started_at' => null, 'release_name' => null, 'release_path' => null, 'build_server_id' => null, 'build_phase' => null, 'artifact_key' => null]);
 
             throw $exception;
         }

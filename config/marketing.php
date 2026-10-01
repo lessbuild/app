@@ -102,6 +102,7 @@ return [
                     ['Deployer API v1', 'Deploy, roll back, promote, scale and manage variables from scripts, with scoped API tokens.'],
                     ['Signed webhooks', 'Push to deploy from GitHub, GitLab and Bitbucket, with every delivery verified.'],
                     ['Monorepos', 'Deploy an app from its folder, and only when a push changes it.'],
+                    ['Build servers', 'Install and build on a separate server of yours, then ship the built release through your own bucket.'],
                     ['GitHub Actions', 'An official action that deploys, waits for the result and comments it on the pull request.'],
                 ]],
             ],

@@ -146,6 +146,26 @@
             @if ($canManage)<div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save settings') }}</x-signal.ui.button></div>@endif
         </form>
     </x-signal.ui.settings-section>
+    <x-signal.ui.settings-section id="build-server" :title="__('Build server')" :description="__('Build on another of your servers so installing dependencies and compiling assets doesn’t slow the websites. The built release passes through one of this project’s storage buckets with links that expire, and the website’s server only unpacks it and makes it live. Docker builds stay on the website’s server.')">
+        <form method="POST" action="{{ route('deploy.environments.build-server', [$project, $environment]) }}" class="grid items-end gap-4 p-4 sm:grid-cols-3 sm:p-6">
+            @csrf
+            @method('PUT')
+            <x-signal.ui.select-field name="build_server_id" :label="__('Build on')">
+                <option value="">{{ __('Each website’s own server') }}</option>
+                @foreach ($buildServers as $buildServer)
+                    <option value="{{ $buildServer->id }}" @selected($environment->build_server_id === $buildServer->id)>{{ $buildServer->label() }}</option>
+                @endforeach
+            </x-signal.ui.select-field>
+            <x-signal.ui.select-field name="artifact_bucket_id" :label="__('Storage bucket')">
+                <option value="">{{ __('None') }}</option>
+                @foreach ($storageBuckets as $bucket)
+                    <option value="{{ $bucket->id }}" @selected($environment->artifact_bucket_id === $bucket->id)>{{ $bucket->name }}</option>
+                @endforeach
+            </x-signal.ui.select-field>
+            @if ($canManage)<div><x-signal.ui.button type="submit" variant="secondary">{{ __('Save') }}</x-signal.ui.button></div>@endif
+            @if ($storageBuckets->isEmpty())<p class="text-xs text-muted sm:col-span-3">{{ __('Add a storage bucket to this project under Infrastructure → Storage first.') }}</p>@endif
+        </form>
+    </x-signal.ui.settings-section>
     </x-signal.ui.page-tab-panel>
 
     <x-signal.ui.page-tab-panel name="variables" :current="$tab">

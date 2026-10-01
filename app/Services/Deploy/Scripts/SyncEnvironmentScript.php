@@ -39,9 +39,7 @@ class SyncEnvironmentScript extends BuildProvisioningScript
         $contents = app(EnvironmentFile::class)->merge($base, $variables);
         $encoded = escapeshellarg(base64_encode($contents));
         $environmentPath = escapeshellarg('/var/www/'.$build->repository->website->deployment_slug.'/.env');
-        $buildVariables = is_array($payload['build_variables'] ?? null) ? $payload['build_variables'] : [];
-        $buildContents = app(EnvironmentFile::class)->merge('', $buildVariables);
-        $buildEncoded = escapeshellarg(base64_encode($buildContents));
+        $buildEncoded = escapeshellarg(base64_encode($this->buildEnvironment($build)));
         $buildEnvironmentPath = escapeshellarg('/var/www/'.$build->repository->website->deployment_slug.'/.build.env');
         $progress = $this->progress($step, $build);
 
@@ -56,5 +54,19 @@ class SyncEnvironmentScript extends BuildProvisioningScript
         set +a
         {$progress}
         SCRIPT;
+    }
+
+    /**
+     * Get the build-time variables as an env file, exported while dependencies install and the build runs.
+     *
+     * @param  Build  $build
+     * @return string
+     */
+    public function buildEnvironment(Build $build): string
+    {
+        $payload = $build->environment_payload ?? [];
+        $variables = is_array($payload['build_variables'] ?? null) ? $payload['build_variables'] : [];
+
+        return app(EnvironmentFile::class)->merge('', $variables);
     }
 }
