@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Analytics;
 
+use App\Models\AnalyticsAdAccount;
 use App\Models\AnalyticsAdSpend;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Analytics\CampaignResultsQuery;
 use App\Queries\Analytics\ProjectSitesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
+use App\Services\Analytics\AdPlatforms;
 use App\Support\CampaignLink;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
@@ -50,6 +52,10 @@ final class ShowCampaignsController
             'invalid' => is_string($url) && $url !== '' && $link === null,
             'results' => $site !== null ? $campaigns->handle($site) : [],
             'canManage' => $site !== null && $user->can('update', $site),
+            'adAccounts' => $site === null ? collect() : AnalyticsAdAccount::query()->where('site_id', $site->id)->orderBy('name')->get(),
+            'adPlatforms' => app(AdPlatforms::class)->configured(),
+            // After signing in to Google or Meta: the ad accounts to choose from, for this site only.
+            'adChoice' => $site !== null && is_array($choice = $request->session()->get('ads.choose')) && ($choice['site'] ?? null) === $site->id ? $choice : null,
             // What spend has been imported, per source: days, total rows and the dates covered.
             'spend' => $site === null ? collect() : AnalyticsAdSpend::query()->where('site_id', $site->id)->toBase()
                 ->selectRaw('source, COUNT(*) AS days, MIN(date) AS first_date, MAX(date) AS last_date')->groupBy('source')->orderBy('source')->get(),

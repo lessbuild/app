@@ -604,6 +604,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::post('/whats-new/seen', MarkChangelogSeenController::class)->name('whats-new.seen');
     // Google sends people back here after they allow Search Console access (one fixed URL, registered with Google).
     Route::get('/analytics/google-analytics/callback', GoogleAnalyticsCallbackController::class)->middleware('throttle:10,1')->name('analytics.google-analytics.callback');
+    Route::get('/analytics/ads/callback/{platform}', App\Http\Controllers\Analytics\AdPlatformCallbackController::class)->whereIn('platform', ['google', 'meta'])->middleware('throttle:10,1')->name('analytics.ads.callback');
     Route::get('/analytics/search-console/callback', SearchConsoleCallbackController::class)->middleware('throttle:10,1')->name('analytics.search-console.callback');
     Route::get('/sso/verify', StartSsoVerificationController::class)->middleware('throttle:10,1')->name('sso.verify');
     Route::post('/invitations/{token}', AcceptInvitationController::class)->middleware('throttle:10,1')->name('invitations.accept');
@@ -650,6 +651,10 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::get('/sites/{site}', ShowSiteController::class)->whereNumber('site')->middleware('can:view,site')->name('sites.show');
             Route::put('/sites/{site}', UpdateSiteController::class)->whereNumber('site')->middleware('can:update,site')->name('sites.update');
             Route::post('/sites/{site}/verify', VerifySiteController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:20,1'])->name('sites.verify');
+            Route::post('/sites/{site}/ads/{platform}/connect', App\Http\Controllers\Analytics\ConnectAdPlatformController::class)->whereNumber('site')->whereIn('platform', ['google', 'meta'])->middleware(['can:update,site', 'throttle:10,1'])->name('sites.ads.connect');
+            Route::post('/sites/{site}/ads', App\Http\Controllers\Analytics\ChooseAdAccountController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:20,1'])->name('sites.ads.choose');
+            Route::post('/sites/{site}/ads/{account}/sync', App\Http\Controllers\Analytics\SyncAdAccountController::class)->whereNumber(['site', 'account'])->middleware(['can:update,site', 'throttle:10,1'])->name('sites.ads.sync');
+            Route::delete('/sites/{site}/ads/{account}', App\Http\Controllers\Analytics\DisconnectAdAccountController::class)->whereNumber(['site', 'account'])->middleware(['can:update,site', 'throttle:20,1'])->name('sites.ads.disconnect');
             Route::post('/sites/{site}/search-console/connect', ConnectSearchConsoleController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:10,1'])->name('sites.search-console.connect');
             Route::put('/sites/{site}/search-console', ChooseSearchConsolePropertyController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.search-console.property');
             Route::delete('/sites/{site}/search-console', DisconnectSearchConsoleController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.search-console.disconnect');

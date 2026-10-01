@@ -67,6 +67,42 @@
                 @empty
                     <p class="text-sm text-muted">{{ __('No ad spend imported yet.') }}</p>
                 @endforelse
+                @foreach ($adAccounts as $adAccount)
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3 text-sm">
+                        <span>
+                            <span class="font-bold text-ink">{{ $adAccount->name }}</span>
+                            <span class="text-muted">· {{ $adAccount->platformName() }} · {{ __('filed under :source', ['source' => $adAccount->source]) }}
+                                · {{ $adAccount->synced_at ? __('read :time', ['time' => $adAccount->synced_at->diffForHumans()]) : __('not read yet') }}</span>
+                            @if ($adAccount->error)<span class="block text-xs text-danger">{{ $adAccount->error }}</span>@endif
+                        </span>
+                        @if ($canManage)
+                            <span class="flex gap-2">
+                                <form method="POST" action="{{ route('analytics.sites.ads.sync', [$project, $site->id, $adAccount->id]) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Read now') }}</x-signal.ui.button></form>
+                                <form method="POST" action="{{ route('analytics.sites.ads.disconnect', [$project, $site->id, $adAccount->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Disconnect') }}</x-signal.ui.button></form>
+                            </span>
+                        @endif
+                    </div>
+                @endforeach
+                @error('ads')<x-signal.ui.alert tone="danger">{{ $message }}</x-signal.ui.alert>@enderror
+                @if ($canManage && $adChoice)
+                    <form method="POST" action="{{ route('analytics.sites.ads.choose', [$project, $site->id]) }}" class="flex flex-wrap items-end gap-3 border-t border-line pt-3">
+                        @csrf
+                        <x-signal.ui.select-field name="account_id" :label="__('Ad account')">
+                            @foreach ($adChoice['accounts'] as $choice)
+                                <option value="{{ $choice['id'] }}">{{ $choice['name'] }}{{ $choice['currency'] ? ' · '.$choice['currency'] : '' }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.button type="submit" variant="primary">{{ __('Connect this account') }}</x-signal.ui.button>
+                    </form>
+                @endif
+                @if ($canManage && $adPlatforms !== [])
+                    <div class="flex flex-wrap items-center gap-3 border-t border-line pt-3">
+                        <span class="text-sm text-muted">{{ __('Read spend daily, straight from the platform:') }}</span>
+                        @foreach ($adPlatforms as $platform)
+                            <form method="POST" action="{{ route('analytics.sites.ads.connect', [$project, $site->id, $platform]) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Connect :platform', ['platform' => \App\Models\AnalyticsAdAccount::PLATFORMS[$platform]['name']]) }}</x-signal.ui.button></form>
+                        @endforeach
+                    </div>
+                @endif
                 @if ($canManage)
                     <form method="POST" action="{{ route('analytics.ad-spend.import', [$project, $site->id]) }}" enctype="multipart/form-data" class="grid gap-3 sm:grid-cols-3 sm:items-end">
                         @csrf

@@ -61,6 +61,15 @@ return [
 
     // Google Search Console for Analytics: an OAuth client (web application) whose redirect URI is
     // {APP_URL}/analytics/search-console/callback. Off until both are set.
+    // Ad spend straight from the ad platforms (Analytics → Campaigns). Google Ads also uses the Google OAuth client below.
+    'google_ads' => [
+        'developer_token' => env('GOOGLE_ADS_DEVELOPER_TOKEN'),
+    ],
+    'meta_ads' => [
+        'app_id' => env('META_ADS_APP_ID'),
+        'app_secret' => env('META_ADS_APP_SECRET'),
+    ],
+
     'google_search_console' => [
         'client_id' => env('GOOGLE_SEARCH_CONSOLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET'),

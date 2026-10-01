@@ -507,6 +507,14 @@ Artisan::command('databases:check-replicas', function (App\Actions\Infrastructur
     $this->info('Checked '.$check->handle().' read replicas.');
 })->purpose('Follow read replica setups and record how far each replica is behind');
 Schedule::command('databases:check-replicas')->everyFiveMinutes()->withoutOverlapping(10)->onOneServer();
+Artisan::command('analytics:sync-ad-spend', function (App\Actions\Analytics\SyncAdSpend $sync): void {
+    $synced = 0;
+    App\Models\AnalyticsAdAccount::query()->each(function (App\Models\AnalyticsAdAccount $account) use ($sync, &$synced): void {
+        $synced += $sync->handle($account) !== null ? 1 : 0;
+    });
+    $this->info("Read the spend of {$synced} ad accounts.");
+})->purpose('Read the last 30 days of spend from connected Google Ads and Meta ad accounts');
+Schedule::command('analytics:sync-ad-spend')->dailyAt('06:20')->withoutOverlapping(60)->onOneServer();
 Schedule::command('clients:send-reports')->monthlyOn(1, '07:00')->withoutOverlapping(60)->onOneServer();
 Schedule::command('providers:sync-bills')->dailyAt('05:40')->withoutOverlapping(60)->onOneServer();
 
