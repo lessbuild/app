@@ -1,7 +1,7 @@
 {{-- The public roadmap: what's being built, what's next, what people are asking for, and what shipped lately. --}}
 @php($headings = ['in_progress' => __('In progress'), 'planned' => __('Planned'), 'under_review' => __('Under consideration')])
 @php($blurbs = ['in_progress' => __('Being built now.'), 'planned' => __('Coming next.'), 'under_review' => __('Requests we’re weighing up. Vote for the ones you want.')])
-<x-signal.layouts.public :title="__('Roadmap')" :description="__('What’s being built for :app, what’s next, and what people are asking for.', ['app' => config('app.name')])" :canonical="route('roadmap')">
+<x-signal.layouts.public :title="__('Roadmap')" :description="__('What’s being built for :app, what’s next, and what people are asking for.', ['app' => config('app.name')])" :canonical="route('roadmap')" :structured-data="[\App\Support\StructuredData::breadcrumbs([config('app.name') => route('home'), __('Roadmap') => route('roadmap')])]">
     <div class="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:px-8 sm:py-16">
         <div class="flex flex-wrap items-end justify-between gap-5">
             <div class="max-w-2xl">

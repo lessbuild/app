@@ -1,18 +1,11 @@
-@php($hero = config('marketing.hero'))
+{{-- The hero's copy, and what the product is for search engines, with its free tier. --}}
+@php
+    $hero = config('marketing.hero');
+    $structuredData = [['@type' => 'SoftwareApplication', 'name' => config('app.name'), 'url' => route('home'), 'applicationCategory' => 'DeveloperApplication', 'operatingSystem' => 'Web',
+    'description' => __(config('marketing.summary')), 'publisher' => ['@id' => route('home').'#organization'], 'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD', 'description' => __('Free tier for every service')]]];
+@endphp
 
-@push('head')
-    {{-- Tells search engines what the product is and that it has a free tier. --}}
-    <script type="application/ld+json">{!! json_encode([
-        '@context' => 'https://schema.org',
-        '@graph' => [
-            ['@type' => 'Organization', 'name' => config('app.name'), 'url' => route('home'), 'logo' => asset('images/og/default.png')],
-            ['@type' => 'SoftwareApplication', 'name' => config('app.name'), 'url' => route('home'), 'applicationCategory' => 'DeveloperApplication', 'operatingSystem' => 'Web',
-                'description' => config('marketing.summary'), 'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD', 'description' => 'Free tier for every service']],
-        ],
-    ], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
-@endpush
-
-<x-signal.layouts.public :title="config('app.name')" :description="__(config('marketing.summary'))" :canonical="route('home')">
+<x-signal.layouts.public :title="__('Deploy, monitor and analyse apps on your own servers')" :description="__(config('marketing.summary'))" :canonical="route('home')" :structured-data="$structuredData">
     {{-- Hero: the promise on the left, a glimpse of the dashboard on the right. --}}
     <section class="relative overflow-hidden border-b border-line bg-surface">
         <div class="surface-grid absolute inset-0 opacity-50" aria-hidden="true"></div>

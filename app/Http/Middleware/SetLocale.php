@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class SetLocale
 {
     /**
-     * Set the request's locale before it is handled.
+     * Set the request's locale before it is handled, and label the response with it.
      *
      * @param  Request  $request
      * @param  Closure(Request): Response  $next
@@ -29,7 +29,14 @@ final class SetLocale
         app()->setLocale($locale);
         Carbon::setLocale($locale);
 
-        return $next($request);
+        $response = $next($request);
+        $response->headers->set('Content-Language', $locale);
+        if (! $request->user() instanceof User) {
+            // Guests get the language their browser asks for at the same address, so caches and crawlers must keep each language apart.
+            $response->setVary('Accept-Language', false);
+        }
+
+        return $response;
     }
 
     /**

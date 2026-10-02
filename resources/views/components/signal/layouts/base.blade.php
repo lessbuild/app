@@ -4,9 +4,13 @@
     'indexable' => false,
     'canonical' => null,
     'image' => null,
+    'structuredData' => [],
 ])
 
-@php($pageTitle = $title ? $title.' · '.config('app.name') : config('app.name'))
+{{-- The site's name follows the page's title, unless the title already is the name. --}}
+@php($pageTitle = $title && $title !== config('app.name') ? $title.' · '.config('app.name') : config('app.name'))
+{{-- Indexed pages are canonical at their own address without the query string, so tracking parameters don't make duplicates. --}}
+@php($canonical ??= $indexable ? url()->current() : null)
 
 <!DOCTYPE html>
 <html
@@ -48,7 +52,7 @@
             <meta property="og:type" content="website">
             <meta property="og:title" content="{{ $pageTitle }}">
             @if ($description)<meta property="og:description" content="{{ $description }}">@endif
-            <meta property="og:url" content="{{ $canonical ?? url()->current() }}">
+            <meta property="og:url" content="{{ $canonical }}">
             <meta property="og:image" content="{{ $image ?? asset('images/og/default.png') }}">
             <meta property="og:image:width" content="1200">
             <meta property="og:image:height" content="630">
@@ -56,6 +60,10 @@
             <meta name="twitter:title" content="{{ $pageTitle }}">
             @if ($description)<meta name="twitter:description" content="{{ $description }}">@endif
             <meta name="twitter:image" content="{{ $image ?? asset('images/og/default.png') }}">
+            @if ($structuredData !== [])
+                {{-- What the page is, for search results. Left off customers' status pages, which aren't ours to describe. --}}
+                {{ \App\Support\StructuredData::script($structuredData) }}
+            @endif
         @endif
         <x-signal.theme-boot />
         @vite(['resources/css/app.css', 'resources/js/app.js'])

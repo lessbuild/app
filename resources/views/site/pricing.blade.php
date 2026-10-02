@@ -1,6 +1,6 @@
 @php($yearly = request()->query('billing') === 'yearly')
 @php($money = fn (?int $cents): string => $cents === null ? __('Contact us') : ($cents === 0 ? __('Free') : '$'.number_format($cents / 100, $cents % 100 === 0 ? 0 : 2)))
-<x-signal.layouts.public :title="__('Pricing')" :description="__('Each service has its own tiers. Start free and pay for what each project needs.')" :canonical="route('pricing')">
+<x-signal.layouts.public :title="__('Pricing')" :description="__('Each service has its own tiers. Start free and pay for what each project needs.')" :canonical="route('pricing')" :structured-data="[\App\Support\StructuredData::breadcrumbs([config('app.name') => route('home'), __('Pricing') => route('pricing')])]">
     <div class="mx-auto grid max-w-6xl gap-12 px-5 py-12 sm:px-8 sm:py-16">
     <section class="grid gap-3 text-center">
         <h1 class="text-4xl font-extrabold tracking-tight text-ink">{{ __('Pricing') }}</h1>

@@ -1,6 +1,6 @@
 @php($other = $page === 'privacy' ? 'terms' : 'privacy')
 
-<x-signal.layouts.public :title="__($copy['title'])" :description="__($copy['description'])" :canonical="route('legal', $page)">
+<x-signal.layouts.public :title="__($copy['title'])" :description="__($copy['description'])" :canonical="route('legal', $page)" :structured-data="[\App\Support\StructuredData::breadcrumbs([config('app.name') => route('home'), __($copy['title']) => route('legal', $page)])]">
     <article class="mx-auto max-w-3xl px-5 py-12 sm:px-8 sm:py-16" aria-labelledby="legal-heading">
         <p class="ui-eyebrow">{{ __(':app legal', ['app' => config('app.name')]) }}</p>
         <h1 id="legal-heading" class="mt-3 text-4xl font-extrabold tracking-[-0.04em] text-ink sm:text-5xl">{{ __($copy['title']) }}</h1>

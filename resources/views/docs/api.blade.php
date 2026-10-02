@@ -1,4 +1,4 @@
-<x-signal.layouts.base :title="__('API reference')" :description="__('The platform’s public API: Deployer API v1, Monitoring ingest, heartbeats and queues, and the analytics tracker.')" indexable :canonical="route('docs.api')">
+<x-signal.layouts.base :title="__('API reference')" :description="__('The platform’s public API: Deployer API v1, Monitoring ingest, heartbeats and queues, and the analytics tracker.')" indexable :canonical="route('docs.api')" :structured-data="[\App\Support\StructuredData::breadcrumbs([config('app.name') => route('home'), __('API reference') => route('docs.api')])]">
     <main id="main-content" tabindex="-1" class="mx-auto grid max-w-5xl gap-6 px-4 py-10 sm:px-8 sm:py-14">
         <header>
             <p class="ui-eyebrow">{{ config('app.name') }}</p>

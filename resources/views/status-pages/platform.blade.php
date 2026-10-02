@@ -1,4 +1,4 @@
-<x-signal.layouts.base :title="__(':app status', ['app' => config('app.name')])" :description="__('Live status of the platform and its services.')" indexable :canonical="route('platform.status')">
+<x-signal.layouts.base :title="__(':app status', ['app' => config('app.name')])" :description="__('Live status of the platform and its services.')" indexable :canonical="route('platform.status')" :structured-data="[\App\Support\StructuredData::breadcrumbs([config('app.name') => route('home'), __('Status') => route('platform.status')])]">
     <main id="main-content" tabindex="-1" class="mx-auto grid max-w-4xl gap-6 px-4 py-10 sm:px-8 sm:py-14">
         <header>
             <p class="ui-eyebrow">{{ config('app.name') }}</p>

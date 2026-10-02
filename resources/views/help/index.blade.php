@@ -1,4 +1,4 @@
-<x-signal.layouts.public :title="__('Help centre')" :description="__('Short guides to every part of :app.', ['app' => config('app.name')])" :canonical="route('help')">
+<x-signal.layouts.public :title="__('Help centre')" :description="__('Short guides to every part of :app.', ['app' => config('app.name')])" :canonical="route('help')" :structured-data="[\App\Support\StructuredData::breadcrumbs([config('app.name') => route('home'), __('Help centre') => route('help')])]">
     <section class="border-b border-line bg-surface">
         <div class="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
             <p class="ui-eyebrow">{{ __('Help centre') }}</p>

@@ -1,4 +1,4 @@
-<x-signal.layouts.public :title="__(':app vs :other', ['app' => config('app.name'), 'other' => $copy['name']])" :description="__('How :app compares with :other, and when to choose each.', ['app' => config('app.name'), 'other' => $copy['name']])" :canonical="route('compare', $slug)">
+<x-signal.layouts.public :title="__(':app vs :other', ['app' => config('app.name'), 'other' => $copy['name']])" :description="__('How :app compares with :other, and when to choose each.', ['app' => config('app.name'), 'other' => $copy['name']])" :canonical="route('compare', $slug)" :structured-data="[\App\Support\StructuredData::breadcrumbs([config('app.name') => route('home'), __(':app vs :other', ['app' => config('app.name'), 'other' => $copy['name']]) => route('compare', $slug)])]">
     <div class="mx-auto max-w-4xl px-5 py-12 sm:px-8 sm:py-16">
         <p class="ui-eyebrow">{{ __('Compare') }}</p>
         <h1 class="mt-3 text-4xl font-extrabold tracking-[-0.04em] text-ink sm:text-5xl">{{ __(':app vs :other', ['app' => config('app.name'), 'other' => $copy['name']]) }}</h1>

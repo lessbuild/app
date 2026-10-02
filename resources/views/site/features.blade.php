@@ -1,8 +1,13 @@
-@php($accent = $copy['accent'])
-@php($others = collect($services)->reject(fn ($other): bool => $other->key() === $service->key()))
+{{-- The service's accent, the other services, and breadcrumbs and the questions below for search results. --}}
+@php
+    $accent = $copy['accent'];
+    $others = collect($services)->reject(fn ($other): bool => $other->key() === $service->key());
+    $structuredData = array_values(array_filter([\App\Support\StructuredData::breadcrumbs([config('app.name') => route('home'), $service->name() => route('features', $service->key())]),
+        $copy['questions'] !== [] ? \App\Support\StructuredData::faq(array_map(fn (array $pair): array => [__($pair[0]), __($pair[1])], $copy['questions'])) : null]));
+@endphp
 
 {{-- A service's page, laid out like the Signal product pages. Long lists collapse to titles on phones. --}}
-<x-signal.layouts.public :title="$service->name()" :description="__($copy['summary'])" :canonical="route('features', $service->key())" :image="asset('images/og/'.$service->key().'.png')">
+<x-signal.layouts.public :title="$service->name().': '.__($copy['eyebrow'])" :description="__($copy['summary'])" :canonical="route('features', $service->key())" :image="file_exists(public_path('images/og/'.$service->key().'.png')) ? asset('images/og/'.$service->key().'.png') : null" :structured-data="$structuredData">
     <section class="border-b border-line bg-surface" aria-labelledby="service-heading">
         <div class="mx-auto grid max-w-6xl items-center gap-8 px-5 py-10 sm:px-8 sm:py-16 lg:grid-cols-[.95fr_1.05fr] lg:gap-12 lg:py-20">
             <div class="min-w-0">

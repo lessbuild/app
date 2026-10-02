@@ -1,4 +1,4 @@
-<x-signal.layouts.public :title="__($guide['title'])" :description="__($guide['summary'])" :canonical="route('help.guide', $slug)">
+<x-signal.layouts.public :title="__($guide['title'])" :description="__($guide['summary'])" :canonical="route('help.guide', $slug)" :structured-data="[\App\Support\StructuredData::breadcrumbs([config('app.name') => route('home'), __('Help centre') => route('help'), __($guide['title']) => route('help.guide', $slug)]), \App\Support\StructuredData::article(__($guide['title']), __($guide['summary']), route('help.guide', $slug))]">
     <div class="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1fr_18rem]">
         <article aria-labelledby="guide-heading">
             <x-signal.ui.link :href="route('help')" layout="inline" size="inline" variant="muted" class="font-bold"><span aria-hidden="true">←</span> {{ __('Help centre') }}</x-signal.ui.link>

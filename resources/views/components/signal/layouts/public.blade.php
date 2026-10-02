@@ -3,12 +3,13 @@
     'description' => null,
     'canonical' => null,
     'image' => null,
+    'structuredData' => [],
 ])
 
 @php($services = app(\App\Platform\ServiceRegistry::class)->all())
 
 {{-- The public site, as the Signal starter's Buildpusher homepage lays it out: a blurred sticky header, the page, and a three-column footer. Indexed by search engines. --}}
-<x-signal.layouts.base :title="$title" :description="$description" indexable :canonical="$canonical" :image="$image">
+<x-signal.layouts.base :title="$title" :description="$description" indexable :canonical="$canonical" :image="$image" :structured-data="$structuredData">
     <div class="min-h-screen overflow-x-hidden">
         <header class="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
             <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-5 sm:px-8">

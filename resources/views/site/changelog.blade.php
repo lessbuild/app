@@ -1,4 +1,4 @@
-<x-signal.layouts.public :title="__('Changelog')" :description="__('What’s new in :app.', ['app' => config('app.name')])" :canonical="route('changelog')">
+<x-signal.layouts.public :title="__('Changelog')" :description="__('Every :app release: new features and improvements to deploys, servers, monitoring, security and analytics, newest first.', ['app' => config('app.name')])" :canonical="route('changelog')" :structured-data="[\App\Support\StructuredData::breadcrumbs([config('app.name') => route('home'), __('Changelog') => route('changelog')])]">
     <div class="mx-auto max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
         <p class="ui-eyebrow">{{ __('Changelog') }}</p>
         <h1 class="mt-3 text-4xl font-extrabold tracking-[-0.04em] text-ink sm:text-5xl">{{ __('What’s new') }}</h1>
