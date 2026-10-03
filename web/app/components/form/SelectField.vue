@@ -7,6 +7,10 @@ const props = withDefaults(defineProps<{ name: string; label: string; descriptio
     description: undefined, errorKey: undefined, id: undefined, options: () => [], placeholder: undefined,
 });
 const model = defineModel<string>();
+// Without a value from the page, start on the placeholder or, without one, the first option (as a plain select does).
+if (model.value === undefined) {
+    model.value = props.placeholder !== undefined ? '' : props.options[0]?.value;
+}
 const controlId = computed(() => props.id ?? props.name);
 const { field, error, describedBy } = useFieldState(() => controlId.value, () => props.name, () => !!props.description, () => props.errorKey);
 </script>
