@@ -103,7 +103,13 @@ final class ProjectTemplatesTest extends TestCase
         $this->assertSame("APP_KEY=\nDB_PASSWORD=\n", $template->definition['env']);
         $this->assertStringNotContainsString('hunter2', (string) json_encode($template->definition));
         $this->assertCount(1, $template->definition['monitors']);
-        $saved = collect($this->actingAs($owner)->getJson('/api/app/projects/templates')->assertOk()->json('templates'))->firstWhere('name', 'Shop setup');
+        $saved = null;
+        foreach ((array) $this->actingAs($owner)->getJson('/api/app/projects/templates')->assertOk()->json('templates') as $listed) {
+            if (is_array($listed) && ($listed['name'] ?? null) === 'Shop setup') {
+                $saved = $listed;
+            }
+        }
+        $this->assertIsArray($saved);
         $this->assertSame([1, 1, 1], [$saved['environments'], $saved['monitors'], $saved['goals']]);
 
         $this->actingAs($owner)->postJson('/api/app/projects/templates', [
