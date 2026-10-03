@@ -20,6 +20,7 @@ use App\Http\Controllers\Account\RenameAccountController;
 use App\Http\Controllers\Account\RevokeApiTokenController;
 use App\Http\Controllers\Account\RevokeInvitationController;
 use App\Http\Controllers\Account\SendWebhookController;
+use App\Http\Controllers\Account\ShowAccountSecurityController;
 use App\Http\Controllers\Account\ShowAccountSettingsController;
 use App\Http\Controllers\Account\ShowApiTokensController;
 use App\Http\Controllers\Account\ShowAuditLogController;
@@ -28,8 +29,11 @@ use App\Http\Controllers\Account\ShowWebhooksController;
 use App\Http\Controllers\Account\StoreAuditStreamController;
 use App\Http\Controllers\Account\StoreWebhookEndpointController;
 use App\Http\Controllers\Account\SwitchAccountController;
+use App\Http\Controllers\Account\UpdateAccountSecurityController;
 use App\Http\Controllers\Account\UpdateMemberProjectsController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
+use App\Http\Controllers\Account\UpdateSamlSettingsController;
+use App\Http\Controllers\Account\UpdateScimSettingsController;
 use App\Http\Controllers\Account\UpdateWebhookEndpointController;
 use App\Http\Controllers\Auth\ShowCurrentUserController;
 use App\Http\Controllers\Auth\ShowSignInOptionsController;
@@ -138,4 +142,10 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::put('/account/webhooks/{endpoint}', UpdateWebhookEndpointController::class)->whereNumber('endpoint')->middleware(['account.can:update', 'throttle:30,1'])->name('account.webhooks.update');
     Route::delete('/account/webhooks/{endpoint}', DeleteWebhookEndpointController::class)->whereNumber('endpoint')->middleware(['account.can:update', 'throttle:20,1'])->name('account.webhooks.destroy');
     Route::post('/account/webhooks/{endpoint}/send', SendWebhookController::class)->whereNumber('endpoint')->middleware(['account.can:update', 'throttle:20,1'])->name('account.webhooks.send');
+
+    // The account's sign-in rules, single sign-on (OpenID Connect or SAML) and SCIM provisioning.
+    Route::get('/account/security', ShowAccountSecurityController::class)->middleware('account.can:update')->name('account.security');
+    Route::put('/account/security', UpdateAccountSecurityController::class)->middleware(['account.can:update', 'password.confirm', 'throttle:20,1'])->name('account.security.update');
+    Route::put('/account/security/scim', UpdateScimSettingsController::class)->middleware(['account.can:update', 'password.confirm', 'throttle:20,1'])->name('account.security.scim');
+    Route::put('/account/security/saml', UpdateSamlSettingsController::class)->middleware(['account.can:update', 'password.confirm', 'throttle:20,1'])->name('account.security.saml');
 });

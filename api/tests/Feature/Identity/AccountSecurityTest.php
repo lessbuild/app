@@ -33,63 +33,74 @@ final class AccountSecurityTest extends TestCase
         $this->owner->forceFill(['current_account_id' => $this->account->id])->save();
     }
 
+    /**
+     * Owners can't save rules that would lock them out; the change is audited.
+     */
     public function test_owners_cant_save_rules_that_would_lock_them_out(): void
     {
-        $this->actingAs($this->owner)->get('/account/security')->assertOk()->assertSee(route('sso.callback'))->assertSee('127.0.0.1');
+        $this->actingAs($this->owner)->getJson('/api/app/account/security')->assertOk()->assertJsonPath('oidc.redirectUri', route('sso.callback'))->assertJsonPath('ip', '127.0.0.1');
 
-        $this->save(['allowed_ip_ranges' => "203.0.113.0/24\nnot-an-ip"])->assertSessionHasErrors('allowed_ip_ranges');
-        $this->save(['allowed_ip_ranges' => '203.0.113.0/24'])->assertSessionHasErrors('allowed_ip_ranges');
-        $this->save(['allowed_email_domains' => 'other.com'])->assertSessionHasErrors('allowed_email_domains');
-        $this->save(['require_two_factor' => '1'])->assertSessionHasErrors('require_two_factor');
-        $this->save(['sso_enforced' => '1'])->assertSessionHasErrors('sso_enforced');
-        $this->save(['sso_issuer' => 'https://login.acme.com', 'sso_client_id' => 'bp', 'sso_client_secret' => 's3cret', 'sso_enforced' => '1'])->assertSessionHasErrors('sso_enforced');
+        $this->save(['allowed_ip_ranges' => "203.0.113.0/24\nnot-an-ip"])->assertJsonValidationErrors('allowed_ip_ranges');
+        $this->save(['allowed_ip_ranges' => '203.0.113.0/24'])->assertJsonValidationErrors('allowed_ip_ranges');
+        $this->save(['allowed_email_domains' => 'other.com'])->assertJsonValidationErrors('allowed_email_domains');
+        $this->save(['require_two_factor' => '1'])->assertJsonValidationErrors('require_two_factor');
+        $this->save(['sso_enforced' => '1'])->assertJsonValidationErrors('sso_enforced');
+        $this->save(['sso_issuer' => 'https://login.acme.com', 'sso_client_id' => 'bp', 'sso_client_secret' => 's3cret', 'sso_enforced' => '1'])->assertJsonValidationErrors('sso_enforced');
 
-        $this->save(['allowed_ip_ranges' => "127.0.0.0/8\n2001:db8::/32", 'allowed_email_domains' => 'ACME.com, acme.co.uk', 'session_idle_minutes' => '30'])->assertRedirect('/account/security');
+        $this->save(['allowed_ip_ranges' => "127.0.0.0/8\n2001:db8::/32", 'allowed_email_domains' => 'ACME.com, acme.co.uk', 'session_idle_minutes' => '30'])->assertOk()->assertJsonPath('redirect', '/account/security');
         $account = $this->account->refresh();
         $this->assertSame([['127.0.0.0/8', '2001:db8::/32'], ['acme.com', 'acme.co.uk'], 30], [$account->allowed_ip_ranges, $account->allowed_email_domains, $account->session_idle_minutes]);
         $this->assertStringContainsString('IP ranges', (string) data_get(AuditEntry::query()->where('action', AuditAction::SecurityRulesChanged)->sole()->context, 'changes'));
 
         $member = $this->member('max@acme.com', AccountRole::Member);
-        $this->actingAs($member)->get('/account/security')->assertForbidden();
+        $this->actingAs($member)->getJson('/api/app/account/security')->assertForbidden();
     }
 
+    /**
+     * The rules apply to every signed-in request to the app's API, but never trap anyone: personal settings stay
+     * reachable, and each check says where to go (409) to put things right.
+     */
     public function test_the_rules_apply_to_every_signed_in_request_but_never_trap_anyone(): void
     {
         $member = $this->member('max@acme.com', AccountRole::Member);
         $this->account->forceFill(['allowed_ip_ranges' => ['203.0.113.0/24']])->save();
-        $this->actingAs($member->fresh() ?? $member)->get('/dashboard')->assertForbidden();
-        $this->actingAs($member->fresh() ?? $member)->get('/settings/profile')->assertOk();
-        $this->actingAs($member->fresh() ?? $member)->withServerVariables(['REMOTE_ADDR' => '203.0.113.9'])->get('/dashboard')->assertOk();
+        $this->actingAs($member->fresh() ?? $member)->getJson('/api/app/dashboard')->assertForbidden();
+        $this->actingAs($member->fresh() ?? $member)->getJson('/api/app/auth/me')->assertOk();
+        $this->actingAs($member->fresh() ?? $member)->withServerVariables(['REMOTE_ADDR' => '203.0.113.9'])->getJson('/api/app/dashboard')->assertOk();
 
         $this->account->forceFill(['allowed_ip_ranges' => null, 'require_two_factor' => true])->save();
-        $this->actingAs($member->fresh() ?? $member)->get('/dashboard')->assertRedirect('/settings/security');
-        $this->actingAs($member->fresh() ?? $member)->get('/settings/security')->assertOk()->assertSee('requires two-factor authentication');
+        $this->actingAs($member->fresh() ?? $member)->getJson('/api/app/dashboard')->assertStatus(409)->assertJsonPath('redirect', '/settings/security');
 
         $this->account->forceFill(['require_two_factor' => false, 'session_idle_minutes' => 30])->save();
-        $this->actingAs($member->fresh() ?? $member)->withSession(['account.activity.'.$this->account->id => now()->subMinutes(31)->getTimestamp()])->get('/dashboard')->assertRedirect('/login');
+        $this->actingAs($member->fresh() ?? $member)->withSession(['account.activity.'.$this->account->id => now()->subMinutes(31)->getTimestamp()])->getJson('/api/app/dashboard')->assertStatus(409)->assertJsonPath('redirect', '/login');
         $this->assertGuest();
-        $this->actingAs($member->fresh() ?? $member)->withSession(['account.activity.'.$this->account->id => now()->subMinutes(5)->getTimestamp()])->get('/dashboard')->assertOk();
+        $this->actingAs($member->fresh() ?? $member)->withSession(['account.activity.'.$this->account->id => now()->subMinutes(5)->getTimestamp()])->getJson('/api/app/dashboard')->assertOk();
 
         $this->configureSso(['sso_enforced' => true]);
-        $this->actingAs($member->fresh() ?? $member)->get('/dashboard')->assertRedirect('/sso/verify');
-        $this->actingAs($member->fresh() ?? $member)->withSession(['sso.verified.'.$this->account->id => true])->get('/dashboard')->assertOk();
+        $this->actingAs($member->fresh() ?? $member)->getJson('/api/app/dashboard')->assertStatus(409)->assertJsonPath('redirect', '/sso/verify');
+        $this->actingAs($member->fresh() ?? $member)->withSession(['sso.verified.'.$this->account->id => true])->getJson('/api/app/dashboard')->assertOk();
     }
 
+    /**
+     * Invitations are limited to the allowed email domains.
+     */
     public function test_invitations_are_limited_to_the_allowed_domains(): void
     {
         $this->account->forceFill(['allowed_email_domains' => ['acme.com']])->save();
-        $this->actingAs($this->owner)->post('/account/invitations', ['email' => 'eve@elsewhere.com', 'role' => 'member'])->assertSessionHasErrors('email');
-        $this->actingAs($this->owner)->post('/account/invitations', ['email' => 'max@acme.com', 'role' => 'member'])->assertSessionHasNoErrors();
+        $this->actingAs($this->owner)->postJson('/api/app/account/invitations', ['email' => 'eve@elsewhere.com', 'role' => 'member'])->assertJsonValidationErrors('email');
+        $this->actingAs($this->owner)->postJson('/api/app/account/invitations', ['email' => 'max@acme.com', 'role' => 'member'])->assertOk();
     }
 
+    /**
+     * Members sign in through the identity provider, with PKCE and a state the callback checks.
+     */
     public function test_members_sign_in_through_the_identity_provider(): void
     {
         $this->configureSso();
         $this->fakeProvider('olive@acme.com');
-        $this->get('/login')->assertSee(route('sso.login'));
 
-        $this->post('/login/sso', ['email' => 'nobody@acme.com'])->assertSessionHasErrors('email');
-        $redirect = $this->post('/login/sso', ['email' => 'Olive@acme.com'])->assertRedirect()->headers->get('Location');
+        $this->postJson('/api/app/auth/sso', ['email' => 'nobody@acme.com'])->assertJsonValidationErrors('email');
+        $redirect = $this->postJson('/api/app/auth/sso', ['email' => 'Olive@acme.com'])->assertOk()->json('redirect');
         $this->assertStringStartsWith('https://login.acme.com/authorize?', (string) $redirect);
         parse_str((string) parse_url((string) $redirect, PHP_URL_QUERY), $query);
         $this->assertSame(['bp-client', route('sso.callback'), 'S256'], [$query['client_id'], $query['redirect_uri'], $query['code_challenge_method']]);
@@ -97,22 +108,25 @@ final class AccountSecurityTest extends TestCase
         $this->get('/sso/callback?code=abc&state=wrong')->assertRedirect('/login');
         $this->assertGuest();
 
-        $this->get('/sso/callback?code=abc&state='.$this->state($this->post('/login/sso', ['email' => 'olive@acme.com'])->headers->get('Location')))->assertRedirect('/dashboard');
+        $this->get('/sso/callback?code=abc&state='.$this->state($this->postJson('/api/app/auth/sso', ['email' => 'olive@acme.com'])->json('redirect')))->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($this->owner);
         $this->assertTrue(session('sso.verified.'.$this->account->id));
         $this->assertSame(1, AuditEntry::query()->where('action', AuditAction::SsoSignedIn)->count());
         Http::assertSent(fn ($request): bool => $request->url() === 'https://login.acme.com/token' && $request['code'] === 'abc' && strlen((string) $request['code_verifier']) === 96);
     }
 
+    /**
+     * The provider must be on a public address and vouch for a member with an allowed domain.
+     */
     public function test_the_provider_must_be_public_and_vouch_for_a_member_with_an_allowed_domain(): void
     {
         $this->configureSso(['allowed_email_domains' => ['acme.com']]);
         $this->fakeProvider('stranger@acme.com');
-        $this->get('/sso/callback?code=abc&state='.$this->state($this->post('/login/sso', ['email' => 'olive@acme.com'])->headers->get('Location')))->assertRedirect('/login')->assertSessionHasErrors('social');
+        $this->get('/sso/callback?code=abc&state='.$this->state($this->postJson('/api/app/auth/sso', ['email' => 'olive@acme.com'])->json('redirect')))->assertRedirect('/login')->assertSessionHasErrors('social');
         $this->assertGuest();
 
         $this->mock(DnsResolver::class)->shouldReceive('addresses')->andReturn(['10.0.0.8']);
-        $this->post('/login/sso', ['email' => 'olive@acme.com'])->assertSessionHasErrors('email');
+        $this->postJson('/api/app/auth/sso', ['email' => 'olive@acme.com'])->assertJsonValidationErrors('email');
     }
 
     /**
@@ -136,7 +150,7 @@ final class AccountSecurityTest extends TestCase
      */
     private function save(array $fields): \Illuminate\Testing\TestResponse
     {
-        return $this->actingAs($this->owner)->from('/account/security')->put('/account/security', ['require_two_factor' => '0', 'sso_enforced' => '0', ...$fields]);
+        return $this->actingAs($this->owner)->putJson('/api/app/account/security', ['require_two_factor' => '0', 'sso_enforced' => '0', ...$fields]);
     }
 
     /**

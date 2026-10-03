@@ -61,6 +61,9 @@ final class SamlSsoTest extends TestCase
      *
      * @return void
      */
+    /**
+     * Members sign in through a SAML identity provider; tampered or replayed responses are refused.
+     */
     public function test_members_sign_in_through_a_saml_identity_provider(): void
     {
         $this->withoutMiddleware(RequirePassword::class);
@@ -70,9 +73,9 @@ final class SamlSsoTest extends TestCase
         Membership::query()->forceCreate(['account_id' => $account->id, 'user_id' => $member->id, 'role' => AccountRole::Member]);
         $owner->forceFill(['current_account_id' => $account->id])->save();
 
-        $this->actingAs($owner)->get('/account/security')->assertOk()->assertSee('SAML single sign-on')->assertSee(route('sso.saml.acs'));
-        $this->actingAs($owner)->put('/account/security/saml', ['saml_idp_entity_id' => 'https://idp.example.com', 'saml_idp_sso_url' => 'https://idp.example.com/sso', 'saml_idp_certificate' => 'not a certificate'])->assertSessionHasErrors('saml_idp_certificate');
-        $this->actingAs($owner)->put('/account/security/saml', ['saml_idp_entity_id' => 'https://idp.example.com', 'saml_idp_sso_url' => 'https://idp.example.com/sso', 'saml_idp_certificate' => $this->certificate])->assertRedirect('/account/security');
+        $this->actingAs($owner)->getJson('/api/app/account/security')->assertOk()->assertJsonPath('saml.acsUrl', route('sso.saml.acs'));
+        $this->actingAs($owner)->putJson('/api/app/account/security/saml', ['saml_idp_entity_id' => 'https://idp.example.com', 'saml_idp_sso_url' => 'https://idp.example.com/sso', 'saml_idp_certificate' => 'not a certificate'])->assertJsonValidationErrors('saml_idp_certificate');
+        $this->actingAs($owner)->putJson('/api/app/account/security/saml', ['saml_idp_entity_id' => 'https://idp.example.com', 'saml_idp_sso_url' => 'https://idp.example.com/sso', 'saml_idp_certificate' => $this->certificate])->assertOk()->assertJsonPath('redirect', '/account/security');
         $account->refresh();
         $this->assertSame('saml', $account->sso_protocol);
         $this->assertTrue($account->hasSso());
@@ -80,8 +83,8 @@ final class SamlSsoTest extends TestCase
         auth()->logout();
 
         // Start signing in: off to the identity provider with a request.
-        $redirect = $this->post('/login/sso', ['email' => 'amy@acme.test'])->assertRedirect();
-        $this->assertStringStartsWith('https://idp.example.com/sso?SAMLRequest=', (string) $redirect->headers->get('Location'));
+        $redirect = $this->postJson('/api/app/auth/sso', ['email' => 'amy@acme.test'])->assertOk();
+        $this->assertStringStartsWith('https://idp.example.com/sso?SAMLRequest=', (string) $redirect->json('redirect'));
         $requestId = (string) session('sso.saml.attempt');
         $this->assertNotSame('', $requestId);
 
@@ -91,7 +94,7 @@ final class SamlSsoTest extends TestCase
         $this->assertGuest();
 
         // The request can only be answered once, so start again and answer it properly.
-        $this->post('/login/sso', ['email' => 'amy@acme.test']);
+        $this->postJson('/api/app/auth/sso', ['email' => 'amy@acme.test'])->assertOk();
         $requestId = (string) session('sso.saml.attempt');
         $acs = $this->post('/sso/saml/acs', ['SAMLResponse' => base64_encode($this->response($requestId, 'amy@acme.test', route('sso.saml.metadata', $account->id)))]);
         $acs->assertStatus(303);

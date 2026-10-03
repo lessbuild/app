@@ -47,10 +47,10 @@ final class ScimProvisioningTest extends TestCase
         $this->onTier($this->project, 'deploy', 'team');
         $owner = $this->ownerOf($this->project);
         $owner->forceFill(['current_account_id' => $this->project->account_id])->save();
-        $this->actingAs($owner)->put('/account/security/scim', ['change' => 'role', 'scim_default_role' => 'viewer'])->assertRedirect();
-        $this->actingAs($owner)->put('/account/security/scim', ['change' => 'token'])->assertSessionHas('scim_token');
-        $this->token = (string) session('scim_token');
-        $this->actingAs($owner)->get('/account/security')->assertOk()->assertSee('/api/scim/v2');
+        $this->actingAs($owner)->putJson('/api/app/account/security/scim', ['change' => 'role', 'scim_default_role' => 'viewer'])->assertOk();
+        $this->token = (string) $this->actingAs($owner)->putJson('/api/app/account/security/scim', ['change' => 'token'])->assertOk()->json('token');
+        $this->assertNotSame('', $this->token);
+        $this->actingAs($owner)->getJson('/api/app/account/security')->assertOk()->assertJsonPath('scim.on', true)->assertJsonPath('scim.baseUrl', url('/api/scim/v2'));
     }
 
     /**
