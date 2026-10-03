@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import { useState, type ComponentPropsWithoutRef, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { useT } from '@/lib/i18n-client';
 import { errorKey, firstError, useForm } from './Form';
@@ -15,7 +15,7 @@ export function FieldError({ name, id }: { name: string; id?: string }) {
 
     return (
         <div id={id} data-form-error className="my-2" aria-live="polite">
-            <div className="ui-alert ui-alert--danger ui-alert-danger" role="alert">{message}</div>
+            <div className="ui-alert ui-alert--danger ui-alert-danger text-sm" role="alert">{message}</div>
         </div>
     );
 }
@@ -156,5 +156,28 @@ export function PlanLimitAlert({ billingUrl }: { billingUrl?: string }) {
         <div className="ui-alert ui-alert--warning ui-alert-warning" role="alert">
             {message} {billingUrl && <a href={billingUrl} className="font-semibold underline">{t('See plans with more')}</a>}
         </div>
+    );
+}
+
+/** A password input with a button to show what's typed, for checking a long password before submitting. */
+export function PasswordField({ name, label, description, id, ...input }: Common & Omit<ComponentPropsWithoutRef<'input'>, 'type'>) {
+    const { t } = useT();
+    const [visible, setVisible] = useState(false);
+    const controlId = id ?? name;
+
+    return (
+        <InputField
+            id={controlId}
+            name={name}
+            label={label}
+            description={description}
+            type={visible ? 'text' : 'password'}
+            suffix={
+                <button type="button" className="ui-btn ui-btn-secondary rounded-l-none border-l-0 px-3 text-xs" aria-controls={controlId} aria-pressed={visible} onClick={() => setVisible(!visible)}>
+                    {visible ? t('Hide') : t('Show')}
+                </button>
+            }
+            {...input}
+        />
     );
 }

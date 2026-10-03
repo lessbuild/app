@@ -5,6 +5,7 @@ import { local } from '@/lib/url';
 import { t, tc, type Translator } from '@/lib/i18n';
 import { I18nProvider } from '@/lib/i18n-client';
 import type { Shell } from '@/lib/types';
+import { ConfirmIdentityDialog } from '@/components/auth/ConfirmIdentity';
 import { NavLinks } from './NavLinks';
 import { SignOutButton } from './SignOutButton';
 import { ThemeToggle } from './ThemeToggle';
@@ -96,6 +97,7 @@ export function AppShell({ shell, i18n, service, children }: { shell: Shell; i18
                 )}
                 {children}
             </main>
+            <ConfirmIdentityDialog />
         </I18nProvider>
     );
 }

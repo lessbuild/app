@@ -25,7 +25,6 @@ Route::get('/account/security', FrontendPageController::class)->name('account.se
 Route::get('/account/settings', FrontendPageController::class)->name('account.settings');
 Route::get('/account/webhooks', FrontendPageController::class)->name('account.webhooks');
 Route::get('/analytics/view/{token}', FrontendPageController::class)->name('analytics.viewer');
-Route::get('/api/app/projects/{project}/audit/runs/{siteAuditRun}/files/{file}', FrontendPageController::class)->name('app.audit.files');
 Route::get('/assistant', FrontendPageController::class)->name('assistant');
 Route::get('/changelog', FrontendPageController::class)->name('changelog');
 Route::get('/compare/{competitor}', FrontendPageController::class)->name('compare');

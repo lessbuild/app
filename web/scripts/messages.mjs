@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const web = join(dirname(fileURLToPath(import.meta.url)), '..');
 const lang = join(web, '..', 'api', 'lang');
 const locales = ['es', 'fr', 'de', 'pt'];
-const call = /\btc?\(\s*(?:[A-Za-z_$][\w$]*\s*,\s*)?(['"])((?:\\.|(?!\1).)*)\1/g;
+const call = /\b(?:tc?|rich)\(\s*(?:[A-Za-z_$][\w$]*\s*,\s*)?(['"])((?:\\.|(?!\1).)*)\1/g;
 
 /** Every .ts and .tsx file under a folder. */
 function sources(folder) {

@@ -59,7 +59,6 @@ Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('thr
 Route::get('/auth/{provider}/redirect', App\Http\Controllers\Auth\RedirectToProviderController::class)->middleware(['guest', 'throttle:20,1'])->name('social.redirect');
 // Shared by sign-in, connecting a provider and sudo-mode confirmation; the controller tells them apart.
 Route::get('/auth/{provider}/callback', App\Http\Controllers\Auth\HandleProviderCallbackController::class)->middleware('throttle:20,1')->name('social.callback');
-Route::post('/user/confirm-password/{provider}', App\Http\Controllers\Auth\ConfirmWithProviderController::class)->middleware(['auth', 'throttle:10,1'])->name('social.confirm');
 Route::get('/sso/callback', App\Http\Controllers\Auth\SsoCallbackController::class)->middleware('throttle:20,1')->name('sso.callback');
 Route::post('/sso/saml/acs', App\Http\Controllers\Auth\ConsumeSamlResponseController::class)->middleware('throttle:20,1')->name('sso.saml.acs');
 Route::get('/sso/saml/finish', App\Http\Controllers\Auth\FinishSamlSignInController::class)->middleware('throttle:20,1')->name('sso.saml.finish');

@@ -3,6 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { createContext, useContext, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useT } from '@/lib/i18n-client';
+import { ensureCsrf, xsrfToken } from '@/lib/client';
+import { confirmIdentity } from '@/lib/confirm';
 import { local } from '@/lib/url';
 
 type Errors = Record<string, string[]>;
@@ -25,22 +27,23 @@ export function firstError(errors: Errors, key: string): string | undefined {
     return errors[key]?.[0] ?? Object.entries(errors).find(([field]) => field.startsWith(`${key}.`))?.[1][0];
 }
 
-function xsrfToken(): string {
-    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
-    return match?.[1] ? decodeURIComponent(match[1]) : '';
-}
 
 /**
  * A form that posts to the API (`/api/app/…`) as form data: field names as Laravel expects them, method spoofing for
  * PUT and DELETE, files included. Laravel's validation errors appear on their fields. On success the page refreshes,
  * or goes where the API's `{ redirect }` says; a download is saved.
  */
-export function Form({ action, method = 'POST', className = 'grid gap-5', confirm, onSuccess, children, id }: {
+export function Form({ action, method = 'POST', className = 'grid gap-5', confirm, onSuccess, after, children, id }: {
     action: string;
     method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     className?: string;
     confirm?: string;
     onSuccess?: (redirect: string | null) => void;
+    /**
+     * Decide where to go after a successful submit, from the API's answer: a path loads that page in full (as after
+     * signing in), `null` stays put without refreshing. Without it, the page refreshes or follows `{ redirect }`.
+     */
+    after?: (data: Record<string, unknown>) => string | null | undefined;
     children: ReactNode;
     id?: string;
 }) {
@@ -61,14 +64,24 @@ export function Form({ action, method = 'POST', className = 'grid gap-5', confir
             body.append('_method', method);
         }
         setState({ errors: {}, busy: true });
+        await ensureCsrf();
+        const post = () => fetch(action, {
+            method: 'POST',
+            body,
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrfToken() },
+        });
         let response: Response;
         try {
-            response = await fetch(action, {
-                method: 'POST',
-                body,
-                credentials: 'same-origin',
-                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrfToken() },
-            });
+            response = await post();
+            if (response.status === 423) {
+                // A sensitive change: confirm it's them, then send the form again.
+                if (!(await confirmIdentity())) {
+                    setState({ errors: {}, busy: false });
+                    return;
+                }
+                response = await post();
+            }
         } catch {
             setState({ errors: { _form: [t('The connection failed. Check you’re online and try again.')] }, busy: false });
             return;
@@ -78,6 +91,12 @@ export function Form({ action, method = 'POST', className = 'grid gap-5', confir
             const payload = (await response.json()) as { errors?: Errors; message?: string };
             setState({ errors: payload.errors ?? { _form: [payload.message ?? t('Check the form and try again.')] }, busy: false });
             requestAnimationFrame(() => form.current?.querySelector<HTMLElement>('[aria-invalid="true"], [data-form-error]')?.focus());
+            return;
+        }
+        if (response.status === 409) {
+            // A check sends the person somewhere first (such as setting up a second factor).
+            const payload = (await response.json()) as { redirect: string };
+            window.location.assign(payload.redirect);
             return;
         }
         if (response.status === 419) {
@@ -103,7 +122,19 @@ export function Form({ action, method = 'POST', className = 'grid gap-5', confir
             return;
         }
 
-        const payload = (response.status === 204 ? {} : await response.json()) as { redirect?: string };
+        const text = await response.text();
+        const payload = (text ? JSON.parse(text) : {}) as { redirect?: string } & Record<string, unknown>;
+        if (after) {
+            const next = after(payload);
+            if (typeof next === 'string') {
+                window.location.assign(next);
+                return;
+            }
+            if (next === null) {
+                setState({ errors: {}, busy: false });
+                return;
+            }
+        }
         setState({ errors: {}, busy: false });
         const target = payload.redirect ? local(payload.redirect) : null;
         onSuccess?.(target);

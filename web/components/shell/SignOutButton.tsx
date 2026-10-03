@@ -14,7 +14,6 @@ export function SignOutButton({ action }: { action: string }) {
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': token ? decodeURIComponent(token) : '' },
         }).catch(() => null);
         // A full reload, so nothing from the signed-in session stays in memory; the home page is a Laravel page anyway.
-        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = '/';
     }
 
