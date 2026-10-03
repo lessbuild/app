@@ -12,6 +12,12 @@
 
 @plugin "@tailwindcss/forms";
 
+/* A modal dialog is centred in the window. Unlayered, so spacing utilities on the page around it (space-y-*, which
+   set margins on every child) can't pull it to the top. */
+dialog.ui-dialog:modal {
+    margin: auto;
+}
+
 /* Dialogs use the native <dialog>; keep the page behind still while one is open. */
 html:has(dialog.ui-dialog[open]) {
     overflow: hidden;

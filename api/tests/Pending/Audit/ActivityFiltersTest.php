@@ -31,30 +31,6 @@ final class ActivityFiltersTest extends TestCase
         $this->owner->forceFill(['current_account_id' => $this->account->id])->save();
     }
 
-    public function test_the_audit_log_filters_by_person_kind_and_date_and_exports_what_it_shows(): void
-    {
-        $other = User::factory()->create(['name' => 'Max Member']);
-        $membership = new \App\Models\Membership;
-        $membership->forceFill(['account_id' => $this->account->id, 'user_id' => $other->id, 'role' => \App\Enums\AccountRole::Member])->save();
-        $this->entry($this->owner, AuditAction::AccountRenamed, ['name' => 'Acme'], now()->subDays(10));
-        $this->entry($other, AuditAction::PasswordChanged, [], now()->subDay());
-        $this->entry($this->owner, AuditAction::TwoFactorEnabled, [], now());
-
-        $this->actingAs($this->owner)->get('/account/audit-log?category=security')->assertOk()
-            ->assertSee('Changed their password')->assertDontSee('Renamed the account');
-        $this->actingAs($this->owner)->get("/account/audit-log?category=security&person={$other->id}")->assertOk()
-            ->assertSee('Changed their password')->assertDontSee('Turned on two-factor');
-        $this->actingAs($this->owner)->get('/account/audit-log?from='.now()->subDays(11)->toDateString().'&to='.now()->subDays(9)->toDateString())->assertOk()
-            ->assertSee('Renamed the account')->assertDontSee('Changed their password');
-        // Values that don't belong to the account are ignored.
-        $this->actingAs($this->owner)->get('/account/audit-log?person='.User::factory()->create()->id.'&category=nope&from=yesterday')->assertOk()->assertSee('Renamed the account');
-
-        $csv = $this->actingAs($this->owner)->get('/account/audit-log/export?category=security')->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8')->streamedContent();
-        $this->assertStringContainsString('Changed their password', $csv);
-        $this->assertStringContainsString('Sign-in and security', $csv);
-        $this->assertStringNotContainsString('Renamed the account', $csv);
-    }
-
     public function test_the_inbox_filters_by_kind_and_words_and_exports(): void
     {
         $this->notify('Deploy finished', 'Shop is live', read: true);

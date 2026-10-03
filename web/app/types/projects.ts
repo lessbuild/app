@@ -38,7 +38,7 @@ export type SetupStep = {
 export type ProjectSetup = { steps: SetupStep[] };
 
 /** One entry of a project's recent changes, from the audit log. */
-export type AuditEntryView = { id: number; actor: string; description: string; at: string };
+export type AuditEntryView = { id: string; actor: string; actorEmail?: string | null; description: string; ipAddress?: string | null; device?: string | null; at: string; category?: string };
 
 export type DomainRow = { id: string; name: string; environment: string | null; verifiedAt: string | null; lastCheckedAt: string | null; recordName: string; recordValue: string };
 

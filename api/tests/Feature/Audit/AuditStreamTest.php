@@ -44,11 +44,11 @@ final class AuditStreamTest extends TestCase
             's3.eu-central-1.amazonaws.com/*' => Http::response('', 200),
         ]);
 
-        $this->actingAs($owner)->get('/account/audit-log')->assertOk()->assertSee('Add a stream');
-        $this->actingAs($owner)->post('/account/audit-log/streams', ['name' => 'Bad', 'type' => 'webhook', 'endpoint_url' => 'http://siem.example.com'])->assertSessionHasErrors('endpoint_url');
-        $this->actingAs($owner)->post('/account/audit-log/streams', ['name' => 'Chat', 'type' => 'slack', 'endpoint_url' => 'https://hooks.slack.com/services/T0/B0/abc'])->assertRedirect('/account/audit-log');
-        $this->actingAs($owner)->post('/account/audit-log/streams', ['name' => 'SIEM', 'type' => 'webhook', 'endpoint_url' => 'https://siem.example.com/ingest'])->assertSessionHas('stream_secret');
-        $this->actingAs($owner)->post('/account/audit-log/streams', ['name' => 'Archive', 'type' => 's3', 'backup_destination_id' => $destination->id])->assertRedirect();
+        $this->actingAs($owner)->getJson('/api/app/account/audit-log')->assertOk()->assertJsonPath('canManageStreams', true);
+        $this->actingAs($owner)->postJson('/api/app/account/audit-log/streams', ['name' => 'Bad', 'type' => 'webhook', 'endpoint_url' => 'http://siem.example.com'])->assertJsonValidationErrors('endpoint_url');
+        $this->actingAs($owner)->postJson('/api/app/account/audit-log/streams', ['name' => 'Chat', 'type' => 'slack', 'endpoint_url' => 'https://hooks.slack.com/services/T0/B0/abc'])->assertCreated()->assertJsonPath('redirect', '/account/audit-log');
+        $this->assertNotEmpty($this->actingAs($owner)->postJson('/api/app/account/audit-log/streams', ['name' => 'SIEM', 'type' => 'webhook', 'endpoint_url' => 'https://siem.example.com/ingest'])->assertCreated()->json('secret'));
+        $this->actingAs($owner)->postJson('/api/app/account/audit-log/streams', ['name' => 'Archive', 'type' => 's3', 'backup_destination_id' => $destination->id])->assertCreated();
         $siem = AuditStream::query()->where('name', 'SIEM')->sole();
 
         app(RecordAuditEntry::class)->handle(AuditAction::ProjectUpdated, $owner, $project->account_id, [], $project->id);
@@ -74,6 +74,9 @@ final class AuditStreamTest extends TestCase
         $siem->refresh();
         $this->assertFalse($siem->enabled);
         $this->assertStringContainsString('HTTP 500', (string) $siem->last_error);
-        $this->actingAs($owner)->get('/account/audit-log')->assertOk()->assertSee('Paused')->assertSee('HTTP 500');
+        $streams = (array) $this->actingAs($owner)->getJson('/api/app/account/audit-log')->assertOk()->json('streams');
+        $paused = array_values(array_filter($streams, fn (mixed $stream): bool => is_array($stream) && $stream['name'] === 'SIEM'))[0] ?? [];
+        $this->assertFalse($paused['enabled'] ?? true);
+        $this->assertStringContainsString('HTTP 500', (string) ($paused['lastError'] ?? ''));
     }
 }

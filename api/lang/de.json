@@ -1270,6 +1270,7 @@
     "Copied": "Kopiert",
     "Copies": "Kopien",
     "Copies deploy settings, workers, recipes and variables; schedules come across switched off. Leave this unticked to set new secrets for it.": "Kopiert Deployment-Einstellungen, Worker, Rezepte und Variablen; Zeitpläne werden deaktiviert übernommen. Nicht ankreuzen, um neue Secrets dafür festzulegen.",
+    "Copy": "Kopieren",
     "Copy database": "Datenbank kopieren",
     "Copy from": "Kopieren von",
     "Copy into another website": "In eine andere Website kopieren",

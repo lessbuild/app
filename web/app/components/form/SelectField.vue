@@ -6,7 +6,7 @@ defineOptions({ inheritAttrs: false });
 const props = withDefaults(defineProps<{ name: string; label: string; description?: string; hideLabel?: boolean; errorKey?: string; id?: string; required?: boolean; options?: Option[]; placeholder?: string }>(), {
     description: undefined, errorKey: undefined, id: undefined, options: () => [], placeholder: undefined,
 });
-const model = defineModel<string>();
+const model = defineModel<string | null>();
 // Without a value from the page, start on the placeholder or, without one, the first option (as a plain select does).
 if (model.value === undefined) {
     model.value = props.placeholder !== undefined ? '' : props.options[0]?.value;

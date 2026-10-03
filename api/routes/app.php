@@ -9,16 +9,28 @@ declare(strict_types=1);
 use App\Http\Controllers\AccessRequests\ShowAccessRequestFormController;
 use App\Http\Controllers\AccessRequests\StoreAccessRequestController;
 use App\Http\Controllers\Account\ChangeMemberRoleController;
+use App\Http\Controllers\Account\CreateApiTokenController;
 use App\Http\Controllers\Account\DeleteAccountController;
+use App\Http\Controllers\Account\DeleteAuditStreamController;
+use App\Http\Controllers\Account\DeleteWebhookEndpointController;
+use App\Http\Controllers\Account\ExportAuditLogController;
 use App\Http\Controllers\Account\InviteMemberController;
 use App\Http\Controllers\Account\RemoveMemberController;
 use App\Http\Controllers\Account\RenameAccountController;
+use App\Http\Controllers\Account\RevokeApiTokenController;
 use App\Http\Controllers\Account\RevokeInvitationController;
+use App\Http\Controllers\Account\SendWebhookController;
 use App\Http\Controllers\Account\ShowAccountSettingsController;
+use App\Http\Controllers\Account\ShowApiTokensController;
+use App\Http\Controllers\Account\ShowAuditLogController;
 use App\Http\Controllers\Account\ShowMembersController;
+use App\Http\Controllers\Account\ShowWebhooksController;
+use App\Http\Controllers\Account\StoreAuditStreamController;
+use App\Http\Controllers\Account\StoreWebhookEndpointController;
 use App\Http\Controllers\Account\SwitchAccountController;
 use App\Http\Controllers\Account\UpdateMemberProjectsController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
+use App\Http\Controllers\Account\UpdateWebhookEndpointController;
 use App\Http\Controllers\Auth\ShowCurrentUserController;
 use App\Http\Controllers\Auth\ShowSignInOptionsController;
 use App\Http\Controllers\Auth\StartSsoSignInController;
@@ -108,4 +120,22 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::get('/account/settings', ShowAccountSettingsController::class)->middleware('account.can:update')->name('account.settings');
     Route::put('/account/settings', RenameAccountController::class)->name('account.settings.update');
     Route::delete('/account/settings', DeleteAccountController::class)->middleware('password.confirm')->name('account.settings.destroy');
+
+    // API tokens for /api/v1 and /api/v2: a token's value is shown once, when it's created.
+    Route::get('/account/api-tokens', ShowApiTokensController::class)->middleware('account.can:manageApiTokens')->name('account.api-tokens');
+    Route::post('/account/api-tokens', CreateApiTokenController::class)->middleware(['password.confirm', 'throttle:20,1'])->name('account.api-tokens.store');
+    Route::delete('/account/api-tokens/{token}', RevokeApiTokenController::class)->whereNumber('token')->name('account.api-tokens.destroy');
+
+    // The audit log: who changed what, exported as CSV, and streamed to Slack, a SIEM or S3 as it happens.
+    Route::get('/account/audit-log', ShowAuditLogController::class)->middleware('account.can:viewAuditLog')->name('account.audit-log');
+    Route::get('/account/audit-log/export', ExportAuditLogController::class)->middleware(['account.can:viewAuditLog', 'throttle:10,1'])->name('account.audit-log.export');
+    Route::post('/account/audit-log/streams', StoreAuditStreamController::class)->middleware(['account.can:update', 'throttle:10,1'])->name('account.audit-log.streams.store');
+    Route::delete('/account/audit-log/streams/{stream}', DeleteAuditStreamController::class)->whereNumber('stream')->middleware(['account.can:update', 'throttle:10,1'])->name('account.audit-log.streams.destroy');
+
+    // Webhooks: signed events sent to the account's own endpoints, with each endpoint's recent deliveries.
+    Route::get('/account/webhooks', ShowWebhooksController::class)->middleware('account.can:update')->name('account.webhooks');
+    Route::post('/account/webhooks', StoreWebhookEndpointController::class)->middleware(['account.can:update', 'throttle:20,1'])->name('account.webhooks.store');
+    Route::put('/account/webhooks/{endpoint}', UpdateWebhookEndpointController::class)->whereNumber('endpoint')->middleware(['account.can:update', 'throttle:30,1'])->name('account.webhooks.update');
+    Route::delete('/account/webhooks/{endpoint}', DeleteWebhookEndpointController::class)->whereNumber('endpoint')->middleware(['account.can:update', 'throttle:20,1'])->name('account.webhooks.destroy');
+    Route::post('/account/webhooks/{endpoint}/send', SendWebhookController::class)->whereNumber('endpoint')->middleware(['account.can:update', 'throttle:20,1'])->name('account.webhooks.send');
 });

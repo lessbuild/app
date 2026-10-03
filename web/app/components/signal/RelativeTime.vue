@@ -5,7 +5,7 @@
  * keeps it current.
  */
 const props = defineProps<{ at: string }>();
-const { locale } = useT();
+const { locale, dateTime } = useT();
 const mounted = ref(false);
 const now = ref(Date.now());
 let timer: number | undefined;
@@ -18,7 +18,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
 
 const text = computed(() => {
     void now.value;
-    return mounted.value ? ago(props.at, locale.value) : new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(props.at));
+    return mounted.value ? ago(props.at, locale.value) : dateTime(props.at);
 });
 const title = computed(() => (mounted.value ? new Date(props.at).toLocaleString(locale.value) : undefined));
 </script>

@@ -56,16 +56,20 @@ final class WebhooksTest extends TestCase
      *
      * @return void
      */
+    /**
+     * Endpoints receive the signed events they chose; test events and resends go out on request.
+     */
     public function test_endpoints_receive_signed_events_they_chose(): void
     {
         Http::fake(['hooks.example.com/*' => Http::response('', 204)]);
-        $this->actingAs($this->owner)->get('/account/webhooks')->assertOk()->assertSee('No endpoints yet')->assertSee('deploy.succeeded');
-        $this->actingAs($this->owner)->post('/account/webhooks', ['url' => 'http://hooks.example.com/in', 'events' => ['*']])->assertSessionHasErrors('url');
-        $this->actingAs($this->owner)->post('/account/webhooks', ['url' => 'https://hooks.example.com/in', 'events' => ['nope']])->assertSessionHasErrors('events');
-        $this->actingAs($this->owner)->post('/account/webhooks', ['url' => 'https://hooks.example.com/in', 'description' => 'Ops bot', 'events' => ['server.created', 'server.ready']])
-            ->assertRedirect('/account/webhooks')->assertSessionHas('webhook_secret');
+        $this->actingAs($this->owner)->getJson('/api/app/account/webhooks')->assertOk()->assertJsonPath('endpoints', [])->assertSee('deploy.succeeded');
+        $this->actingAs($this->owner)->postJson('/api/app/account/webhooks', ['url' => 'http://hooks.example.com/in', 'events' => ['*']])->assertJsonValidationErrors('url');
+        $this->actingAs($this->owner)->postJson('/api/app/account/webhooks', ['url' => 'https://hooks.example.com/in', 'events' => ['nope']])->assertJsonValidationErrors('events');
+        $added = $this->actingAs($this->owner)->postJson('/api/app/account/webhooks', ['url' => 'https://hooks.example.com/in', 'description' => 'Ops bot', 'events' => ['server.created', 'server.ready']])
+            ->assertCreated()->assertJsonPath('redirect', '/account/webhooks');
         $endpoint = WebhookEndpoint::query()->sole();
         $secret = $endpoint->signing_secret;
+        $this->assertSame($secret, $added->json('secret'));
 
         $server = Server::factory()->create(['account_id' => $this->project->account_id, 'name' => 'web-1', 'provisioning_status' => Server::STATUS_ACTIVE]);
         $server->forceFill(['name' => 'web-renamed'])->save();
@@ -85,11 +89,11 @@ final class WebhooksTest extends TestCase
         $server->forceFill(['provisioning_status' => Server::STATUS_ACTIVE])->save();
         $this->assertSame(['server.created', 'server.ready'], WebhookDelivery::query()->orderBy('id')->pluck('event')->all());
 
-        $this->actingAs($this->owner)->post("/account/webhooks/{$endpoint->id}/send")->assertRedirect();
+        $this->actingAs($this->owner)->postJson("/api/app/account/webhooks/{$endpoint->id}/send")->assertOk();
         $this->assertSame(1, WebhookDelivery::query()->where('event', 'ping')->where('status', 'delivered')->count());
-        $this->actingAs($this->owner)->post("/account/webhooks/{$endpoint->id}/send", ['delivery' => $delivery->id])->assertRedirect();
+        $this->actingAs($this->owner)->postJson("/api/app/account/webhooks/{$endpoint->id}/send", ['delivery' => $delivery->id])->assertOk();
         Http::assertSentCount(4);
-        $this->actingAs($this->owner)->get('/account/webhooks')->assertOk()->assertSee('Ops bot')->assertSee('server.ready')->assertSee('Delivered');
+        $this->actingAs($this->owner)->getJson('/api/app/account/webhooks')->assertOk()->assertJsonPath('endpoints.0.description', 'Ops bot')->assertSee('server.ready')->assertJsonPath('endpoints.0.deliveries.0.status', 'delivered');
     }
 
     /**
@@ -98,10 +102,13 @@ final class WebhooksTest extends TestCase
      *
      * @return void
      */
+    /**
+     * Failures retry, then pause the endpoint; only those who manage the account reach webhooks.
+     */
     public function test_failures_retry_then_pause_the_endpoint_and_access_is_limited(): void
     {
         Http::fake(['hooks.example.com/*' => Http::response('nope', 500)]);
-        $this->actingAs($this->owner)->post('/account/webhooks', ['url' => 'https://hooks.example.com/in', 'events' => ['*']]);
+        $this->actingAs($this->owner)->postJson('/api/app/account/webhooks', ['url' => 'https://hooks.example.com/in', 'events' => ['*']])->assertCreated();
         $endpoint = WebhookEndpoint::query()->sole();
 
         Server::factory()->create(['account_id' => $this->project->account_id]);
@@ -110,20 +117,20 @@ final class WebhooksTest extends TestCase
         $this->assertSame(1, $endpoint->refresh()->failure_count);
 
         $endpoint->forceFill(['failure_count' => WebhookEndpoint::MAX_FAILURES - 1])->save();
-        $this->actingAs($this->owner)->post("/account/webhooks/{$endpoint->id}/send");
+        $this->actingAs($this->owner)->postJson("/api/app/account/webhooks/{$endpoint->id}/send");
         $this->assertFalse($endpoint->refresh()->enabled);
         Server::factory()->create(['account_id' => $this->project->account_id]);
         $this->assertSame(2, WebhookDelivery::query()->count());
 
-        $this->actingAs($this->owner)->put("/account/webhooks/{$endpoint->id}", ['url' => $endpoint->url, 'events' => ['*'], 'enabled' => '1'])->assertRedirect();
+        $this->actingAs($this->owner)->putJson("/api/app/account/webhooks/{$endpoint->id}", ['url' => $endpoint->url, 'events' => ['*'], 'enabled' => '1'])->assertOk();
         $this->assertSame([true, 0], [$endpoint->refresh()->enabled, $endpoint->failure_count]);
 
         $member = User::factory()->create();
         $this->addMember($this->project, $member, AccountRole::Member);
         $member->forceFill(['current_account_id' => $this->project->account_id])->save();
-        $this->actingAs($member)->get('/account/webhooks')->assertForbidden();
-        $this->actingAs($member)->delete("/account/webhooks/{$endpoint->id}")->assertForbidden();
-        $this->actingAs($this->owner)->delete("/account/webhooks/{$endpoint->id}")->assertRedirect();
+        $this->actingAs($member)->getJson('/api/app/account/webhooks')->assertForbidden();
+        $this->actingAs($member)->deleteJson("/api/app/account/webhooks/{$endpoint->id}")->assertForbidden();
+        $this->actingAs($this->owner)->deleteJson("/api/app/account/webhooks/{$endpoint->id}")->assertOk();
         $this->assertSame(0, WebhookEndpoint::query()->count());
     }
 }

@@ -24,6 +24,9 @@ final class AuditLogTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Account changes are logged and shown to those allowed to see them.
+     */
     public function test_account_changes_are_logged_and_shown_to_people_allowed_to_see_them(): void
     {
         Notification::fake();
@@ -35,19 +38,21 @@ final class AuditLogTest extends TestCase
         app(InviteMember::class)->handle($owner, $account, new InviteMemberData('new@example.com', AccountRole::Viewer));
         app(ChangeMemberRole::class)->handle($owner, $membership->refresh(), AccountRole::Admin);
 
-        $this->actingAs($owner)->get('/account/audit-log')
-            ->assertOk()
-            ->assertSee('Olive Owner')
-            ->assertSee('Invited new@example.com as Viewer')
-            ->assertSee('Changed Max Member &lt;max@example.com&gt; from Member to Administrator', false);
+        $log = $this->actingAs($owner)->getJson('/api/app/account/audit-log')->assertOk()->assertJsonPath('entries.0.actor', 'Olive Owner');
+        $descriptions = array_column((array) $log->json('entries'), 'description');
+        $this->assertContains('Invited new@example.com as Viewer', $descriptions);
+        $this->assertContains('Changed Max Member <max@example.com> from Member to Administrator', $descriptions);
 
         $viewer = User::factory()->create();
         Account::factory()->withMember($viewer)->create();
         $viewer->forceFill(['current_account_id' => $account->id])->save();
         $account->memberships()->forceCreate(['user_id' => $viewer->id, 'role' => AccountRole::Viewer]);
-        $this->actingAs($viewer)->get('/account/audit-log')->assertForbidden();
+        $this->actingAs($viewer)->getJson('/api/app/account/audit-log')->assertForbidden();
     }
 
+    /**
+     * The log shows only the current account.
+     */
     public function test_the_log_only_shows_the_current_account(): void
     {
         $owner = User::factory()->create();
@@ -56,9 +61,12 @@ final class AuditLogTest extends TestCase
         Account::factory()->withMember($other)->create(['name' => 'Secret Corp']);
         (new AuditEntry)->forceFill(['account_id' => $other->current_account_id, 'actor_name' => 'Someone', 'action' => AuditAction::AccountCreated, 'context' => ['name' => 'Secret Corp']])->save();
 
-        $this->actingAs($owner)->get('/account/audit-log')->assertOk()->assertDontSee('Secret Corp');
+        $this->actingAs($owner)->getJson('/api/app/account/audit-log')->assertOk()->assertDontSee('Secret Corp');
     }
 
+    /**
+     * Entries keep who made them after that person leaves and is deleted.
+     */
     public function test_entries_keep_the_actor_after_they_leave_and_are_deleted(): void
     {
         $owner = User::factory()->create();
@@ -75,16 +83,19 @@ final class AuditLogTest extends TestCase
         $this->assertSame('Left the account', $entry->action->describe($entry->context ?? []));
     }
 
+    /**
+     * Personal security changes are logged without an account.
+     */
     public function test_personal_security_changes_are_logged_without_an_account(): void
     {
         $user = User::factory()->create(['password' => 'old-password-123']);
         $confirmed = ['auth.password_confirmed_at' => time()];
 
-        $this->actingAs($user)->put('/user/password', ['current_password' => 'old-password-123', 'password' => 'new-password-456', 'password_confirmation' => 'new-password-456']);
-        $this->actingAs($user)->withSession($confirmed)->post('/user/two-factor-authentication');
+        $this->actingAs($user)->putJson('/api/app/auth/user/password', ['current_password' => 'old-password-123', 'password' => 'new-password-456', 'password_confirmation' => 'new-password-456'])->assertOk();
+        $this->actingAs($user)->withSession($confirmed)->postJson('/api/app/auth/user/two-factor-authentication')->assertOk();
         $secret = (string) Fortify::currentEncrypter()->decrypt((string) $user->refresh()->two_factor_secret);
-        $this->actingAs($user)->withSession($confirmed)->post('/user/confirmed-two-factor-authentication', ['code' => app(Google2FA::class)->getCurrentOtp($secret)]);
-        $this->actingAs($user)->withSession($confirmed)->post('/user/two-factor-recovery-codes');
+        $this->actingAs($user)->withSession($confirmed)->postJson('/api/app/auth/user/confirmed-two-factor-authentication', ['code' => app(Google2FA::class)->getCurrentOtp($secret)])->assertOk();
+        $this->actingAs($user)->withSession($confirmed)->postJson('/api/app/auth/user/two-factor-recovery-codes')->assertOk();
 
         $entries = AuditEntry::query()->where('actor_id', $user->id)->orderBy('id')->get();
         $this->assertSame(
@@ -94,6 +105,9 @@ final class AuditLogTest extends TestCase
         $this->assertTrue($entries->every(fn (AuditEntry $entry): bool => $entry->account_id === null && $entry->ip_address === '127.0.0.1'));
     }
 
+    /**
+     * Entries are pruned after a year.
+     */
     public function test_entries_are_pruned_after_a_year(): void
     {
         foreach ([AuditEntry::RETENTION_DAYS + 1, 10] as $daysAgo) {

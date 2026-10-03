@@ -5,7 +5,7 @@ withDefaults(defineProps<{
     size?: 'sm' | 'default' | 'lg';
     type?: 'button' | 'submit';
     /** Make it a link to this address (or, on this page, to these query parameters, such as a dialog). */
-    to?: string | { query: Record<string, string> };
+    to?: string | { query: Record<string, string | null | undefined> };
 }>(), { variant: 'secondary', size: 'default', type: 'button', to: undefined });
 </script>
 

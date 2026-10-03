@@ -24,6 +24,9 @@ export async function setLocale(locale: string): Promise<void> {
 /** Translate in a component: `const { t, tc } = useT()`, then `t('Save')` in the template or script. */
 export function useT() {
     const state = useTranslator();
+    // The browser's time zone, kept in a cookie by plugins/time-zone.client.ts, so the server formats dates the way the
+    // browser will (until it's known, both use UTC).
+    const timeZone = useCookie<string | undefined>('bp_tz', { readonly: true }).value || 'UTC';
 
     return {
         locale: computed(() => state.value.locale),
@@ -32,6 +35,6 @@ export function useT() {
         /** Format a number for the language. */
         number: (value: number) => new Intl.NumberFormat(state.value.locale).format(value),
         /** Format a date and time for the language. */
-        dateTime: (iso: string) => new Intl.DateTimeFormat(state.value.locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)),
+        dateTime: (iso: string) => new Intl.DateTimeFormat(state.value.locale, { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(new Date(iso)),
     };
 }
