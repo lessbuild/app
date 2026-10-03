@@ -1,0 +1,95 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Jobs\Infrastructure;
+
+use App\Models\DatabaseSnapshot;
+use App\Services\Infrastructure\DatabaseCommands;
+use App\Services\Infrastructure\ServerShell;
+use Carbon\CarbonImmutable;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use RuntimeException;
+use Throwable;
+
+/** Reads a website database's size, connections and tables into its snapshot, and drops snapshots older than 30 days. */
+final class InspectDatabase implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable;
+
+    /**
+     * One attempt; someone can run another inspection.
+     *
+     * @var int
+     */
+    public int $tries = 1;
+
+    /**
+     * Listing tables of a large database can take a few minutes.
+     *
+     * @var int
+     */
+    public int $timeout = 300;
+
+    /**
+     * Create a new InspectDatabase instance.
+     *
+     * Reads a website's database size, tables and connection count.
+     *
+     * @param  int  $snapshotId  The queued snapshot to fill in.
+     */
+    public function __construct(public readonly int $snapshotId) {}
+
+    /**
+     * Claim the snapshot, runs the inspection on the server, stores what it reports, and removes the website's
+     * snapshots older than 30 days.
+     *
+     * @param  ServerShell  $shell
+     * @param  DatabaseCommands  $commands
+     * @return void
+     */
+    public function handle(ServerShell $shell, DatabaseCommands $commands): void
+    {
+        if (DatabaseSnapshot::query()->whereKey($this->snapshotId)->where('status', 'queued')->update(['status' => 'running']) === 0) {
+            return;
+        }
+        $snapshot = DatabaseSnapshot::query()->with('website.server')->findOrFail($this->snapshotId);
+        $server = $snapshot->website->server;
+        $result = $server === null ? null : $shell->run($server, $commands->inspect($snapshot->website));
+        if ($result === null || ! $result->successful()) {
+            $this->failed(new RuntimeException('The database couldn’t be inspected.'));
+
+            return;
+        }
+        $values = ['tables' => [], 'slow_queries' => [], 'server_status' => [], 'slow_log_enabled' => null];
+        foreach (preg_split('/\R/', trim($result->output)) ?: [] as $line) {
+            if (str_starts_with($line, 'table=')) {
+                $values['tables'][] = substr($line, 6);
+            } elseif (preg_match('/\A(size_bytes|active_connections)=(\d+)\z/', $line, $match) === 1) {
+                $values[$match[1]] = (int) $match[2];
+            } elseif (preg_match('/\Aslow_log=(\d),(\S+)\z/', $line, $match) === 1) {
+                $values['slow_log_enabled'] = $match[1] === '1' && str_contains(strtoupper($match[2]), 'TABLE');
+            } elseif (preg_match('/\Aslow=(\d+)\t([\d.]+)\t([\d.]+)\t(\d+)\t(.+)\z/', $line, $match) === 1) {
+                $values['slow_queries'][] = ['count' => (int) $match[1], 'average' => (float) $match[2], 'slowest' => (float) $match[3], 'rows' => (int) $match[4], 'query' => mb_substr($match[5], 0, 400)];
+            } elseif (preg_match('/\A(?:var=)?([A-Za-z_]+)[=\t](\d+)\z/', $line, $match) === 1) {
+                $values['server_status'][strtolower($match[1])] = (int) $match[2];
+            }
+        }
+        $snapshot->forceFill([...$values, 'status' => 'ready', 'error' => null, 'collected_at' => CarbonImmutable::now()])->save();
+        DatabaseSnapshot::query()->where('website_id', $snapshot->website_id)->where('created_at', '<', now()->subDays(30))->delete();
+    }
+
+    /**
+     * Mark the snapshot failed.
+     *
+     * @param  Throwable  $exception
+     * @return void
+     */
+    public function failed(Throwable $exception): void
+    {
+        DatabaseSnapshot::query()->whereKey($this->snapshotId)->first()?->forceFill(['status' => 'failed', 'error' => $exception->getMessage(), 'collected_at' => now()])->save();
+    }
+}

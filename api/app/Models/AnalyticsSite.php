@@ -1,0 +1,252 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Database\Factories\AnalyticsSiteFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+
+/**
+ * A website tracked by a project's Analytics service. `public_id` is the tracker's data-site value.
+ *
+ * @property int $id
+ * @property string $project_id
+ * @property string|null $environment_id
+ * @property string $name
+ * @property string $public_id
+ * @property list<string> $domains
+ * @property int|null $export_bucket_id the storage bucket raw events are exported to each day
+ * @property string|null $export_prefix the folder inside the bucket
+ * @property Carbon|null $exported_until the last day exported
+ * @property string|null $export_error why the last export failed
+ * @property-read StorageBucket|null $exportBucket
+ * @property Carbon|null $imported_until the last day of history imported from Google Analytics
+ * @property list<string>|null $custom_properties custom event property keys the site keeps, for breakdowns
+ * @property list<string>|null $excluded_paths
+ * @property list<string>|null $excluded_ips
+ * @property list<array{name: string, pattern: string}>|null $content_groups named groups of pages, such as Blog: /blog/*
+ * @property list<string>|null $blocked_referrers referring domains treated as spam, besides the built-in list addresses and networks (CIDR) whose visits aren't counted
+ * @property string $timezone
+ * @property Carbon|null $verified_at
+ * @property Carbon|null $last_event_at
+ * @property Carbon|null $last_processed_at
+ * @property bool $collection_enabled
+ * @property Carbon|null $collection_paused_at
+ * @property string|null $share_token
+ * @property string|null $share_password
+ * @property Carbon|null $shared_at
+ * @property string|null $search_console_token
+ * @property string|null $search_console_property
+ * @property Carbon|null $search_console_connected_at
+ * @property-read Project $project
+ */
+#[UseFactory(AnalyticsSiteFactory::class)]
+class AnalyticsSite extends Model
+{
+    /** @use HasFactory<AnalyticsSiteFactory> */
+    use HasFactory;
+
+    /**
+     * Stored in `analytics_sites`.
+     *
+     * @var string|null
+     */
+    protected $table = 'analytics_sites';
+
+    /**
+     * The site's settings and collection state.
+     *
+     * @var list<string>
+     */
+    protected $fillable = ['name', 'domains', 'excluded_paths', 'timezone', 'collection_enabled', 'collection_paused_at', 'last_event_at', 'last_processed_at'];
+
+    /**
+     * Keep the shared report's password hash and the Search Console token out of arrays and JSON.
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['share_password', 'search_console_token'];
+
+    /**
+     * Give each new site a random public ID for its tracker snippet, so the internal ID isn't exposed.
+     *
+     * @return void
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $site): void {
+            $site->public_id ??= Str::lower(Str::random(24));
+        });
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * Reads `domains` and `excluded_paths` as JSON lists.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'domains' => 'array',
+            'custom_properties' => 'array',
+            'imported_until' => 'date',
+            'exported_until' => 'date',
+            'excluded_paths' => 'array',
+            'excluded_ips' => 'array',
+            'content_groups' => 'array',
+            'blocked_referrers' => 'array',
+            'verified_at' => 'datetime',
+            'collection_paused_at' => 'datetime',
+            'last_event_at' => 'datetime',
+            'last_processed_at' => 'datetime',
+            'shared_at' => 'datetime',
+            'search_console_token' => 'encrypted',
+            'search_console_connected_at' => 'datetime',
+            'collection_enabled' => 'boolean',
+        ];
+    }
+
+    /**
+     * Get the project the site belongs to.
+     *
+     * @return BelongsTo<Project, $this>
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
+    /**
+     * Get everything the site has sent.
+     *
+     * @return HasMany<AnalyticsEvent, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(AnalyticsEvent::class, 'site_id');
+    }
+
+    /**
+     * Get the storage bucket the site's raw events are exported to.
+     *
+     * @return BelongsTo<StorageBucket, $this>
+     */
+    public function exportBucket(): BelongsTo
+    {
+        return $this->belongsTo(StorageBucket::class, 'export_bucket_id');
+    }
+
+    /**
+     * Get the people with view-only access to the site.
+     *
+     * @return HasMany<AnalyticsSiteViewer, $this>
+     */
+    public function viewers(): HasMany
+    {
+        return $this->hasMany(AnalyticsSiteViewer::class, 'site_id');
+    }
+
+    /**
+     * Get the site's imports from Google Analytics.
+     *
+     * @return HasMany<AnalyticsImport, $this>
+     */
+    public function imports(): HasMany
+    {
+        return $this->hasMany(AnalyticsImport::class, 'site_id');
+    }
+
+    /**
+     * Get the site's scheduled reports and traffic spike alerts.
+     *
+     * @return HasMany<AnalyticsNotification, $this>
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(AnalyticsNotification::class, 'site_id');
+    }
+
+    /**
+     * Get the site's goals.
+     *
+     * @return HasMany<AnalyticsGoal, $this>
+     */
+    public function goals(): HasMany
+    {
+        return $this->hasMany(AnalyticsGoal::class, 'site_id');
+    }
+
+    /**
+     * Get the goal completions on the site.
+     *
+     * @return HasMany<AnalyticsGoalConversion, $this>
+     */
+    public function goalConversions(): HasMany
+    {
+        return $this->hasMany(AnalyticsGoalConversion::class, 'site_id');
+    }
+
+    /**
+     * Get the batches the site has sent.
+     *
+     * @return HasMany<AnalyticsIngestionBatch, $this>
+     */
+    public function ingestionBatches(): HasMany
+    {
+        return $this->hasMany(AnalyticsIngestionBatch::class, 'site_id');
+    }
+
+    /**
+     * Get the visits reconstructed from the site's events.
+     *
+     * @return HasMany<AnalyticsVisit, $this>
+     */
+    public function visits(): HasMany
+    {
+        return $this->hasMany(AnalyticsVisit::class, 'site_id');
+    }
+
+    /**
+     * Determine whether one of the site's hostnames was matched to a verified domain of its project, proving the
+     * project controls the website.
+     *
+     * @return bool
+     */
+    public function isVerified(): bool
+    {
+        return $this->verified_at !== null;
+    }
+
+    /**
+     * Determine whether events are accepted: collection is on, not paused, and the site is verified.
+     *
+     * @return bool
+     */
+    public function isCollectionAvailable(): bool
+    {
+        return $this->collection_enabled && $this->collection_paused_at === null && $this->isVerified();
+    }
+
+    /**
+     * Determine whether a page path matches one of the site's excluded patterns (such as `/admin/*`) and shouldn't be
+     * recorded.
+     *
+     * @param  string  $path
+     * @return bool
+     */
+    public function excludesPath(string $path): bool
+    {
+        return collect($this->excluded_paths ?? [])->contains(
+            fn (string $pattern): bool => $pattern !== '' && Str::is($pattern, $path),
+        );
+    }
+}

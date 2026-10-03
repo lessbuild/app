@@ -1,0 +1,138 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Api;
+
+use App\Actions\ApiTokens\CreateApiToken;
+use App\Data\ApiTokens\CreateApiTokenData;
+use App\Enums\AccountRole;
+use App\Enums\ApiScope;
+use App\Enums\AuditAction;
+use App\Models\Account;
+use App\Models\ApiToken;
+use App\Models\AuditEntry;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
+use Tests\TestCase;
+
+final class ApiTokensTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $owner;
+
+    private Account $account;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->owner = User::factory()->create();
+        $this->account = Account::factory()->withMember($this->owner)->create(['name' => 'Acme']);
+    }
+
+    public function test_owners_create_a_token_that_is_shown_once_and_audited(): void
+    {
+        $confirmed = ['auth.password_confirmed_at' => time()];
+
+        $this->actingAs($this->owner)->post('/account/api-tokens', ['name' => 'CI', 'scopes' => ['deploy:write'], 'expires' => '30'])->assertRedirect('/user/confirm-password');
+
+        $this->actingAs($this->owner)->withSession($confirmed)
+            ->post('/account/api-tokens', ['name' => 'CI', 'scopes' => ['deploy:write', 'account:read'], 'expires' => '30'])
+            ->assertRedirect('/account/api-tokens');
+        $flash = session('new_token');
+        $this->assertIsArray($flash);
+        $plainText = (string) $flash['value'];
+        $this->assertStringContainsString('|bpk_', $plainText);
+
+        $token = ApiToken::query()->sole();
+        $this->assertSame($this->account->id, $token->account_id);
+        $this->assertSame(['account:read', 'deploy:read', 'deploy:write'], $token->abilities);
+        $this->assertTrue($token->expires_at?->between(now()->addDays(29), now()->addDays(31)));
+        $this->assertNotSame($plainText, $token->getAttributes()['token']);
+        $this->assertTrue(AuditEntry::query()->where('action', AuditAction::ApiTokenCreated)->where('account_id', $this->account->id)->exists());
+
+        $this->actingAs($this->owner)->withSession(['new_token' => ['name' => 'CI', 'value' => $plainText]])->get('/account/api-tokens')->assertSee($plainText);
+        $this->actingAs($this->owner)->get('/account/api-tokens')->assertOk()->assertSee('CI')->assertDontSee($plainText);
+    }
+
+    public function test_token_requests_are_validated(): void
+    {
+        $this->actingAs($this->owner)->withSession(['auth.password_confirmed_at' => time()])
+            ->post('/account/api-tokens', ['name' => '', 'scopes' => ['root:everything'], 'expires' => '9999'])
+            ->assertSessionHasErrors(['name', 'scopes.0', 'expires']);
+    }
+
+    public function test_a_token_calls_the_api_inside_its_account_and_only_within_its_scopes(): void
+    {
+        $readOnly = $this->token([ApiScope::AccountRead]);
+        $deployOnly = $this->token([ApiScope::DeployRead]);
+
+        $this->api($readOnly)->assertOk()->assertJsonPath('data.id', $this->account->id)->assertJsonPath('data.name', 'Acme');
+        $this->assertNotNull(ApiToken::query()->findOrFail((int) strtok($readOnly, '|'))->last_used_at);
+
+        $this->api($deployOnly)->assertForbidden();
+        $this->api('1|not-a-real-token')->assertUnauthorized();
+        $this->api(null)->assertUnauthorized();
+    }
+
+    public function test_a_browser_session_is_not_an_api_credential(): void
+    {
+        $this->actingAs($this->owner)->getJson('/api/v1/account')->assertUnauthorized();
+    }
+
+    public function test_tokens_stop_working_when_their_creator_loses_access_or_they_expire(): void
+    {
+        $token = $this->token([ApiScope::AccountRead]);
+        $this->api($token)->assertOk();
+
+        $admin = User::factory()->create();
+        $membership = $this->account->memberships()->forceCreate(['user_id' => $admin->id, 'role' => AccountRole::Admin]);
+        $adminToken = $this->token([ApiScope::AccountRead], $admin);
+        $this->api($adminToken)->assertOk();
+        $membership->forceFill(['role' => AccountRole::Member])->save();
+        $this->api($adminToken)->assertForbidden();
+        $membership->delete();
+        $this->api($adminToken)->assertForbidden();
+
+        ApiToken::query()->whereKey((int) strtok($token, '|'))->update(['expires_at' => now()->subMinute()]);
+        $this->api($token)->assertUnauthorized();
+    }
+
+    public function test_only_token_managers_see_the_page_and_tokens_are_revoked_within_the_account(): void
+    {
+        $member = User::factory()->create();
+        $this->account->memberships()->forceCreate(['user_id' => $member->id, 'role' => AccountRole::Member]);
+        $member->forceFill(['current_account_id' => $this->account->id])->save();
+        $this->actingAs($member)->get('/account/api-tokens')->assertForbidden();
+
+        $token = $this->token([ApiScope::AccountRead]);
+        $id = (int) strtok($token, '|');
+        $this->actingAs($member)->delete("/account/api-tokens/{$id}")->assertForbidden();
+
+        $stranger = User::factory()->create();
+        Account::factory()->withMember($stranger)->create();
+        $this->actingAs($stranger)->delete("/account/api-tokens/{$id}")->assertNotFound();
+
+        $this->actingAs($this->owner)->delete("/account/api-tokens/{$id}")->assertRedirect('/account/api-tokens');
+        $this->assertNull(ApiToken::query()->find($id));
+        $this->api($token)->assertUnauthorized();
+    }
+
+    /** @param list<ApiScope> $scopes */
+    private function token(array $scopes, ?User $user = null): string
+    {
+        return app(CreateApiToken::class)->handle($user ?? $this->owner, $this->account, new CreateApiTokenData('test', $scopes, 30))->plainText;
+    }
+
+    /** @return TestResponse<\Symfony\Component\HttpFoundation\Response> */
+    private function api(?string $token): TestResponse
+    {
+        // Each call is a fresh API request: forget whoever the previous one authenticated.
+        $this->app['auth']->forgetGuards();
+        $this->flushHeaders();
+
+        return ($token === null ? $this : $this->withToken($token))->getJson('/api/v1/account');
+    }
+}

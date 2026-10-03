@@ -1,0 +1,170 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Http\Controllers\Analytics\CollectEventsController;
+use App\Http\Controllers\Analytics\PreflightCollectController;
+use App\Http\Controllers\Api\V1\Analytics\ListDailyRowsController;
+use App\Http\Controllers\Api\V1\Analytics\ListSitesController as AnalyticsSitesController;
+use App\Http\Controllers\Api\V1\Analytics\ShowReportController as AnalyticsReportController;
+use App\Http\Controllers\Api\V1\Analytics\StoreServerEventsController;
+use App\Http\Controllers\Api\V1\Deploy\ApplyConfigurationReviewController;
+use App\Http\Controllers\Api\V1\Deploy\ApplyWorkflowController;
+use App\Http\Controllers\Api\V1\Deploy\CreateConfigurationReviewController;
+use App\Http\Controllers\Api\V1\Deploy\DeployEnvironmentController;
+use App\Http\Controllers\Api\V1\Deploy\ListDeploymentsController;
+use App\Http\Controllers\Api\V1\Deploy\ListProjectsController;
+use App\Http\Controllers\Api\V1\Deploy\PlanConfigurationController;
+use App\Http\Controllers\Api\V1\Deploy\PromoteDeploymentController;
+use App\Http\Controllers\Api\V1\Deploy\ReplaceEnvironmentVariablesController;
+use App\Http\Controllers\Api\V1\Deploy\RollbackDeploymentController;
+use App\Http\Controllers\Api\V1\Deploy\ScaleEnvironmentController;
+use App\Http\Controllers\Api\V1\Deploy\ShowConfigurationApplicationController;
+use App\Http\Controllers\Api\V1\Deploy\ShowDeploymentController;
+use App\Http\Controllers\Api\V1\Deploy\ShowDeploymentLogController;
+use App\Http\Controllers\Api\V1\Deploy\ShowMeController;
+use App\Http\Controllers\Api\V1\Deploy\ShowProjectController;
+use App\Http\Controllers\Api\V1\Deploy\UpdateConfigurationOperationController;
+use App\Http\Controllers\Api\V1\Deploy\UpdateEnvironmentRuntimeController;
+use App\Http\Controllers\Api\V1\ShowAccountController;
+use App\Http\Controllers\Deploy\ReceiveGitHubAppWebhookController;
+use App\Http\Controllers\Deploy\ReceiveRepositoryWebhookController;
+use App\Http\Controllers\Docs\ShowOpenApiController;
+use App\Http\Controllers\Monitoring\RecordHeartbeatController;
+use App\Http\Controllers\Monitoring\RecordQueueSnapshotController;
+use App\Http\Controllers\Monitoring\RecordQueueWorkerController;
+use App\Http\Controllers\Scim\DeleteScimUserController;
+use App\Http\Controllers\Scim\ListScimGroupsController;
+use App\Http\Controllers\Scim\ListScimUsersController;
+use App\Http\Controllers\Scim\ShowScimConfigController;
+use App\Http\Controllers\Scim\ShowScimUserController;
+use App\Http\Controllers\Scim\StoreScimUserController;
+use App\Http\Controllers\Scim\UpdateScimUserController;
+use App\Http\Controllers\Telemetry\CollectBrowserErrorsController;
+use App\Http\Controllers\Telemetry\IngestEventsController;
+use App\Http\Controllers\Telemetry\IngestOtlpController;
+use App\Http\Controllers\Telemetry\RecordDeploymentApiController;
+use App\Http\Controllers\Telemetry\ShowIngestReceiptController;
+use App\Http\Middleware\AuthenticateHeartbeatToken;
+use App\Http\Middleware\AuthenticateQueueToken;
+use Illuminate\Support\Facades\Route;
+
+// Token API. Every route needs a token (auth:sanctum), resolves the token's account and checks scopes.
+// SCIM 2.0 provisioning (Okta, Microsoft Entra ID): the account's SCIM token authenticates.
+Route::prefix('scim/v2')->middleware(['scim', 'throttle:120,1'])->name('scim.')->group(function (): void {
+    Route::get('/ServiceProviderConfig', ShowScimConfigController::class)->name('config');
+    Route::get('/Users', ListScimUsersController::class)->name('users.index');
+    Route::post('/Users', StoreScimUserController::class)->name('users.store');
+    Route::get('/Users/{id}', ShowScimUserController::class)->name('users.show');
+    Route::match(['put', 'patch'], '/Users/{id}', UpdateScimUserController::class)->name('users.update');
+    Route::delete('/Users/{id}', DeleteScimUserController::class)->name('users.destroy');
+    Route::get('/Groups', ListScimGroupsController::class)->name('groups.index');
+});
+
+// Model Context Protocol: people's AI tools read the account through the assistant's tools, within the token's scopes.
+Route::post('/mcp', App\Http\Controllers\Api\Mcp\HandleMcpRequestController::class)->middleware(['auth:sanctum', 'token.account', 'throttle:api'])->name('api.mcp');
+
+Route::prefix('v1')->middleware(['auth:sanctum', 'token.account', 'throttle:api'])->group(function (): void {
+    Route::get('/account', ShowAccountController::class)->middleware('abilities:account:read')->name('api.v1.account');
+
+    Route::middleware('abilities:analytics:write')->prefix('analytics')->group(function (): void {
+        Route::post('/sites/{site}/events', StoreServerEventsController::class)->whereNumber('site')->middleware('throttle:collect')->name('api.v1.analytics.events');
+    });
+    Route::middleware('abilities:analytics:read')->prefix('analytics')->group(function (): void {
+        Route::get('/sites', AnalyticsSitesController::class)->name('api.v1.analytics.sites');
+        Route::get('/sites/{site}/report', AnalyticsReportController::class)->whereNumber('site')->name('api.v1.analytics.report');
+        Route::get('/sites/{site}/rows', ListDailyRowsController::class)->whereNumber('site')->name('api.v1.analytics.rows');
+    });
+
+    // Deployer API v1 (a public contract): the same paths, fields and status codes, over v2 tokens with Deploy scopes.
+    Route::middleware('abilities:deploy:read')->group(function (): void {
+        Route::get('/me', ShowMeController::class)->name('api.v1.me');
+        Route::get('/projects', ListProjectsController::class)->name('api.v1.projects');
+        Route::get('/projects/{project}', ShowProjectController::class)->name('api.v1.projects.show');
+        Route::get('/deployments', ListDeploymentsController::class)->name('api.v1.deployments');
+        Route::get('/deployments/{build}', ShowDeploymentController::class)->whereNumber('build')->name('api.v1.deployments.show');
+        Route::get('/deployments/{build}/log', ShowDeploymentLogController::class)->whereNumber('build')->name('api.v1.deployments.log');
+        Route::get('/projects/{project}/configuration/applications/{application}', ShowConfigurationApplicationController::class)->whereNumber('application')->name('api.v1.configuration.applications.show');
+    });
+    Route::middleware('abilities:deploy:write')->group(function (): void {
+        Route::post('/deployments/{build}/rollback', RollbackDeploymentController::class)->whereNumber('build')->name('api.v1.deployments.rollback');
+        Route::post('/deployments/{build}/promote', PromoteDeploymentController::class)->whereNumber('build')->name('api.v1.deployments.promote');
+        Route::post('/environments/{environment}/deploy', DeployEnvironmentController::class)->name('api.v1.environments.deploy');
+        Route::patch('/environments/{environment}/scale', ScaleEnvironmentController::class)->name('api.v1.environments.scale');
+        Route::patch('/environments/{environment}/runtime', UpdateEnvironmentRuntimeController::class)->name('api.v1.environments.runtime');
+        Route::put('/projects/{project}/workflow', ApplyWorkflowController::class)->name('api.v1.projects.workflow');
+        Route::put('/environments/{environment}/variables', ReplaceEnvironmentVariablesController::class)->name('api.v1.environments.variables');
+        Route::post('/projects/{project}/configuration/plan', PlanConfigurationController::class)->name('api.v1.configuration.plan');
+        Route::post('/projects/{project}/configuration/reviews', CreateConfigurationReviewController::class)->name('api.v1.configuration.reviews');
+        Route::post('/projects/{project}/configuration/reviews/{review}/apply', ApplyConfigurationReviewController::class)->whereNumber('review')->name('api.v1.configuration.apply');
+        Route::post('/projects/{project}/configuration/applications/{application}/operations/{operation}/{action}', UpdateConfigurationOperationController::class)
+            ->whereNumber(['application', 'operation'])->whereIn('action', ['cancel', 'retry'])->name('api.v1.configuration.operations');
+    });
+});
+
+// The resources API: projects, servers, websites and monitors as resources, for infrastructure as code (Terraform).
+Route::prefix('v2')->middleware(['auth:sanctum', 'token.account', 'throttle:api'])->group(function (): void {
+    Route::middleware('abilities:projects:read')->group(function (): void {
+        Route::get('/projects', App\Http\Controllers\Api\V2\ListProjectsController::class)->name('api.v2.projects');
+        Route::get('/projects/{projectId}', App\Http\Controllers\Api\V2\ShowProjectController::class)->name('api.v2.projects.show');
+    });
+    Route::middleware('abilities:projects:write')->group(function (): void {
+        Route::post('/projects', App\Http\Controllers\Api\V2\StoreProjectController::class)->name('api.v2.projects.store');
+        Route::put('/projects/{projectId}', App\Http\Controllers\Api\V2\UpdateProjectController::class)->name('api.v2.projects.update');
+        Route::delete('/projects/{projectId}', App\Http\Controllers\Api\V2\DestroyProjectController::class)->name('api.v2.projects.destroy');
+    });
+    Route::middleware('abilities:infrastructure:read')->group(function (): void {
+        Route::get('/servers', App\Http\Controllers\Api\V2\ListServersController::class)->name('api.v2.servers');
+        Route::get('/servers/{serverId}', App\Http\Controllers\Api\V2\ShowServerController::class)->whereNumber('serverId')->name('api.v2.servers.show');
+        Route::get('/websites', App\Http\Controllers\Api\V2\ListWebsitesController::class)->name('api.v2.websites');
+        Route::get('/websites/{websiteId}', App\Http\Controllers\Api\V2\ShowWebsiteController::class)->whereNumber('websiteId')->name('api.v2.websites.show');
+    });
+    Route::middleware('abilities:infrastructure:write')->group(function (): void {
+        Route::post('/servers', App\Http\Controllers\Api\V2\StoreServerController::class)->name('api.v2.servers.store');
+        Route::delete('/servers/{serverId}', App\Http\Controllers\Api\V2\DestroyServerController::class)->whereNumber('serverId')->name('api.v2.servers.destroy');
+        Route::post('/websites', App\Http\Controllers\Api\V2\StoreWebsiteController::class)->name('api.v2.websites.store');
+        Route::put('/websites/{websiteId}', App\Http\Controllers\Api\V2\UpdateWebsiteController::class)->whereNumber('websiteId')->name('api.v2.websites.update');
+        Route::delete('/websites/{websiteId}', App\Http\Controllers\Api\V2\DestroyWebsiteController::class)->whereNumber('websiteId')->name('api.v2.websites.destroy');
+    });
+    Route::middleware('abilities:monitoring:read')->group(function (): void {
+        Route::get('/projects/{projectId}/monitors', App\Http\Controllers\Api\V2\ListMonitorsController::class)->name('api.v2.monitors');
+        Route::get('/projects/{projectId}/monitors/{monitorId}', App\Http\Controllers\Api\V2\ShowMonitorController::class)->whereNumber('monitorId')->name('api.v2.monitors.show');
+    });
+    Route::middleware('abilities:monitoring:write')->group(function (): void {
+        Route::post('/projects/{projectId}/monitors', App\Http\Controllers\Api\V2\StoreMonitorController::class)->name('api.v2.monitors.store');
+        Route::put('/projects/{projectId}/monitors/{monitorId}', App\Http\Controllers\Api\V2\UpdateMonitorController::class)->whereNumber('monitorId')->name('api.v2.monitors.update');
+        Route::delete('/projects/{projectId}/monitors/{monitorId}', App\Http\Controllers\Api\V2\DestroyMonitorController::class)->whereNumber('monitorId')->name('api.v2.monitors.destroy');
+    });
+});
+
+// The API's OpenAPI description (resources/openapi/v1.yaml).
+Route::get('/openapi.json', ShowOpenApiController::class)->name('docs.openapi');
+
+// Public contract from the old Analytics app: the tracker posts here without a token.
+Route::post('/v1/collect/{publicId}', CollectEventsController::class)->middleware('throttle:collect')->where('publicId', '[A-Za-z0-9]+')->name('analytics.collect');
+Route::options('/v1/collect/{publicId}', PreflightCollectController::class)->middleware('throttle:collect')->where('publicId', '[A-Za-z0-9]+');
+
+// Browser errors from customers' pages (/monitoring/browser.js), with the environment's public browser key.
+Route::match(['POST', 'OPTIONS'], '/v1/browser/{key}/errors', CollectBrowserErrorsController::class)->middleware('throttle:collect')->where('key', 'bpb_[A-Za-z0-9]+')->name('api.browser-errors');
+
+// Public contracts from the old Monitor app: each monitor has its own bearer key.
+Route::middleware(['throttle:queue-ingress', AuthenticateQueueToken::class])->group(function (): void {
+    Route::post('/v1/queues/{queue}/snapshots', RecordQueueSnapshotController::class)->whereNumber('queue')->name('api.queues.snapshots.store');
+    Route::post('/v1/queues/{queue}/workers', RecordQueueWorkerController::class)->whereNumber('queue')->name('api.queues.workers.store');
+});
+Route::post('/v1/heartbeats/{heartbeat}', RecordHeartbeatController::class)
+    ->whereNumber('heartbeat')
+    ->middleware(['throttle:heartbeat-ingress', AuthenticateHeartbeatToken::class])
+    ->name('api.heartbeats.store');
+
+// Telemetry ingest (public contracts from the old Monitor app), authenticated with an environment's ingest key.
+Route::middleware(['throttle:ingest', 'ingest.token'])->group(function (): void {
+    Route::post('/v1/ingest', IngestEventsController::class)->name('api.ingest');
+    Route::get('/v1/ingest/receipts/{receipt}', ShowIngestReceiptController::class)->whereUlid('receipt')->name('api.ingest.receipts.show');
+    Route::post('/v1/otlp/v1/{signal}', IngestOtlpController::class)->whereIn('signal', ['traces', 'logs', 'metrics'])->name('api.otlp');
+    Route::post('/v1/deployments', RecordDeploymentApiController::class)->middleware('throttle:deployments')->name('api.deployments.store');
+});
+
+// Git push webhooks for a repository (Deployer's public contract), verified with the repository's secret.
+Route::post('/repositories/{repository}/webhook', ReceiveRepositoryWebhookController::class)->whereNumber('repository')->middleware('throttle:120,1')->name('webhooks.repositories.receive');
+Route::post('/github-app/webhook', ReceiveGitHubAppWebhookController::class)->middleware('throttle:600,1')->name('github-app.webhook');

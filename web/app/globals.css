@@ -1,0 +1,38 @@
+/* The Signal design system: tokens, presets, component classes and app-wide rules. */
+@import "tailwindcss" source(none);
+@custom-variant dark (&:where(.dark, .dark *));
+@import "./styles/theme.css";
+@import "./styles/presets.css";
+@import "./styles/components.css";
+@import "./styles/ui.css";
+@import "./styles/app-base.css";
+
+@source "../app";
+@source "../components";
+@source "../lib";
+@source inline("dark light");
+
+@plugin "@tailwindcss/forms";
+
+/* Modals opened by intercepted routes use the native dialog; keep the page behind still while one is open. */
+html:has(dialog.ui-dialog[open]) {
+    overflow: hidden;
+}
+
+dialog.ui-dialog::backdrop {
+    background: rgb(15 23 42 / 0.5);
+    backdrop-filter: blur(2px);
+}
+
+/* Audit's comparison chart: the audited site in the accent, competitors as context in grey (an emphasis chart).
+   Checked with the dataviz palette validator against each surface: lightness band, CVD separation, the
+   normal-vision floor and 3:1 contrast all pass; the grey reads as grey on purpose. */
+:root {
+    --audit-chart-site: #0074a6;
+    --audit-chart-other: #8a94a6;
+}
+
+.dark {
+    --audit-chart-site: #17a3c5;
+    --audit-chart-other: #6a6f78;
+}

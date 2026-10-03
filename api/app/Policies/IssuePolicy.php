@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Policies;
+
+use App\Models\Issue;
+use App\Models\Project;
+use App\Models\User;
+use App\Policies\Concerns\ManagesMonitoring;
+
+final class IssuePolicy
+{
+    use ManagesMonitoring;
+
+    /**
+     * Determine whether the user can resolve, snooze, ignore or assign an issue: people who manage Monitoring in the
+     * issue's project.
+     *
+     * @param  User  $user
+     * @param  Issue  $record
+     * @return bool
+     */
+    public function update(User $user, Issue $record): bool
+    {
+        return $this->live($record) && $this->managesMonitoring($user, $record->project);
+    }
+}

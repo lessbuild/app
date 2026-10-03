@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Infrastructure;
+
+use phpseclib4\Crypt\RSA;
+use phpseclib4\Crypt\RSA\PrivateKey;
+
+class SshKeyPair
+{
+    /**
+     * The generated private key, from which both halves are exported.
+     *
+     * @var PrivateKey
+     */
+    private readonly PrivateKey $key;
+
+    /**
+     * Create a new SshKeyPair instance.
+     *
+     * Create a new 4096-bit RSA key pair for managed SSH access.
+     */
+    public function __construct()
+    {
+        $this->key = RSA::createKey(4096);
+    }
+
+    /**
+     * Return the public key in OpenSSH authorized_keys format.
+     *
+     * @return string
+     */
+    public function publicKey(): string
+    {
+        return $this->key->getPublicKey()->toString('OpenSSH');
+    }
+
+    /**
+     * Return the unencrypted OpenSSH private key for encrypted application storage.
+     *
+     * @return string
+     */
+    public function privateKey(): string
+    {
+        return $this->key->toString('OpenSSH');
+    }
+}

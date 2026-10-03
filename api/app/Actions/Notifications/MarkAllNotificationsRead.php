@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Notifications;
+
+use App\Models\User;
+
+final class MarkAllNotificationsRead
+{
+    /**
+     * Mark every unread notification read and returns how many there were.
+     *
+     * @param  User  $user
+     * @return int
+     */
+    public function handle(User $user): int
+    {
+        return $user->unreadNotifications()->update(['read_at' => now()]);
+    }
+}

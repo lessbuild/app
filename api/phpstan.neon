@@ -1,0 +1,14 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 8
+    paths:
+        - app
+        - database
+        - routes
+        - tests
+    tmpDir: storage/phpstan
+    # v2's page tests, waiting to be rewritten as API tests in their slice (docs/plan.md).
+    excludePaths:
+        - tests/Pending

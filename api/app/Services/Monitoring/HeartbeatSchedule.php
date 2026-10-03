@@ -1,0 +1,69 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Monitoring;
+
+use App\Models\Monitor;
+use Carbon\CarbonImmutable;
+use Cron\CronExpression;
+use InvalidArgumentException;
+
+final class HeartbeatSchedule
+{
+    /**
+     * Work out when the next run is due after a moment: a fixed interval, or the next cron occurrence in the monitor's
+     * timezone.
+     *
+     * @param  Monitor  $monitor
+     * @param  CarbonImmutable  $after
+     * @return CarbonImmutable
+     */
+    public function next(Monitor $monitor, CarbonImmutable $after): CarbonImmutable
+    {
+        if ($monitor->heartbeat_schedule === 'interval' && $monitor->heartbeat_interval_minutes >= 1
+            && $monitor->heartbeat_interval_minutes <= 43200) {
+            return $after->addMinutes($monitor->heartbeat_interval_minutes);
+        }
+        if ($monitor->heartbeat_schedule !== 'cron') {
+            throw new InvalidArgumentException('Invalid heartbeat schedule.');
+        }
+
+        return $this->nextCron($monitor->heartbeat_cron ?? '', $monitor->heartbeat_timezone ?? '', $after);
+    }
+
+    /**
+     * Use Laravel's installed cron parser, including its DST transition behavior.
+     *
+     * @param  string  $expression
+     * @param  string  $timezone
+     * @param  CarbonImmutable  $after
+     * @return CarbonImmutable
+     */
+    public function nextCron(string $expression, string $timezone, CarbonImmutable $after): CarbonImmutable
+    {
+        $expression = trim($expression);
+        if (strlen($expression) > 100 || count(preg_split('/\\s+/', $expression) ?: []) !== 5
+            || ! in_array($timezone, timezone_identifiers_list(), true)) {
+            throw new InvalidArgumentException('Use a five-field cron expression and an IANA timezone.');
+        }
+        $cron = (new CronExpression($expression))->setMaxIterationCount(2400);
+
+        return CarbonImmutable::instance($cron->getNextRunDate($after, 0, false, $timezone))->utc();
+    }
+
+    /**
+     * Start the schedule afresh from now, forgetting runs seen under the old one.
+     *
+     * @param  Monitor  $monitor
+     * @param  CarbonImmutable  $now
+     * @return void
+     */
+    public function reset(Monitor $monitor, CarbonImmutable $now): void
+    {
+        $due = $monitor->enabled ? $this->next($monitor, $now) : null;
+        $monitor->forceFill(['heartbeat_sequence' => null, 'heartbeat_due_at' => $due,
+            'heartbeat_received_at' => null, 'heartbeat_succeeded_at' => null,
+            'next_check_at' => $due?->addMinutes((int) $monitor->heartbeat_grace_minutes)]);
+    }
+}

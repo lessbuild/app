@@ -1,0 +1,15 @@
+{
+  "timeZone": "Etc/UTC",
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "dataStudio": {
+    "name": "BuildPusher Analytics",
+    "company": "BuildPusher",
+    "logoUrl": "https://buildpusher.com/favicon.ico",
+    "addonUrl": "https://buildpusher.com/help/share-analytics",
+    "supportUrl": "https://buildpusher.com/help",
+    "description": "Daily pageviews, visits, visitors, conversions and bounces from BuildPusher Analytics, by page, source, channel, campaign, country, city, device, browser, operating system or screen size."
+  },
+  "urlFetchWhitelist": ["https://buildpusher.com/"],
+  "oauthScopes": ["https://www.googleapis.com/auth/script.external_request"]
+}

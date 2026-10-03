@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Deploy;
+
+use App\Models\Build;
+use App\Services\Deploy\RepositoryDeploymentPlan;
+use Illuminate\Support\Facades\DB;
+
+final class RecordBuildStage
+{
+    /**
+     * Create a new RecordBuildStage instance.
+     *
+     * Records progress reported by a running deploy script.
+     *
+     * @param  RepositoryDeploymentPlan  $plan  Knows which stage switches the release live and which one is last.
+     * @param  FinishBuild  $finish  Finishes the deploy when the last stage is reported.
+     */
+    public function __construct(private readonly RepositoryDeploymentPlan $plan, private readonly FinishBuild $finish) {}
+
+    /**
+     * Record that a stage of the deployment script finished (signed callback). The last one makes the build live. The
+     * last one makes the build live.
+     *
+     * @param  Build  $build
+     * @param  int  $stage
+     * @return void
+     */
+    public function handle(Build $build, int $stage): void
+    {
+        $final = DB::transaction(function () use ($build, $stage): bool {
+            $locked = Build::query()->lockForUpdate()->find($build->id);
+            if ($locked === null || ! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
+                return false;
+            }
+            $locked->forceFill([
+                'last_heartbeat_at' => now(), 'setup_stage' => max($locked->setup_stage, $stage),
+                'activated_at' => $stage >= $this->plan->activationStage() ? ($locked->activated_at ?? now()) : $locked->activated_at,
+            ])->save();
+
+            return $stage >= $this->plan->finalStage();
+        });
+        if ($final) {
+            $this->finish->handle($build, Build::STATUS_SUCCEEDED);
+        }
+    }
+}

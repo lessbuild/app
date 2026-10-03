@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Deploy;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * A configuration document with its bindings. The API sends `bindings` as a JSON object; the page sends it as JSON
+ * text in a field, which is decoded here.
+ */
+final class ConfigurationRequest extends FormRequest
+{
+    /**
+     * Get the validation rules: the document text (at most 50,000 characters) and bindings, which must be present even
+     * if empty.
+     *
+     * @return array<string, array<mixed>>
+     */
+    public function rules(): array
+    {
+        return ['document' => ['required', 'string', 'max:50000'], 'bindings' => ['present']];
+    }
+
+    /**
+     * Get the configuration document as posted.
+     *
+     * @return string
+     */
+    public function document(): string
+    {
+        return $this->string('document')->toString();
+    }
+
+    /**
+     * Get the bindings as an array, decoded from JSON text when the page sent them that way. Anything but a JSON
+     * object (including a non-empty list) is a validation error.
+     *
+     * @return array<string, mixed>
+     */
+    public function bindings(): array
+    {
+        $bindings = $this->input('bindings');
+        if (is_string($bindings)) {
+            $bindings = trim($bindings) === '' ? [] : json_decode($bindings, true);
+        }
+        if (! is_array($bindings) || (array_is_list($bindings) && $bindings !== [])) {
+            throw ValidationException::withMessages(['bindings' => __('Bindings must be a JSON object with placements, secrets and repositories.')]);
+        }
+
+        /** @var array<string, mixed> $bindings */
+        return $bindings;
+    }
+}

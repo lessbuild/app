@@ -1,0 +1,23 @@
+{
+    "name": "buildpusher/laravel",
+    "description": "Send a Laravel app's requests, exceptions, slow queries, queue jobs and logs to BuildPusher Monitoring.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0|^13.0",
+        "illuminate/http": "^11.0|^12.0|^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BuildPusher\\Laravel\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "BuildPusher\\Laravel\\BuildPusherServiceProvider"
+            ]
+        }
+    }
+}

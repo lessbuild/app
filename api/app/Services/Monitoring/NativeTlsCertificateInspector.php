@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Monitoring;
+
+use App\Contracts\Monitoring\TlsCertificateInspector;
+use App\Data\Monitoring\TlsCertificateInspection;
+use CurlHandle;
+use Throwable;
+
+final class NativeTlsCertificateInspector implements TlsCertificateInspector
+{
+    /**
+     * Create a new NativeTlsCertificateInspector instance.
+     *
+     * Inspects TLS certificates with curl.
+     *
+     * @param  PublicHttpTarget  $targets  Checks the hostname.
+     * @param  PublicWebhookTarget  $addresses  Refuses addresses that aren't public.
+     */
+    public function __construct(private readonly PublicHttpTarget $targets, private readonly PublicWebhookTarget $addresses) {}
+
+    /**
+     * Open a TLS connection only (no HTTP request is sent) to the pinned public address, verifying the certificate
+     * chain and hostname, and reads the leaf certificate.
+     *
+     * @param  string  $hostname
+     * @param  string  $address
+     * @param  int  $port
+     * @param  int  $timeoutMilliseconds
+     * @return TlsCertificateInspection
+     */
+    public function inspect(string $hostname, string $address, int $port, int $timeoutMilliseconds): TlsCertificateInspection
+    {
+        $authority = str_contains($hostname, ':') ? '['.$hostname.']' : $hostname;
+        $url = 'https://'.$authority.':'.$port.'/';
+        $target = $this->targets->parse($url);
+        if ($target === null || $target['host'] !== $hostname || ! $this->addresses->isPublic($address)
+            || ($target['literal'] && $target['host'] !== $address)) {
+            return new TlsCertificateInspection(error: 'target_not_public');
+        }
+        $handle = null;
+        try {
+            $handle = curl_init($url);
+            if ($handle === false) {
+                return new TlsCertificateInspection(error: 'checker_unavailable');
+            }
+            $pinned = str_contains($address, ':') ? '['.$address.']' : $address;
+            // A connection-only transfer performs TLS verification without sending HTTP or credentials.
+            $configured = curl_setopt_array($handle, [
+                CURLOPT_CONNECT_ONLY => true, CURLOPT_CERTINFO => true, CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => true, CURLOPT_SSL_VERIFYHOST => 2, CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
+                CURLOPT_PROXY => '', CURLOPT_NOPROXY => '*', CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_PROTOCOLS => CURLPROTO_HTTPS, CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTPS,
+                CURLOPT_FRESH_CONNECT => true, CURLOPT_FORBID_REUSE => true,
+                CURLOPT_TIMEOUT_MS => max(1, min(20000, $timeoutMilliseconds)),
+                CURLOPT_CONNECTTIMEOUT_MS => max(1, min(20000, $timeoutMilliseconds)),
+            ] + ($target['literal'] ? [] : [CURLOPT_RESOLVE => [$hostname.':'.$port.':'.$pinned]]));
+            if (! $configured) {
+                return new TlsCertificateInspection(error: 'checker_unavailable');
+            }
+            if (curl_exec($handle) === false) {
+                return TlsCertificateInspection::fromCurlFailure(curl_errno($handle));
+            }
+            $certificates = curl_getinfo($handle, CURLINFO_CERTINFO);
+            $connectMs = curl_getinfo($handle, CURLINFO_APPCONNECT_TIME) * 1000;
+            $pem = $certificates[0]['Cert'] ?? null;
+
+            return is_string($pem) ? TlsCertificateInspection::fromVerifiedPem($pem, $connectMs)
+                : new TlsCertificateInspection(error: 'tls_certificate_unavailable', connectMs: $connectMs);
+        } catch (Throwable) {
+            return new TlsCertificateInspection(error: 'checker_unavailable');
+        } finally {
+            if ($handle instanceof CurlHandle) {
+                curl_close($handle);
+            }
+        }
+    }
+}

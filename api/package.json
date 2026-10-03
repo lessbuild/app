@@ -1,0 +1,28 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build && npm run build:tracker",
+        "build:tracker": "rolldown resources/tracker/v1.js -f iife -m -o public/tracker/v1.js && rolldown resources/tracker/extras.js -f iife -m -o public/tracker/v1-extras.js",
+        "dev": "vite",
+        "e2e": "playwright test"
+    },
+    "devDependencies": {
+        "@playwright/test": "1.63.0",
+        "@tailwindcss/forms": "^0.5.11",
+        "@tailwindcss/vite": "^4.3.3",
+        "@xterm/xterm": "^6.0.0",
+        "concurrently": "^10.0.3",
+        "laravel-vite-plugin": "^3.1",
+        "tailwindcss": "^4.3.3",
+        "vite": "^8.0.0"
+    },
+    "optionalDependencies": {
+        "@laravel/multiplex": "^0.4.1"
+    },
+    "dependencies": {
+        "axe-core": "^4.13.0",
+        "playwright": "1.63.0"
+    }
+}

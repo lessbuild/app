@@ -1,0 +1,111 @@
+name: BuildPusher deploy
+description: Deploy the pushed commit to a BuildPusher environment, wait for it, report on the pull request, and fail the job if the deploy fails.
+author: BuildPusher
+branding:
+  icon: upload-cloud
+  color: blue
+inputs:
+  token:
+    description: A BuildPusher API token with the Deploy scopes (store it as a secret).
+    required: true
+  project:
+    description: The project's slug, name or ID.
+    required: true
+  environment:
+    description: The environment's slug, name or ID.
+    required: false
+    default: production
+  ref:
+    description: The branch, tag or commit to deploy. Defaults to the commit that triggered the workflow.
+    required: false
+    default: ''
+  wait:
+    description: Wait for the deploy to finish and fail the job if it fails.
+    required: false
+    default: 'true'
+  url:
+    description: The BuildPusher address.
+    required: false
+    default: https://buildpusher.com
+  comment:
+    description: "On pull requests, add (or update) a comment with the deploy's result. Needs pull-requests: write."
+    required: false
+    default: 'true'
+  github-token:
+    description: The token used to comment on the pull request.
+    required: false
+    default: ${{ github.token }}
+outputs:
+  deployment-id:
+    description: The deploy's number in BuildPusher.
+    value: ${{ steps.deploy.outputs.deployment-id }}
+  deployment-url:
+    description: Where to see the deploy in BuildPusher.
+    value: ${{ steps.deploy.outputs.deployment-url }}
+  status:
+    description: succeeded, failed, or queued when not waiting.
+    value: ${{ steps.deploy.outputs.status }}
+runs:
+  using: composite
+  steps:
+    - name: Install the BuildPusher CLI
+      shell: bash
+      run: |
+        command -v php >/dev/null 2>&1 || { sudo apt-get update -qq && sudo apt-get install -y -qq php-cli; }
+        curl -fsSL "${{ inputs.url }}/cli/buildpusher" -o "$RUNNER_TEMP/buildpusher"
+        php -l "$RUNNER_TEMP/buildpusher" >/dev/null
+        chmod +x "$RUNNER_TEMP/buildpusher"
+    - name: Deploy
+      id: deploy
+      shell: bash
+      env:
+        BUILDPUSHER_TOKEN: ${{ inputs.token }}
+        BUILDPUSHER_URL: ${{ inputs.url }}
+        BP_PROJECT: ${{ inputs.project }}
+        BP_ENVIRONMENT: ${{ inputs.environment }}
+        BP_REF: ${{ inputs.ref || github.sha }}
+        BP_WAIT: ${{ inputs.wait }}
+      run: |
+        args=(deploy "$BP_PROJECT" "$BP_ENVIRONMENT" "--ref=$BP_REF")
+        if [ "$BP_WAIT" = "true" ]; then args+=(--wait); fi
+        set +e
+        "$RUNNER_TEMP/buildpusher" "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/buildpusher.log"
+        code=${PIPESTATUS[0]}
+        set -e
+        clean=$(sed -e 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/buildpusher.log")
+        id=$(printf '%s' "$clean" | grep -oE 'Deploy #[0-9]+' | head -n1 | tr -dc '0-9')
+        url=$(printf '%s' "$clean" | grep -oE 'https?://[^ ]+/deploy/builds/[0-9]+' | head -n1)
+        if [ "$BP_WAIT" != "true" ]; then status=queued; elif [ "$code" = "0" ]; then status=succeeded; else status=failed; fi
+        {
+          echo "deployment-id=$id"
+          echo "deployment-url=$url"
+          echo "status=$status"
+        } >> "$GITHUB_OUTPUT"
+        {
+          echo "### BuildPusher deploy to $BP_ENVIRONMENT"
+          echo ""
+          echo "Deploy #$id of \`$BP_REF\`: **$status**. [Open in BuildPusher]($url)"
+        } >> "$GITHUB_STEP_SUMMARY"
+        exit "$code"
+    - name: Comment on the pull request
+      if: always() && inputs.comment == 'true' && github.event.pull_request.number != ''
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+        BP_ENVIRONMENT: ${{ inputs.environment }}
+        BP_REF: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+        ID: ${{ steps.deploy.outputs.deployment-id }}
+        URL: ${{ steps.deploy.outputs.deployment-url }}
+        STATUS: ${{ steps.deploy.outputs.status || 'failed' }}
+        RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        case "$STATUS" in succeeded) icon="✅ Live";; queued) icon="⏳ Queued";; *) icon="❌ Failed";; esac
+        body=$(printf '<!-- buildpusher-deploy:%s -->\n**BuildPusher → %s:** %s\n\nDeploy #%s of `%s` · [details](%s) · [workflow run](%s)' "$BP_ENVIRONMENT" "$BP_ENVIRONMENT" "$icon" "$ID" "${BP_REF:0:12}" "$URL" "$RUN")
+        existing=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq ".[] | select(.body | startswith(\"<!-- buildpusher-deploy:$BP_ENVIRONMENT -->\")) | .id" | head -n1 || true)
+        if [ -n "$existing" ]; then
+          gh api -X PATCH "repos/$REPO/issues/comments/$existing" -f body="$body" >/dev/null
+        else
+          gh api -X POST "repos/$REPO/issues/$PR/comments" -f body="$body" >/dev/null
+        fi

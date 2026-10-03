@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Platform\Catalog;
+
+/** Servers have always been part of Deployer's plans; Deploy's tier sets the server limit until Infrastructure is priced on its own. */
+final class InfrastructureCatalog
+{
+    /**
+     * Get Infrastructure's catalogue: a single free "included" tier, since Infrastructure isn't priced on its own yet
+     * and the server limit lives on Deploy's tiers.
+     *
+     * @return ServiceBilling
+     */
+    public static function billing(): ServiceBilling
+    {
+        return new ServiceBilling([
+            new Tier('included', __('Included'), 0, __('Server limits come from your Deploy plan.'), [__('Servers, websites, databases and backups'), __('Server count set by your Deploy plan')]),
+        ]);
+    }
+}
