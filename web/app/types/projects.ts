@@ -14,3 +14,32 @@ export type Dashboard = {
 };
 
 export type ServiceOption = { key: string; name: string; tagline: string; icon: string };
+
+export type ProjectSummary = { id: string; name: string; description: string | null; accountName: string; isSample: boolean; checklistDismissed: boolean; createdAt: string };
+
+export type EnvironmentSummary = { id: string; name: string; kind: string; kindLabel: string };
+
+export type ServiceCard = ServiceOption & { enabled: boolean; canUse: boolean; canManage: boolean; url: string };
+
+/** A project's header, environments and services, shared by its pages. */
+export type ProjectOverview = { project: ProjectSummary; environments: EnvironmentSummary[]; services: ServiceCard[]; canManage: boolean };
+
+export type SetupStep = {
+    key: string;
+    title: string;
+    description: string;
+    state: 'done' | 'working' | 'todo';
+    detail: string | null;
+    actionLabel: string | null;
+    actionUrl: string | null;
+    icon: string;
+};
+
+export type ProjectSetup = { steps: SetupStep[] };
+
+/** One entry of a project's recent changes, from the audit log. */
+export type AuditEntryView = { id: number; actor: string; description: string; at: string };
+
+export type DomainRow = { id: string; name: string; environment: string | null; verifiedAt: string | null; lastCheckedAt: string | null; recordName: string; recordValue: string };
+
+export type ProjectTemplate = { key: string; name: string; description: string; savedId: number | null; environments: number; monitors: number; goals: number };

@@ -20,7 +20,10 @@ final class ProjectActivityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_overview_shows_recent_project_activity_and_the_audit_log_filters_by_project(): void
+    /**
+     * The project's overview lists its own recent changes (not other projects'), and entries outlive the project.
+     */
+    public function test_the_overview_shows_recent_project_activity(): void
     {
         $owner = User::factory()->create(['name' => 'Olive Owner']);
         $account = Account::factory()->withMember($owner)->create();
@@ -30,18 +33,12 @@ final class ProjectActivityTest extends TestCase
 
         $viewer = User::factory()->create();
         $account->memberships()->forceCreate(['user_id' => $viewer->id, 'role' => AccountRole::Viewer]);
-        $this->actingAs($viewer)->get("/projects/{$shop->id}")
-            ->assertOk()
-            ->assertSee('Olive Owner')
-            ->assertSee('turned on Analytics for Shop')
-            ->assertDontSee('created the project Blog')
-            ->assertDontSee(__('Full history'));
-
-        $this->actingAs($owner)->get("/account/audit-log?project={$shop->id}")
-            ->assertOk()
-            ->assertSee('Turned on Analytics for Shop')
-            ->assertDontSee('Created the project Blog');
-        $this->actingAs($owner)->get('/account/audit-log?project=not-a-project')->assertOk()->assertSee('Created the project Blog');
+        $response = $this->actingAs($viewer)->getJson("/api/app/projects/{$shop->id}")->assertOk()->assertJsonPath('canViewAuditLog', false);
+        $this->assertSame(['Olive Owner'], array_values(array_unique(array_column($response->json('activity'), 'actor'))));
+        $descriptions = implode(' | ', array_column($response->json('activity'), 'description'));
+        $this->assertStringContainsString('Turned on Analytics for Shop', $descriptions);
+        $this->assertStringNotContainsString('Blog', $descriptions);
+        $this->actingAs($owner)->getJson("/api/app/projects/{$shop->id}")->assertJsonPath('canViewAuditLog', true);
 
         app(DeleteProject::class)->handle($owner, $blog);
         $this->assertSame(1, AuditEntry::query()->where('action', AuditAction::ProjectCreated)->whereNull('project_id')->count(), 'Entries outlive their project.');

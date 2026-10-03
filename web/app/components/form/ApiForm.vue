@@ -108,10 +108,12 @@ async function submit(event: SubmitEvent) {
     }
     const target = payload.redirect ? local(payload.redirect) : null;
     emit('success', target);
-    if (target === null || target === route.fullPath) {
-        await refreshPage();
-    } else {
+    if (target !== null && target !== route.fullPath) {
         await navigateTo(target);
+    }
+    // Staying on the same page (perhaps without a dialog's query): its data is keyed by path, so load it again.
+    if (target === null || target.split('?')[0] === route.path) {
+        await refreshPage();
     }
     state.busy = false;
 }

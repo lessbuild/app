@@ -7,7 +7,7 @@ import type { Tone } from '~/types/ui';
  * appears as it lands.
  */
 const props = defineProps<{ initial: ActivityItem[]; kind: string | null; kinds: Record<string, string> }>();
-const { t, locale } = useT();
+const { t } = useT();
 const items = ref(props.initial);
 let timer: number | undefined;
 
@@ -55,7 +55,7 @@ const filters = computed(() => [['', t('All')], ...Object.entries(props.kinds)] 
                         </p>
                         <p class="mt-0.5 text-xs text-muted">
                             {{ [item.project, item.actor].filter(Boolean).join(' · ') }}{{ item.project || item.actor ? ' · ' : '' }}
-                            <time :datetime="item.at" :title="new Date(item.at).toLocaleString(locale)">{{ ago(item.at, locale) }}</time>
+                            <RelativeTime :at="item.at" />
                         </p>
                     </div>
                     <Badge :tone="(item.tone as Tone) ?? 'neutral'">{{ item.outcome }}</Badge>

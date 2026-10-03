@@ -46,14 +46,15 @@ final class ProjectTemplatesTest extends TestCase
         $server = Server::factory()->create(['provider_id' => Provider::factory()->create(['account_id' => $existing->account_id])->id, 'type' => ServerType::App, 'name' => 'web-1']);
         $github = Provider::factory()->type(ProviderType::GitHub)->create(['account_id' => $existing->account_id, 'name' => 'GitHub']);
 
-        $this->actingAs($owner)->get('/dashboard')->assertOk()->assertSee('From a template');
-        $this->actingAs($owner)->get('/projects/templates?template=laravel')->assertOk()->assertSee('Set up Laravel')->assertSee('web-1');
-        $this->actingAs($owner)->post('/projects/templates', ['template' => 'rails', 'name' => 'Shop'])->assertSessionHasErrors('template');
+        $page = $this->actingAs($owner)->getJson('/api/app/projects/templates')->assertOk();
+        $this->assertContains('laravel', array_column($page->json('templates'), 'key'));
+        $this->assertSame(['web-1'], array_column($page->json('servers'), 'label'));
+        $this->actingAs($owner)->postJson('/api/app/projects/templates', ['template' => 'rails', 'name' => 'Shop'])->assertJsonValidationErrors('template');
 
-        $this->actingAs($owner)->post('/projects/templates', [
+        $this->actingAs($owner)->postJson('/api/app/projects/templates', [
             'template' => 'laravel', 'name' => 'Shop', 'server_id' => $server->id, 'domain' => 'Shop.Example.com',
             'provider_id' => $github->id, 'repository_url' => 'https://github.com/Acme/Shop.git', 'branch' => 'main',
-        ])->assertRedirect();
+        ])->assertOk();
 
         $project = Project::query()->where('name', 'Shop')->sole();
         $this->assertEqualsCanonicalizing(['deploy', 'infrastructure', 'monitoring', 'analytics'], $project->enabledServices()->pluck('service')->all());
@@ -83,10 +84,10 @@ final class ProjectTemplatesTest extends TestCase
         $this->onTier($existing, 'deploy', 'pro');
         $server = Server::factory()->create(['provider_id' => Provider::factory()->create(['account_id' => $existing->account_id])->id, 'type' => ServerType::App]);
         $github = Provider::factory()->type(ProviderType::GitHub)->create(['account_id' => $existing->account_id]);
-        $this->actingAs($owner)->post('/projects/templates', [
+        $this->actingAs($owner)->postJson('/api/app/projects/templates', [
             'template' => 'laravel', 'name' => 'Shop', 'server_id' => $server->id, 'domain' => 'shop.example.com',
             'provider_id' => $github->id, 'repository_url' => 'github.com/acme/shop', 'branch' => 'main',
-        ])->assertRedirect();
+        ])->assertOk();
         $shop = Project::query()->where('name', 'Shop')->sole();
         $production = $shop->environments()->where('slug', 'production')->firstOrFail();
         $production->forceFill(['deployment_strategy' => 'canary', 'requires_deployment_approval' => true])->save();
@@ -97,17 +98,18 @@ final class ProjectTemplatesTest extends TestCase
         $site = AnalyticsSite::query()->where('project_id', $shop->id)->sole();
         (new AnalyticsGoal)->forceFill(['site_id' => $site->id, 'name' => 'Checkout', 'kind' => 'pageview', 'match_type' => 'exact', 'match_value' => '/thanks', 'active' => true])->save();
 
-        $this->actingAs($owner)->post("/projects/{$shop->id}/template", ['name' => 'Shop setup'])->assertRedirect();
+        $this->actingAs($owner)->postJson("/api/app/projects/{$shop->id}/template", ['name' => 'Shop setup'])->assertOk();
         $template = ProjectTemplate::query()->sole();
         $this->assertSame("APP_KEY=\nDB_PASSWORD=\n", $template->definition['env']);
         $this->assertStringNotContainsString('hunter2', (string) json_encode($template->definition));
         $this->assertCount(1, $template->definition['monitors']);
-        $this->actingAs($owner)->get('/projects/templates')->assertOk()->assertSee('Shop setup')->assertSee('1 other environment · 1 uptime check · 1 goal');
+        $saved = collect($this->actingAs($owner)->getJson('/api/app/projects/templates')->assertOk()->json('templates'))->firstWhere('name', 'Shop setup');
+        $this->assertSame([1, 1, 1], [$saved['environments'], $saved['monitors'], $saved['goals']]);
 
-        $this->actingAs($owner)->post('/projects/templates', [
+        $this->actingAs($owner)->postJson('/api/app/projects/templates', [
             'template' => $template->key(), 'name' => 'Blog', 'server_id' => $server->id, 'domain' => 'blog.example.com',
             'provider_id' => $github->id, 'repository_url' => 'github.com/acme/blog', 'branch' => 'main',
-        ])->assertRedirect();
+        ])->assertOk();
         $blog = Project::query()->where('name', 'Blog')->sole();
         $blogProduction = $blog->environments()->where('slug', 'production')->firstOrFail();
         $this->assertSame(['canary', true], [$blogProduction->deployment_strategy, $blogProduction->requires_deployment_approval]);
@@ -116,7 +118,7 @@ final class ProjectTemplatesTest extends TestCase
         $this->assertSame("APP_KEY=\nDB_PASSWORD=\n", Website::query()->where('url', 'blog.example.com')->sole()->env_file);
         $this->assertSame(['/thanks'], AnalyticsGoal::query()->whereHas('site', fn ($query) => $query->where('project_id', $blog->id))->pluck('match_value')->all());
 
-        $this->actingAs($owner)->delete("/projects/templates/{$template->id}")->assertRedirect();
+        $this->actingAs($owner)->deleteJson("/api/app/projects/templates/{$template->id}")->assertOk();
         $this->assertSame(0, ProjectTemplate::query()->count());
     }
 }
