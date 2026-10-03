@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Platform\ServiceRegistry;
 use App\Platform\Services\AnalyticsService;
+use App\Platform\Services\AuditService;
 use App\Platform\Services\DeployService;
 use App\Platform\Services\InfrastructureService;
 use App\Platform\Services\MonitoringService;
@@ -29,6 +30,7 @@ final class PlatformServiceProvider extends ServiceProvider
             $registry->register(new MonitoringService);
             $registry->register(new AnalyticsService);
             $registry->register(new SecurityService);
+            $registry->register(new AuditService);
 
             return $registry;
         });

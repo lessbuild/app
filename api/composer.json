@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.5",
+        "anthropic-ai/sdk": "^0.54.0",
         "filament/filament": "^5.9",
         "laravel/fortify": "^1.40",
         "laravel/framework": "^13.17",
@@ -44,8 +45,8 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/",
-            "BuildPusher\\Sdk\\": "sdk/php/src/",
-            "BuildPusher\\Laravel\\": "sdk/laravel/src/"
+            "BuildPusher\\Sdk\\": "../sdk/php/src/",
+            "BuildPusher\\Laravel\\": "../sdk/laravel/src/"
         }
     },
     "scripts": {

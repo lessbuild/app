@@ -111,6 +111,26 @@ class Project extends Model
     }
 
     /**
+     * Get the project's Audit sites.
+     *
+     * @return HasMany<SiteAudit, $this>
+     */
+    public function siteAudits(): HasMany
+    {
+        return $this->hasMany(SiteAudit::class);
+    }
+
+    /**
+     * Get the runs of the project's audits.
+     *
+     * @return HasMany<SiteAuditRun, $this>
+     */
+    public function siteAuditRuns(): HasMany
+    {
+        return $this->hasMany(SiteAuditRun::class);
+    }
+
+    /**
      * Get the services turned on in the project.
      *
      * @return HasMany<EnabledService, $this>

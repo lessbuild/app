@@ -46,6 +46,12 @@ return [
                 'team' => env('STRIPE_PRICE_SECURITY_TEAM_YEARLY'),
             ],
         ],
+        'audit' => [
+            'tier' => [
+                'pro' => env('STRIPE_PRICE_AUDIT_PRO_YEARLY'),
+                'business' => env('STRIPE_PRICE_AUDIT_BUSINESS_YEARLY'),
+            ],
+        ],
     ],
 
     // Pay-as-you-go usage beyond a tier's allowance. Each meter needs a Stripe billing meter (its event name here) and a
@@ -54,6 +60,7 @@ return [
     'meters' => [
         'monitoring' => ['events' => env('STRIPE_METER_MONITORING_EVENTS')],
         'analytics' => ['pageviews' => env('STRIPE_METER_ANALYTICS_PAGEVIEWS')],
+        'audit' => ['runs' => env('STRIPE_METER_AUDIT_RUNS')],
     ],
 
     'prices' => [
@@ -86,6 +93,13 @@ return [
                 'pro' => env('STRIPE_PRICE_SECURITY_PRO'),
                 'team' => env('STRIPE_PRICE_SECURITY_TEAM'),
             ],
+        ],
+        'audit' => [
+            'tier' => [
+                'pro' => env('STRIPE_PRICE_AUDIT_PRO'),
+                'business' => env('STRIPE_PRICE_AUDIT_BUSINESS'),
+            ],
+            'usage' => ['runs' => env('STRIPE_PRICE_AUDIT_RUNS_USAGE')],
         ],
     ],
 ];

@@ -11,6 +11,7 @@ use App\Models\AnalyticsAdSpend;
 use App\Models\AnalyticsSite;
 use App\Models\Project;
 use App\Models\User;
+use ArrayObject;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -90,7 +91,7 @@ final class AdPlatformsTest extends TestCase
     public function test_meta_ads_spend_is_read_across_pages(): void
     {
         config(['services.meta_ads.app_id' => 'app-id', 'services.meta_ads.app_secret' => 'app-secret']);
-        $meta = new \ArrayObject(['fail' => false]);
+        $meta = new ArrayObject(['fail' => false]);
         Http::fake(function (Request $request) use ($meta) {
             $url = $request->url();
 

@@ -57,16 +57,26 @@ final class ShellComposer
     public function compose(View $view): void
     {
         $user = $this->request->user();
-        if (! $user instanceof User) {
-            return;
+        if ($user instanceof User) {
+            $view->with('shell', $this->shell($user));
         }
+    }
 
+    /**
+     * Build the shell for a signed-in person on the current route. The Next.js frontend gets the same shell as JSON from
+     * `/api/app/shell`, naming the service it's showing in the route.
+     *
+     * @param  User  $user
+     * @return Shell
+     */
+    public function shell(User $user): Shell
+    {
         $account = $user->currentAccount;
         $project = $this->request->route('project');
         $project = $project instanceof Project && $user->can('view', $project) ? $project : null;
         [$sectionLabel, $sectionNav] = $this->sections($user, $account, $project);
 
-        $view->with('shell', new Shell(
+        return new Shell(
             user: $user,
             account: $account,
             accounts: $this->accounts->handle($user),
@@ -83,7 +93,7 @@ final class ShellComposer
                 : null,
             unseenChanges: Changelog::unseen($user->last_seen_changelog_at?->format('Y-m-d')),
             platformOperational: $this->platformOperational(),
-        ));
+        );
     }
 
     /**

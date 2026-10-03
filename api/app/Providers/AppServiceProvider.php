@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use Anthropic\Client as AnthropicClient;
 use App\Contracts\Analytics\CountryLookup;
 use App\Contracts\Analytics\GoogleAnalyticsData;
 use App\Contracts\Analytics\SearchConsole;
@@ -16,6 +17,9 @@ use App\Contracts\PaymentProvider;
 use App\Contracts\RequestOrigin;
 use App\Contracts\Security\DomainProbe;
 use App\Contracts\Security\VulnerabilityDatabase;
+use App\Contracts\SiteAudits\AuditAnalyst;
+use App\Contracts\SiteAudits\AuditBrowser;
+use App\Contracts\SiteAudits\WebSearch;
 use App\Contracts\Telemetry\TelemetryIngestor;
 use App\Contracts\Telemetry\TelemetryPayloadMapper;
 use App\Http\HttpRequestOrigin;
@@ -46,6 +50,9 @@ use App\Services\Monitoring\NativeTcpConnector;
 use App\Services\Monitoring\NativeTlsCertificateInspector;
 use App\Services\Security\NetworkDomainProbe;
 use App\Services\Security\OsvDatabase;
+use App\Services\SiteAudits\BraveWebSearch;
+use App\Services\SiteAudits\ClaudeAuditAnalyst;
+use App\Services\SiteAudits\PlaywrightAuditBrowser;
 use App\Services\SocialSignIn\SocialiteSignInGateway;
 use App\Services\SocialSignIn\SocialSignInGateway;
 use App\Services\Telemetry\DatabaseTelemetryIngestor;
@@ -75,6 +82,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GoogleAnalyticsData::class, GoogleAnalytics::class);
         $this->app->bind(DomainProbe::class, NetworkDomainProbe::class);
         $this->app->bind(VulnerabilityDatabase::class, OsvDatabase::class);
+        $this->app->bind(AuditBrowser::class, PlaywrightAuditBrowser::class);
+        $this->app->bind(AuditAnalyst::class, fn (): AuditAnalyst => new ClaudeAuditAnalyst(new AnthropicClient(apiKey: (string) config('services.anthropic.key'))));
+        $this->app->bind(WebSearch::class, BraveWebSearch::class);
         $this->app->bind(DnsResolver::class, SystemDnsResolver::class);
         $this->app->bind(MonitoringDnsResolver::class, NativeDnsResolver::class);
         $this->app->bind(DnsRecordResolver::class, NativeDnsRecordResolver::class);

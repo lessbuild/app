@@ -13,7 +13,7 @@ OLD_ENV=/var/www/buildpusher-unified/shared/.env
 PHP=/usr/bin/php8.5
 # queue:connection:worker timeout (seconds). Each timeout stays below its connection's retry_after, so a slow job is
 # never picked up twice; scheduled tasks (up to an hour) run on the default queue.
-QUEUES=(default:database:3700 terminals:database:3700 checks:checks:100 alerts:alerts:100 telemetry:telemetry:150)
+QUEUES=(default:database:3700 terminals:database:3700 checks:checks:100 alerts:alerts:100 telemetry:telemetry:150 site-audits:database:1800)
 
 step() { printf '\n==> %s\n' "$*"; }
 fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
@@ -91,7 +91,13 @@ cd "$RELEASE"
 COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
 npm ci --no-audit --no-fund
 npm run build
-rm -rf node_modules
+# Keep the production packages: Audit's browser (resources/site-audit/runner.mjs) needs playwright and axe-core.
+npm prune --omit=dev --no-audit --no-fund
+# Chromium for Audit, shared between releases; --with-deps installs the system libraries it needs the first time.
+mkdir -p "$SHARED/playwright"
+PLAYWRIGHT_BROWSERS_PATH="$SHARED/playwright" npx playwright install --with-deps --only-shell chromium
+chown -R www-data:www-data "$SHARED/playwright"
+grep -q '^PLAYWRIGHT_BROWSERS_PATH=' "$SHARED/.env" || printf 'PLAYWRIGHT_BROWSERS_PATH=%s\n' "$SHARED/playwright" >> "$SHARED/.env"
 
 if [ "${NEW_KEY:-0}" = 1 ]; then
     step "Generating the application key"

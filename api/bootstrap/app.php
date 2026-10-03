@@ -20,6 +20,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
@@ -31,6 +32,10 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        // The Next.js frontend's API: JSON, signed in with the session cookie.
+        then: function (): void {
+            Route::middleware('web')->prefix('api/app')->name('app.')->group(base_path('routes/app.php'));
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Stripe signs its webhooks; there is no session or CSRF token. One-click unsubscribe (RFC 8058) posts from the mail client with the token in the URL; provisioning scripts post signed callbacks.
