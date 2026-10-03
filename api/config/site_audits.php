@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // Audit: the simulated visitor, its browser and its limits.
 return [
+    // Audit is off until the production server can run Chromium (decided 2026-10-03). Off, the service isn't
+    // registered, so it's in no navigation, plan or page, and its help guides and changelog entry are hidden.
+    'enabled' => (bool) env('AUDIT_ENABLED', false),
+
     // The Claude model that plays the visitor and writes the findings.
     'model' => env('AUDIT_MODEL', 'claude-opus-5'),
 

@@ -10,6 +10,7 @@ use App\Contracts\SiteAudits\AuditBrowser;
 use App\Enums\AccountRole;
 use App\Enums\SelectionKind;
 use App\Models\BillingSelection;
+use App\Platform\ServiceRegistry;
 use App\Models\Project;
 use App\Models\SiteAudit;
 use App\Models\SiteAuditRun;
@@ -200,6 +201,20 @@ final class SiteAuditsTest extends TestCase
 
         $this->actingAs($this->owner)->deleteJson("{$this->base}/{$id}")->assertNoContent();
         $this->assertSame(0, SiteAudit::query()->count());
+    }
+
+    /**
+     * Switched off (the production default until the server can run Chromium), Audit isn't a service: it's in no
+     * navigation or plan, and projects can't reach its pages.
+     */
+    public function test_audit_can_be_switched_off(): void
+    {
+        config(['site_audits.enabled' => false]);
+        $this->app->forgetInstance(ServiceRegistry::class);
+
+        $this->assertNotContains('audit', app(ServiceRegistry::class)->keys());
+        $this->actingAs($this->owner)->getJson($this->base)->assertNotFound();
+        $this->get('/features/audit')->assertNotFound();
     }
 
     /**

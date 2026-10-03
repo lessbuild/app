@@ -30,7 +30,9 @@ final class PlatformServiceProvider extends ServiceProvider
             $registry->register(new MonitoringService);
             $registry->register(new AnalyticsService);
             $registry->register(new SecurityService);
-            $registry->register(new AuditService);
+            if (config('site_audits.enabled')) {
+                $registry->register(new AuditService);
+            }
 
             return $registry;
         });

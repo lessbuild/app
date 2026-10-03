@@ -12,7 +12,8 @@ return [
         'monitoring' => ['title' => 'Monitoring', 'summary' => 'Checks, telemetry, alerts, incidents and status pages.', 'icon' => 'pulse'],
         'security' => ['title' => 'Security', 'summary' => 'Scans, findings, servers, domains, attacks and compliance.', 'icon' => 'shield-check'],
         'analytics' => ['title' => 'Analytics', 'summary' => 'Sites, the tracker, reports, exploring, sharing and your data.', 'icon' => 'chart'],
-        'audit' => ['title' => 'Audit', 'summary' => 'Simulated visitors, competitor comparisons and what to improve.', 'icon' => 'search'],
+        // Audit's group and guides show once Audit is switched on (config/site_audits.php).
+        ...((bool) env('AUDIT_ENABLED', false) ? ['audit' => ['title' => 'Audit', 'summary' => 'Simulated visitors, competitor comparisons and what to improve.', 'icon' => 'search']] : []),
     ],
 
     'guides' => [
@@ -482,29 +483,31 @@ return [
                 ['Your own domain', 'Under Send through your own domain, copy the proxy rules for Caddy or Nginx and the matching snippet, so the tracker loads from your site and ad blockers don’t stop it.'],
             ],
         ],
-        'run-an-audit' => [
-            'group' => 'audit',
-            'title' => 'Run an audit of your site',
-            'summary' => 'Watch a simulated visitor try real tasks on your site and your competitors’, and see what to improve.',
-            'steps' => [
-                ['Turn on Audit', 'In the project’s settings, switch on Audit. It appears in the project’s sidebar.'],
-                ['Add your site', 'Choose New audit and enter your site’s address. Pick up to five tasks for the visitor to try, such as finding the price or signing up, or describe your own.'],
-                ['Choose competitors', 'Add the sites people compare you with, or choose Suggest competitors and pick from the list. Your plan sets how many you can compare with.'],
-                ['Read the report', 'The first report is ready in a few minutes. It scores your site and each competitor on navigation, conversion, clarity, trust, speed, accessibility, search and mobile, and lists what to fix first.'],
-                ['Look at the evidence', 'Each finding shows the screen where the visitor met the problem, with it outlined. The most important ones come with a mock-up of the fix. Open a journey to replay every step and read why the visitor did what they did.'],
-                ['Run it again', 'Choose Run audit after you change your site, or set the audit to run every month or week (Pro and Business plans) to see whether the changes helped.'],
+        ...((bool) env('AUDIT_ENABLED', false) ? [
+            'run-an-audit' => [
+                'group' => 'audit',
+                'title' => 'Run an audit of your site',
+                'summary' => 'Watch a simulated visitor try real tasks on your site and your competitors’, and see what to improve.',
+                'steps' => [
+                    ['Turn on Audit', 'In the project’s settings, switch on Audit. It appears in the project’s sidebar.'],
+                    ['Add your site', 'Choose New audit and enter your site’s address. Pick up to five tasks for the visitor to try, such as finding the price or signing up, or describe your own.'],
+                    ['Choose competitors', 'Add the sites people compare you with, or choose Suggest competitors and pick from the list. Your plan sets how many you can compare with.'],
+                    ['Read the report', 'The first report is ready in a few minutes. It scores your site and each competitor on navigation, conversion, clarity, trust, speed, accessibility, search and mobile, and lists what to fix first.'],
+                    ['Look at the evidence', 'Each finding shows the screen where the visitor met the problem, with it outlined. The most important ones come with a mock-up of the fix. Open a journey to replay every step and read why the visitor did what they did.'],
+                    ['Run it again', 'Choose Run audit after you change your site, or set the audit to run every month or week (Pro and Business plans) to see whether the changes helped.'],
+                ],
             ],
-        ],
-        'audit-bot' => [
-            'group' => 'audit',
-            'title' => 'About the BuildPusher Audit visitor',
-            'summary' => 'What the BuildPusherAudit user agent is, what it does on your site, and how to stop it.',
-            'steps' => [
-                ['What it is', 'BuildPusherAudit is a headless Chromium browser. A BuildPusher customer asked it to try tasks on their site or on sites they compare themselves with, such as finding the price, the way a first-time visitor would.'],
-                ['What it does', 'It opens public pages only, at most about two a second and a few dozen per audit. It never submits a purchase, payment or sign-up, and when a form needs details it types obviously fake ones (Alex Example, alex@example.com).'],
-                ['How it identifies itself', 'Its user agent contains “BuildPusherAudit/1.0” and a link to this page.'],
-                ['How to stop it', 'Add a robots.txt group for BuildPusherAudit (or for every user agent) that disallows the pages you don’t want visited. Audits read robots.txt before every page and skip what it disallows.'],
+            'audit-bot' => [
+                'group' => 'audit',
+                'title' => 'About the BuildPusher Audit visitor',
+                'summary' => 'What the BuildPusherAudit user agent is, what it does on your site, and how to stop it.',
+                'steps' => [
+                    ['What it is', 'BuildPusherAudit is a headless Chromium browser. A BuildPusher customer asked it to try tasks on their site or on sites they compare themselves with, such as finding the price, the way a first-time visitor would.'],
+                    ['What it does', 'It opens public pages only, at most about two a second and a few dozen per audit. It never submits a purchase, payment or sign-up, and when a form needs details it types obviously fake ones (Alex Example, alex@example.com).'],
+                    ['How it identifies itself', 'Its user agent contains “BuildPusherAudit/1.0” and a link to this page.'],
+                    ['How to stop it', 'Add a robots.txt group for BuildPusherAudit (or for every user agent) that disallows the pages you don’t want visited. Audits read robots.txt before every page and skip what it disallows.'],
+                ],
             ],
-        ],
+        ] : []),
     ],
 ];

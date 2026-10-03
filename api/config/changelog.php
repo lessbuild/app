@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
-    ['date' => '2026-10-03', 'title' => 'Audit: see your site as a first-time visitor does', 'changes' => [
-        'A new service, Audit: a browser plays a first-time visitor on your site, tries real tasks such as finding the price or signing up, and reports what got in the way.',
-        'Compared with your competitors: the same tasks run on the sites people compare you with, with suggestions for who they are.',
-        'Eight scores per site: navigation, conversion, clarity, trust, speed, accessibility, search and mobile.',
-        'Fixes you can see: each finding outlines the problem on a screenshot, and the most important come with a mock-up of the fix.',
-        'Scheduled audits every month or week on Pro and Business plans, so you can see whether changes helped.',
-    ]],
+    // Shown once Audit is switched on (config/site_audits.php).
+    ...((bool) env('AUDIT_ENABLED', false) ? [
+        ['date' => '2026-10-03', 'title' => 'Audit: see your site as a first-time visitor does', 'changes' => [
+            'A new service, Audit: a browser plays a first-time visitor on your site, tries real tasks such as finding the price or signing up, and reports what got in the way.',
+            'Compared with your competitors: the same tasks run on the sites people compare you with, with suggestions for who they are.',
+            'Eight scores per site: navigation, conversion, clarity, trust, speed, accessibility, search and mobile.',
+            'Fixes you can see: each finding outlines the problem on a screenshot, and the most important come with a mock-up of the fix.',
+            'Scheduled audits every month or week on Pro and Business plans, so you can see whether changes helped.',
+        ]],
+    ] : []),
     ['date' => '2026-10-01', 'title' => 'Platform: webhooks, SCIM, agency tools, costs by project and your own templates', 'changes' => [
         'Infrastructure as code: a resources API for projects, servers, websites and monitors, and a Terraform provider built on it.',
         'Inventories as CSV: export servers, websites, repositories, providers and recipes as spreadsheets.',
