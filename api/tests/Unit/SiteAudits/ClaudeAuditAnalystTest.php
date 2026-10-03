@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 final class ClaudeAuditAnalystTest extends TestCase
 {
-    /** @var list<array{request: RequestInterface}> */
+    /** @var list<RequestInterface> */
     private array $sent = [];
 
     /**
@@ -40,7 +40,7 @@ final class ClaudeAuditAnalystTest extends TestCase
         $this->assertSame(['type' => 'click', 'thought' => 'Pricing is in the menu.', 'n' => 3], $action);
         $this->assertSame(['input' => 150, 'output' => 40], $analyst->usage());
 
-        $request = $this->sent[0]['request'];
+        $request = $this->sent[0];
         $this->assertStringContainsString('server-side-fallback-2026-07-01', $request->getHeaderLine('anthropic-beta'));
         $body = json_decode((string) $request->getBody(), true);
         $this->assertSame('claude-opus-5', $body['model']);
@@ -91,7 +91,7 @@ final class ClaudeAuditAnalystTest extends TestCase
 
         $this->assertSame(['navigation' => 80, 'conversion' => 100, 'content' => 70, 'trust' => 60], $result['sites']['site']);
         $this->assertSame('T', $result['findings'][0]['title']);
-        $body = json_decode((string) $this->sent[0]['request']->getBody(), true);
+        $body = json_decode((string) $this->sent[0]->getBody(), true);
         $this->assertSame('high', $body['output_config']['effort']);
         $this->assertSame('json_schema', $body['output_config']['format']['type']);
         $this->assertSame('Screenshot s1:', $body['messages'][0]['content'][0]['text']);
@@ -117,7 +117,11 @@ final class ClaudeAuditAnalystTest extends TestCase
     private function analyst(array $responses): ClaudeAuditAnalyst
     {
         $stack = HandlerStack::create(new MockHandler($responses));
-        $stack->push(Middleware::history($this->sent));
+        $stack->push(Middleware::mapRequest(function (RequestInterface $request): RequestInterface {
+            $this->sent[] = $request;
+
+            return $request;
+        }));
 
         return new ClaudeAuditAnalyst(new Client(apiKey: 'test-key', requestOptions: ['transporter' => new Guzzle(['handler' => $stack]), 'maxRetries' => 0]));
     }

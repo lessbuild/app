@@ -17,7 +17,8 @@ final class OpenApiTest extends TestCase
         $routes = [];
         foreach (Route::getRoutes()->getRoutes() as $route) {
             /** @var RoutingRoute $route */
-            if (! str_starts_with($route->uri(), 'api/') || $route->getName() === 'docs.openapi') {
+            // /api/app is the private browser API behind the Next.js frontend, not a public contract.
+            if (! str_starts_with($route->uri(), 'api/') || str_starts_with($route->uri(), 'api/app/') || $route->getName() === 'docs.openapi') {
                 continue;
             }
             foreach (array_diff($route->methods(), ['HEAD']) as $method) {

@@ -16,6 +16,7 @@ use App\Models\SiteAuditRun;
 use App\Models\UsageRecord;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\Fakes\FakeAuditAnalyst;
@@ -63,7 +64,7 @@ final class SiteAuditsTest extends TestCase
             'competitors' => [['url' => 'https://rival.example', 'name' => 'Rival']], 'schedule' => 'none',
         ])->assertCreated()->assertJsonPath('audit.url', 'https://shop.example/')->assertJsonPath('audit.competitors.0.name', 'Rival');
 
-        $run = SiteAuditRun::query()->findOrFail($created->json('runId'));
+        $run = $this->findRun($created->json('runId'));
         $this->assertSame('done', $run->status->value);
         $this->assertSame(['input' => 1200, 'output' => 300], ['input' => $run->input_tokens, 'output' => $run->output_tokens]);
         $this->assertContains('checks https://rival.example/', $this->browser->log);
@@ -114,7 +115,7 @@ final class SiteAuditsTest extends TestCase
         (new BillingSelection)->forceFill(['account_id' => $this->project->account_id, 'service' => 'audit', 'kind' => SelectionKind::Tier, 'item_key' => 'pro'])->save();
         $this->actingAs($this->owner)->putJson("{$this->base}/{$id}", [...$audit, 'schedule' => 'monthly'])->assertOk()->assertJsonPath('audit.schedule', 'monthly');
         $run = $this->actingAs($this->owner)->postJson("{$this->base}/{$id}/runs")->assertStatus(202)->assertJsonPath('run.status', 'queued')->json('run.id');
-        $this->assertSame('done', SiteAuditRun::query()->findOrFail($run)->status->value);
+        $this->assertSame('done', $this->findRun($run)->status->value);
     }
 
     /**
@@ -124,12 +125,14 @@ final class SiteAuditsTest extends TestCase
     {
         (new BillingSelection)->forceFill(['account_id' => $this->project->account_id, 'service' => 'audit', 'kind' => SelectionKind::Tier, 'item_key' => 'business'])->save();
         $id = $this->actingAs($this->owner)->postJson($this->base, ['url' => 'shop.example', 'goals' => ['pricing'], 'schedule' => 'weekly', 'run_now' => false])->assertCreated()->json('audit.id');
-        $audit = SiteAudit::query()->findOrFail($id);
+        $audit = SiteAudit::query()->findOrFail((int) $id);
         $this->assertTrue($audit->next_run_at?->isNextWeek() || $audit->next_run_at?->diffInDays(now(), true) >= 6);
 
-        $this->artisan('site-audits:run-scheduled')->expectsOutput('Queued 0 audits.')->assertSuccessful();
+        $this->assertSame(0, Artisan::call('site-audits:run-scheduled'));
+        $this->assertStringContainsString('Queued 0 audits.', Artisan::output());
         $audit->forceFill(['next_run_at' => now()->subMinute()])->save();
-        $this->artisan('site-audits:run-scheduled')->expectsOutput('Queued 1 audits.')->assertSuccessful();
+        $this->assertSame(0, Artisan::call('site-audits:run-scheduled'));
+        $this->assertStringContainsString('Queued 1 audits.', Artisan::output());
         $this->assertSame('scheduled', $audit->runs()->firstOrFail()->trigger);
         $this->assertTrue($audit->refresh()->next_run_at?->isFuture());
     }
@@ -142,14 +145,14 @@ final class SiteAuditsTest extends TestCase
         $this->browser->failing = ['https://rival.example/'];
         $id = $this->actingAs($this->owner)->postJson($this->base, ['url' => 'shop.example', 'goals' => ['pricing'], 'competitors' => [['url' => 'rival.example']], 'schedule' => 'none'])
             ->assertCreated()->json('runId');
-        $this->assertSame('done', SiteAuditRun::query()->findOrFail($id)->status->value);
-        $this->assertCount(1, SiteAuditRun::query()->findOrFail($id)->scores ?? [], 'Only the site itself is scored.');
+        $this->assertSame('done', $this->findRun($id)->status->value);
+        $this->assertCount(1, $this->findRun($id)->scores ?? [], 'Only the site itself is scored.');
 
         $this->browser->failing = ['https://down.example/'];
         $audit = SiteAudit::query()->firstOrFail();
         $audit->forceFill(['url' => 'https://down.example/'])->save();
         (new BillingSelection)->forceFill(['account_id' => $this->project->account_id, 'service' => 'audit', 'kind' => SelectionKind::Tier, 'item_key' => 'pro'])->save();
-        $run = SiteAuditRun::query()->findOrFail($this->actingAs($this->owner)->postJson("{$this->base}/{$audit->id}/runs")->assertStatus(202)->json('run.id'));
+        $run = $this->findRun($this->actingAs($this->owner)->postJson("{$this->base}/{$audit->id}/runs")->assertStatus(202)->json('run.id'));
         $this->assertSame('failed', $run->status->value);
         $this->assertSame('The site couldn’t be reached.', $run->error);
         $this->assertContains('close', $this->browser->log);
@@ -197,5 +200,13 @@ final class SiteAuditsTest extends TestCase
 
         $this->actingAs($this->owner)->deleteJson("{$this->base}/{$id}")->assertNoContent();
         $this->assertSame(0, SiteAudit::query()->count());
+    }
+
+    /**
+     * Find a run by the id an API response gave.
+     */
+    private function findRun(mixed $id): SiteAuditRun
+    {
+        return SiteAuditRun::query()->findOrFail((int) $id);
     }
 }
