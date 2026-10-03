@@ -40,7 +40,8 @@ mkdir -p "$VOLUME/releases" "$SHARED/storage"/{app/public,framework/{cache/data,
 ln -sfn "$VOLUME" "$LINK.tmp" && mv -Tf "$LINK.tmp" "$LINK"
 rm -rf "$RELEASE"
 mkdir -p "$RELEASE"
-git -C "$REPO" archive "$COMMIT" | tar -x -C "$RELEASE"
+# The Laravel app lives in api/; its tree becomes the release root.
+git -C "$REPO" archive "$COMMIT:api" | tar -x -C "$RELEASE"
 
 step "Writing the shared .env (first deploy only)"
 if [ ! -f "$SHARED/.env" ]; then

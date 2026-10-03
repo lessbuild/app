@@ -2,6 +2,12 @@
 
 One Laravel application that brings Deploy, Infrastructure, Monitoring and Analytics together as services of a single platform, in the way Cloudflare groups its products under one dashboard. The plan lives in [docs/platform-v2-plan.md](docs/platform-v2-plan.md).
 
+## Repository layout
+
+- `api/` is the Laravel application; every path under "Code rules" and "UI" below is relative to it. Run `composer`, `php artisan`, Pint, PHPStan and its tests from `api/`.
+- `web/` is the Next.js frontend that replaces the Blade pages service by service; `docs/nextjs-and-audit-plan.md` has the decisions and the order. Until a page moves, Next.js falls back to Laravel for it.
+- `deploy/`, `docs/`, `sdk/` and `integrations/` stay at the root.
+
 ## Product model
 
 - **Account** → **Projects** → **Environments**. A project has domains and enabled services.

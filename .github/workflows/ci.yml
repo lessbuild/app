@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [platform-v2]
 
+# The Laravel application (the API) lives in api/.
+defaults:
+  run:
+    working-directory: api
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -83,7 +88,7 @@ jobs:
         with:
           name: playwright-report
           path: |
-            playwright-report
-            test-results
-            storage/logs/e2e.log
+            api/playwright-report
+            api/test-results
+            api/storage/logs/e2e.log
           retention-days: 7
