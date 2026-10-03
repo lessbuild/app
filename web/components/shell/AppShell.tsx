@@ -9,6 +9,7 @@ import { ConfirmIdentityDialog } from '@/components/auth/ConfirmIdentity';
 import { NavLinks } from './NavLinks';
 import { SignOutButton } from './SignOutButton';
 import { ThemeToggle } from './ThemeToggle';
+import { Toaster } from './Toaster';
 
 // Paths the Next.js app serves; links to them navigate client-side. Everything else is still a Laravel page.
 const moved = ['/audit'];
@@ -98,6 +99,7 @@ export function AppShell({ shell, i18n, service, children }: { shell: Shell; i18
                 {children}
             </main>
             <ConfirmIdentityDialog />
+            <Toaster />
         </I18nProvider>
     );
 }

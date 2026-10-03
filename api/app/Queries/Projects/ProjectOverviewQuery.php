@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Queries\Projects;
 
+use App\Data\Projects\EnvironmentSummary;
 use App\Data\Projects\ProjectOverview;
+use App\Data\Projects\ProjectSummary;
 use App\Data\Projects\ServiceCard;
 use App\Enums\EnvironmentKind;
 use App\Models\Environment;
@@ -41,10 +43,11 @@ final class ProjectOverviewQuery
         $kinds = array_flip(array_map(fn (EnvironmentKind $kind): string => $kind->value, EnvironmentKind::cases()));
 
         return new ProjectOverview(
-            project: $project,
+            project: ProjectSummary::from($project),
             // Closed previews' environments are history; they'd crowd every environment list.
             environments: array_values($project->environments()->whereDoesntHave('preview', fn ($query) => $query->where('status', Preview::STATUS_CLOSED))->get()
                 ->sortBy([fn (Environment $a, Environment $b): int => $kinds[$a->kind->value] <=> $kinds[$b->kind->value], fn (Environment $a, Environment $b): int => strcasecmp($a->name, $b->name)])
+                ->map(EnvironmentSummary::from(...))
                 ->all()),
             services: array_map(fn (PlatformService $service): ServiceCard => new ServiceCard(
                 key: $service->key(),
@@ -54,7 +57,7 @@ final class ProjectOverviewQuery
                 enabled: in_array($service->key(), $enabled, true),
                 canUse: $gate->allows('useService', [$project, $service->key()]),
                 canManage: $gate->allows('manageService', [$project, $service->key()]),
-                url: route('projects.services.show', [$project->id, $service->key()]),
+                url: route('projects.services.show', [$project->id, $service->key()], false),
             ), $this->services->all()),
             canManage: $gate->allows('update', $project),
         );

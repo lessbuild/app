@@ -5,6 +5,7 @@ import { createContext, useContext, useRef, useState, type FormEvent, type React
 import { useT } from '@/lib/i18n-client';
 import { ensureCsrf, xsrfToken } from '@/lib/client';
 import { confirmIdentity } from '@/lib/confirm';
+import { flash } from '@/lib/flash';
 import { local } from '@/lib/url';
 
 type Errors = Record<string, string[]>;
@@ -124,6 +125,9 @@ export function Form({ action, method = 'POST', className = 'grid gap-5', confir
 
         const text = await response.text();
         const payload = (text ? JSON.parse(text) : {}) as { redirect?: string } & Record<string, unknown>;
+        if (typeof payload.message === 'string') {
+            flash(payload.message);
+        }
         if (after) {
             const next = after(payload);
             if (typeof next === 'string') {
