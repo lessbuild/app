@@ -3063,6 +3063,7 @@
     "Processes for :slug must be a map of at most 20.": "Los procesos de :slug deben ser un mapa de 20 como máximo.",
     "Product explorer": "Explorador de productos",
     "Production": "Producción",
+    "Production cloud": "Nube de producción",
     "Production is created with the project and can’t be removed. Add staging, development or preview environments as you need them.": "Producción se crea con el proyecto y no se puede eliminar. Añade entornos de staging, desarrollo o vista previa según los necesites.",
     "Profile": "Perfil",
     "Profile saved.": "Perfil guardado.",

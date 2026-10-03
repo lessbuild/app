@@ -33,30 +33,33 @@ final class ProvidersTest extends TestCase
         $this->withoutMiddleware(\Illuminate\Auth\Middleware\RequirePassword::class);
     }
 
+    /**
+     * Owners connect, change and remove providers; tokens are encrypted and never returned.
+     */
     public function test_owners_connect_change_and_remove_providers(): void
     {
-        $this->actingAs($this->owner)->get('/account/providers')->assertOk()->assertSee('No providers yet');
-        $this->actingAs($this->owner)->post('/account/providers', ['name' => 'Production cloud', 'type' => 'hetzner', 'token' => 'secret-token-1'])->assertRedirect();
+        $this->actingAs($this->owner)->getJson('/api/app/account/providers')->assertOk()->assertJsonPath('providers', []);
+        $this->actingAs($this->owner)->postJson('/api/app/account/providers', ['name' => 'Production cloud', 'type' => 'hetzner', 'token' => 'secret-token-1'])->assertOk();
 
         $provider = Provider::query()->sole();
         $this->assertSame(ProviderType::Hetzner, $provider->type);
         $this->assertSame('secret-token-1', $provider->token);
         $this->assertStringNotContainsString('secret-token-1', (string) $provider->getRawOriginal('token'));
         $this->assertSame($this->owner->id, $provider->created_by);
-        $this->actingAs($this->owner)->get("/account/providers/{$provider->id}")->assertOk()->assertSee('Production cloud')->assertDontSee('secret-token-1');
+        $this->actingAs($this->owner)->getJson("/api/app/account/providers/{$provider->id}")->assertOk()->assertJsonPath('provider.name', 'Production cloud')->assertDontSee('secret-token-1');
 
         $provider->forceFill(['connection_status' => 'healthy', 'connection_checked_at' => now()])->save();
-        $this->actingAs($this->owner)->put("/account/providers/{$provider->id}", ['name' => 'Renamed', 'type' => 'hetzner', 'token' => ''])->assertRedirect();
+        $this->actingAs($this->owner)->putJson("/api/app/account/providers/{$provider->id}", ['name' => 'Renamed', 'type' => 'hetzner', 'token' => ''])->assertOk();
         $this->assertSame('secret-token-1', $this->reload($provider)->token);
         $this->assertSame('healthy', $this->reload($provider)->connection_status);
-        $this->actingAs($this->owner)->put("/account/providers/{$provider->id}", ['name' => 'Renamed', 'type' => 'hetzner', 'token' => 'secret-token-2'])->assertRedirect();
+        $this->actingAs($this->owner)->putJson("/api/app/account/providers/{$provider->id}", ['name' => 'Renamed', 'type' => 'hetzner', 'token' => 'secret-token-2'])->assertOk();
         $this->assertSame('unchecked', $this->reload($provider)->connection_status);
 
         Server::factory()->create(['provider_id' => $provider->id]);
-        $this->actingAs($this->owner)->put("/account/providers/{$provider->id}", ['name' => 'Renamed', 'type' => 'vultr'])->assertSessionHasErrors('type');
-        $this->actingAs($this->owner)->delete("/account/providers/{$provider->id}")->assertSessionHasErrors('provider');
+        $this->actingAs($this->owner)->putJson("/api/app/account/providers/{$provider->id}", ['name' => 'Renamed', 'type' => 'vultr'])->assertJsonValidationErrors('type');
+        $this->actingAs($this->owner)->deleteJson("/api/app/account/providers/{$provider->id}")->assertJsonValidationErrors('provider');
         Server::query()->delete();
-        $this->actingAs($this->owner)->delete("/account/providers/{$provider->id}")->assertRedirect('/account/providers');
+        $this->actingAs($this->owner)->deleteJson("/api/app/account/providers/{$provider->id}")->assertOk()->assertJsonPath('redirect', '/account/providers');
         $this->assertSoftDeleted($provider);
         $this->assertSame(
             [AuditAction::ProviderCreated, AuditAction::ProviderUpdated, AuditAction::ProviderUpdated, AuditAction::ProviderDeleted],
@@ -64,6 +67,9 @@ final class ProvidersTest extends TestCase
         );
     }
 
+    /**
+     * Members can't see or manage providers; other accounts' providers aren't found.
+     */
     public function test_members_cant_see_or_manage_providers(): void
     {
         $member = User::factory()->create();
@@ -71,31 +77,37 @@ final class ProvidersTest extends TestCase
         $member->forceFill(['current_account_id' => $this->owner->current_account_id])->save();
         $provider = Provider::factory()->create(['account_id' => $this->owner->current_account_id]);
 
-        $this->actingAs($member)->get('/account/providers')->assertForbidden();
-        $this->actingAs($member)->post('/account/providers', ['name' => 'Nope', 'type' => 'vultr', 'token' => 'x'])->assertForbidden();
-        $this->actingAs($member)->post("/account/providers/{$provider->id}/check")->assertForbidden();
-        $this->actingAs($this->owner)->get('/account/providers/'.Provider::factory()->create()->id)->assertNotFound();
+        $this->actingAs($member)->getJson('/api/app/account/providers')->assertForbidden();
+        $this->actingAs($member)->postJson('/api/app/account/providers', ['name' => 'Nope', 'type' => 'vultr', 'token' => 'x'])->assertForbidden();
+        $this->actingAs($member)->postJson("/api/app/account/providers/{$provider->id}/check")->assertForbidden();
+        $this->actingAs($this->owner)->getJson('/api/app/account/providers/'.Provider::factory()->create()->id)->assertNotFound();
     }
 
+    /**
+     * Checks record health history and tell the creator when the connection changes.
+     */
     public function test_checks_record_health_history_and_tell_the_creator_about_changes(): void
     {
         Notification::fake();
         $provider = Provider::factory()->create(['account_id' => $this->owner->current_account_id, 'created_by' => $this->owner->id, 'connection_failure_threshold' => 2]);
         Http::fake(['https://api.digitalocean.com/*' => Http::sequence()->push([], 401)->push([], 401)->push(['droplets' => []], 200)]);
 
-        $this->actingAs($this->owner)->post("/account/providers/{$provider->id}/check")->assertSessionHas('error');
+        $this->actingAs($this->owner)->postJson("/api/app/account/providers/{$provider->id}/check")->assertOk()->assertJsonPath('successful', false);
         $this->assertSame('unchecked', $this->reload($provider)->connection_status);
         Notification::assertNothingSent();
-        $this->actingAs($this->owner)->post("/account/providers/{$provider->id}/check")->assertSessionHas('error', 'Connection failed. DigitalOcean returned HTTP 401. Check the credential and its permissions.');
+        $this->actingAs($this->owner)->postJson("/api/app/account/providers/{$provider->id}/check")->assertJsonPath('message', 'Connection failed. DigitalOcean returned HTTP 401. Check the credential and its permissions.');
         $this->assertSame('failed', $this->reload($provider)->connection_status);
         Notification::assertSentToTimes($this->owner, ProviderConnectionChanged::class, 1);
-        $this->actingAs($this->owner)->post("/account/providers/{$provider->id}/check")->assertSessionHas('status');
+        $this->actingAs($this->owner)->postJson("/api/app/account/providers/{$provider->id}/check")->assertJsonPath('successful', true);
         $this->assertSame('healthy', $this->reload($provider)->connection_status);
         Notification::assertSentToTimes($this->owner, ProviderConnectionChanged::class, 2);
         $this->assertSame([false, false, true], $provider->connectionChecks()->orderBy('id')->pluck('successful')->all());
         Http::assertSent(fn ($request): bool => $request->hasHeader('Authorization', 'Bearer '.$provider->token));
     }
 
+    /**
+     * The scheduled check only runs for providers that are monitored and due.
+     */
     public function test_the_scheduled_check_only_runs_due_monitored_providers(): void
     {
         Http::fake(['*' => Http::response(['ok' => true])]);

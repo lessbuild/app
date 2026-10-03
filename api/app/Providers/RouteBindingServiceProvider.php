@@ -99,7 +99,9 @@ final class RouteBindingServiceProvider extends ServiceProvider
     public function boot(): void
     {
         foreach (self::BINDINGS as $parameter => [$model, $scope, $routes]) {
-            Route::bind($parameter, fn (string $value, RoutingRoute $route): Model|string => $route->named($routes) ? $this->resolve($model, $scope, $value, $route) : $value);
+            // The app's API (routes/app.php) names its routes like the pages, under `app.`.
+            $names = [...$routes, ...array_map(fn (string $name): string => 'app.'.$name, $routes)];
+            Route::bind($parameter, fn (string $value, RoutingRoute $route): Model|string => $route->named($names) ? $this->resolve($model, $scope, $value, $route) : $value);
         }
     }
 

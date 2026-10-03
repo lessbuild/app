@@ -70,7 +70,7 @@ final class ProjectSetupQuery
         return new SetupStep('provider', __('Connect a cloud provider'), __('Connect your cloud account (DigitalOcean, Hetzner, AWS, Google Cloud, Azure and more) so servers are created in it. Already have a server? You can import it instead.'),
             $provider !== null || $imported ? SetupStep::DONE : SetupStep::TODO,
             $provider !== null ? $this->text(':name is connected.', ['name' => $provider->name]) : ($imported ? $this->text('Using an imported server.') : null),
-            __('Add a provider'), route('account.providers', ['dialog' => 'add-provider']), 'layers');
+            __('Add a provider'), route('account.providers', ['dialog' => 'add-provider', 'return' => route('projects.setup', $project, false)]), 'layers');
     }
 
     /**
