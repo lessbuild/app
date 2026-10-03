@@ -5,6 +5,14 @@
  */
 const { t, tc } = useT();
 const shell = useShell();
+
+/** Switch to another of the person's accounts and load its dashboard in full, so nothing from the old one lingers. */
+async function switchAccount(id: string) {
+    const result = await send<{ redirect: string }>('POST', `/accounts/${id}/switch`).catch(() => null);
+    if (result) {
+        window.location.assign(local(result.redirect));
+    }
+}
 </script>
 
 <template>
@@ -45,6 +53,18 @@ const shell = useShell();
                                     <p class="truncate text-sm font-extrabold text-ink">{{ shell.user.name }}</p>
                                     <p class="truncate text-xs text-muted">{{ shell.user.email }}</p>
                                 </div>
+                                <template v-if="shell.accounts.length > 1">
+                                    <p class="px-3 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ t('Switch account') }}</p>
+                                    <button
+                                        v-for="account in shell.accounts.filter((item) => item.id !== shell?.account?.id)"
+                                        :key="account.id"
+                                        type="button"
+                                        class="topbar-nav-link w-full"
+                                        @click="switchAccount(account.id)"
+                                    >
+                                        {{ account.name }}
+                                    </button>
+                                </template>
                                 <template v-if="shell.accountLinks.length > 0">
                                     <p class="px-3 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ shell.account?.name }}</p>
                                     <NuxtLink v-for="item in shell.accountLinks" :key="item.url" :to="item.url" class="topbar-nav-link w-full">{{ item.label }}</NuxtLink>

@@ -4008,6 +4008,7 @@
     "Supported: Ubuntu :versions on x86-64 or ARM64. Provisioning may reconfigure or restart existing services.": "Suportado: Ubuntu :versions em x86-64 ou ARM64. O provisionamento pode reconfigurar ou reiniciar serviços existentes.",
     "Switch": "Trocar",
     "Switch :service plan": "Trocar o plano do :service",
+    "Switch account": "Trocar de conta",
     "Switching the server to Node.js :version.": "Trocando o servidor para Node.js :version.",
     "Switching to PHP :version. It takes a few minutes the first time a version is installed.": "Trocando para PHP :version. Leva alguns minutos na primeira vez que uma versão é instalada.",
     "Sync now": "Sincronizar agora",

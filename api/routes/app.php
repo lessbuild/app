@@ -8,6 +8,17 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AccessRequests\ShowAccessRequestFormController;
 use App\Http\Controllers\AccessRequests\StoreAccessRequestController;
+use App\Http\Controllers\Account\ChangeMemberRoleController;
+use App\Http\Controllers\Account\DeleteAccountController;
+use App\Http\Controllers\Account\InviteMemberController;
+use App\Http\Controllers\Account\RemoveMemberController;
+use App\Http\Controllers\Account\RenameAccountController;
+use App\Http\Controllers\Account\RevokeInvitationController;
+use App\Http\Controllers\Account\ShowAccountSettingsController;
+use App\Http\Controllers\Account\ShowMembersController;
+use App\Http\Controllers\Account\SwitchAccountController;
+use App\Http\Controllers\Account\UpdateMemberProjectsController;
+use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Auth\ShowCurrentUserController;
 use App\Http\Controllers\Auth\ShowSignInOptionsController;
 use App\Http\Controllers\Auth\StartSsoSignInController;
@@ -45,7 +56,7 @@ Route::get('/auth/options', ShowSignInOptionsController::class)->middleware('thr
 Route::post('/auth/sso', StartSsoSignInController::class)->middleware(['guest', 'throttle:10,1'])->name('auth.sso');
 Route::get('/access-requests', ShowAccessRequestFormController::class)->middleware('throttle:60,1')->name('access-requests.form');
 Route::post('/access-requests', StoreAccessRequestController::class)->middleware('throttle:5,1')->name('access-requests.store');
-Route::get('/invitations/{token}', ShowInvitationController::class)->where('token', '[A-Za-z0-9]{20,100}')->middleware('throttle:30,1')->name('invitations.show');
+Route::get('/invitations/{token}', ShowInvitationController::class)->where('token', '[A-Za-z0-9_-]{1,100}')->middleware('throttle:30,1')->name('invitations.show');
 
 Route::get('/auth/me', ShowCurrentUserController::class)->middleware('auth')->name('auth.me');
 Route::post('/auth/confirm-with/{provider}', App\Http\Controllers\Auth\ConfirmWithProviderController::class)->middleware(['auth', 'throttle:10,1'])->name('auth.confirm-with');
@@ -84,4 +95,17 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
         Route::post('/services/{service}', EnableProjectServiceController::class)->name('services.store');
         Route::delete('/services/{service}', DisableProjectServiceController::class)->name('services.destroy');
     });
+
+    // The account: switching between accounts, members and invitations, and the account's own settings.
+    Route::post('/accounts/{account}/switch', SwitchAccountController::class)->name('accounts.switch');
+    Route::get('/account/members', ShowMembersController::class)->middleware('account.can:view')->name('account.members');
+    Route::post('/account/invitations', InviteMemberController::class)->middleware('throttle:20,1')->name('account.invitations.store');
+    Route::delete('/account/invitations/{invitation}', RevokeInvitationController::class)->name('account.invitations.destroy');
+    Route::put('/account/members/{membership}', ChangeMemberRoleController::class)->name('account.members.update');
+    Route::delete('/account/members/{membership}', RemoveMemberController::class)->name('account.members.destroy');
+    Route::put('/account/members/{membership}/services', UpdateMemberServicesController::class)->name('account.members.services');
+    Route::put('/account/members/{membership}/projects', UpdateMemberProjectsController::class)->name('account.members.projects');
+    Route::get('/account/settings', ShowAccountSettingsController::class)->middleware('account.can:update')->name('account.settings');
+    Route::put('/account/settings', RenameAccountController::class)->name('account.settings.update');
+    Route::delete('/account/settings', DeleteAccountController::class)->middleware('password.confirm')->name('account.settings.destroy');
 });

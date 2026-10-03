@@ -20,42 +20,11 @@ use Tests\Feature\Infrastructure\InfrastructureHelpers;
 use Tests\Feature\Monitoring\MonitoringHelpers;
 use Tests\TestCase;
 
-final class ProjectAccessTest extends TestCase
+final class ProtectedEnvironmentsTest extends TestCase
 {
     use InfrastructureHelpers;
     use MonitoringHelpers;
     use RefreshDatabase;
-
-    /**
-     * Check that a member limited to some projects can't open or find the others, and that owners can't be limited.
-     *
-     * @return void
-     */
-    public function test_members_can_be_limited_to_some_projects(): void
-    {
-        $shop = Project::factory()->withServices(['deploy'])->create(['name' => 'Shop']);
-        $owner = $this->ownerOf($shop);
-        $blog = Project::factory()->for($shop->account)->withServices(['deploy'])->create(['name' => 'Blog']);
-        $member = User::factory()->create();
-        $membership = $this->addMember($shop, $member, AccountRole::Member);
-        $member->forceFill(['current_account_id' => $shop->account_id])->save();
-
-        $this->actingAs($owner)->get('/account/members')->assertOk()->assertSee('Project access');
-        $this->actingAs($owner)->put("/account/members/{$membership->id}/projects", ['project_access' => 'some', 'projects' => [$shop->id]])->assertRedirect('/account/members');
-        $this->assertSame([$shop->id], $membership->refresh()->project_ids);
-
-        $this->actingAs($member)->get("/projects/{$shop->id}")->assertOk();
-        $this->actingAs($member)->get("/projects/{$blog->id}")->assertNotFound();
-        $this->actingAs($member)->get('/dashboard')->assertOk()->assertSee('Shop')->assertDontSee('Blog');
-        $this->actingAs($member)->getJson('/search?q=bl')->assertOk()->assertJsonMissing(['title' => 'Blog']);
-        $this->actingAs($owner)->get("/projects/{$blog->id}")->assertOk();
-        $this->actingAs($owner)->getJson('/search?q=bl')->assertOk()->assertJsonFragment(['title' => 'Blog']);
-
-        $ownerMembership = Membership::query()->where('user_id', $owner->id)->sole();
-        $this->actingAs($owner)->put("/account/members/{$ownerMembership->id}/projects", ['project_access' => 'some', 'projects' => []])->assertSessionHasErrors();
-        $this->actingAs($owner)->put("/account/members/{$membership->id}/projects", ['project_access' => 'all'])->assertRedirect();
-        $this->actingAs($member)->get("/projects/{$blog->id}")->assertOk();
-    }
 
     /**
      * Check that a protected environment takes deploys and changes only from owners, admins and members allowed to
