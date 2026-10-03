@@ -47,13 +47,13 @@ final class AdminOperationsTest extends TestCase
 
         $this->as($admin)->get('/admin/queues')->assertOk()->assertSee('Ping monitor')->assertSee('RuntimeException: Connection refused')->assertDontSee('/var/www');
         Livewire::test(Queues::class)->assertCanSeeTableRecords([$first, $second])->callAction(TestAction::make('retry')->table($first))->assertNotified();
-        $this->assertSame(1, DB::table('failed_jobs')->count());
+        $this->assertDatabaseCount('failed_jobs', 1);
         $this->assertSame(1, DB::table('jobs')->where('queue', 'checks')->count());
         Livewire::test(Queues::class)->callAction(TestAction::make('forget')->table($second));
-        $this->assertSame(0, DB::table('failed_jobs')->count());
+        $this->assertDatabaseCount('failed_jobs', 0);
         $this->failedJob('Another');
         Livewire::test(Queues::class)->callAction('forgetAll');
-        $this->assertSame(0, DB::table('failed_jobs')->count());
+        $this->assertDatabaseCount('failed_jobs', 0);
 
         $this->assertSame(['jobs.retried', 'jobs.forgotten', 'jobs.forgotten'], PlatformAdminEvent::query()->orderBy('id')->pluck('action')->all());
         $this->as($admin)->get('/admin')->assertOk()->assertSee("Retried failed job {$first}.");
