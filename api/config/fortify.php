@@ -133,7 +133,7 @@ return [
     |
     */
 
-    // Headless: the Next.js app draws the sign-in pages and calls these routes for JSON.
+    // Headless: the Nuxt app draws the sign-in pages and calls these routes for JSON.
     'views' => false,
 
     /*

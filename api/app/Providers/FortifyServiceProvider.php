@@ -24,7 +24,7 @@ use Laravel\Fortify\Fortify;
 final class FortifyServiceProvider extends ServiceProvider
 {
     /**
-     * Wire Fortify (headless: the Next.js app draws the pages) to our actions, record sign-in activity, and set the rate
+     * Wire Fortify (headless: the Nuxt app draws the pages) to our actions, record sign-in activity, and set the rate
      * limits for sign-in, two-factor codes and passkey assertions.
      *
      * @return void

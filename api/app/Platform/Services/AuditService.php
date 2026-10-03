@@ -54,7 +54,7 @@ final class AuditService implements PlatformService
     }
 
     /**
-     * Get the service's pages, served by the Next.js frontend: the audits and the latest report.
+     * Get the service's pages, served by the Nuxt app: the audits and the latest report.
      *
      * @param  string  $projectId
      * @return list<ServiceNavItem>

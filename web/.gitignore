@@ -1,6 +1,5 @@
-/node_modules
-/.next
-/out
-next-env.d.ts
-*.tsbuildinfo
-/messages
+.nuxt
+.output
+.data
+node_modules
+messages

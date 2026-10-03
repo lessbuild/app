@@ -7,7 +7,7 @@ Started 2026-10-03. platform-v2 keeps serving production until v3 replaces it.
 | Topic | Decision |
 |---|---|
 | Start | **Fresh**, on the orphan branch `platform-v3`, reusing v2's code wherever it fits |
-| Frontend | **Next.js** (App Router, TypeScript) with **Tailwind CSS 4**, keeping the Signal design |
+| Frontend | **Nuxt 4** (Vue 3, TypeScript, server-rendered) with **Tailwind CSS 4**, keeping the Signal design. Started in Next.js; switched to Nuxt on the owner's request on 2026-10-03, before any page went live |
 | Backend | **Laravel**, following v2's code rules (below), as a JSON API |
 | Data | **Empty database**: no carry-over, so the schema may be tidied |
 | Admin | **Filament** stays in Laravel at `/admin` |
@@ -19,7 +19,7 @@ Started 2026-10-03. platform-v2 keeps serving production until v3 replaces it.
 ```
 api/    Laravel: the JSON API (/api/app for the frontend, /api/v1 and /api/v2 for tokens), Filament (/admin),
         the public endpoints (ingest, tracker, webhooks, callbacks, CLI, status JSON and badges) and mail
-web/    Next.js: every page people see, signed in or not
+web/    Nuxt: every page people see, signed in or not
 deploy/ docs/ sdk/ integrations/
 ```
 
@@ -44,20 +44,21 @@ New for v3:
 
 ## Frontend rules
 
-- Server components load data from `/api/app` as the signed-in person (`lib/api.ts` forwards the cookies); client
-  components write with `lib/client.ts` (CSRF header, 422 → field errors).
-- Signal lives in `web/`: the CSS tokens, presets and component classes (from v2's `resources/css`), the icons, and React
-  components in `components/signal`. Light and dark, palettes, density and contrast all keep working.
+- Pages load data from `/api/app` with `useApi()`, rendered on the server as the signed-in person (the cookies are
+  forwarded, and cookies Laravel refreshes are passed back); writes go through `ApiForm` or `send()` (CSRF header,
+  422 → field errors, 423 → "Confirm it's you" and retry).
+- Signal lives in `web/`: the CSS tokens, presets and component classes (from v2's `resources/css`), the icons, and Vue
+  components in `app/components/signal`. Light and dark, palettes, density and contrast all keep working.
 - Every user-facing string goes through `t()` and is translated into es, fr, de and pt (`web/messages`).
-- Create and edit screens are intercepted routes (`@modal/(.)…`) with a full-page fallback; multi-step tasks use
-  `Wizard`. Destructive actions confirm in a dialog.
+- Create and edit screens are dialogs on the page linked with `?dialog=<id>` (a full page backs those linked from
+  outside the app); multi-step tasks use `Wizard`. Destructive actions confirm in a dialog.
 - Accessible by default: labels, focus management in dialogs and wizards, keyboard paths, colour never alone.
 
 ## Order
 
 0. **Scaffold**: the Laravel app with v2's domain code (models, migrations, actions, queries, data, services, jobs,
-   policies, enums, platform, support, contracts, notifications, Filament) and no Blade pages; the Next.js app with
-   Signal, i18n, the shell, `Modal`, `Wizard`, forms and dialogs. CI for both.
+   policies, enums, platform, support, contracts, notifications, Filament) and no Blade pages; the Nuxt app with
+   Signal, i18n, the shell, `Wizard`, forms and dialogs. CI for both.
 1. **Identity**: sign-up, sign-in, two-factor, passkeys, social and SSO sign-in, email verification, password reset,
    invitations; the shell (`/api/app/shell`).
 2. **Projects and account**: dashboard, projects (wizard), setup guide, domains, environments, services; account

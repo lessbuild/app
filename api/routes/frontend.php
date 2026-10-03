@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-// The Next.js app's pages, named so Laravel can link to them: emails, notifications, OAuth and SSO return addresses,
-// and anything else that calls route(). Caddy sends these paths to Next.js; Laravel never serves them, and answers 404
+// The Nuxt app's pages, named so Laravel can link to them: emails, notifications, OAuth and SSO return addresses,
+// and anything else that calls route(). Caddy sends these paths to Nuxt; Laravel never serves them, and answers 404
 // if it's asked (only when running without Caddy).
 
 use App\Http\Controllers\FrontendPageController;

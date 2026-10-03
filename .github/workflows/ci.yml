@@ -69,15 +69,14 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      # npm run build first extracts the translations (and fails on a missing one), then builds the standalone server.
+      # npm run messages fails on a missing translation; the build is a self-contained Node server in .output.
       - run: npm run messages
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:
-          name: web-standalone
-          path: |
-            web/.next/standalone
-            web/.next/static
+          name: web-server
+          path: web/.output
+          include-hidden-files: true
           retention-days: 7

@@ -1,15 +1,13 @@
-import next from 'eslint-config-next';
+import withNuxt from './.nuxt/eslint.config.mjs';
 
-const config = [
-    ...next,
-    { ignores: ['.next/**', 'messages/**'] },
+export default withNuxt(
+    { ignores: ['messages/**', '.output/**'] },
     {
         rules: {
-            // Full page loads are deliberate here: after signing in or out (so every server component sees the new
-            // session) and from helpers outside React components, which can't use the router.
-            '@next/next/no-location-assign-relative-destination': 'off',
+            // Pages are named after their URL segment (login, register), not multi-word.
+            'vue/multi-word-component-names': 'off',
+            // Icons are trusted SVG paths generated from the design system.
+            'vue/no-v-html': 'off',
         },
     },
-];
-
-export default config;
+);

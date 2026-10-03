@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// Laravel's own web routes. Every page people see is the Next.js app (web/); Laravel answers the JSON API
+// Laravel's own web routes. Every page people see is the Nuxt app (web/); Laravel answers the JSON API
 // (routes/api.php and routes/app.php), the admin panel, and the machine endpoints below, whose addresses are public
 // contracts used by provisioning and deployment scripts, Stripe, the CLI, and status badges.
 

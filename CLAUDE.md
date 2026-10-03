@@ -1,11 +1,11 @@
 # BuildPusher platform v3
 
-One platform that brings Deploy, Infrastructure, Monitoring, Security, Analytics (and Audit, switched off for now) together as services of a single account, dashboard and bill. v3 is a fresh start on the `platform-v3` branch: a Laravel JSON API (`api/`) and a Next.js app (`web/`), reusing v2's code wherever it fits. The plan and order of work are in [docs/plan.md](docs/plan.md).
+One platform that brings Deploy, Infrastructure, Monitoring, Security, Analytics (and Audit, switched off for now) together as services of a single account, dashboard and bill. v3 is a fresh start on the `platform-v3` branch: a Laravel JSON API (`api/`) and a Nuxt app (`web/`), reusing v2's code wherever it fits. The plan and order of work are in [docs/plan.md](docs/plan.md).
 
 ## Repository layout
 
-- `api/` — Laravel: the JSON API for the app (`routes/app.php`, under `/api/app`), the token APIs (`routes/api.php`: `/api/v1`, `/api/v2`, ingest, MCP, SCIM), the Filament admin (`/admin`), sign-in round trips and machine endpoints (`routes/web.php`), and `routes/frontend.php`, which only *names* the Next.js pages so `route()` can link to them from emails and notifications. Run `composer`, `php artisan`, Pint, PHPStan and its tests from `api/`.
-- `web/` — Next.js (App Router, TypeScript, Tailwind CSS 4): every page people see.
+- `api/` — Laravel: the JSON API for the app (`routes/app.php`, under `/api/app`), the token APIs (`routes/api.php`: `/api/v1`, `/api/v2`, ingest, MCP, SCIM), the Filament admin (`/admin`), sign-in round trips and machine endpoints (`routes/web.php`), and `routes/frontend.php`, which only *names* the Nuxt pages so `route()` can link to them from emails and notifications. Run `composer`, `php artisan`, Pint, PHPStan and its tests from `api/`.
+- `web/` — Nuxt 4 (Vue 3, TypeScript, Tailwind CSS 4), rendered on the server: every page people see. Run `npm` from `web/`.
 - `deploy/`, `docs/`, `sdk/`, `integrations/`.
 
 ## Product model
@@ -46,17 +46,18 @@ A conventional Laravel layout, organised by type (not by domain). Within a type,
 
 ## API (api/)
 
-- `/api/app/*` is the Next.js app's API on the `web` middleware group: the session cookie signs people in and writes send `X-XSRF-TOKEN`. Fortify runs headless under `/api/app/auth`.
+- `/api/app/*` is the Nuxt app's API on the `web` middleware group: the session cookie signs people in and writes send `X-XSRF-TOKEN`. Fortify runs headless under `/api/app/auth`.
 - Controllers answer JSON: a Data object (or a list of them) for reads, the saved Data object for writes, or `{ "redirect": "/path" }` when the app should move on. Validation errors are Laravel's 422; `RuleViolation` maps to a field error.
 - Each slice rewrites the area's v2 feature tests (in `tests/Pending`) as API tests and moves them back into `tests/Feature`.
 
 ## UI (web/)
 
-- Use the Signal components (`web/components/signal`, forms in `web/components/form`) and Signal's CSS classes for every page. Don't add inline styles or one-off components when a Signal primitive exists; add a primitive when one is missing.
+- Use the Signal components (`web/app/components/signal`, forms in `web/app/components/form`) and Signal's CSS classes for every page. Don't add inline styles or one-off components when a Signal primitive exists; add a primitive when one is missing.
 - **Improve the UI where it helps** (the owner asked for this with the rewrite): clearer hierarchy, fewer clicks, better empty states and feedback, consistent spacing. Keep the Signal look.
-- Create and edit screens open as modals through intercepted routes (`@modal/(.)…`) with a full-page fallback; tasks with dependent steps use `Wizard`; destructive actions confirm in `DeleteDialog`.
-- Server components load data with `api()` (`lib/server.ts`); client components write with `Form` or `send()` (`lib/client.ts`).
-- Every user-facing string goes through `t()` / `tc()` and must exist in `api/lang/{es,fr,de,pt}.json`; `npm run messages` fails on a missing one.
+- Create and edit screens open in a dialog on the page (`UiDialog`, `FormDialog`), linked with `?dialog=<id>` so Back closes them and a link opens them; a full page backs the ones linked from outside the app. Tasks with dependent steps use `Wizard`; destructive actions confirm in `DeleteDialog`.
+- Pages load data with `useApi()` (`app/composables/useApi.ts`, server-rendered with the person's cookies) and write with `ApiForm` or `send()` (`app/utils/client.ts`); after a write the page's data reloads (`refreshPage()`) or the app follows the API's `redirect`. Signed-in pages use `definePageMeta({ layout: 'app' })`; the signed-in middleware loads the shell for them.
+- Components are named by file without folder prefixes, never after an HTML element (`UiButton`, `UiDialog`, `ApiForm`). Each component's `<script setup>` starts with a comment saying what it is for.
+- Every user-facing string goes through `t()` / `tc()` from `useT()` and must exist in `api/lang/{es,fr,de,pt}.json`; `npm run messages` fails on a missing one.
 - Accessible by default: real labels, focus moved into dialogs and wizard steps, keyboard paths, colour never the only signal, light and dark both checked.
 - The admin panel stays Filament (`api/app/Filament`): its writes go through Actions; its resources set `$shouldSkipAuthorization` because the panel's middleware decides access.
 

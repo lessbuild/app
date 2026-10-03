@@ -1,7 +1,7 @@
 // Builds web/messages/<locale>.json from the Laravel app's translations (api/lang/<locale>.json), keeping only the
-// strings the Next.js app uses. Strings are found as t('…'), t(i18n, '…') and tc(…) calls (single or double quotes),
+// strings the app uses. Strings are found as t('…') and tc('…') calls in app/ (single or double quotes),
 // keyed by their English text exactly as Laravel's __() keys them. Exits with an error listing any string a language
-// doesn't translate yet: add it to api/lang so both frontends share one set of translations.
+// doesn't translate yet: add it to api/lang so the app and the API share one set of translations.
 
 import { readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
@@ -10,21 +10,21 @@ import { fileURLToPath } from 'node:url';
 const web = join(dirname(fileURLToPath(import.meta.url)), '..');
 const lang = join(web, '..', 'api', 'lang');
 const locales = ['es', 'fr', 'de', 'pt'];
-const call = /\b(?:tc?|rich)\(\s*(?:[A-Za-z_$][\w$]*\s*,\s*)?(['"])((?:\\.|(?!\1).)*)\1/g;
+const call = /\b(?:tc?)\(\s*(['"])((?:\\.|(?!\1).)*)\1/g;
 
-/** Every .ts and .tsx file under a folder. */
+/** Every .ts and .vue file under a folder. */
 function sources(folder) {
     return readdirSync(folder).flatMap((name) => {
         const path = join(folder, name);
         if (statSync(path).isDirectory()) {
             return name === 'node_modules' || name.startsWith('.') ? [] : sources(path);
         }
-        return ['.ts', '.tsx'].includes(extname(name)) ? [path] : [];
+        return ['.ts', '.vue'].includes(extname(name)) ? [path] : [];
     });
 }
 
 const keys = new Set();
-for (const file of ['app', 'components', 'lib'].flatMap((folder) => sources(join(web, folder)))) {
+for (const file of sources(join(web, 'app'))) {
     for (const match of readFileSync(file, 'utf8').matchAll(call)) {
         keys.add(match[2].replace(/\\(['"\\])/g, '$1'));
     }

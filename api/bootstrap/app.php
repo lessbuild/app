@@ -32,16 +32,16 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        // The Next.js frontend's API: JSON, signed in with the session cookie.
+        // The Nuxt app's API: JSON, signed in with the session cookie.
         then: function (): void {
             Route::middleware(['web', App\Http\Middleware\AnswerRedirectsAsJson::class])->prefix('api/app')->name('app.')->group(base_path('routes/app.php'));
-            // The Next.js app's pages, named for route() (emails, notifications, return addresses); never served here.
+            // The Nuxt app's pages, named for route() (emails, notifications, return addresses); never served here.
             Route::group([], base_path('routes/frontend.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Stripe signs its webhooks; there is no session or CSRF token. One-click unsubscribe (RFC 8058) posts from the mail client with the token in the URL; provisioning scripts post signed callbacks.
-        // The referral code isn't secret, and the Next.js app reads it to pass to sign-up.
+        // The referral code isn't secret, and the Nuxt app reads it to pass to sign-up.
         $middleware->encryptCookies(except: ['bp_referral']);
         $middleware->validateCsrfTokens(except: ['webhooks/stripe', 'status/subscriptions/*/unsubscribe/*', 'servers/*/provisioning/callback/*', 'websites/*/provisioning/callback/*', 'builds/*/deployment/callback/*', 'environments/*/wake', 'sso/saml/acs']);
         // Monitor signals are checked byte for byte; monitor secrets are stored exactly as typed.
