@@ -4355,7 +4355,7 @@
     "This terminal was opened in another browser or tab session. Open a new one from the server page.": "Este terminal se abrió en otra sesión del navegador o de otra pestaña. Abre uno nuevo desde la página del servidor.",
     "This terminal was opened in another browser.": "Este terminal se abrió en otro navegador.",
     "This token no longer has access to its account.": "Este token ya no tiene acceso a su cuenta.",
-    "This uses one of your :allowance audits this month (:used used so far).": "Esto usa una de tus :allowance auditorías de este mes (:used usadas hasta ahora).",
+    "This uses your one audit this month.|This uses one of your :count audits this month (:used used so far).": "Esto usa tu única auditoría de este mes.|Esto usa una de tus :count auditorías de este mes (:used usadas hasta ahora).",
     "This website already has a database user with that name.": "Este sitio web ya tiene un usuario de base de datos con ese nombre.",
     "This website belongs to an open preview. Close the preview instead.": "Este sitio web pertenece a una vista previa abierta. Cierra la vista previa en su lugar.",
     "Threshold": "Umbral",

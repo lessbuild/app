@@ -76,3 +76,17 @@ Each slice: tests, Pint, PHPStan (api) and lint, type-check, Playwright (web); c
 - **Server size.** Production has 1 vCPU and ~1 GB of RAM, already swapping, with the root disk 90% full. Next.js (~200 MB) plus Chromium for audits (~300 MB a page) won't fit. Before slice 1 goes live it needs at least 2 vCPU / 4 GB, or audits run on a separate worker machine.
 - **Claude cost per audit.** About 40 vision calls an audit with three journeys on the site and two competitors. The model is `AUDIT_MODEL` (default `claude-sonnet-5`); prices above leave margin at that rate.
 - **Size of the move.** 278 views and ~600 routes. The fallback rewrite keeps the app whole while it's half moved.
+
+## Progress
+
+- **2026-10-03 — slice 0 done** (`a3212d84`): the Laravel app lives in `api/`; CI and the deploy script follow it.
+- **Slice 2 done** (`300f18d9`): the Audit backend, `/api/app` (session cookie + XSRF) with the Audit endpoints and `/shell`.
+  Model default `claude-opus-5` (`AUDIT_MODEL`); requests opt into server-side refusal fallbacks.
+- **Slices 1 and 3, first cut**: `web/` with the Signal port (CSS shared from `api/resources/css`, icons generated from the
+  Blade icon set and sprite, the theme boot script read from its Blade component), translations shared through
+  `web/scripts/messages.mjs`, the app shell from `/api/app/shell`, `Modal` (intercepted routes) and `Wizard`, and the
+  Audit pages: list, new-audit wizard (modal and page), audit, edit (modal and page), report with live progress, the
+  score comparison (an emphasis chart, colours checked with the dataviz validator), findings and journeys (modal and
+  page).
+- **Not yet**: the Next.js server in production (Caddy routes, a systemd unit, the CI artifact copied to the server),
+  auth pages in Next.js, CSP with nonces for Next.js pages, Playwright tests for `web/`. Then slice 4 onward.

@@ -92,3 +92,27 @@ jobs:
             api/test-results
             api/storage/logs/e2e.log
           retention-days: 7
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      # npm run build first extracts the translations (and fails on a missing one), then builds the standalone server.
+      - run: npm run messages
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-standalone
+          path: |
+            web/.next/standalone
+            web/.next/static
+          retention-days: 7
