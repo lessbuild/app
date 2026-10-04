@@ -17,6 +17,12 @@ const { data: options } = await useApi<SignInOptions>('/auth/options', { invite 
         </div>
         <div v-else class="grid gap-5">
             <SignUpForm :invite="invite" :invited-email="options.invitedEmail" :referral="referral" :turnstile-site-key="options.turnstileSiteKey" />
+            <p class="text-center text-xs leading-5 text-muted">
+                <Rich :text="t('By creating an account you agree to the :terms and :privacy.')">
+                    <template #terms><NuxtLink to="/terms" class="font-semibold text-primary hover:underline">{{ t('terms of service') }}</NuxtLink></template>
+                    <template #privacy><NuxtLink to="/privacy" class="font-semibold text-primary hover:underline">{{ t('privacy policy') }}</NuxtLink></template>
+                </Rich>
+            </p>
             <SocialProviders :providers="options.socialProviders" />
         </div>
         <template #footer>

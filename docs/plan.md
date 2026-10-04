@@ -125,4 +125,10 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   `/api/app/status-domains/{host}`), and server/middleware/status-domains.ts 404s the rest of the app there. The embed
   widget, badges, JSON reports, legacy addresses and one-click unsubscribe stay in Laravel, unchanged. Set
   NUXT_PUBLIC_APP_HOST in production so the app's own host skips the domain lookup.
-- **10. Public site**: next.
+- **10. Public site**: done. The home page (signed-in people go to their dashboard; a status page's custom domain
+  shows that page), service pages, pricing, the changelog, the roadmap (one-click voting, suggesting a feature in a
+  dialog), comparisons, the privacy policy and terms, the help centre (filtered as you type) and the API reference,
+  in the public layout. Each page's endpoint returns a meta block (title, description, canonical address, preview
+  image, schema.org graph) that usePublicPage() puts in the head. The sitemap, robots.txt and security.txt stay in
+  Laravel. The CSP-nonce test waits in tests/Pending for the cut-over.
+- **11. Recipes, notifications, assistant, onboarding**: next.

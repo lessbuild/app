@@ -34,6 +34,10 @@ export const laravelPaths = [
     '/badge.svg',
     '/report.json',
     '/embed',
+    // What search engines and security researchers read.
+    '/sitemap.xml',
+    '/robots.txt',
+    '/.well-known/**',
     '/internal/**',
     '/servers/*/provisioning/**',
     '/websites/*/provisioning/**',
