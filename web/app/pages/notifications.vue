@@ -53,6 +53,7 @@ const tabs = computed(() => [
             </form>
         </div>
 
+        <SavedViews page="notifications" :keys="['filter', 'type', 'q']" />
         <div class="ui-card overflow-hidden"><NotificationList :items="data.items" /></div>
 
         <nav v-if="data.nextCursor || data.previousCursor" class="flex justify-between gap-3" :aria-label="t('Notification pages')">

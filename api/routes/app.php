@@ -83,6 +83,10 @@ use App\Http\Controllers\Projects\StoreProjectTemplateController;
 use App\Http\Controllers\Projects\StoreSampleProjectController;
 use App\Http\Controllers\Projects\UpdateProjectController;
 use App\Http\Controllers\Projects\VerifyDomainController;
+use App\Http\Controllers\SavedViews\DeleteSavedViewController;
+use App\Http\Controllers\SavedViews\ShowSavedViewsController;
+use App\Http\Controllers\SavedViews\StoreSavedViewController;
+use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\Settings\DeletePushDeviceController;
 use App\Http\Controllers\Settings\DeleteSshKeyController;
 use App\Http\Controllers\Settings\DeleteUserController;
@@ -171,6 +175,12 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
         Route::post('/services/{service}', EnableProjectServiceController::class)->name('services.store');
         Route::delete('/services/{service}', DisableProjectServiceController::class)->name('services.destroy');
     });
+
+    // Searching the account (the command palette), and the person's saved views of filtered pages.
+    Route::get('/search', SearchController::class)->middleware('throttle:120,1')->name('search');
+    Route::get('/saved-views', ShowSavedViewsController::class)->name('saved-views.index');
+    Route::post('/saved-views', StoreSavedViewController::class)->middleware('throttle:30,1')->name('saved-views.store');
+    Route::delete('/saved-views/{view}', DeleteSavedViewController::class)->whereNumber('view')->name('saved-views.destroy');
 
     // The person's notifications, across their accounts.
     Route::get('/notifications', ShowNotificationsController::class)->name('notifications.index');

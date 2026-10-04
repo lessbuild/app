@@ -69,6 +69,8 @@ function added(result: Record<string, unknown>): null {
             <UiButton type="submit">{{ t('Show') }}</UiButton>
         </form>
 
+        <SavedViews page="audit-log" :keys="['project', 'person', 'category', 'from', 'to']" />
+
         <EmptyState v-if="data.entries.length === 0" icon="list" :title="t('Nothing recorded yet')" :description="t('Invitations, role changes and other account changes will appear here.')" />
         <template v-else>
             <div class="ui-card overflow-hidden">

@@ -37,6 +37,7 @@ async function switchAccount(id: string) {
                             <Icon name="sparkles" class="h-[18px] w-[18px]" />
                             <span v-if="shell.unseenChanges > 0" class="absolute right-1 top-1 size-2 rounded-full bg-primary" aria-hidden="true" />
                         </NuxtLink>
+                        <CommandPalette :shell="shell" />
                         <NotificationsBell :unread="shell.unreadNotifications" />
                         <ThemeToggle />
                         <details class="ui-topbar-menu group relative">
