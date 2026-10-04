@@ -42,7 +42,7 @@ final class ShowMembersController
             'overview' => $query->handle($account, $user),
             'invitationDays' => InviteMember::EXPIRES_AFTER_DAYS,
             'roles' => array_map(fn (AccountRole $role): array => ['value' => $role->value, 'label' => $role->label(), 'description' => $role->description()], AccountRole::cases()),
-            'services' => array_map(fn (PlatformService $service): array => ['key' => $service->key(), 'name' => $service->name()], array_values($this->services->all())),
+            'services' => array_map(fn (PlatformService $service): array => ['key' => $service->key(), 'name' => $service->name()], $this->services->all()),
             'projects' => Project::query()->where('account_id', $account->id)->orderBy('name')->get(['id', 'name'])
                 ->map(fn (Project $project): array => ['id' => $project->id, 'name' => $project->name])->values(),
         ]);

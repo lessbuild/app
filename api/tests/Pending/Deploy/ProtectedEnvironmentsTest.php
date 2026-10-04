@@ -7,7 +7,6 @@ namespace Tests\Feature\Accounts;
 use App\Enums\AccountRole;
 use App\Enums\ProviderType;
 use App\Models\Build;
-use App\Models\Membership;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Repository;

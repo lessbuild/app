@@ -29,8 +29,8 @@ final class ShowAccountSecurityController
             'rules' => [
                 'requireTwoFactor' => (bool) $account->require_two_factor,
                 'sessionIdleMinutes' => $account->session_idle_minutes,
-                'allowedEmailDomains' => array_values($account->allowed_email_domains ?? []),
-                'allowedIpRanges' => array_values($account->allowed_ip_ranges ?? []),
+                'allowedEmailDomains' => $account->allowed_email_domains ?? [],
+                'allowedIpRanges' => $account->allowed_ip_ranges ?? [],
             ],
             'oidc' => [
                 'issuer' => $account->sso_issuer,

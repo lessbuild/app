@@ -38,7 +38,7 @@ final class ShowProviderController
             ],
             'checks' => $provider->connectionChecks()->orderByDesc('checked_at')->orderByDesc('id')->limit(20)->get()->map(fn (ProviderConnectionCheck $check): array => [
                 'id' => $check->id,
-                'checkedAt' => $check->checked_at?->toIso8601String(),
+                'checkedAt' => $check->checked_at->toIso8601String(),
                 'successful' => (bool) $check->successful,
                 'error' => $check->error,
                 'automatic' => $check->source === 'automatic',

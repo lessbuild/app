@@ -38,7 +38,7 @@ final class ShowWebhooksController
                 'id' => $endpoint->id,
                 'url' => $endpoint->url,
                 'description' => $endpoint->description,
-                'events' => array_values((array) $endpoint->events),
+                'events' => $endpoint->events,
                 'enabled' => (bool) $endpoint->enabled,
                 'lastDeliveredAt' => $endpoint->last_delivered_at?->toIso8601String(),
                 'lastError' => $endpoint->last_error,
