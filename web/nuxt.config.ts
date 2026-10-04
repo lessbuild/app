@@ -8,8 +8,9 @@ export default defineNuxtConfig({
     devtools: { enabled: false },
     modules: ['@nuxt/eslint'],
     css: ['@fontsource-variable/inter', '~/assets/css/main.css'],
-    // Components are named by file (UiButton, ApiForm), wherever they sit under components/.
-    components: [{ path: '~/components', pathPrefix: false }],
+    // Components are named by file (UiButton, ApiForm), wherever they sit under components/; the Acme theme's own
+    // components keep its names behind an Acme prefix (AcmeBtn, AcmeBadge), so they don't clash with ours.
+    components: [{ path: '~/components/acme', prefix: 'Acme' }, { path: '~/components', pathPrefix: false, ignore: ['acme/**'] }],
     vite: { plugins: [tailwindcss()] },
     typescript: { strict: true },
     runtimeConfig: {
