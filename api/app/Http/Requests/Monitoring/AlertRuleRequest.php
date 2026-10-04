@@ -20,7 +20,7 @@ use Illuminate\Validation\Validator;
 /** Authorisation happens in SaveAlertRule; paid rule types are checked against the account's Monitoring tier here. */
 final class AlertRuleRequest extends FormRequest
 {
-    public const WINDOWS = [1 => '1 minute', 5 => '5 minutes', 15 => '15 minutes', 30 => '30 minutes', 60 => '1 hour'];
+    public const WINDOWS = AlertRule::WINDOWS;
 
     /**
      * Get the data to validate: the JSON body for API calls, the form fields otherwise.

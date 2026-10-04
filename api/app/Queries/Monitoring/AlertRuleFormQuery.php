@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Queries\Monitoring;
 
 use App\Enums\AlertMetric;
-use App\Http\Requests\Monitoring\AlertRuleRequest;
 use App\Models\AlertRule;
 use App\Models\MetricSeries;
 use App\Models\Project;
@@ -49,7 +48,7 @@ final readonly class AlertRuleFormQuery
                 'disabled' => ($metric->isTelemetryGuardrail() && ! $plan->has('monitoring.guardrails')) || ($metric->isSloBurnRate() && ! $plan->has('monitoring.slo_burn_rate'))
                     || ($metric->isAnomaly() && ! $plan->has('monitoring.anomalies')) || ($metric === AlertMetric::LogPatternCount && ! $plan->has('monitoring.log_patterns')),
             ], AlertMetric::cases()),
-            'windows' => array_map(fn (int $minutes, string $label): array => ['value' => (string) $minutes, 'label' => __($label)], array_keys(AlertRuleRequest::WINDOWS), AlertRuleRequest::WINDOWS),
+            'windows' => array_map(fn (int $minutes, string $label): array => ['value' => (string) $minutes, 'label' => __($label)], array_keys(AlertRule::WINDOWS), AlertRule::WINDOWS),
             'objectives' => array_map(fn (ServiceLevelObjective $objective): array => ['value' => (string) $objective->id, 'label' => $objective->name.' · '.$objective->environment->name], $this->rules->objectives($project)),
             'series' => MetricSeries::query()->whereIn('environment_id', $project->environments()->select('id'))->orderBy('name')->limit(500)->get()
                 ->map(fn (MetricSeries $series): array => ['value' => (string) $series->id, 'label' => $series->name.' · '.$series->resource_label])->values(),

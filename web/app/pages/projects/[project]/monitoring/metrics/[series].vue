@@ -63,7 +63,7 @@ const anomalyMessage = computed(() => {
         >
             <template #actions>
                 <UiButton :to="`/projects/${project.id}/monitoring/metrics`" variant="quiet" size="sm">{{ t('All metrics') }}</UiButton>
-                <UiButton v-if="data.canManage" :to="{ path: `/projects/${project.id}/monitoring/rules/create`, query: { metric: 'numeric_metric', series: String(series.id) } }" variant="primary" size="sm">{{ t('Create alert') }}</UiButton>
+                <UiButton v-if="data.canManage" :to="`/projects/${project.id}/monitoring/rules/create?metric=numeric_metric&series=${series.id}`" variant="primary" size="sm">{{ t('Create alert') }}</UiButton>
             </template>
         </ProjectHeader>
         <form class="flex flex-wrap items-end gap-3" @submit.prevent="navigateTo({ query: { range: range ?? undefined, mode: mode === 'value' ? undefined : mode ?? undefined } })">

@@ -85,6 +85,12 @@ use Illuminate\Support\Carbon;
 #[UseFactory(MonitorFactory::class)]
 class Monitor extends Model
 {
+    /** The kinds of monitor, by type, with their English labels. */
+    public const TYPES = ['http' => 'HTTP uptime', 'dns' => 'DNS records', 'tls' => 'TLS certificate', 'tcp' => 'TCP port', 'flow' => 'Multi-step check', 'heartbeat' => 'Cron / heartbeat', 'queue' => 'Queue / workers'];
+
+    /** How often a monitor can check, in minutes, with English labels. */
+    public const INTERVALS = [1 => 'Every minute', 5 => 'Every 5 minutes', 15 => 'Every 15 minutes', 30 => 'Every 30 minutes', 60 => 'Every hour'];
+
     /** @use HasFactory<MonitorFactory> */
     use HasFactory, SoftDeletes;
 

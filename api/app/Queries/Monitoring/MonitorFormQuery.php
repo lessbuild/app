@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Queries\Monitoring;
 
-use App\Http\Requests\Monitoring\MonitorRequest;
 use App\Models\AlertDestination;
 use App\Models\Monitor;
 use App\Models\Project;
@@ -28,8 +27,8 @@ final readonly class MonitorFormQuery
         $routing = $monitor?->destinations()->first()?->getRelation('pivot');
 
         return [
-            'types' => array_map(fn (string $label): string => __($label), MonitorRequest::TYPES),
-            'intervals' => array_map(fn (int $minutes, string $label): array => ['value' => (string) $minutes, 'label' => __($label)], array_keys(MonitorRequest::INTERVALS), MonitorRequest::INTERVALS),
+            'types' => array_map(fn (string $label): string => __($label), Monitor::TYPES),
+            'intervals' => array_map(fn (int $minutes, string $label): array => ['value' => (string) $minutes, 'label' => __($label)], array_keys(Monitor::INTERVALS), Monitor::INTERVALS),
             'queueSettings' => array_map(fn (string $field, array $limits): array => [
                 'field' => $field,
                 'label' => __(QueueMonitorSettings::LABELS[$field]),

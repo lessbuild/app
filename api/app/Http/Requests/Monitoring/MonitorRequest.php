@@ -23,9 +23,9 @@ use RuntimeException;
 /** Every monitor type's fields; fields for other types are excluded. Authorisation happens in SaveMonitor. */
 final class MonitorRequest extends FormRequest
 {
-    public const TYPES = ['http' => 'HTTP uptime', 'dns' => 'DNS records', 'tls' => 'TLS certificate', 'tcp' => 'TCP port', 'flow' => 'Multi-step check', 'heartbeat' => 'Cron / heartbeat', 'queue' => 'Queue / workers'];
+    public const TYPES = Monitor::TYPES;
 
-    public const INTERVALS = [1 => 'Every minute', 5 => 'Every 5 minutes', 15 => 'Every 15 minutes', 30 => 'Every 30 minutes', 60 => 'Every hour'];
+    public const INTERVALS = Monitor::INTERVALS;
 
     /**
      * Get the data to validate: the JSON body for API calls, the form fields otherwise.

@@ -64,6 +64,9 @@ use Illuminate\Support\Carbon;
 #[UseFactory(AlertRuleFactory::class)]
 final class AlertRule extends Model
 {
+    /** The windows a rule can judge over, in minutes, with English labels. */
+    public const WINDOWS = [1 => '1 minute', 5 => '5 minutes', 15 => '15 minutes', 30 => '30 minutes', 60 => '1 hour'];
+
     /** @use HasFactory<AlertRuleFactory> */
     use HasFactory, SoftDeletes;
 
