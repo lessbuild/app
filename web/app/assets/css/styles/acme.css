@@ -223,3 +223,9 @@ html:root.dark[data-frame="site"] {
   .site-btn-outline-light { display: inline-flex; align-items: center; gap: 0.375rem; border: 1px solid rgb(255 255 255 / 0.2); border-radius: 0.375rem; padding: 0.625rem 1rem; color: #ffffff; font-size: 0.875rem; font-weight: 500; text-decoration: none; }
   .site-btn-outline-light:hover { background: rgb(255 255 255 / 0.08); }
 }
+
+@layer components {
+  /* Alerts hold a sentence (often with a link in it), so they flow as text rather than laying each piece out as a
+     flex column. */
+  :root .ui-alert { display: block; border-radius: 0.75rem; padding: 0.75rem 1rem; font-size: 0.875rem; line-height: 1.5rem; }
+}

@@ -21,13 +21,6 @@ final class ShowFeaturesController
     private const PREVIEW_IMAGES = ['deploy', 'infrastructure', 'monitoring', 'security', 'analytics', 'audit'];
 
     /**
-     * The services with a screenshot (web/public/images/screens).
-     *
-     * @var list<string>
-     */
-    private const SCREENSHOTS = ['deploy', 'infrastructure', 'monitoring', 'analytics'];
-
-    /**
      * Show a service's page: everything it does, how it's used, its safeguards, how it works with the other services,
      * and common questions. Unknown services are a 404.
      *
@@ -56,7 +49,8 @@ final class ShowFeaturesController
             ),
             'service' => ['key' => $definition->key(), 'name' => $definition->name()],
             'copy' => $copy,
-            'screenshot' => in_array($service, self::SCREENSHOTS, true) ? '/images/screens/'.$service.'.png' : null,
+            // No screenshots until they're taken again of the redesigned app; the page shows its illustration instead.
+            'screenshot' => null,
             'others' => array_values(array_map(fn (PlatformService $other): array => [
                 'key' => $other->key(),
                 'name' => $other->name(),

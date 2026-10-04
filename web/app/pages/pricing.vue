@@ -21,7 +21,7 @@ const money = (cents: number | null) => (cents === null ? t('Contact us') : cent
 
 <template>
     <div>
-        <SiteHero :kicker="t('Pricing')" :title="t('Pricing')" :description="t('Each service has its own tiers, all on one bill. Start free, change tiers any time, and pay monthly or yearly in US dollars.')" centered>
+        <SiteHero kicker="BuildPusher" :title="t('Pricing')" :description="t('Each service has its own tiers, all on one bill. Start free, change tiers any time, and pay monthly or yearly in US dollars.')" centered>
             <nav class="mx-auto mt-8 inline-flex rounded-lg border border-line bg-surface p-1 text-sm font-medium" :aria-label="t('Billing period')">
                 <NuxtLink :to="{ query: {} }" :class="['rounded-md px-4 py-1.5', !yearly ? 'bg-[var(--acme-night)] text-white' : 'text-muted hover:text-ink']" :aria-current="!yearly ? 'page' : undefined">{{ t('Monthly') }}</NuxtLink>
                 <NuxtLink :to="{ query: { billing: 'yearly' } }" :class="['rounded-md px-4 py-1.5', yearly ? 'bg-[var(--acme-night)] text-white' : 'text-muted hover:text-ink']" :aria-current="yearly ? 'page' : undefined">{{ t('Yearly · 2 months free') }}</NuxtLink>
