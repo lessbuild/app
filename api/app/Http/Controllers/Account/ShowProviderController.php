@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Account;
 
-use App\Enums\ProviderType;
+use App\Data\Infrastructure\ProviderSummary;
 use App\Http\Attributes\CurrentAccount;
 use App\Models\Account;
 use App\Models\Provider;
@@ -29,7 +29,7 @@ final class ShowProviderController
         return response()->json([
             'account' => ['id' => $account->id, 'name' => $account->name],
             'provider' => [
-                ...self::summary($provider),
+                ...(array) ProviderSummary::from($provider),
                 'description' => $provider->description,
                 'baseUrl' => $provider->base_url,
                 'monitoringEnabled' => (bool) $provider->connection_monitoring_enabled,
@@ -45,40 +45,9 @@ final class ShowProviderController
                 'durationMs' => $check->duration_ms,
             ])->values(),
             'servers' => $provider->servers()->orderBy('name')->get()->map(fn (Server $server): string => $server->label())->values(),
-            'types' => self::types(),
+            'types' => ProviderSummary::types(),
             'intervals' => Provider::CHECK_INTERVALS,
             'thresholds' => Provider::FAILURE_THRESHOLDS,
         ]);
-    }
-
-    /**
-     * Describe a provider for lists: its name, type and connection status.
-     *
-     * @param  Provider  $provider
-     * @return array<string, mixed>
-     */
-    public static function summary(Provider $provider): array
-    {
-        return [
-            'id' => $provider->id,
-            'name' => $provider->name,
-            'type' => $provider->type->value,
-            'typeLabel' => $provider->type->label(),
-            'purpose' => $provider->type->purpose(),
-            'hostsServers' => $provider->type->hostsServers(),
-            'serverCount' => (int) ($provider->servers_count ?? 0),
-            'status' => $provider->connection_status ?? 'unknown',
-            'checkedAt' => $provider->connection_checked_at?->toIso8601String(),
-        ];
-    }
-
-    /**
-     * List the types a provider can be, with what each is for.
-     *
-     * @return list<array{value: string, label: string, purpose: string}>
-     */
-    public static function types(): array
-    {
-        return array_map(fn (ProviderType $type): array => ['value' => $type->value, 'label' => $type->label(), 'purpose' => $type->purpose()], ProviderType::cases());
     }
 }

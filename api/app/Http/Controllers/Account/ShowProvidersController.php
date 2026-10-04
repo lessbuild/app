@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Account;
 
+use App\Data\Infrastructure\ProviderSummary;
 use App\Http\Attributes\CurrentAccount;
 use App\Models\Account;
 use App\Models\Provider;
@@ -24,8 +25,8 @@ final class ShowProvidersController
     {
         return response()->json([
             'account' => ['id' => $account->id, 'name' => $account->name],
-            'providers' => $providers->handle($account->id)->map(fn (Provider $provider): array => ShowProviderController::summary($provider))->values(),
-            'types' => ShowProviderController::types(),
+            'providers' => $providers->handle($account->id)->map(fn (Provider $provider): ProviderSummary => ProviderSummary::from($provider))->values(),
+            'types' => ProviderSummary::types(),
         ]);
     }
 }
