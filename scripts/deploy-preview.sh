@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Publishes the newest green CI build of web/ to the preview at http://174.138.39.41:8021.
+# Publishes a green CI build of web/ to the preview at http://174.138.39.41:8021: the run given
+# (scripts/deploy-preview.sh <run-id>), else the newest green one. Pass the run you just watched: GitHub can
+# take a moment to list a finished run as successful, and the newest green one may still be the one before it.
 # GitHub builds it (the server is too small); this only downloads the "web-server" artifact and restarts.
 # The API runs straight from this checkout, so migrations are run here too.
 set -euo pipefail
@@ -9,7 +11,7 @@ branch=platform-v3
 target=/var/www/buildpusher-v3/web
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
-run=$(gh run list -R "$repo" -b "$branch" -w CI -s success -L 1 --json databaseId -q '.[0].databaseId')
+run=${1:-$(gh run list -R "$repo" -b "$branch" -w CI -s success -L 1 --json databaseId -q '.[0].databaseId')}
 echo "Deploying CI run $run"
 
 tmp=$(mktemp -d)
