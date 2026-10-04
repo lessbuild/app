@@ -11,13 +11,16 @@ use PHPUnit\Framework\Assert;
 abstract class TestCase extends BaseTestCase
 {
     /**
-     * Add the app API's assertions to test responses.
+     * Add the app API's assertions to test responses, and render pages without the built admin theme.
      *
      * @return void
      */
     protected function setUp(): void
     {
         parent::setUp();
+
+        // The admin panel's theme is built by CI (vite build), not before tests: render pages without its manifest.
+        $this->withoutVite();
 
         // The app's API answers a write with `{ "redirect": "/path" }` where a page used to redirect. Compare paths, so
         // tests can pass route() URLs (absolute) or the API's own paths (under /api/app) as before.

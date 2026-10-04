@@ -76,7 +76,6 @@ final class SelfMonitoringTest extends TestCase
 
     public function test_browser_errors_from_the_platforms_pages_are_reported(): void
     {
-        $this->get('/login')->assertSee('name="error-endpoint"', false);
         $error = ['message' => 'TypeError: x is undefined', 'source' => url('/build/assets/app.js'), 'line' => 12, 'column' => 4, 'stack' => 'at go (app.js:12:4)', 'page' => url('/login')];
         Queue::fake([ReportPlatformException::class]);
         $this->postJson('/_errors', $error)->assertNoContent();

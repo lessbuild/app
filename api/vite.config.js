@@ -5,7 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/terminal.js', 'resources/css/filament/admin/theme.css'],
+            // The admin panel's theme is the only asset Laravel builds: every page people see is the Nuxt app (web/).
+            input: ['resources/css/filament/admin/theme.css'],
             refresh: true,
         }),
         tailwindcss(),

@@ -58,6 +58,22 @@ jobs:
       - run: cp .env.example .env && php artisan key:generate
       - run: php artisan test
 
+  # The Filament admin panel's theme (api/public/build), built here because the server is too small to build it.
+  admin-theme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts
+      - run: npx vite build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: admin-theme
+          path: api/public/build
+          retention-days: 7
+
   web:
     runs-on: ubuntu-latest
     defaults:

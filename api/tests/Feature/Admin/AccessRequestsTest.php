@@ -31,8 +31,8 @@ final class AccessRequestsTest extends TestCase
 
     public function test_open_registration_needs_no_request(): void
     {
-        $this->get('/request-access')->assertRedirect('/register');
-        $this->post('/register', $this->signUp('ada@example.com'))->assertRedirect();
+        $this->getJson('/api/app/access-requests')->assertOk()->assertJsonPath('registrationOpen', true);
+        $this->postJson('/api/app/auth/register', $this->signUp('ada@example.com'))->assertCreated();
         $this->assertTrue(User::query()->where('email', 'ada@example.com')->exists());
     }
 
@@ -42,13 +42,13 @@ final class AccessRequestsTest extends TestCase
         config(['platform.registration.open' => false]);
         $admin = $this->admin();
 
-        $this->get('/register')->assertOk()->assertSee('Sign-up is by invitation');
-        $this->post('/register', $this->signUp('ada@example.com'))->assertSessionHasErrors('email');
+        $this->getJson('/api/app/auth/options')->assertOk()->assertJsonPath('registrationOpen', false)->assertJsonPath('invitedEmail', null);
+        $this->postJson('/api/app/auth/register', $this->signUp('ada@example.com'))->assertJsonValidationErrors('email');
         $this->assertFalse(User::query()->where('email', 'ada@example.com')->exists());
 
         $request = ['name' => 'Ada', 'email' => 'Ada@Example.com', 'company' => 'Analytical', 'team_size' => '2-5', 'use_case' => 'Deploy the engine.'];
-        $this->post('/request-access', $request)->assertRedirect('/request-access')->assertSessionHas('status');
-        $this->post('/request-access', [...$request, 'use_case' => 'Deploy the engine, and monitor it.'])->assertRedirect();
+        $this->postJson('/api/app/access-requests', $request)->assertCreated()->assertJsonPath('message', fn ($message): bool => is_string($message));
+        $this->postJson('/api/app/access-requests', [...$request, 'use_case' => 'Deploy the engine, and monitor it.'])->assertCreated();
         $record = AccessRequest::query()->sole();
         $this->assertSame(['ada@example.com', 'Deploy the engine, and monitor it.', 'pending'], [$record->email, $record->use_case, $record->status]);
         $this->assertNotSame('ada@example.com', AccessRequest::query()->toBase()->value('email'));
@@ -71,8 +71,8 @@ final class AccessRequestsTest extends TestCase
         $this->assertSame('access_request.reviewed', PlatformAdminEvent::query()->latest('id')->value('action'));
 
         auth()->logout();
-        $this->get("/register?invite={$invite}")->assertOk()->assertSee('value="ada@example.com"', false)->assertDontSee('Sign-up is by invitation');
-        $this->post('/register', [...$this->signUp('ada@example.com'), 'invite' => $invite])->assertRedirect();
+        $this->getJson("/api/app/auth/options?invite={$invite}")->assertOk()->assertJsonPath('invitedEmail', 'ada@example.com');
+        $this->postJson('/api/app/auth/register', [...$this->signUp('ada@example.com'), 'invite' => $invite])->assertCreated();
         $this->assertTrue(User::query()->where('email', 'ada@example.com')->exists());
         $record->refresh();
         $this->assertSame(['accepted', null], [$record->status, $record->invitation_token_hash]);
@@ -80,7 +80,7 @@ final class AccessRequestsTest extends TestCase
 
         auth()->logout();
         $this->flushSession();
-        $this->post('/register', [...$this->signUp('eve@example.com'), 'invite' => $invite])->assertSessionHasErrors('email');
+        $this->postJson('/api/app/auth/register', [...$this->signUp('eve@example.com'), 'invite' => $invite])->assertJsonValidationErrors('email');
         $this->as($admin);
         Livewire::test(ManageAccessRequests::class, ['activeTab' => 'accepted'])->assertCanSeeTableRecords([$record])->assertActionHidden(TestAction::make('review')->table($record));
     }
@@ -93,7 +93,7 @@ final class AccessRequestsTest extends TestCase
         $invitation = new AccountInvitation;
         $invitation->forceFill(['account_id' => $account->id, 'invited_by_id' => $owner->id, 'email' => 'grace@example.com', 'role' => AccountRole::Member, 'token_hash' => hash('sha256', 'x'), 'expires_at' => now()->addDay()])->save();
 
-        $this->post('/register', $this->signUp('grace@example.com'))->assertRedirect();
+        $this->postJson('/api/app/auth/register', $this->signUp('grace@example.com'))->assertCreated();
         $this->assertTrue(User::query()->where('email', 'grace@example.com')->exists());
     }
 

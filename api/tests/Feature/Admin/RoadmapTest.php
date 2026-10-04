@@ -35,7 +35,7 @@ final class RoadmapTest extends TestCase
         $sender = $this->person();
         $voter = $this->person();
 
-        $this->actingAs($sender)->post('/feedback', ['feedback_kind' => 'idea', 'feedback_message' => 'Please add Bitbucket pipelines', 'feedback_page' => route('roadmap')])->assertRedirect();
+        $this->actingAs($sender)->postJson('/api/app/feedback', ['kind' => 'idea', 'message' => 'Please add Bitbucket pipelines', 'page' => route('roadmap')])->assertCreated();
         $feedback = Feedback::query()->sole();
 
         $this->as($admin)->get('/admin/feedback')->assertOk()->assertSee('Add to roadmap');
@@ -47,14 +47,15 @@ final class RoadmapTest extends TestCase
 
         // Guests see the roadmap; the private feedback never appears on it.
         auth()->logout();
-        $this->get('/roadmap')->assertOk()->assertSee('Bitbucket support')->assertSee('Planned')->assertSee('Sign in to vote or suggest')->assertDontSee('Please add Bitbucket pipelines');
+        $this->getJson('/api/app/site/roadmap')->assertOk()->assertJsonPath('columns.1.status', 'planned')->assertJsonPath('columns.1.requests.0.title', 'Bitbucket support')
+            ->assertJsonPath('signedIn', false)->assertJsonLacksText('Please add Bitbucket pipelines');
 
-        $this->actingAs($voter)->post("/roadmap/{$request->id}/vote")->assertRedirect(route('roadmap').'#request-'.$request->id);
+        $this->actingAs($voter)->postJson("/api/app/roadmap/{$request->id}/vote")->assertOk()->assertJsonPath('voted', true);
         $this->assertSame(2, $request->refresh()->votes_count);
-        $this->actingAs($voter)->get('/roadmap')->assertOk()->assertSee('aria-pressed="true"', false)->assertSee('Suggest a feature');
-        $this->actingAs($voter)->post("/roadmap/{$request->id}/vote");
+        $this->actingAs($voter)->getJson('/api/app/site/roadmap')->assertOk()->assertJsonPath('voted', [$request->id])->assertJsonPath('signedIn', true);
+        $this->actingAs($voter)->postJson("/api/app/roadmap/{$request->id}/vote");
         $this->assertSame(1, $request->refresh()->votes_count);
-        $this->actingAs($voter)->post("/roadmap/{$request->id}/vote");
+        $this->actingAs($voter)->postJson("/api/app/roadmap/{$request->id}/vote");
 
         // Other feedback can be linked to the same request, counting its sender once.
         $second = new Feedback;
@@ -67,8 +68,8 @@ final class RoadmapTest extends TestCase
         $this->assertNotNull($request->refresh()->shipped_at);
         Notification::assertSentTo([$sender, $voter], FeatureRequestShipped::class);
         Notification::assertNotSentTo($admin, FeatureRequestShipped::class);
-        $this->actingAs($voter)->post("/roadmap/{$request->id}/vote")->assertStatus(422);
-        $this->get('/roadmap')->assertOk()->assertSee('Recently shipped')->assertSee('Bitbucket support');
+        $this->actingAs($voter)->postJson("/api/app/roadmap/{$request->id}/vote")->assertStatus(422);
+        $this->getJson('/api/app/site/roadmap')->assertOk()->assertJsonPath('shipped.0.title', 'Bitbucket support');
     }
 
     /**
@@ -86,7 +87,7 @@ final class RoadmapTest extends TestCase
         Livewire::test(ManageFeatureRequests::class)->callAction('create', ['title' => 'Dark launch flags', 'status' => 'bogus'])->assertHasActionErrors(['status']);
         Livewire::test(ManageFeatureRequests::class)->callAction('create', ['title' => 'Dark launch flags', 'status' => 'declined'])->assertHasNoActionErrors();
         $this->as($admin)->get('/admin/roadmap')->assertOk()->assertSee('Dark launch flags')->assertSee('Not planned');
-        $this->get('/roadmap')->assertOk()->assertDontSee('Dark launch flags');
+        $this->getJson('/api/app/site/roadmap')->assertOk()->assertJsonLacksText('Dark launch flags');
     }
 
     /**

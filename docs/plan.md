@@ -135,6 +135,8 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   worked out, Markdown rendered by Laravel with raw HTML stripped, the MCP address for other AI tools), "What's new" as
   a dialog in the app header with "Got it", and the weekly report, CLI and compatibility tests back in Feature.
   Recipes and notifications came with slices 5 and 2; onboarding is the setup guide (slice 2) and the getting-started
-  emails. Still pending: the Filament admin tests (tests/Pending/Admin), the shell test that needs Audit, and the CSP
-  test for the cut-over.
+  emails. The Filament admin tests run again: CI builds the admin theme (api/public/build, the only
+  asset Laravel builds) and the preview deploy installs it; tests render without it. The app reports its own browser
+  errors to /_errors again, and platform admins get the admin panel in their menu. Still pending: the shell test that
+  needs Audit, and the CSP test for the cut-over.
 - **12. Audit**: next (built, switched off).

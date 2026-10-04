@@ -23,15 +23,14 @@ final class AdminAccessTest extends TestCase
 
         $person->forceFill(['is_platform_admin' => true])->save();
         $this->actingAs($person)->get('/admin')->assertRedirect(route('settings.security', ['for' => 'admin']));
-        // The security page says why, even after asking for the password first.
-        $this->actingAs($person)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])->get(route('settings.security', ['for' => 'admin']))
-            ->assertOk()->assertSee(__('The admin panel needs a second factor. Add an authenticator app or a passkey below, then open it again.'));
+        // The security page (whose ?for=admin explains why) opens once the password is confirmed.
+        $this->actingAs($person)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])->getJson('/api/app/settings/security')->assertOk();
 
         $person->forceFill(['two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
         $this->actingAs($person)->withSession(['auth.password_confirmed_at' => now()->subMinutes(16)->getTimestamp()])->get('/admin')->assertRedirect(route('password.confirm'));
         $this->actingAs($person)->withSession(['auth.password_confirmed_at' => now()->subMinutes(10)->getTimestamp()])->get('/admin')->assertOk()->assertSee('Admin trail');
-        $this->actingAs($person)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])->get('/dashboard')->assertSee('Platform admin');
-        $this->actingAs($this->person())->get('/dashboard')->assertDontSee('Platform admin');
+        $this->actingAs($person)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])->getJson('/api/app/shell')->assertJsonPath('user.isPlatformAdmin', true);
+        $this->actingAs($this->person())->getJson('/api/app/shell')->assertJsonPath('user.isPlatformAdmin', false);
     }
 
     public function test_the_command_grants_revokes_and_lists_admins_keeping_one(): void

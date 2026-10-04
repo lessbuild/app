@@ -38,6 +38,7 @@ export const laravelPaths = [
     '/sitemap.xml',
     '/robots.txt',
     '/.well-known/**',
+    '/_errors',
     '/internal/**',
     '/servers/*/provisioning/**',
     '/websites/*/provisioning/**',

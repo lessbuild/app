@@ -15,6 +15,7 @@ use App\Http\Controllers\Deploy\WakeEnvironmentController;
 use App\Http\Controllers\Infrastructure\RecordServerProvisioningController;
 use App\Http\Controllers\Infrastructure\RecordWebsiteProvisioningController;
 use App\Http\Controllers\Platform\ShowPlatformStatusReportController;
+use App\Http\Controllers\ReportBrowserErrorController;
 use App\Http\Controllers\Security\EvaluateSecurityGateController;
 use App\Http\Controllers\Site\ShowRobotsController;
 use App\Http\Controllers\Site\ShowSecurityTxtController;
@@ -30,6 +31,8 @@ use App\Http\Controllers\StatusPages\UnsubscribeStatusWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
+// The Nuxt app's own JavaScript errors, reported into the platform's Monitoring (web/app/plugins/error-reporter.client.ts).
+Route::post('/_errors', ReportBrowserErrorController::class)->middleware('throttle:20,1')->name('browser-errors.store');
 // What search engines and security researchers read: the sitemap, robots.txt and security.txt.
 Route::get('/sitemap.xml', ShowSitemapController::class)->name('sitemap');
 Route::get('/robots.txt', ShowRobotsController::class)->name('robots');
