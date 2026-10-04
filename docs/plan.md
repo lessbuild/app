@@ -110,4 +110,12 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   servers (update windows, installing updates now, SSH access given and removed), the Cloudflare firewall, attacks
   and blocking settings, access reviews as a wizard (members, API tokens, SSH access, then confirm), and compliance
   with the evidence pack download. The deploy gate callback is unchanged.
-- **8. Analytics**: next.
+- **8. Analytics**: done. The report (period, comparison and filters in the address, every list narrowing the report,
+  notes and releases under the chart, page speed, search terms, engagement, goals, a live panel refreshed every 15
+  seconds, saved views and CSV exports), sites (added in a dialog; their settings, snippet, verification, Search
+  Console, raw export, Google Analytics imports, view-only access, reports and alerts and sharing, each change in a
+  dialog), goals, funnels (added with a wizard), campaigns (link builder, results, ad spend from a CSV or a connected
+  ad account) and Explore's tabs (insights, paths, properties, items, attribution, clicks, forms, A/B tests,
+  retention). Shared reports, their embed (the one page other sites may frame) and view-only links are public Nuxt
+  pages on public endpoints. OAuth returns report back with `?notice=` or `?error=`.
+- **9. Status pages**: next.

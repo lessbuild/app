@@ -29,6 +29,11 @@ export default defineNuxtConfig({
     routeRules: {
         // Signed-in pages are personal: never cached by a proxy.
         '/**': { headers: { 'Cache-Control': 'private, no-store' } },
+        // A shared Analytics report's embed is meant to be framed by other sites (the only page that may be); shared and
+        // view-only reports stay out of search engines.
+        '/share/analytics/**': { headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } },
+        '/share/analytics/*/embed': { headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex', 'Content-Security-Policy': 'frame-ancestors *' } },
+        '/analytics/view/**': { headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } },
     },
     eslint: { config: { stylistic: false } },
 });

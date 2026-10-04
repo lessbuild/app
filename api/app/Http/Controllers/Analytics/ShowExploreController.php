@@ -90,7 +90,7 @@ final class ShowExploreController
                 'clicks' => $clicks->handle($site, $period, $path),
                 'forms' => $forms->handle($site, $period),
                 'experiments' => $this->experiments($site, $experiments),
-                default => $insights->handle($site, $period),
+                default => array_map(fn (array $insight): array => [...$insight, 'dimension' => __($insight['dimension'])], $insights->handle($site, $period)),
             },
         ]);
     }
