@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The signed-in app's footer, fixed to the bottom of the window: whether the platform is working, and quick ways to
- * search, get help, see what's new and send feedback without leaving the page.
+ * The signed-in app's footer, under the page: whether the platform is working, and quick ways to search, get help, see
+ * what's new and send feedback without leaving the page.
  */
 const props = defineProps<{ operational: boolean | null }>();
 const { t } = useT();
@@ -23,8 +23,8 @@ function search() {
 </script>
 
 <template>
-    <footer class="app-footer fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur" :aria-label="t('Footer')">
-        <div class="ui-layout-gutter mx-auto flex h-10 w-full max-w-content items-center justify-between gap-4 text-xs text-muted">
+    <footer class="app-footer border-t border-line" :aria-label="t('Footer')">
+        <div class="mx-auto flex h-12 w-full max-w-content items-center justify-between gap-4 px-4 text-xs text-muted sm:px-6 lg:px-10">
             <NuxtLink to="/status" class="inline-flex min-w-0 items-center gap-2 font-semibold hover:text-ink">
                 <span :class="['size-2 shrink-0 rounded-full', operational === true ? 'bg-success' : operational === false ? 'bg-warning' : 'bg-line']" aria-hidden="true" />
                 <span class="truncate">{{ status }}</span>

@@ -1,97 +1,78 @@
 <script setup lang="ts">
 /**
- * The signed-in frame: two topbar rows (the platform's services and the person's menu; then the account or project
- * and its section navigation), then the page. The signed-in middleware has loaded the shell.
+ * The signed-in frame (the Acme look): a sidebar with the account, the platform's services and the sections, and the
+ * page beside it under a slim bar of what's new, search, notifications and the theme. On large screens it's a rounded
+ * frame inset from the window; below that the sidebar opens as a drawer. Only the page scrolls (router.options.ts
+ * brings it back to the top between pages). The signed-in middleware has loaded the shell.
  */
 const { t } = useT();
 const shell = useShell();
+const route = useRoute();
+const drawer = ref(false);
 
-/** Switch to another of the person's accounts and load its dashboard in full, so nothing from the old one lingers. */
-async function switchAccount(id: string) {
-    const result = await send<{ redirect: string }>('POST', `/accounts/${id}/switch`).catch(() => null);
-    if (result) {
-        window.location.assign(local(result.redirect));
+useHead({ htmlAttrs: { 'data-frame': 'app' } });
+watch(() => route.fullPath, () => (drawer.value = false));
+
+/**
+ * Close the drawer with Escape.
+ *
+ * @param event The key press.
+ */
+function escape(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+        drawer.value = false;
     }
 }
+
+onMounted(() => window.addEventListener('keydown', escape));
+onBeforeUnmount(() => window.removeEventListener('keydown', escape));
 </script>
 
 <template>
-    <div v-if="shell">
+    <div v-if="shell" class="h-dvh lg:p-3 xl:p-4">
         <a href="#main-content" class="ui-skip-link">{{ t('Skip to main content') }}</a>
-        <header class="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
-            <div class="ui-layout-gutter mx-auto max-w-content">
-                <div class="flex min-h-16 items-center gap-3">
-                    <details class="relative xl:hidden">
-                        <summary class="ui-icon-btn list-none" :aria-label="t('Open navigation')"><Icon name="menu" class="h-5 w-5" /></summary>
-                        <div class="absolute left-0 top-12 z-50 grid w-72 gap-1 rounded-panel border border-line bg-surface p-3 shadow-panel">
-                            <NavLinks :items="shell.primaryNav" :label="t('Platform')" class="flex-col items-stretch" />
-                        </div>
-                    </details>
-                    <NuxtLink to="/dashboard" class="flex min-w-0 shrink-0 items-center gap-2.5 text-sm font-extrabold tracking-tight text-ink" :aria-label="t(':app home', { app: 'BuildPusher' })">
-                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-ink text-surface shadow-soft" aria-hidden="true">↗</span>
-                        <span class="hidden truncate sm:inline">BuildPusher</span>
+        <div class="flex h-full overflow-hidden bg-[var(--acme-panel)] lg:rounded-2xl lg:border lg:border-line lg:shadow-sm">
+            <AppSidebar :shell="shell" class="hidden lg:flex" />
+
+            <Transition name="acme-fade">
+                <div v-if="drawer" class="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" :aria-label="t('Navigation')">
+                    <div class="absolute inset-0 bg-black/30" @click="drawer = false" />
+                    <AppSidebar :shell="shell" mobile class="relative h-full shadow-2xl" @close="drawer = false" />
+                </div>
+            </Transition>
+
+            <div class="flex min-w-0 flex-1 flex-col">
+                <header class="flex h-14 shrink-0 items-center gap-2 border-b border-line px-3 sm:px-6 lg:px-8">
+                    <button type="button" class="ui-icon-btn lg:hidden" :aria-label="t('Open navigation')" :aria-expanded="drawer" @click="drawer = true"><Icon name="menu" class="size-5" /></button>
+                    <NuxtLink to="/dashboard" class="flex min-w-0 items-center gap-2 font-medium text-ink lg:hidden" :aria-label="t(':app home', { app: 'BuildPusher' })">
+                        <span class="grid size-6 shrink-0 place-items-center rounded-md bg-ink text-sm text-surface" aria-hidden="true">↗</span>
+                        <span class="truncate">BuildPusher</span>
                     </NuxtLink>
-                    <NavLinks :items="shell.primaryNav" :label="t('Platform')" class="hidden flex-1 pl-2 xl:flex" />
-                    <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+                    <p v-if="shell.account" class="hidden min-w-0 items-center gap-1.5 text-sm text-muted lg:flex">
+                        <span class="truncate">{{ shell.account.name }}</span>
+                        <template v-if="shell.project">
+                            <Icon name="chevron-right" class="size-3.5 shrink-0" />
+                            <NuxtLink :to="`/projects/${shell.project.id}`" class="truncate font-medium text-ink hover:underline">{{ shell.project.name }}</NuxtLink>
+                        </template>
+                    </p>
+                    <div class="ml-auto flex shrink-0 items-center gap-1">
                         <WhatsNewDialog :unseen="shell.unseenChanges" />
                         <CommandPalette :shell="shell" />
                         <NotificationsBell :unread="shell.unreadNotifications" />
                         <ThemeToggle />
-                        <details class="ui-topbar-menu group relative">
-                            <summary class="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-control px-1.5 text-sm font-bold text-ink hover:bg-surface-muted" :aria-label="t('Account menu for :name', { name: shell.user.name })">
-                                <span class="ui-avatar ui-avatar-sm text-xs" aria-hidden="true">{{ shell.user.name.slice(0, 1).toUpperCase() }}</span>
-                            </summary>
-                            <div class="absolute right-0 top-full z-40 mt-2 grid min-w-60 gap-1 rounded-panel border border-line bg-surface p-2 shadow-panel">
-                                <div class="border-b border-line px-3 pb-3 pt-2">
-                                    <p class="truncate text-sm font-extrabold text-ink">{{ shell.user.name }}</p>
-                                    <p class="truncate text-xs text-muted">{{ shell.user.email }}</p>
-                                </div>
-                                <template v-if="shell.accounts.length > 1">
-                                    <p class="px-3 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ t('Switch account') }}</p>
-                                    <button
-                                        v-for="account in shell.accounts.filter((item) => item.id !== shell?.account?.id)"
-                                        :key="account.id"
-                                        type="button"
-                                        class="topbar-nav-link w-full"
-                                        @click="switchAccount(account.id)"
-                                    >
-                                        {{ account.name }}
-                                    </button>
-                                </template>
-                                <template v-if="shell.accountLinks.length > 0">
-                                    <p class="px-3 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ shell.account?.name }}</p>
-                                    <NuxtLink v-for="item in shell.accountLinks" :key="item.url" :to="item.url" class="topbar-nav-link w-full">{{ item.label }}</NuxtLink>
-                                </template>
-                                <div class="mt-1 grid gap-1 border-t border-line pt-1">
-                                    <NuxtLink to="/settings/profile" class="topbar-nav-link w-full">{{ t('Your settings') }}</NuxtLink>
-                                    <NuxtLink to="/help" class="topbar-nav-link w-full">{{ t('Help centre') }}</NuxtLink>
-                                    <a v-if="shell.user.isPlatformAdmin" href="/admin" class="topbar-nav-link w-full">{{ t('Platform admin') }}</a>
-                                    <NuxtLink :to="{ query: { ...$route.query, dialog: 'feedback' } }" class="topbar-nav-link w-full">{{ t('Send feedback') }}</NuxtLink>
-                                    <SignOutButton action="/api/app/auth/logout" />
-                                </div>
-                            </div>
-                        </details>
                     </div>
-                </div>
-                <div v-if="shell.account !== null" class="flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-line py-2">
-                    <div class="flex min-w-0 flex-wrap items-center gap-2 text-sm font-bold text-ink">
-                        <NuxtLink v-if="shell.project" :to="`/projects/${shell.project.id}`" class="flex min-w-0 items-center gap-2 rounded-control px-2 py-1.5 hover:bg-surface-muted">
-                            <Icon name="layers" class="h-4 w-4 text-muted" />
-                            <span class="truncate">{{ shell.project.name }}</span>
-                        </NuxtLink>
-                        <span v-else class="px-2 text-muted">{{ shell.account.name }}</span>
+                </header>
+                <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto outline-none" data-scroll-frame>
+                    <div class="mx-auto w-full max-w-content space-y-6 px-4 pb-10 pt-6 sm:px-6 sm:pt-8 lg:px-10">
+                        <Alert v-if="shell.limitWarning" :tone="shell.limitWarning.tone" role="status">
+                            {{ shell.limitWarning.message }} <NuxtLink :to="shell.limitWarning.url" class="font-semibold underline">{{ shell.limitWarning.linkLabel }}</NuxtLink>
+                        </Alert>
+                        <slot />
                     </div>
-                    <NavLinks v-if="shell.sectionNav.length > 0" :items="shell.sectionNav" :label="shell.sectionLabel" class="max-w-full justify-end" />
-                </div>
+                    <AppFooter :operational="shell.platformOperational" />
+                </main>
             </div>
-        </header>
-        <main id="main-content" tabindex="-1" class="ui-layout-gutter mx-auto w-full max-w-content space-y-6 pb-20 pt-7 sm:pt-9">
-            <Alert v-if="shell.limitWarning" :tone="shell.limitWarning.tone" role="status">
-                {{ shell.limitWarning.message }} <NuxtLink :to="shell.limitWarning.url" class="font-semibold underline">{{ shell.limitWarning.linkLabel }}</NuxtLink>
-            </Alert>
-            <slot />
-        </main>
-        <AppFooter :operational="shell.platformOperational" />
+        </div>
         <ConfirmIdentityDialog />
         <Toaster />
     </div>

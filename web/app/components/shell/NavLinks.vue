@@ -8,23 +8,7 @@ import type { NavLink } from '~/types/shell';
 const props = defineProps<{ items: NavLink[]; label: string }>();
 const route = useRoute();
 
-const current = computed(() => {
-    const service = route.meta.service;
-    if (typeof service === 'string') {
-        const tab = props.items.find((item) => item.service === service);
-        if (tab) {
-            return tab.url;
-        }
-    }
-    let best: string | null = null;
-    for (const item of props.items) {
-        const path = item.url.split('?')[0] ?? item.url;
-        if ((route.path === path || route.path.startsWith(path.endsWith('/') ? path : `${path}/`)) && (best === null || path.length > best.length)) {
-            best = item.url;
-        }
-    }
-    return best;
-});
+const current = computed(() => currentNavUrl(props.items, route));
 </script>
 
 <template>

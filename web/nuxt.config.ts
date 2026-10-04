@@ -7,7 +7,7 @@ export default defineNuxtConfig({
     compatibilityDate: '2026-09-01',
     devtools: { enabled: false },
     modules: ['@nuxt/eslint'],
-    css: ['~/assets/css/main.css'],
+    css: ['@fontsource-variable/inter', '~/assets/css/main.css'],
     // Components are named by file (UiButton, ApiForm), wherever they sit under components/.
     components: [{ path: '~/components', pathPrefix: false }],
     vite: { plugins: [tailwindcss()] },
