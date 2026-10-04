@@ -37,14 +37,14 @@ final class SecretScanningTest extends TestCase
         $website = Website::factory()->create(['account_id' => $project->account_id, 'environment_id' => $environment->id, 'name' => 'Shop']);
         $stripe = 'sk_live_'.str_repeat('a1B2', 6);
         $aws = 'AKIA'.str_repeat('Q', 16);
-        $page = "/projects/{$project->id}/security";
+        $page = "/api/app/projects/{$project->id}/security";
 
-        $this->actingAs($owner)->post("{$page}/scans", ['kind' => 'secrets'])->assertSessionHasErrors('kind');
+        $this->actingAs($owner)->postJson("{$page}/scans", ['kind' => 'secrets'])->assertJsonValidationErrors('kind');
 
         (new BillingSelection)->forceFill(['account_id' => $project->account_id, 'service' => 'security', 'kind' => SelectionKind::Tier, 'item_key' => 'pro'])->save();
         $this->shell->reply("./app/Services/Billing.php:12:{$stripe}\n./config/aws.php:3:{$aws}\n./.env.production:1:{$aws}\nENVFILE:./.env.production\n");
         TelemetryEvent::factory()->create(['environment_id' => $environment->id, 'type' => 'exception', 'name' => 'Payment failed', 'payload' => ['message' => "Bad key {$stripe}"], 'occurred_at' => now()->subHour()]);
-        $this->actingAs($owner)->post("{$page}/scans", ['kind' => 'secrets'])->assertRedirect();
+        $this->actingAs($owner)->postJson("{$page}/scans", ['kind' => 'secrets'])->assertSuccessful();
 
         $this->assertStringContainsString('grep -IHnoE', $this->shell->ran[0]['command']);
         $this->assertStringContainsString("-path './vendor'", $this->shell->ran[0]['command']);
@@ -57,7 +57,7 @@ final class SecretScanningTest extends TestCase
         ], $titles);
         $this->assertFalse(SecurityFinding::query()->where('detail', 'like', "%{$stripe}%")->orWhere('title', 'like', "%{$aws}%")->exists(), 'Never stored in full.');
         $this->assertStringContainsString('sk_l••••••••', (string) SecurityFinding::query()->where('scope', "code:{$website->id}")->where('title', 'like', 'Stripe%')->value('detail'));
-        $this->actingAs($owner)->get("{$page}/findings?source=secrets")->assertOk()->assertSee('config/aws.php')->assertDontSee($aws);
+        $this->actingAs($owner)->getJson("{$page}/findings?source=secrets")->assertOk()->assertJsonFragment(['title' => 'AWS access key in config/aws.php'])->assertDontSee($aws);
     }
 
     /**

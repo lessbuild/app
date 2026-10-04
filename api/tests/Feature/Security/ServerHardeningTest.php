@@ -56,10 +56,10 @@ final class ServerHardeningTest extends TestCase
         $server = Server::factory()->create(['account_id' => $project->account_id, 'name' => 'web-1']);
         Website::factory()->create(['account_id' => $project->account_id, 'environment_id' => $project->environments()->firstOrFail()->id, 'server_id' => $server->id]);
         (new ServerFirewallRule)->forceFill(['server_id' => $server->id, 'name' => 'Office', 'port' => '5432', 'protocol' => 'tcp', 'source' => '198.51.100.0/24', 'status' => 'active'])->save();
-        $page = "/projects/{$project->id}/security";
+        $page = "/api/app/projects/{$project->id}/security";
 
         $this->shell->reply(self::NEGLECTED);
-        $this->actingAs($owner)->post("{$page}/scans", ['kind' => 'servers'])->assertRedirect();
+        $this->actingAs($owner)->postJson("{$page}/scans", ['kind' => 'servers'])->assertSuccessful();
         $this->assertStringContainsString('sshd -T', $this->shell->ran[0]['command']);
         $titles = SecurityFinding::query()->where('source', 'servers')->pluck('severity', 'title')->all();
         $this->assertSame('high', $titles['web-1 accepts SSH passwords']);
@@ -72,9 +72,9 @@ final class ServerHardeningTest extends TestCase
         $this->assertArrayNotHasKey('Redis on web-1 can be reached from the internet', $titles, 'Listening on 127.0.0.1 is fine.');
 
         $firewall = SecurityFinding::query()->where('title', 'web-1’s firewall is off')->sole();
-        $this->actingAs($owner)->get("{$page}/findings?source=servers")->assertOk()->assertSee(__('Turn the firewall on'))->assertSee('data-modal-trigger="fix-'.$firewall->id.'"', false);
+        $this->actingAs($owner)->getJson("{$page}/findings?source=servers")->assertOk()->assertJsonFragment(['id' => $firewall->id, 'fixAction' => 'enable-firewall', 'fixLabel' => __('Turn the firewall on')]);
         $this->shell->reply('ok')->reply(self::HARDENED);
-        $this->actingAs($owner)->post("{$page}/findings/{$firewall->id}/fix")->assertRedirect();
+        $this->actingAs($owner)->postJson("{$page}/findings/{$firewall->id}/fix")->assertSuccessful();
         $fix = $this->shell->ran[1]['command'];
         $this->assertStringContainsString('ufw allow 22/tcp', $fix);
         $this->assertLessThan(strpos($fix, 'ufw --force enable'), strpos($fix, 'ufw allow 22/tcp'), 'SSH is allowed before the firewall turns on.');
@@ -87,10 +87,10 @@ final class ServerHardeningTest extends TestCase
         $this->assertStringContainsString('prohibit-password', app(HardeningScripts::class)->script('root-keys-only', $server), 'Root keeps key access, which BuildPusher uses.');
 
         Queue::fake();
-        $this->actingAs($owner)->get("{$page}/servers")->assertOk()->assertSee('web-1')->assertSee(__('No update window.'));
-        $this->actingAs($owner)->put("{$page}/servers/{$server->id}/patch", ['patch_day' => 2, 'patch_hour' => 4, 'patch_reboot' => '1'])->assertRedirect("{$page}/servers");
+        $this->actingAs($owner)->getJson("{$page}/servers")->assertOk()->assertJsonPath('servers.0.name', 'web-1')->assertJsonPath('servers.0.patchDay', null);
+        $this->actingAs($owner)->putJson("{$page}/servers/{$server->id}/patch", ['patch_day' => 2, 'patch_hour' => 4, 'patch_reboot' => '1'])->assertJsonRedirect("{$page}/servers");
         $this->assertSame([2, 4, true], [$server->refresh()->patch_day, $server->patch_hour, $server->patch_reboot]);
-        $this->actingAs($owner)->put("{$page}/servers/{$server->id}/patch", ['now' => '1'])->assertRedirect();
+        $this->actingAs($owner)->putJson("{$page}/servers/{$server->id}/patch", ['now' => '1'])->assertSuccessful();
         Queue::assertPushed(PatchServer::class, fn (PatchServer $job): bool => $job->serverId === $server->id && ! $job->reboot);
 
         $this->travelTo(CarbonImmutable::parse('next tuesday 04:10', 'UTC'));
@@ -100,6 +100,6 @@ final class ServerHardeningTest extends TestCase
         $this->assertSame(0, app(PatchSchedule::class)->runDue(), 'Outside the window.');
 
         $other = Server::factory()->create(['account_id' => $project->account_id]);
-        $this->actingAs($owner)->put("{$page}/servers/{$other->id}/patch", ['patch_day' => 1])->assertSessionHasErrors('patch_day');
+        $this->actingAs($owner)->putJson("{$page}/servers/{$other->id}/patch", ['patch_day' => 1])->assertJsonValidationErrors('patch_day');
     }
 }

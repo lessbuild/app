@@ -63,10 +63,10 @@ final class SecurityOverviewTest extends TestCase
         $this->probe->pages['https://shop.example.com/'] = ['status' => 200, 'headers' => ['server' => 'nginx/1.18.0']];
         $this->probe->cnames['old.example.com'] = 'shop-old.herokuapp.com';
         $this->probe->txt['_dmarc.example.com'] = ['v=DMARC1; p=none'];
-        $page = "/projects/{$project->id}/security";
+        $page = "/api/app/projects/{$project->id}/security";
 
-        $this->actingAs($owner)->get($page)->assertOk()->assertSee(__('Domains, HTTPS and email'))->assertSee(__('Not run yet.'));
-        $this->actingAs($owner)->post("{$page}/scans", ['kind' => 'domains'])->assertRedirect($page);
+        $this->actingAs($owner)->getJson($page)->assertOk()->assertJsonFragment(['kind' => 'domains', 'label' => __('Domains, HTTPS and email'), 'status' => null]);
+        $this->actingAs($owner)->postJson("{$page}/scans", ['kind' => 'domains'])->assertJsonRedirect($page);
         $scan = SecurityScan::query()->sole();
         $this->assertSame('done', $scan->status);
 
@@ -80,11 +80,11 @@ final class SecurityOverviewTest extends TestCase
         $this->assertSame('low', $titles['example.com’s DMARC policy only monitors (p=none)']);
         $this->assertArrayNotHasKey('shop.example.com doesn’t send HTTP visitors to HTTPS', $titles);
 
-        $this->actingAs($owner)->get($page)->assertOk()->assertSee(__('Most serious open findings'))->assertSee('shop-old.herokuapp.com')->assertSee('Grade F');
-        $this->actingAs($owner)->get("{$page}/findings?severity=low")->assertOk()->assertSee('nginx/1.18.0')->assertDontSee('herokuapp');
+        $this->actingAs($owner)->getJson($page)->assertOk()->assertJsonPath('recent.0.title', 'old.example.com points at shop-old.herokuapp.com, which no longer exists')->assertJsonPath('grade', 'F');
+        $this->actingAs($owner)->getJson("{$page}/findings?severity=low")->assertOk()->assertJsonFragment(['title' => 'shop.example.com reveals software versions (nginx/1.18.0)'])->assertDontSee('herokuapp');
 
         $version = SecurityFinding::query()->where('title', 'like', '%reveals software versions%')->sole();
-        $this->actingAs($owner)->put("{$page}/findings/{$version->id}", ['status' => 'ignored', 'reason' => 'Behind a proxy'])->assertRedirect();
+        $this->actingAs($owner)->putJson("{$page}/findings/{$version->id}", ['status' => 'ignored', 'reason' => 'Behind a proxy'])->assertSuccessful();
         $this->assertSame(['ignored', 'Behind a proxy'], [$version->refresh()->status, $version->ignored_reason]);
 
         // Fixes: the dangling record is removed, the certificate renewed, headers and email records added.
@@ -93,15 +93,15 @@ final class SecurityOverviewTest extends TestCase
         $this->probe->pages['https://shop.example.com/'] = ['status' => 200, 'headers' => ['server' => 'nginx/1.18.0', 'strict-transport-security' => 'max-age=31536000', 'x-content-type-options' => 'nosniff', 'x-frame-options' => 'SAMEORIGIN', 'referrer-policy' => 'no-referrer']];
         $this->probe->txt['example.com'] = ['v=spf1 include:_spf.example.net -all'];
         $this->probe->txt['_dmarc.example.com'] = ['v=DMARC1; p=reject'];
-        $this->actingAs($owner)->post("{$page}/scans", ['kind' => 'domains']);
+        $this->actingAs($owner)->postJson("{$page}/scans", ['kind' => 'domains']);
         $this->assertFalse(SecurityFinding::query()->where('status', 'open')->where('scope', 'domain:shop.example.com')->exists());
         $this->assertSame('ignored', $version->refresh()->status, 'Ignored findings stay ignored.');
         $this->assertTrue(SecurityFinding::query()->where('status', 'resolved')->where('title', 'like', '%herokuapp%')->exists());
 
         $viewer = User::factory()->create();
         $this->addMember($project, $viewer, AccountRole::Viewer);
-        $this->actingAs($viewer)->get($page)->assertOk()->assertDontSee(__('Scan now'));
-        $this->actingAs($viewer)->post("{$page}/scans", ['kind' => 'domains'])->assertForbidden();
+        $this->actingAs($viewer)->getJson($page)->assertOk()->assertJsonPath('canManage', false);
+        $this->actingAs($viewer)->postJson("{$page}/scans", ['kind' => 'domains'])->assertForbidden();
 
         $this->assertSame(1, app(ScanSchedule::class)->queueDue(), 'Domains were just scanned; dependencies never were.');
         $this->assertSame(0, app(ScanSchedule::class)->queueDue());

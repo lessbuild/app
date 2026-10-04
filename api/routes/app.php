@@ -344,6 +344,25 @@ use App\Http\Controllers\SavedViews\DeleteSavedViewController;
 use App\Http\Controllers\SavedViews\ShowSavedViewsController;
 use App\Http\Controllers\SavedViews\StoreSavedViewController;
 use App\Http\Controllers\Search\SearchController;
+use App\Http\Controllers\Security\ApplySecurityFixController;
+use App\Http\Controllers\Security\DeleteSecurityBlockController;
+use App\Http\Controllers\Security\DeleteSshGrantController;
+use App\Http\Controllers\Security\DownloadEvidencePackController;
+use App\Http\Controllers\Security\ShowSecurityAccessController;
+use App\Http\Controllers\Security\ShowSecurityAttacksController;
+use App\Http\Controllers\Security\ShowSecurityComplianceController;
+use App\Http\Controllers\Security\ShowSecurityFindingsController;
+use App\Http\Controllers\Security\ShowSecurityFirewallController;
+use App\Http\Controllers\Security\ShowSecurityOverviewController;
+use App\Http\Controllers\Security\ShowSecurityServersController;
+use App\Http\Controllers\Security\StoreAccessReviewController;
+use App\Http\Controllers\Security\StoreSecurityScanController;
+use App\Http\Controllers\Security\StoreSshGrantController;
+use App\Http\Controllers\Security\UpdateAttackSettingsController;
+use App\Http\Controllers\Security\UpdatePatchWindowController;
+use App\Http\Controllers\Security\UpdateSecurityFindingController;
+use App\Http\Controllers\Security\UpdateSecurityGateController;
+use App\Http\Controllers\Security\UpdateZoneSecurityController;
 use App\Http\Controllers\Services\ShowServiceController;
 use App\Http\Controllers\Settings\DeletePushDeviceController;
 use App\Http\Controllers\Settings\DeleteSshKeyController;
@@ -848,5 +867,32 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::delete('/keys/{token}', RevokeIngestTokenController::class)->whereNumber('token')->middleware(['can:delete,token', 'throttle:30,1'])->name('keys.revoke');
         Route::get('/environments/{environment}/deliveries', ShowIngestReceiptsController::class)->name('ingest.deliveries');
         Route::post('/ingest-deliveries/{receipt}/retry', RetryIngestReceiptController::class)->whereUlid('receipt')->middleware(['can:create,App\\Models\\IngestToken,project', 'throttle:30,1'])->name('ingest.retry');
+    });
+});
+
+// Security: the overview and checks, findings, servers' hardening and SSH access, the firewall, attacks, access reviews
+// and compliance evidence. Its records belong to the project; servers are the project's (ProjectServersQuery). The
+// Actions authorise each write (manageService), and the pages only offer writes to people who may make them.
+Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{project}')->middleware('project.context')->group(function (): void {
+    Route::prefix('/security')->middleware('service:security')->name('security.')->group(function (): void {
+        Route::get('/', ShowSecurityOverviewController::class)->name('overview');
+        Route::get('/findings', ShowSecurityFindingsController::class)->name('findings');
+        Route::get('/servers', ShowSecurityServersController::class)->name('servers');
+        Route::get('/firewall', ShowSecurityFirewallController::class)->name('firewall');
+        Route::get('/attacks', ShowSecurityAttacksController::class)->name('attacks');
+        Route::get('/access', ShowSecurityAccessController::class)->name('access');
+        Route::get('/compliance', ShowSecurityComplianceController::class)->name('compliance');
+        Route::post('/compliance/evidence', DownloadEvidencePackController::class)->middleware(['password.confirm', 'throttle:10,1'])->name('compliance.download');
+        Route::post('/access/reviews', StoreAccessReviewController::class)->middleware(['password.confirm', 'throttle:10,1'])->name('access.store');
+        Route::put('/attacks/settings', UpdateAttackSettingsController::class)->middleware('throttle:20,1')->name('attacks.settings');
+        Route::delete('/attacks/{block}', DeleteSecurityBlockController::class)->whereNumber('block')->middleware('throttle:30,1')->name('attacks.destroy');
+        Route::put('/firewall/{zone}', UpdateZoneSecurityController::class)->where('zone', '[a-f0-9]{8,64}')->middleware('throttle:20,1')->name('firewall.update');
+        Route::post('/servers/{server}/ssh', StoreSshGrantController::class)->whereNumber('server')->middleware('throttle:30,1')->name('servers.ssh.store');
+        Route::delete('/servers/{server}/ssh/{grant}', DeleteSshGrantController::class)->whereNumber(['server', 'grant'])->middleware('throttle:30,1')->name('servers.ssh.destroy');
+        Route::put('/servers/{server}/patch', UpdatePatchWindowController::class)->whereNumber('server')->middleware('throttle:20,1')->name('servers.patch');
+        Route::post('/findings/{finding}/fix', ApplySecurityFixController::class)->whereNumber('finding')->middleware('throttle:20,1')->name('findings.fix');
+        Route::put('/findings/{finding}', UpdateSecurityFindingController::class)->whereNumber('finding')->middleware('throttle:60,1')->name('findings.update');
+        Route::post('/scans', StoreSecurityScanController::class)->middleware('throttle:20,1')->name('scans.store');
+        Route::put('/gate/{environment}', UpdateSecurityGateController::class)->middleware('throttle:30,1')->name('gate.update');
     });
 });

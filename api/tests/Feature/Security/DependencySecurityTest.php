@@ -101,16 +101,16 @@ final class DependencySecurityTest extends TestCase
         $environment = $project->environments()->where('slug', 'production')->firstOrFail();
         $website = Website::factory()->create(['account_id' => $project->account_id, 'environment_id' => $environment->id, 'name' => 'Shop']);
         $this->shell->reply("==composer.lock\n".base64_encode(self::COMPOSER)."\n");
-        $page = "/projects/{$project->id}/security";
+        $page = "/api/app/projects/{$project->id}/security";
 
-        $this->actingAs($owner)->post("{$page}/scans", ['kind' => 'dependencies'])->assertRedirect();
+        $this->actingAs($owner)->postJson("{$page}/scans", ['kind' => 'dependencies'])->assertSuccessful();
         $this->assertStringContainsString('composer.lock package-lock.json', $this->shell->ran[0]['command']);
         $guzzle = SecurityFinding::query()->where('title', 'like', 'guzzlehttp/guzzle%')->sole();
         $this->assertSame(['critical', 'Shop', 'Update guzzlehttp/guzzle to 7.4.5 or later.', "website:{$website->id}"], [$guzzle->severity, $guzzle->subject, $guzzle->fix, $guzzle->scope]);
         $this->assertSame('medium', SecurityFinding::query()->where('title', 'like', 'phpunit/phpunit%')->value('severity'), 'Development packages count one level lower.');
 
-        $this->actingAs($owner)->get($page)->assertOk()->assertSee(__('Deploy gate'))->assertSee(__('High or critical vulnerabilities'));
-        $this->actingAs($owner)->put("{$page}/gate/{$environment->id}", ['security_gate' => 'critical'])->assertRedirect($page);
+        $this->actingAs($owner)->getJson($page)->assertOk()->assertJsonPath('gateIncluded', true)->assertJsonFragment(['id' => $environment->id, 'name' => $environment->name, 'gate' => null]);
+        $this->actingAs($owner)->putJson("{$page}/gate/{$environment->id}", ['security_gate' => 'critical'])->assertJsonRedirect($page);
         $this->assertSame('critical', $environment->refresh()->security_gate);
 
         $repository = Repository::factory()->create(['website_id' => $website->id, 'project_id' => $project->id, 'environment_id' => $environment->id]);
@@ -123,7 +123,7 @@ final class DependencySecurityTest extends TestCase
         $this->assertStringStartsWith('BLOCK Security stopped this deploy: guzzlehttp/guzzle 7.4.1 (GHSA-guzz)', (string) $gate()->assertOk()->getContent());
         $this->post("/builds/{$build->id}/deployment/callback/security")->assertForbidden();
 
-        $this->actingAs($owner)->put("{$page}/findings/{$guzzle->id}", ['status' => 'ignored', 'reason' => 'Not used for redirects'])->assertRedirect();
+        $this->actingAs($owner)->putJson("{$page}/findings/{$guzzle->id}", ['status' => 'ignored', 'reason' => 'Not used for redirects'])->assertSuccessful();
         $this->assertStringStartsWith('PASS', (string) $gate()->getContent(), 'Accepting the risk lets deploys through.');
 
         $build->forceFill(['environment_payload' => []])->save();
@@ -140,7 +140,7 @@ final class DependencySecurityTest extends TestCase
         $project = Project::factory()->withServices(['security', 'deploy'])->create();
         $owner = $this->ownerOf($project);
         $environment = $project->environments()->firstOrFail();
-        $this->actingAs($owner)->put("/projects/{$project->id}/security/gate/{$environment->id}", ['security_gate' => 'high'])->assertSessionHasErrors('security_gate');
+        $this->actingAs($owner)->putJson("/api/app/projects/{$project->id}/security/gate/{$environment->id}", ['security_gate' => 'high'])->assertJsonValidationErrors('security_gate');
         $this->assertNull($environment->refresh()->security_gate);
     }
 }

@@ -43,7 +43,7 @@ final class AttackBlockingTest extends TestCase
         $this->assertSame([], $this->shell->ran);
 
         (new BillingSelection)->forceFill(['account_id' => $project->account_id, 'service' => 'security', 'kind' => SelectionKind::Tier, 'item_key' => 'pro'])->save();
-        $this->actingAs($owner)->put("/projects/{$project->id}/security/attacks/settings", ['autoblock' => '1', 'block_hours' => 12, 'allowlist' => "198.51.100.0/24\n"])->assertRedirect();
+        $this->actingAs($owner)->putJson("/api/app/projects/{$project->id}/security/attacks/settings", ['autoblock' => '1', 'block_hours' => 12, 'allowlist' => "198.51.100.0/24\n"])->assertSuccessful();
         $this->shell->reply($summary);
         $this->assertSame(2, $watch->run());
         $this->assertStringContainsString('/var/log/caddy/shop.access.log', $this->shell->ran[0]['command']);
@@ -57,8 +57,8 @@ final class AttackBlockingTest extends TestCase
         $this->shell->reply($summary);
         $this->assertSame(0, $watch->run(), 'Already blocked.');
 
-        $this->actingAs($owner)->get("/projects/{$project->id}/security/attacks")->assertOk()->assertSee('203.0.113.7')->assertSee(__('Repeated failed sign-ins'));
-        $this->actingAs($owner)->delete("/projects/{$project->id}/security/attacks/{$bruteForce->id}")->assertRedirect();
+        $this->actingAs($owner)->getJson("/api/app/projects/{$project->id}/security/attacks")->assertOk()->assertJsonFragment(['ip' => '203.0.113.7', 'reason' => __('Repeated failed sign-ins')]);
+        $this->actingAs($owner)->deleteJson("/api/app/projects/{$project->id}/security/attacks/{$bruteForce->id}")->assertSuccessful();
         $this->assertNotNull($bruteForce->refresh()->lifted_at);
         $this->assertSame($owner->id, $bruteForce->lifted_by);
         $this->assertStringContainsString("ufw delete deny from '203.0.113.7'", collect($this->shell->ran)->last()['command'] ?? '');
@@ -68,6 +68,6 @@ final class AttackBlockingTest extends TestCase
         $watch->run();
         $this->assertNotNull($flood->refresh()->lifted_at, 'Expired blocks lift on their own.');
 
-        $this->actingAs($owner)->put("/projects/{$project->id}/security/attacks/settings", ['block_hours' => 24, 'allowlist' => 'not-an-ip'])->assertSessionHasErrors('allowlist');
+        $this->actingAs($owner)->putJson("/api/app/projects/{$project->id}/security/attacks/settings", ['block_hours' => 24, 'allowlist' => 'not-an-ip'])->assertJsonValidationErrors('allowlist');
     }
 }

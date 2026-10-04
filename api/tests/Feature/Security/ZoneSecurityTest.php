@@ -41,19 +41,19 @@ final class ZoneSecurityTest extends TestCase
         $website = Website::factory()->create(['account_id' => $project->account_id, 'environment_id' => $project->environments()->firstOrFail()->id]);
         (new WebsiteDomain)->forceFill(['website_id' => $website->id, 'hostname' => 'shop.example.com', 'type' => 'primary', 'is_temporary' => false, 'dns_status' => 'active', 'ssl_status' => 'active',
             'dns_provider_id' => $cloudflare->id, 'dns_record_id' => 'a1b2c3d4e5f6a7b8c9d0a1b2c3d4e5f6:rec1'])->save();
-        $page = "/projects/{$project->id}/security/firewall";
+        $page = "/api/app/projects/{$project->id}/security/firewall";
 
-        $this->actingAs($owner)->get($page)->assertOk()->assertSee('shop.example.com')->assertSee(__('Firewall and bot controls come with the Team Security plan.'));
-        $this->actingAs($owner)->put("{$page}/a1b2c3d4e5f6a7b8c9d0a1b2c3d4e5f6", ['security_level' => 'high'])->assertSessionHasErrors('security_level');
+        $this->actingAs($owner)->getJson($page)->assertOk()->assertJsonPath('zones.0.domains', ['shop.example.com'])->assertJsonPath('included', false);
+        $this->actingAs($owner)->putJson("{$page}/a1b2c3d4e5f6a7b8c9d0a1b2c3d4e5f6", ['security_level' => 'high'])->assertJsonValidationErrors('security_level');
 
         (new BillingSelection)->forceFill(['account_id' => $project->account_id, 'service' => 'security', 'kind' => SelectionKind::Tier, 'item_key' => 'team'])->save();
-        $this->actingAs($owner)->put("{$page}/a1b2c3d4e5f6a7b8c9d0a1b2c3d4e5f6", ['security_level' => 'high', 'bot_fight_mode' => '1', 'under_attack' => '1'])->assertRedirect($page);
+        $this->actingAs($owner)->putJson("{$page}/a1b2c3d4e5f6a7b8c9d0a1b2c3d4e5f6", ['security_level' => 'high', 'bot_fight_mode' => '1', 'under_attack' => '1'])->assertJsonRedirect($page);
         $zone = SecurityZone::query()->sole();
         $this->assertSame(['high', true, true, 'example.com'], [$zone->security_level, $zone->bot_fight_mode, $zone->under_attack, $zone->zone_name]);
         Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/settings/security_level') && $request['value'] === 'under_attack');
         Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/bot_management') && $request['fight_mode'] === true);
-        $this->actingAs($owner)->get($page)->assertSee(__('Under attack mode'))->assertSee('example.com');
+        $this->actingAs($owner)->getJson($page)->assertJsonPath('zones.0.underAttack', true)->assertJsonPath('zones.0.level', 'high')->assertSee('example.com');
 
-        $this->actingAs($owner)->put("{$page}/ffffffffffffffffffffffffffffffff", ['security_level' => 'high'])->assertSessionHasErrors('security_level');
+        $this->actingAs($owner)->putJson("{$page}/ffffffffffffffffffffffffffffffff", ['security_level' => 'high'])->assertJsonValidationErrors('security_level');
     }
 }

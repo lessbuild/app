@@ -105,4 +105,9 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   (components, updates, badges, custom domains), and telemetry: issues with tickets, events, traces, the service
   map, releases and deployments compared side by side, setup with ingest keys and browser errors, deliveries and
   metrics. The public status pages themselves come in slice 9.
-- **7. Security**: next.
+- **7. Security**: done. The overview (score and grade, each check with Scan now, the deploy gate per environment in a
+  dialog, the worst open findings), findings with filters and one-click server fixes, ignore and reopen in dialogs,
+  servers (update windows, installing updates now, SSH access given and removed), the Cloudflare firewall, attacks
+  and blocking settings, access reviews as a wizard (members, API tokens, SSH access, then confirm), and compliance
+  with the evidence pack download. The deploy gate callback is unchanged.
+- **8. Analytics**: next.

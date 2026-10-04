@@ -31,14 +31,14 @@ final class ComplianceTest extends TestCase
         $project = Project::factory()->withServices(['security'])->create(['name' => 'Storefront']);
         $owner = $this->ownerOf($project);
         (new SecurityFinding)->forceFill(['project_id' => $project->id, 'source' => 'domains', 'scope' => 'domain:x', 'fingerprint' => 'f', 'severity' => 'high', 'title' => '=HYPERLINK("evil")', 'status' => 'resolved', 'first_seen_at' => now()->subMonth(), 'last_seen_at' => now()->subWeek(), 'resolved_at' => now()->subWeek()])->save();
-        $page = "/projects/{$project->id}/security/compliance";
+        $page = "/api/app/projects/{$project->id}/security/compliance";
         $session = ['auth.password_confirmed_at' => time()];
 
-        $this->actingAs($owner)->get($page)->assertOk()->assertSee(__('Compliance reports come with the Team Security plan.'));
-        $this->actingAs($owner)->withSession($session)->post("{$page}/evidence", ['months' => 12])->assertSessionHasErrors('months');
+        $this->actingAs($owner)->getJson($page)->assertOk()->assertJsonPath('included', false);
+        $this->actingAs($owner)->withSession($session)->postJson("{$page}/evidence", ['months' => 12])->assertJsonValidationErrors('months');
 
         (new BillingSelection)->forceFill(['account_id' => $project->account_id, 'service' => 'security', 'kind' => SelectionKind::Tier, 'item_key' => 'team'])->save();
-        $response = $this->actingAs($owner)->withSession($session)->post("{$page}/evidence", ['months' => 12])->assertOk()->assertDownload();
+        $response = $this->actingAs($owner)->withSession($session)->postJson("{$page}/evidence", ['months' => 12])->assertOk()->assertDownload();
         $zip = new ZipArchive;
         $download = $response->baseResponse;
         $this->assertInstanceOf(BinaryFileResponse::class, $download);
