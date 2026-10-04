@@ -2,6 +2,10 @@ includes:
     - vendor/larastan/larastan/extension.neon
 
 parameters:
+    ignoreErrors:
+        # TestResponse::assertJsonRedirect() is a macro added in tests/TestCase.php.
+        - message: '#Call to an undefined method Illuminate\\Testing\\TestResponse<.*>::assertJsonRedirect\(\)#'
+          identifier: method.notFound
     level: 8
     paths:
         - app

@@ -36,5 +36,7 @@ export function useT() {
         number: (value: number) => new Intl.NumberFormat(state.value.locale).format(value),
         /** Format a date and time for the language. */
         dateTime: (iso: string) => new Intl.DateTimeFormat(state.value.locale, { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(new Date(iso)),
+        /** Format a calendar date (no time) for the language, such as a due date. */
+        date: (iso: string) => new Intl.DateTimeFormat(state.value.locale, { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(iso)),
     };
 }

@@ -15,6 +15,8 @@ export const laravelPaths = [
     '/fonts/filament/**',
     '/auth/*/**',
     '/sso/**',
+    '/github-app/connect',
+    '/github-app/callback',
     '/r/*',
     '/analytics/google-analytics/callback',
     '/analytics/search-console/callback',

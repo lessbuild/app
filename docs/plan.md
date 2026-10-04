@@ -83,4 +83,13 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   saved views; feedback; the footer. Left for later slices: the GitHub App connect flow (Deploy), the setup guide's
   in-page forms for adding a website or an Analytics site (Infrastructure, Analytics), and white-label branding on
   status pages (Status pages).
-- **3. Billing**: next.
+- **3. Billing**: done.
+- **4. Deploy**: done. Repositories (connect dialog or page, deploy now / a version / later, push webhook, build
+  cache, previews settings), deploys (followed live by polling the status endpoint, release notes, approvals,
+  destructive migrations, release analysis, promotion, cancel / redeploy / roll back), comparing two deploys,
+  approving from chat links, previews, pipelines, environments (controls and freezes, settings and build server,
+  variables and secret syncs, workers, resources, automation, recipes, notifications), configuration as code with
+  reviews and receipts, the public release notes page and the GitHub App's repositories. Waiting on slice 5: the
+  account recipe library and website deletion (five tests are skipped until the Infrastructure API exists; remove
+  the `markTestSkipped` calls in `tests/Feature/Deploy/EnvironmentRecipesTest.php` and `PreviewsTest.php`).
+- **5. Infrastructure**: next.

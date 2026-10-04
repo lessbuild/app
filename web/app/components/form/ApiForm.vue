@@ -34,7 +34,8 @@ async function submit(event: SubmitEvent) {
     if (state.busy || (props.confirm && !window.confirm(props.confirm))) {
         return;
     }
-    const body = new FormData(event.currentTarget as HTMLFormElement);
+    // The button that sent it counts too (as name="decision" value="approve" does in a plain form).
+    const body = new FormData(event.currentTarget as HTMLFormElement, event.submitter);
     if (props.method !== 'POST') {
         body.append('_method', props.method);
     }

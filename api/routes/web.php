@@ -66,6 +66,12 @@ Route::get('/sso/saml/{account}/metadata', App\Http\Controllers\Auth\ShowSamlMet
 // The signed link in getting-started emails: one-click unsubscribe posts here (the app shows the page for a GET).
 Route::post('/email/getting-started/{user}/stop', App\Http\Controllers\Onboarding\StopGettingStartedEmailsController::class)->whereUlid('user')->middleware(['signed', 'throttle:20,1'])->name('getting-started-emails.stop.store');
 
+// GitHub App installs: off to GitHub, and back (the App's Setup URL points at /github-app/callback).
+Route::middleware(['auth', 'verified'])->group(function (): void {
+    Route::get('/github-app/connect', App\Http\Controllers\Deploy\ConnectGitHubAppController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.connect');
+    Route::get('/github-app/callback', App\Http\Controllers\Deploy\CompleteGitHubAppInstallController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.callback');
+});
+
 Route::get('/r/{code}', App\Http\Controllers\Referrals\ShowReferralController::class)->where('code', '[A-Za-z0-9]{6,16}')->middleware('throttle:60,1')->name('referrals.show');
 
 Route::middleware(['auth', 'verified', 'account.security'])->group(function (): void {
