@@ -12,8 +12,9 @@ use Illuminate\Http\Request;
 final class ShowSiteFrameController
 {
     /**
-     * Describe the public site's frame: the services for its navigation, the one-line summary, the contact address,
-     * and whether the visitor is signed in (for the header's buttons).
+     * Describe the public site's frame: the services for its navigation (with what each is for and a line about it, for
+     * the services menu), the one-line summary, the contact address, and whether the visitor is signed in (for the
+     * header's buttons).
      *
      * @param  Request  $request
      * @param  ServiceRegistry  $services
@@ -27,6 +28,8 @@ final class ShowSiteFrameController
                 'name' => $service->name(),
                 'icon' => (string) config('marketing.services.'.$service->key().'.icon', $service->icon()),
                 'accent' => (string) config('marketing.services.'.$service->key().'.accent', $service->key()),
+                'eyebrow' => __((string) config('marketing.services.'.$service->key().'.eyebrow', '')),
+                'summary' => __((string) config('marketing.services.'.$service->key().'.card_summary', '')),
             ], $services->all()),
             'summary' => __((string) config('marketing.summary')),
             'contactEmail' => (string) config('legal.contact_email'),

@@ -29,24 +29,21 @@ async function vote(request: Request) {
 </script>
 
 <template>
-    <div class="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:px-8 sm:py-16">
-        <div class="flex flex-wrap items-end justify-between gap-5">
-            <div class="max-w-2xl">
-                <p class="ui-eyebrow">{{ t('Roadmap') }}</p>
-                <h1 class="mt-3 text-4xl font-extrabold tracking-[-0.04em] text-ink sm:text-5xl">{{ t('What we’re building') }}</h1>
-                <p class="mt-4 text-base leading-7 text-muted">{{ t('Written up from your feedback. Vote for what you want next; you’ll hear from us when it ships.') }}</p>
+    <div>
+        <SiteHero :kicker="t('Roadmap')" :title="t('What we’re building')" :description="t('Written up from your feedback. Vote for what you want next; you’ll hear from us when it ships.')">
+            <div class="mt-8">
+                <NuxtLink v-if="data.signedIn" :to="{ query: { dialog: 'suggest-feature' } }" class="site-btn">{{ t('Suggest a feature') }}</NuxtLink>
+                <NuxtLink v-else to="/login?redirect=/roadmap" class="site-btn-2">{{ t('Sign in to vote or suggest') }}</NuxtLink>
             </div>
-            <UiButton v-if="data.signedIn" variant="primary" :to="{ query: { dialog: 'suggest-feature' } }">{{ t('Suggest a feature') }}</UiButton>
-            <UiButton v-else to="/login?redirect=/roadmap">{{ t('Sign in to vote or suggest') }}</UiButton>
-        </div>
+        </SiteHero>
 
-        <div class="grid items-start gap-6 lg:grid-cols-3">
+        <SiteSection tint frame-class="grid items-start gap-6 lg:grid-cols-3">
             <section v-for="column in data.columns" :key="column.status" class="grid gap-3" :aria-labelledby="`column-${column.status}`">
                 <div>
-                    <h2 :id="`column-${column.status}`" class="flex items-center gap-2 text-lg font-extrabold text-ink">{{ headings[column.status] }} <Badge>{{ column.requests.length }}</Badge></h2>
+                    <h2 :id="`column-${column.status}`" class="flex items-center gap-2 text-lg font-semibold text-ink">{{ headings[column.status] }} <Badge>{{ column.requests.length }}</Badge></h2>
                     <p class="text-sm text-muted">{{ blurbs[column.status] }}</p>
                 </div>
-                <article v-for="item in column.requests" :id="`request-${item.id}`" :key="item.id" class="ui-card flex items-start gap-3 p-4">
+                <article v-for="item in column.requests" :id="`request-${item.id}`" :key="item.id" class="site-card flex items-start gap-3 p-4">
                     <button
                         v-if="data.signedIn"
                         type="button"
@@ -68,20 +65,20 @@ async function vote(request: Request) {
                         <p v-if="item.description" class="mt-1 whitespace-pre-line text-sm leading-6 text-muted">{{ item.description }}</p>
                     </div>
                 </article>
-                <p v-if="column.requests.length === 0" class="rounded-panel border border-dashed border-line p-4 text-sm text-muted">{{ t('Nothing here right now.') }}</p>
+                <p v-if="column.requests.length === 0" class="rounded-xl border border-dashed border-line p-4 text-sm text-muted">{{ t('Nothing here right now.') }}</p>
             </section>
-        </div>
+        </SiteSection>
 
-        <section id="shipped" class="grid gap-3" aria-labelledby="shipped-heading">
-            <h2 id="shipped-heading" class="text-lg font-extrabold text-ink">{{ t('Recently shipped') }}</h2>
+        <SiteSection id="shipped" pad="md" frame-class="grid gap-3" labelledby="shipped-heading">
+            <h2 id="shipped-heading" class="site-h2 mb-3">{{ t('Recently shipped') }}</h2>
             <div v-for="item in data.shipped" :key="item.id" class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
                 <Icon name="check" class="size-4 shrink-0 translate-y-0.5 text-success" />
                 <span class="font-bold text-ink">{{ item.title }}</span>
                 <span class="text-muted">{{ item.shippedAt ? date(item.shippedAt) : '' }} · {{ tc(':count vote|:count votes', item.votes, { count: item.votes }) }}</span>
             </div>
             <p v-if="data.shipped.length === 0" class="text-sm text-muted">{{ t('Nothing shipped from the roadmap in the last 90 days.') }}</p>
-            <p class="text-sm"><NuxtLink to="/changelog" class="font-bold text-primary underline">{{ t('Everything that’s changed is in the changelog') }}</NuxtLink></p>
-        </section>
+            <p class="text-sm"><NuxtLink to="/changelog" class="font-medium text-primary underline">{{ t('Everything that’s changed is in the changelog') }}</NuxtLink></p>
+        </SiteSection>
 
         <FormDialog v-if="data.signedIn" id="suggest-feature" :title="t('Suggest a feature')" :description="t('Tell us what you’d like and why. We read every suggestion and write the popular ones up here.')" action="/api/app/feedback" :submit="t('Send suggestion')">
             <input type="hidden" name="kind" value="idea">

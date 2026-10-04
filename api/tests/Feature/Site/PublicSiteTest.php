@@ -28,7 +28,8 @@ final class PublicSiteTest extends TestCase
         foreach (app(ServiceRegistry::class)->all() as $service) {
             $home->assertJsonFragment(['key' => $service->key(), 'name' => $service->name()]);
         }
-        $this->getJson('/api/app/site')->assertOk()->assertJsonPath('signedIn', false)->assertJsonPath('contactEmail', config('legal.contact_email'));
+        $frame = $this->getJson('/api/app/site')->assertOk()->assertJsonPath('signedIn', false)->assertJsonPath('contactEmail', config('legal.contact_email'));
+        $this->assertSame(__((string) config('marketing.services.deploy.card_summary')), collect((array) $frame->json('services'))->firstWhere('key', 'deploy')['summary'] ?? null);
 
         $user = User::factory()->create();
         Account::factory()->withMember($user)->create();

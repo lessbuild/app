@@ -11,30 +11,30 @@ usePublicPage(() => data.value.meta);
 </script>
 
 <template>
-    <div class="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1fr_18rem]">
+    <SiteSection frame-class="grid gap-10 lg:grid-cols-[1fr_18rem]">
         <article aria-labelledby="guide-heading">
-            <NuxtLink to="/help" class="text-sm font-bold text-muted hover:text-ink"><span aria-hidden="true">←</span> {{ t('Help centre') }}</NuxtLink>
-            <p class="ui-eyebrow mt-6">{{ data.group }}</p>
-            <h1 id="guide-heading" class="mt-3 text-4xl font-extrabold tracking-[-0.04em] text-ink">{{ data.title }}</h1>
-            <p class="mt-4 text-base leading-7 text-muted">{{ data.summary }}</p>
-            <ol class="mt-8 grid gap-4">
-                <li v-for="(step, index) in data.steps" :key="step.title" class="ui-card flex gap-4 p-5">
-                    <span class="grid size-8 shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-extrabold text-primary">{{ index + 1 }}</span>
+            <NuxtLink to="/help" class="inline-flex items-center gap-1 text-sm text-muted hover:text-ink"><Icon name="chevron-left" class="size-3.5" />{{ t('Help centre') }}</NuxtLink>
+            <p class="site-kicker mt-6">{{ data.group }}</p>
+            <h1 id="guide-heading" class="site-h2 mt-3">{{ data.title }}</h1>
+            <p class="mt-4 text-lg leading-8 text-muted">{{ data.summary }}</p>
+            <ol class="mt-8 grid gap-3">
+                <li v-for="(step, index) in data.steps" :key="step.title" class="site-card flex gap-4 p-5">
+                    <span class="grid size-8 shrink-0 place-items-center rounded-lg bg-primary-soft font-mono text-xs font-semibold text-primary">{{ String(index + 1).padStart(2, '0') }}</span>
                     <div>
-                        <h2 class="font-extrabold text-ink">{{ step.title }}</h2>
+                        <h2 class="font-semibold text-ink">{{ step.title }}</h2>
                         <p class="mt-1 text-sm leading-6 text-muted">{{ step.text }}</p>
                     </div>
                 </li>
             </ol>
             <p class="mt-8 text-sm text-muted">
-                {{ t('Still stuck?') }} <a :href="`mailto:${data.contactEmail}`" class="font-semibold text-primary hover:underline">{{ t('Email us') }}</a>{{ t(', or send feedback from inside the app.') }}
+                {{ t('Still stuck?') }} <a :href="`mailto:${data.contactEmail}`" class="font-medium text-primary hover:underline">{{ t('Email us') }}</a>{{ t(', or send feedback from inside the app.') }}
             </p>
         </article>
-        <aside v-if="data.related.length > 0" aria-labelledby="related-heading">
-            <h2 id="related-heading" class="text-xs font-extrabold uppercase tracking-[0.16em] text-subtle">{{ t('More about :group', { group: data.group }) }}</h2>
-            <ul class="mt-4 grid gap-2">
-                <li v-for="other in data.related" :key="other.slug"><NuxtLink :to="`/help/${other.slug}`" class="block rounded-control px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-muted hover:text-ink">{{ other.title }}</NuxtLink></li>
+        <aside v-if="data.related.length > 0" class="lg:border-l lg:border-line lg:pl-8" aria-labelledby="related-heading">
+            <h2 id="related-heading" class="site-kicker">{{ t('More about :group', { group: data.group }) }}</h2>
+            <ul class="mt-4 grid gap-1">
+                <li v-for="other in data.related" :key="other.slug"><NuxtLink :to="`/help/${other.slug}`" class="block rounded-md px-3 py-2 text-sm text-muted hover:bg-[var(--acme-hover)] hover:text-ink">{{ other.title }}</NuxtLink></li>
             </ul>
         </aside>
-    </div>
+    </SiteSection>
 </template>

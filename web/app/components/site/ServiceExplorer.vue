@@ -7,7 +7,7 @@ const { t } = useT();
 const active = ref(props.services[0]?.key ?? '');
 const tabs = ref<HTMLButtonElement[]>([]);
 // One column per service (written out so Tailwind keeps the classes).
-const columns = computed(() => ({ 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-5', 6: 'grid-cols-6' } as Record<number, string>)[props.services.length] ?? 'grid-cols-4');
+const columns = computed(() => ({ 3: 'sm:grid-cols-3', 4: 'sm:grid-cols-4', 5: 'sm:grid-cols-5', 6: 'sm:grid-cols-6' } as Record<number, string>)[props.services.length] ?? 'sm:grid-cols-4');
 
 /** Move between tabs with the arrow keys, Home and End, as a tab list does. */
 function keydown(event: KeyboardEvent, index: number) {
@@ -25,13 +25,10 @@ function keydown(event: KeyboardEvent, index: number) {
 <template>
     <section id="service-explorer" class="scroll-mt-20" aria-labelledby="service-explorer-heading">
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-                <p class="ui-eyebrow">{{ t('Product explorer') }}</p>
-                <h3 id="service-explorer-heading" class="mt-2 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{{ t('A clear view for every kind of work.') }}</h3>
-            </div>
+            <h2 id="service-explorer-heading" class="site-h2">{{ t('A clear view for every kind of work.') }}</h2>
             <p class="hidden max-w-md text-sm leading-6 text-muted sm:block">{{ t('See each service’s part in a project. Open its page for everything it does.') }}</p>
         </div>
-        <div :class="['product-explorer-tabs mt-6 grid rounded-control border border-line bg-surface p-1', columns]" role="tablist" :aria-label="t('Explore the services')">
+        <div :class="['mt-10 grid overflow-hidden rounded-xl border border-line max-sm:grid-cols-2', columns]" role="tablist" :aria-label="t('Explore the services')">
             <button
                 v-for="(service, index) in services"
                 :id="`service-tab-${service.key}`"
@@ -39,7 +36,7 @@ function keydown(event: KeyboardEvent, index: number) {
                 ref="tabs"
                 type="button"
                 role="tab"
-                class="product-explorer-tab"
+                :class="['relative flex items-center justify-center gap-2 border-line py-4 text-sm font-medium transition', active === service.key ? 'bg-surface-muted text-ink' : 'text-muted hover:text-ink', index > 0 && 'sm:border-l', 'max-sm:border-b']"
                 :aria-controls="`service-panel-${service.key}`"
                 :aria-selected="active === service.key"
                 :tabindex="active === service.key ? 0 : -1"
@@ -47,6 +44,7 @@ function keydown(event: KeyboardEvent, index: number) {
                 @keydown="keydown($event, index)"
             >
                 <Icon :name="service.copy.icon" class="size-4" /><span>{{ service.name }}</span>
+                <span v-if="active === service.key" class="absolute inset-x-6 bottom-0 h-0.5 bg-primary" aria-hidden="true" />
             </button>
         </div>
         <div
@@ -57,20 +55,18 @@ function keydown(event: KeyboardEvent, index: number) {
             role="tabpanel"
             tabindex="0"
             :aria-labelledby="`service-tab-${service.key}`"
-            class="product-explorer-panel"
+            class="grid min-w-0 items-center gap-10 pt-12 lg:grid-cols-[1fr_1.15fr]"
         >
-            <div class="grid min-w-0 gap-5 rounded-panel border border-line bg-surface p-4 shadow-soft sm:p-6 md:grid-cols-[.8fr_1.2fr] md:items-center">
-                <div>
-                    <p :class="['text-xs font-extrabold uppercase tracking-[0.14em]', `product-accent-${service.copy.accent}`]">{{ service.copy.eyebrow }}</p>
-                    <h4 class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ service.copy.suite.title }}</h4>
-                    <p class="mt-2 text-sm leading-6 text-muted">{{ service.copy.suite.description }}</p>
-                    <ul class="mt-4 hidden gap-2 sm:grid">
-                        <li v-for="feature in service.copy.suite.features" :key="feature" class="flex items-start gap-2 text-sm font-semibold text-ink"><Icon name="check" class="mt-0.5 size-4 shrink-0 text-success" /><span>{{ feature }}</span></li>
-                    </ul>
-                    <NuxtLink :to="`/features/${service.key}`" class="ui-btn ui-btn-secondary mt-5">{{ t('Explore :service', { service: service.name }) }} <Icon name="arrow-right" class="size-4" /></NuxtLink>
-                </div>
-                <ServicePreview :copy="service.copy" :heading-id="`service-preview-${service.key}`" class="product-explorer-preview" />
+            <div>
+                <p :class="['text-xs font-semibold uppercase tracking-wider', `product-accent-${service.copy.accent}`]">{{ service.copy.eyebrow }}</p>
+                <h3 class="mt-2 text-2xl font-semibold tracking-tight text-ink">{{ service.copy.suite.title }}</h3>
+                <p class="mt-3 text-muted">{{ service.copy.suite.description }}</p>
+                <ul class="mt-5 space-y-2 text-sm text-ink">
+                    <li v-for="feature in service.copy.suite.features" :key="feature" class="flex items-center gap-2"><Icon name="check" :class="['size-3.5 shrink-0', `product-accent-${service.copy.accent}`]" />{{ feature }}</li>
+                </ul>
+                <NuxtLink :to="`/features/${service.key}`" class="site-btn-2 mt-6">{{ t('Explore :service', { service: service.name }) }} <Icon name="arrow-right" class="size-3.5" /></NuxtLink>
             </div>
+            <ServicePreview :copy="service.copy" :heading-id="`service-preview-${service.key}`" />
         </div>
     </section>
 </template>

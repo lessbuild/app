@@ -53,113 +53,103 @@ const yours = computed(() => [
 <template>
     <StatusPageView v-if="statusSlug" :slug="statusSlug" />
     <div v-else-if="home && !home.redirect">
-        <section class="relative overflow-hidden border-b border-line bg-surface">
-            <div class="surface-grid absolute inset-0 opacity-50" aria-hidden="true" />
-            <div class="relative mx-auto grid max-w-6xl items-center gap-12 px-5 py-12 sm:px-8 sm:py-24 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:py-28">
+        <section class="relative overflow-hidden border-b border-line" aria-labelledby="home-heading">
+            <div class="site-dots pointer-events-none absolute inset-0" aria-hidden="true" />
+            <div class="site-frame relative grid items-center gap-12 py-16 lg:grid-cols-[1.1fr_1fr] lg:py-24">
                 <div>
-                    <p class="ui-badge ui-badge-primary"><Icon name="layers" class="h-3.5 w-3.5" /> {{ home.hero.badge }}</p>
-                    <h1 class="mt-6 max-w-2xl text-4xl font-extrabold tracking-[-0.05em] text-ink sm:text-6xl sm:leading-[1.04]">{{ home.hero.headline }}<br><span class="text-primary">{{ home.hero.accent }}</span></h1>
-                    <p class="mt-6 max-w-xl text-base leading-7 text-muted sm:text-lg">{{ home.summary }}</p>
-                    <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                        <NuxtLink to="/register" class="ui-btn ui-btn-primary ui-btn-lg">{{ t('Start free') }} <Icon name="arrow-right" class="h-4 w-4" /></NuxtLink>
-                        <a href="#services" class="ui-btn ui-btn-secondary ui-btn-lg">{{ t('Explore the services') }} <Icon name="arrow-down" class="h-4 w-4" /></a>
+                    <p class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-ink"><span class="size-1.5 rounded-full bg-primary" aria-hidden="true" />{{ home.hero.badge }}</p>
+                    <h1 id="home-heading" class="mt-6 text-[clamp(2.75rem,5.5vw,4.25rem)] font-semibold leading-none tracking-[-0.04em] text-ink">{{ home.hero.headline }}<br><span class="text-primary">{{ home.hero.accent }}</span></h1>
+                    <p class="mt-6 max-w-lg text-lg leading-8 text-muted">{{ home.summary }}</p>
+                    <div class="mt-8 flex flex-wrap gap-2">
+                        <NuxtLink to="/register" class="site-btn">{{ t('Start free') }} <Icon name="arrow-right" class="size-3.5" /></NuxtLink>
+                        <a href="#services" class="site-btn-2">{{ t('Explore the services') }} <Icon name="arrow-down" class="size-3.5" /></a>
                     </div>
-                    <ul class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-semibold text-muted">
-                        <li v-for="point in home.hero.points" :key="point" class="inline-flex items-center gap-2"><Icon name="check" class="h-4 w-4 text-success" /> {{ point }}</li>
+                    <ul class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
+                        <li v-for="point in home.hero.points" :key="point" class="flex items-center gap-1.5"><Icon name="check" class="size-3.5 text-primary" />{{ point }}</li>
                     </ul>
                 </div>
-                <div class="relative mx-auto hidden w-full max-w-2xl sm:block" aria-hidden="true">
-                    <div class="absolute -inset-8 rounded-full bg-primary/10 blur-3xl" />
-                    <div class="ui-panel relative overflow-hidden p-3 sm:p-4">
-                        <div class="flex items-center justify-between border-b border-line px-2 pb-3">
-                            <div class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-danger" /><span class="h-2.5 w-2.5 rounded-full bg-warning" /><span class="h-2.5 w-2.5 rounded-full bg-success" /></div>
-                            <span class="rounded-full bg-surface-muted px-3 py-1 text-[10px] font-bold text-muted">buildpusher / storefront / production</span>
+                <div class="site-card hidden overflow-hidden shadow-[0_30px_60px_-30px_rgb(40_30_100/.35)] sm:block" aria-hidden="true">
+                    <p class="flex items-center gap-1.5 border-b border-line px-4 py-2.5 text-xs"><span class="size-2.5 rounded-full bg-[#fca5a5]" /><span class="size-2.5 rounded-full bg-[#fcd34d]" /><span class="size-2.5 rounded-full bg-[#86efac]" /><span class="ml-auto rounded-full bg-surface-muted px-2 py-0.5 font-mono text-muted">buildpusher / storefront / production</span></p>
+                    <div class="grid gap-3 p-4 sm:grid-cols-2">
+                        <div class="rounded-xl bg-primary-soft p-4 text-sm">
+                            <p class="flex items-center justify-between text-[0.6875rem] font-semibold uppercase tracking-wider text-primary">{{ t('Deploy') }}<Icon name="cloud-upload" class="size-3.5" /></p>
+                            <p class="mt-3 font-semibold text-ink">{{ t('Release #1841') }}</p>
+                            <p class="text-xs text-muted">main · a71c8ef</p>
+                            <ul class="mt-3 space-y-1.5 text-xs text-ink">
+                                <li v-for="row in glimpse" :key="row.label" class="flex justify-between gap-3"><span class="flex items-center gap-1.5"><span class="size-1.5 rounded-full bg-success" />{{ row.label }}</span><span class="font-medium">{{ row.state }}</span></li>
+                            </ul>
                         </div>
-                        <div class="grid gap-3 p-2 pt-4 sm:grid-cols-2">
-                            <div class="rounded-card border border-line bg-surface-muted p-4">
-                                <div class="flex items-center justify-between"><span class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ t('Deploy') }}</span><span class="grid h-8 w-8 place-items-center rounded-card bg-surface text-primary"><Icon name="cloud-upload" class="h-4 w-4" /></span></div>
-                                <p class="mt-6 text-lg font-extrabold text-ink">{{ t('Release #1841') }}</p>
-                                <p class="mt-1 text-xs text-muted">main · a71c8ef</p>
-                                <div class="mt-5 space-y-3">
-                                    <div v-for="row in glimpse" :key="row.label" class="flex items-center justify-between gap-3 text-xs"><span class="flex min-w-0 items-center gap-2 text-muted"><span class="h-1.5 w-1.5 shrink-0 rounded-full bg-success" /><span class="truncate">{{ row.label }}</span></span><span class="font-bold text-ink">{{ row.state }}</span></div>
-                                </div>
-                            </div>
-                            <div class="rounded-card border border-line bg-surface p-4">
-                                <div class="flex items-center justify-between"><span class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ t('Monitoring') }}</span><span class="grid h-8 w-8 place-items-center rounded-card bg-primary-soft text-primary"><Icon name="pulse" class="h-4 w-4" /></span></div>
-                                <p class="mt-6 text-lg font-extrabold text-ink">{{ t('Systems healthy') }}</p>
-                                <p class="mt-1 text-xs text-muted">{{ t('Latest check · 184ms') }}</p>
-                                <div class="mt-5 grid grid-cols-3 gap-2">
-                                    <div v-for="check in checks" :key="check.label" class="rounded-card border border-line bg-surface-muted p-2.5"><p class="text-[10px] font-bold uppercase tracking-[0.12em] text-subtle">{{ check.label }}</p><p class="mt-2 text-sm font-extrabold text-ink">{{ check.value }}</p></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-line px-2 pt-3 text-[11px] text-muted"><span>{{ t('Release a71c8ef marked on Monitoring and Analytics.') }}</span><span class="inline-flex items-center gap-1.5 font-bold text-success"><Icon name="check-circle" class="h-3.5 w-3.5" /> {{ t('Operational') }}</span></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="services" class="scroll-mt-20 bg-surface-muted/40" aria-labelledby="services-heading">
-            <div class="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-24">
-                <div class="grid gap-4 lg:grid-cols-[1fr_0.9fr] lg:items-end">
-                    <div>
-                        <p class="ui-eyebrow">{{ t(':app services', { app: 'BuildPusher' }) }}</p>
-                        <h2 id="services-heading" class="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-ink sm:text-4xl">{{ t('Choose the tool for the work in front of you.') }}</h2>
-                    </div>
-                    <p class="text-base leading-7 text-muted">{{ t('Turn on the services each project needs. They share your team, your alerts and your bill.') }}</p>
-                </div>
-                <div class="mt-9 hidden gap-4 sm:grid sm:grid-cols-2 xl:grid-cols-4">
-                    <ServiceCard v-for="service in home.services" :key="service.key" :service-key="service.key" :name="service.name" :copy="service.copy" />
-                </div>
-                <ServiceExplorer :services="home.services" class="mt-8 sm:mt-14" />
-            </div>
-        </section>
-
-        <section id="workflow" class="border-y border-line bg-surface-muted/60">
-            <div class="mx-auto grid max-w-6xl gap-8 px-5 py-12 sm:gap-12 sm:px-8 sm:py-24 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-                <div>
-                    <p class="ui-eyebrow">{{ t('How the pieces fit') }}</p>
-                    <h2 class="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-ink sm:text-4xl">{{ t('A clear path from commit to confidence.') }}</h2>
-                    <p class="mt-4 text-base leading-7 text-muted">{{ t('Each service does its own job, and they share what they know: a deploy becomes a release marker, an incident points at the release that caused it, and traffic reports show what shipped.') }}</p>
-                </div>
-                <ol class="grid grid-cols-2 gap-3 sm:gap-4">
-                    <li v-for="step in home.workflow" :key="step.number" class="ui-card bg-surface/70 p-4 sm:p-5">
-                        <div class="flex items-center justify-between"><span class="grid h-10 w-10 place-items-center rounded-card bg-surface-muted text-primary" aria-hidden="true"><Icon :name="step.icon" class="h-[18px] w-[18px]" /></span><span class="text-xs font-extrabold text-subtle">{{ step.number }}</span></div>
-                        <h3 class="mt-4 text-base font-extrabold text-ink sm:mt-6">{{ step.title }}</h3>
-                        <p class="mt-2 hidden text-sm leading-6 text-muted sm:block">{{ step.text }}</p>
-                    </li>
-                </ol>
-            </div>
-        </section>
-
-        <section class="mx-auto hidden max-w-6xl px-5 py-16 sm:block sm:px-8 sm:py-24" aria-labelledby="together-heading">
-            <div class="max-w-2xl">
-                <p class="ui-eyebrow">{{ t('Better together') }}</p>
-                <h2 id="together-heading" class="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-ink sm:text-4xl">{{ t('Built as one platform, not bolted together.') }}</h2>
-            </div>
-            <div class="mt-10 grid gap-4 sm:grid-cols-2">
-                <div v-for="item in home.integrations" :key="item.title" class="ui-card p-5"><p class="font-extrabold text-ink">{{ item.title }}</p><p class="mt-2 text-sm leading-6 text-muted">{{ item.text }}</p></div>
-            </div>
-        </section>
-
-        <section class="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:pb-24 sm:pt-0">
-            <div class="ui-emphasis relative overflow-hidden rounded-panel px-6 py-10 sm:px-12 sm:py-16">
-                <div class="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/30 blur-3xl" aria-hidden="true" />
-                <div class="relative grid gap-10 lg:grid-cols-[1fr_0.8fr] lg:items-end">
-                    <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-brand-300">{{ t('Start free') }}</p>
-                        <h2 class="mt-4 max-w-2xl text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">{{ t('Every service has a free tier. Upgrade the ones that grow.') }}</h2>
-                        <p class="ui-emphasis-muted mt-4 max-w-xl text-base leading-7">{{ t('No card to start. Each service has its own plan on one monthly bill, and you can change or cancel any of them whenever you like.') }}</p>
-                        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                            <NuxtLink to="/register" class="ui-btn ui-btn-lg border border-white bg-white text-slate-950 hover:bg-white/90">{{ t('Create your account') }}</NuxtLink>
-                            <NuxtLink to="/pricing" class="ui-btn ui-btn-lg border border-white/25 bg-transparent text-white hover:bg-white/10">{{ t('See pricing') }}</NuxtLink>
+                        <div class="rounded-xl border border-line p-4 text-sm">
+                            <p class="flex items-center justify-between text-[0.6875rem] font-semibold uppercase tracking-wider text-success">{{ t('Monitoring') }}<Icon name="pulse" class="size-3.5" /></p>
+                            <p class="mt-3 font-semibold text-ink">{{ t('Systems healthy') }}</p>
+                            <p class="text-xs text-muted">{{ t('Latest check · 184ms') }}</p>
+                            <dl class="mt-3 grid grid-cols-3 gap-1.5 text-xs">
+                                <div v-for="check in checks" :key="check.label" class="rounded-md bg-surface-muted p-2"><dt class="text-muted">{{ check.label }}</dt><dd class="font-semibold text-ink">{{ check.value }}</dd></div>
+                            </dl>
                         </div>
                     </div>
-                    <div class="hidden gap-3 sm:grid sm:grid-cols-3 lg:grid-cols-1">
-                        <div v-for="item in yours" :key="item.title" class="rounded-card border border-white/10 bg-white/5 p-4"><p class="text-sm font-extrabold text-white">{{ item.title }}</p><p class="mt-1 text-xs leading-5 text-white/65">{{ item.text }}</p></div>
-                    </div>
+                    <p class="flex items-center justify-between gap-3 border-t border-line px-4 py-2.5 text-xs text-muted">{{ t('Release a71c8ef marked on Monitoring and Analytics.') }}<span class="flex shrink-0 items-center gap-1 text-success"><span class="size-1.5 rounded-full bg-success" />{{ t('Operational') }}</span></p>
                 </div>
             </div>
         </section>
+
+        <SectionRule :number="1" :label="t('Services')" :note="t('Turn on the services each project needs')" />
+        <SiteSection id="services" tint labelledby="services-heading" class="scroll-mt-16">
+            <div class="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+                <h2 id="services-heading" class="site-h2">{{ t('Choose the tool for the work in front of you.') }}</h2>
+                <p class="text-muted">{{ t('Turn on the services each project needs. They share your team, your alerts and your bill.') }}</p>
+            </div>
+            <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <ServiceCard v-for="service in home.services" :key="service.key" :service-key="service.key" :name="service.name" :copy="service.copy" />
+                <NuxtLink to="/pricing" class="site-night flex flex-col justify-between p-6">
+                    <span>
+                        <span class="font-mono text-[0.6875rem] uppercase tracking-wider text-white/50">{{ t('Better together') }}</span>
+                        <span class="mt-3 block text-lg font-semibold">{{ t('One account, one bill.') }}</span>
+                        <span class="mt-1.5 block text-sm text-white/65">{{ t('Every service has a free tier. Start with one and turn on the rest when you need them.') }}</span>
+                    </span>
+                    <span class="mt-6 flex items-center gap-1 text-sm font-medium">{{ t('See pricing') }} <Icon name="arrow-right" class="size-3.5" /></span>
+                </NuxtLink>
+            </div>
+        </SiteSection>
+
+        <SectionRule :number="2" :label="t('Product explorer')" :note="t('Each service’s part in a project')" />
+        <SiteSection>
+            <ServiceExplorer :services="home.services" />
+        </SiteSection>
+
+        <SectionRule :number="3" :label="t('How the pieces fit')" :note="t('From commit to confidence')" />
+        <SiteSection tint labelledby="workflow-heading" frame-class="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
+            <div>
+                <h2 id="workflow-heading" class="site-h2">{{ t('A clear path from commit to confidence.') }}</h2>
+                <p class="mt-4 text-muted">{{ t('Each service does its own job, and they share what they know: a deploy becomes a release marker, an incident points at the release that caused it, and traffic reports show what shipped.') }}</p>
+            </div>
+            <ol class="grid gap-3 sm:grid-cols-2">
+                <li v-for="step in home.workflow" :key="step.number" class="site-card p-5">
+                    <p class="flex items-center justify-between"><span class="grid size-9 place-items-center rounded-lg bg-primary-soft text-primary" aria-hidden="true"><Icon :name="step.icon" class="size-4" /></span><span class="font-mono text-xs text-muted">{{ step.number }}</span></p>
+                    <h3 class="mt-4 font-semibold text-ink">{{ step.title }}</h3>
+                    <p class="mt-1 text-sm leading-6 text-muted">{{ step.text }}</p>
+                </li>
+            </ol>
+        </SiteSection>
+
+        <SectionRule :number="4" :label="t('Better together')" :note="t('One platform, not separate tools bolted together')" />
+        <SiteSection labelledby="together-heading">
+            <h2 id="together-heading" class="site-h2 max-w-xl">{{ t('Built as one platform, not bolted together.') }}</h2>
+            <div class="mt-10 grid gap-4 md:grid-cols-2">
+                <article v-for="item in home.integrations" :key="item.title" class="site-card p-6"><h3 class="font-semibold text-ink">{{ item.title }}</h3><p class="mt-2 text-sm leading-6 text-muted">{{ item.text }}</p></article>
+            </div>
+        </SiteSection>
+
+        <SiteCta :kicker="t('Start free')" :title="t('Every service has a free tier. Upgrade the ones that grow.')" :text="t('No card to start. Each service has its own plan on one monthly bill, and you can change or cancel any of them whenever you like.')">
+            <template #actions>
+                <NuxtLink to="/register" class="site-btn-light">{{ t('Create your account') }}</NuxtLink>
+                <NuxtLink to="/pricing" class="site-btn-outline-light">{{ t('See pricing') }}</NuxtLink>
+            </template>
+            <template #aside>
+                <ul class="space-y-2 text-sm">
+                    <li v-for="item in yours" :key="item.title" class="rounded-xl border border-white/10 bg-white/[.04] p-4"><span class="font-semibold">{{ item.title }}</span><p class="mt-0.5 text-white/60">{{ item.text }}</p></li>
+                </ul>
+            </template>
+        </SiteCta>
     </div>
 </template>

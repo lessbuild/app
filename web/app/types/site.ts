@@ -4,7 +4,7 @@
 export type PageMeta = { title: string; description: string; canonical: string; image: string; structuredData: Record<string, unknown> };
 
 /** The public site's frame: the services for its navigation, its summary and contact address. */
-export type SiteFrame = { services: Array<{ key: string; name: string; icon: string; accent: string }>; summary: string; contactEmail: string; signedIn: boolean };
+export type SiteFrame = { services: Array<{ key: string; name: string; icon: string; accent: string; eyebrow: string; summary: string }>; summary: string; contactEmail: string; signedIn: boolean };
 
 /** A service's marketing copy (config/marketing.php), translated. */
 export type ServiceCopy = {
