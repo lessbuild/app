@@ -40,6 +40,9 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // The Nuxt server (and Caddy, in front of `php -S`) call from this machine with X-Forwarded-*: trust those
+        // only from here, so addresses Laravel builds (canonical links, the tracker snippet) use the public host.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
         // Stripe signs its webhooks; there is no session or CSRF token. One-click unsubscribe (RFC 8058) posts from the mail client with the token in the URL; provisioning scripts post signed callbacks.
         // The referral code isn't secret, and the Nuxt app reads it to pass to sign-up.
         $middleware->encryptCookies(except: ['bp_referral']);

@@ -23,6 +23,9 @@ function clean(query: Query | undefined): Record<string, string | string[]> {
 /** The headers that make Laravel answer as the person who asked for the page, for the public host. */
 function forwardedHeaders(incoming: Record<string, string | undefined>, ip: string | undefined): Record<string, string> {
     const proto = incoming['x-forwarded-proto'] ?? 'https';
+    const host = incoming['x-forwarded-host'] ?? incoming.host ?? '';
+    // A host with a port (a preview on :8021) keeps it; otherwise the scheme's default.
+    const port = incoming['x-forwarded-port'] ?? (/:\d+$/.test(host) ? host.split(':').pop() : undefined) ?? (proto === 'http' ? '80' : '443');
 
     return {
         Accept: 'application/json',
@@ -30,9 +33,9 @@ function forwardedHeaders(incoming: Record<string, string | undefined>, ip: stri
         'Accept-Language': incoming['accept-language'] ?? '',
         'User-Agent': incoming['user-agent'] ?? 'BuildPusher web',
         'X-Forwarded-For': incoming['x-forwarded-for'] ?? ip ?? '',
-        'X-Forwarded-Host': incoming['x-forwarded-host'] ?? incoming.host ?? '',
+        'X-Forwarded-Host': host,
         'X-Forwarded-Proto': proto,
-        'X-Forwarded-Port': incoming['x-forwarded-port'] ?? (proto === 'http' ? '80' : '443'),
+        'X-Forwarded-Port': port,
     };
 }
 

@@ -21,7 +21,7 @@ final class ServeStatusPageDomains
      *
      * @var list<string>
      */
-    private const PASS_THROUGH = ['status/*', 'api/app/status/*', 'sanctum/csrf-cookie', 'up', 'favicon.ico', 'robots.txt', 'build/*'];
+    private const PASS_THROUGH = ['status/*', 'api/app/status/*', 'api/app/status-domains/*', 'sanctum/csrf-cookie', 'up', 'favicon.ico', 'robots.txt', 'build/*'];
 
     /**
      * Rewrite requests to a verified status page domain onto the page's routes, and refuse everything else there.
