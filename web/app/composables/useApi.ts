@@ -99,6 +99,8 @@ export function apiErrorNavigation(error: unknown, to: { fullPath: string }) {
 export async function useApi<T>(path: MaybeRefOrGetter<string>, query?: MaybeRefOrGetter<Query | undefined>) {
     const read = useApiReader();
     const route = useRoute();
+    // Code after an await inside a composable loses Nuxt's context; navigation and errors run inside it again.
+    const nuxtApp = useNuxtApp();
     const key = computed(() => `api:${toValue(path)}?${new URLSearchParams(Object.entries(clean(toValue(query))).flatMap(([name, value]) => (Array.isArray(value) ? value : [value]).map((item) => [name, item]))).toString()}`);
     const { data, error, refresh } = await useAsyncData<T>(key, () => read<T>(toValue(path), toValue(query)), { deep: false });
 
@@ -108,10 +110,10 @@ export async function useApi<T>(path: MaybeRefOrGetter<string>, query?: MaybeRef
         }
         const cause = (problem as { cause?: unknown }).cause ?? problem;
         if (cause instanceof ApiError && [401, 409, 419, 423].includes(cause.status)) {
-            await apiErrorNavigation(cause, route);
+            await nuxtApp.runWithContext(() => apiErrorNavigation(cause, route));
             return;
         }
-        throw createError({ statusCode: cause instanceof ApiError && (cause.status === 403 || cause.status === 404) ? 404 : 500, fatal: true });
+        throw nuxtApp.runWithContext(() => createError({ statusCode: cause instanceof ApiError && (cause.status === 403 || cause.status === 404) ? 404 : 500, fatal: true }));
     };
     await handle(error.value);
     watch(error, (problem) => handle(problem));
