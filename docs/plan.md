@@ -139,4 +139,7 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   asset Laravel builds) and the preview deploy installs it; tests render without it. The app reports its own browser
   errors to /_errors again, and platform admins get the admin panel in their menu. Still pending: the shell test that
   needs Audit, and the CSP test for the cut-over.
-- **12. Audit**: next (built, switched off).
+- **12. Audit**: done, and still switched off (AUDIT_ENABLED=false) until the bigger server. The list, an audit
+  (edit in the wizard, run now, delete) and a run's report (progress while it runs, scores against competitors, the
+  findings and journeys in dialogs) are Nuxt pages on the API v2 already had.
+- **13. Cut-over**: next.
