@@ -15,6 +15,7 @@ const period = computed(() => data.value.report?.period);
 const form = reactive({ period: { days: period.value && !period.value.custom ? String(period.value.days) : '30', from: period.value?.custom ? period.value.start : '', to: period.value?.custom ? period.value.end : '', compare: period.value?.compare ?? 'previous' } });
 const filters = computed(() => Object.fromEntries(Object.entries(data.value.filters ?? {}).filter((entry): entry is [string, string] => typeof entry[1] === 'string')));
 const link = (next: Record<string, string>) => ({ path: route.path, query: { ...(period.value?.query ?? {}), ...next } });
+const periodOnly = computed(() => Object.fromEntries(Object.entries(period.value?.query ?? {}).map(([key, value]) => [key, String(value)])));
 const liveUrl = computed(() => `${props.api}${props.api.includes('?') ? '&' : '?'}${new URLSearchParams({ live: '1', ...filters.value })}`);
 useHead({ title: () => (data.value.locked ? t('Shared report') : t(':site analytics', { site: data.value.site })), meta: [{ name: 'robots', content: 'noindex' }] });
 
@@ -50,7 +51,7 @@ function apply() {
             <form class="ui-card grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-end" @submit.prevent="apply">
                 <PeriodFields v-model="form.period" :today="data.today ?? null" />
                 <div><UiButton type="submit" variant="primary">{{ t('Apply') }}</UiButton></div>
-                <div v-if="Object.keys(filters).length > 0" class="sm:col-span-2 lg:col-span-5"><UiButton variant="quiet" size="sm" :to="link({})">{{ t('Clear filters') }}</UiButton></div>
+                <div v-if="Object.keys(filters).length > 0" class="sm:col-span-2 lg:col-span-5"><UiButton variant="quiet" size="sm" :to="{ query: periodOnly }">{{ t('Clear filters') }}</UiButton></div>
             </form>
             <AnalyticsReport :report="data.report" :filters="data.filters ?? {}" :link="link" :live-url="liveUrl" />
             <p v-if="!data.embed" class="text-xs text-muted">{{ t('Cookieless analytics by :app.', { app: 'BuildPusher' }) }}</p>

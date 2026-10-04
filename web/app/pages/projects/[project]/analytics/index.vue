@@ -44,7 +44,7 @@ function apply() {
 }
 /** The same report narrowed by other filters. */
 const link = (filters: Record<string, string>) => ({ path: route.path, query: { site: site.value ? String(site.value.id) : undefined, ...(period.value?.query ?? {}), ...filters } });
-const clearLink = computed(() => ({ path: route.path, query: { site: site.value ? String(site.value.id) : undefined, ...(period.value?.query ?? {}) } }));
+const clearLink = computed(() => ({ query: { site: site.value ? String(site.value.id) : undefined, ...Object.fromEntries(Object.entries(period.value?.query ?? {}).map(([key, value]) => [key, String(value)])) } }));
 const liveUrl = computed(() => `/projects/${project.value.id}/analytics?${new URLSearchParams({ site: String(site.value?.id ?? ''), live: '1', ...Object.fromEntries(Object.entries(data.value.filters).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) })}`);
 // Exports cover a preset period (custom dates fall back to the last 30 days) with the report's filters.
 const exportFields = computed(() => ({ days: period.value && !period.value.custom ? String(period.value.days) : '30', ...Object.fromEntries(Object.entries(data.value.filters).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) }));
