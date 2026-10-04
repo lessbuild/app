@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
  * The signed-in frame (the Acme look): a sidebar with the account, the platform's services and the sections, and the
- * page beside it under a slim bar of what's new, search, notifications and the theme. On large screens it's a rounded
- * frame inset from the window; below that the sidebar opens as a drawer. Only the page scrolls (router.options.ts
- * brings it back to the top between pages). The signed-in middleware has loaded the shell.
+ * page beside it under a slim bar of what's new, search, notifications and the theme (the page's own header says
+ * where you are). On large screens it's a rounded frame inset from the window; below that the sidebar opens as a
+ * drawer. Only the page scrolls (router.options.ts brings it back to the top between pages). The signed-in middleware
+ * has loaded the shell.
  */
 const { t } = useT();
 const shell = useShell();
@@ -48,13 +49,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', escape));
                         <span class="grid size-6 shrink-0 place-items-center rounded-md bg-ink text-sm text-surface" aria-hidden="true">↗</span>
                         <span class="truncate">BuildPusher</span>
                     </NuxtLink>
-                    <p v-if="shell.account" class="hidden min-w-0 items-center gap-1.5 text-sm text-muted lg:flex">
-                        <span class="truncate">{{ shell.account.name }}</span>
-                        <template v-if="shell.project">
-                            <Icon name="chevron-right" class="size-3.5 shrink-0" />
-                            <NuxtLink :to="`/projects/${shell.project.id}`" class="truncate font-medium text-ink hover:underline">{{ shell.project.name }}</NuxtLink>
-                        </template>
-                    </p>
                     <div class="ml-auto flex shrink-0 items-center gap-1">
                         <WhatsNewDialog :unseen="shell.unseenChanges" />
                         <CommandPalette :shell="shell" />
@@ -62,8 +56,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', escape));
                         <ThemeToggle />
                     </div>
                 </header>
-                <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto outline-none" data-scroll-frame>
-                    <div class="mx-auto w-full max-w-content space-y-6 px-4 pb-10 pt-6 sm:px-6 sm:pt-8 lg:px-10">
+                <main id="main-content" tabindex="-1" class="flex flex-1 flex-col overflow-y-auto outline-none" data-scroll-frame>
+                    <div class="mx-auto w-full max-w-content flex-1 space-y-6 px-4 pb-10 pt-6 sm:px-6 sm:pt-8 lg:px-10">
                         <Alert v-if="shell.limitWarning" :tone="shell.limitWarning.tone" role="status">
                             {{ shell.limitWarning.message }} <NuxtLink :to="shell.limitWarning.url" class="font-semibold underline">{{ shell.limitWarning.linkLabel }}</NuxtLink>
                         </Alert>

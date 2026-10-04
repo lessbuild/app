@@ -116,9 +116,6 @@ html.dark[data-frame="app"]:is([data-palette="graphite"], [data-palette="neutral
   html[data-frame="app"] .ui-table th, html[data-frame="app"] .ui-table td { padding: 0.75rem 1rem; }
   html[data-frame="app"] .ui-table td { font-size: 0.875rem; }
 
-  /* Page headers: Acme's plain title, no rule underneath. */
-  html[data-frame="app"] .ui-page-header { border-bottom: 0; padding-bottom: 0; }
-  html[data-frame="app"] .ui-page-header__title { font-size: 1.75rem; line-height: 2.25rem; letter-spacing: -0.02em; }
   html[data-frame="app"] .ui-page-header__icon { border-radius: 0.75rem; background: var(--acme-hover); color: var(--ui-ink); }
 
   /* The sidebar frame (layouts/app.vue). */
@@ -136,3 +133,9 @@ html.dark[data-frame="app"]:is([data-palette="graphite"], [data-palette="neutral
 /* The sidebar drawer fades in and out. */
 .acme-fade-enter-active, .acme-fade-leave-active { transition: opacity 0.15s ease; }
 .acme-fade-enter-from, .acme-fade-leave-to { opacity: 0; }
+
+/* Page headers: Acme's plain, smaller title with no rule underneath. Unlayered, because PageHeader sets its size and
+   rule with utilities, which outrank the components layer. */
+html[data-frame="app"] .ui-page-header { border-bottom-width: 0; padding-bottom: 0; }
+html[data-frame="app"] .ui-page-header__title { font-size: 1.75rem; line-height: 2.25rem; letter-spacing: -0.02em; }
+html[data-frame="app"] dialog.ui-dialog::backdrop { background: rgb(0 0 0 / 0.3); backdrop-filter: blur(2px); }
