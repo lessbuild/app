@@ -44,12 +44,10 @@ async function copy() {
 </script>
 
 <template>
-    <div class="space-y-10">
-        <PageHeader :eyebrow="data.account.name" :title="t('API tokens')" :description="t('Tokens let scripts and CI call the :app API as you, inside :account.', { app: 'BuildPusher', account: data.account.name })">
+    <SettingsFrame :title="t('API tokens')" :description="t('Tokens let scripts and CI call the :app API as you, inside :account.', { app: 'BuildPusher', account: data.account.name })">
             <template #actions>
                 <UiButton variant="primary" :to="{ query: { dialog: 'create-token' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Create a token') }}</UiButton>
             </template>
-        </PageHeader>
 
         <SettingsSection :title="t('Tokens in this account')" :description="t('Everyone’s tokens for :account. Revoke any you don’t recognise.', { account: data.account.name })">
             <p v-if="data.tokens.length === 0" class="p-4 text-sm text-muted sm:p-6">{{ t('No tokens yet.') }}</p>
@@ -113,5 +111,5 @@ async function copy() {
                 </div>
             </div>
         </UiDialog>
-    </div>
+    </SettingsFrame>
 </template>

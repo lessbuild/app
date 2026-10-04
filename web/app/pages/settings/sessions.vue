@@ -8,8 +8,7 @@ const { data } = await useApi<{ sessions: Browser[] | null; signIns: SignIn[]; r
 </script>
 
 <template>
-    <div class="space-y-10">
-        <PageHeader :title="t('Sessions')" :description="t('Where you are signed in, and recent sign-ins to your account.')" />
+    <SettingsFrame :title="t('Sessions')" :description="t('Where you are signed in, and recent sign-ins to your account.')" >
 
         <SettingsSection :title="t('Signed-in browsers')" :description="t('Sign out any browser you don’t recognise. This also forgets “Remember me” on your other browsers, so they’ll ask you to sign in next time.')">
             <p v-if="data.sessions === null" class="p-4 text-sm text-muted sm:p-6">{{ t('Browser sessions can’t be listed on this server.') }}</p>
@@ -54,5 +53,5 @@ const { data } = await useApi<{ sessions: Browser[] | null; signIns: SignIn[]; r
                 </tr>
             </DataTable>
         </SettingsSection>
-    </div>
+    </SettingsFrame>
 </template>

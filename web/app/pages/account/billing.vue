@@ -38,8 +38,7 @@ async function copyLink() {
 </script>
 
 <template>
-    <div class="space-y-6">
-        <PageHeader :eyebrow="data.account.name" :title="t('Billing')" :description="t('Pick a plan for each service. Only the service you change is affected, and changes are prorated.')" />
+    <SettingsFrame :title="t('Billing')" :description="t('Pick a plan for each service. Only the service you change is affected, and changes are prorated.')" >
 
         <Alert v-if="route.query.checkout === 'done'" tone="success" role="status">{{ t('Thanks! Your plan starts as soon as the payment is confirmed; this page updates in a moment.') }}</Alert>
         <Alert v-else-if="route.query.checkout === 'cancelled'" tone="info" role="status">{{ t('Checkout was cancelled. Nothing changed.') }}</Alert>
@@ -51,28 +50,23 @@ async function copyLink() {
         <PageTabs :tabs="tabs" :current="tab" :label="t('Billing sections')" />
 
         <template v-if="tab === 'overview'">
-            <div class="ui-card flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
-                <div>
-                    <p class="font-bold text-ink">{{ data.interval === 'year' ? t('You pay yearly') : t('You pay monthly') }}</p>
-                    <p class="text-sm text-muted">{{ t('Yearly costs ten months, so two months are free. Switching moves every paid plan and is prorated.') }}</p>
+            <SettingsSection :title="t('Plan')" :description="data.periodEnd ? t('Renews :date', { date: dateTime(data.periodEnd) }) : t('Prices exclude tax.')">
+                <div class="p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <p class="font-semibold text-ink">{{ data.interval === 'year' ? t('You pay yearly') : t('You pay monthly') }}</p>
+                        <AcmeBadge :tone="data.status === 'past_due' || data.status === 'unpaid' ? 'red' : 'green'" dot>{{ statusLabels[data.status] ?? data.status }}</AcmeBadge>
+                    </div>
+                    <p class="mt-2 text-2xl font-semibold tabular-nums text-ink">{{ money.cents(data.monthlyTotalCents) }} <span class="text-sm font-normal text-muted">/ {{ t('month') }}</span></p>
+                    <p class="mt-2 text-xs text-muted">{{ t('Yearly costs ten months, so two months are free. Switching moves every paid plan and is prorated.') }} {{ t('Prices exclude tax.') }}</p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <ApiForm v-if="data.canManage" action="/api/app/account/billing/interval" method="PUT">
+                            <input type="hidden" name="interval" :value="data.interval === 'year' ? 'month' : 'year'">
+                            <SubmitButton variant="secondary">{{ data.interval === 'year' ? t('Pay monthly instead') : t('Pay yearly, 2 months free') }}</SubmitButton>
+                        </ApiForm>
+                        <UiButton v-if="data.canManage && data.hasCustomer" @click="portal">{{ t('Payment method and billing details') }}</UiButton>
+                    </div>
                 </div>
-                <ApiForm v-if="data.canManage" action="/api/app/account/billing/interval" method="PUT">
-                    <input type="hidden" name="interval" :value="data.interval === 'year' ? 'month' : 'year'">
-                    <SubmitButton variant="secondary">{{ data.interval === 'year' ? t('Pay monthly instead') : t('Pay yearly, 2 months free') }}</SubmitButton>
-                </ApiForm>
-            </div>
-            <div class="ui-card grid gap-4 p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-6">
-                <div class="grid gap-1">
-                    <p class="ui-eyebrow">{{ t('Monthly total') }}</p>
-                    <p class="text-3xl font-extrabold tracking-tight text-ink">{{ money.cents(data.monthlyTotalCents) }}<span class="text-sm font-bold text-muted"> / {{ t('month') }}</span></p>
-                    <p class="text-sm text-muted">
-                        {{ statusLabels[data.status] ?? data.status }}
-                        <template v-if="data.periodEnd"> · {{ t('Renews :date', { date: dateTime(data.periodEnd) }) }}</template>
-                        · {{ t('Prices exclude tax.') }}
-                    </p>
-                </div>
-                <UiButton v-if="data.canManage && data.hasCustomer" @click="portal">{{ t('Payment method and billing details') }}</UiButton>
-            </div>
+            </SettingsSection>
             <SettingsSection v-if="data.limits.length > 0" :title="t('Plan limits')" :description="t('What you’re using of each limit your plans set. Monthly limits reset on the 1st.')">
                 <ul class="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
                     <li v-for="limit in data.limits" :key="limit.key" class="grid gap-2">
@@ -164,5 +158,5 @@ async function copyLink() {
                 </DataTable>
             </SettingsSection>
         </template>
-    </div>
+    </SettingsFrame>
 </template>

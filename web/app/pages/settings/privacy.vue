@@ -6,8 +6,7 @@ const { data } = await useApi<{ email: string; toDelete: string[]; toLeave: stri
 </script>
 
 <template>
-    <div class="space-y-10">
-        <PageHeader :title="t('Privacy')" :description="t('Download what we hold about you, or delete your user account.')" />
+    <SettingsFrame :title="t('Privacy')" :description="t('Download what we hold about you, or delete your user account.')" >
 
         <SettingsSection :title="t('Download your data')" :description="t('A JSON file with your profile, accounts and roles, sign-in methods (never secrets), API token names, sign-in history and your activity. Project and service data is exported per account.')">
             <div class="p-4 sm:p-6"><a href="/api/app/settings/privacy/export" class="ui-btn ui-btn-secondary" download>{{ t('Download my data') }}</a></div>
@@ -32,5 +31,5 @@ const { data } = await useApi<{ email: string; toDelete: string[]; toLeave: stri
                 </div>
             </div>
         </SettingsSection>
-    </div>
+    </SettingsFrame>
 </template>

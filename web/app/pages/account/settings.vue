@@ -8,8 +8,7 @@ watch(() => data.value.account.name, (value) => (name.value = value));
 </script>
 
 <template>
-    <div class="space-y-10">
-        <PageHeader :eyebrow="data.account.name" :title="t('Account settings')" :description="t('The name everyone in :account sees, and deleting it.', { account: data.account.name })" />
+    <SettingsFrame :title="t('Account settings')" :description="t('The name everyone in :account sees, and deleting it.', { account: data.account.name })" >
 
         <SettingsSection :title="t('Account name')" :description="t('Shown in the account switcher, invitations and emails.')">
             <ApiForm action="/api/app/account/settings" method="PUT" class="p-4 sm:p-6">
@@ -26,5 +25,5 @@ watch(() => data.value.account.name, (value) => (name.value = value));
                 </DeleteDialog>
             </div>
         </SettingsSection>
-    </div>
+    </SettingsFrame>
 </template>

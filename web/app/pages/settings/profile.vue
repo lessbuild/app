@@ -15,8 +15,7 @@ function saved(): null {
 </script>
 
 <template>
-    <div class="space-y-8">
-        <PageHeader :title="t('Profile')" :description="t('Your name and email address across every :app service.', { app: 'BuildPusher' })" />
+    <SettingsFrame :title="t('Profile')" :description="t('Your name and email address across every :app service.', { app: 'BuildPusher' })" >
         <SettingsSection :title="t('Profile')" :description="t('Changing your email address asks you to verify the new one.')">
             <ApiForm action="/api/app/auth/user/profile-information" method="PUT" :after="saved" class="p-4 sm:p-6">
                 <InputField name="name" :label="t('Name')" :model-value="data.name" autocomplete="name" maxlength="255" required />
@@ -25,5 +24,5 @@ function saved(): null {
                 <div class="flex justify-end"><SubmitButton>{{ t('Save profile') }}</SubmitButton></div>
             </ApiForm>
         </SettingsSection>
-    </div>
+    </SettingsFrame>
 </template>

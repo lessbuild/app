@@ -29,8 +29,7 @@ function scim(result: Record<string, unknown>): null {
 </script>
 
 <template>
-    <div class="space-y-10">
-        <PageHeader :eyebrow="data.account.name" :title="t('Security')" :description="t('Rules everyone in :account must follow, and single sign-on through your identity provider.', { account: data.account.name })" />
+    <SettingsFrame :title="t('Security')" :description="t('Rules everyone in :account must follow, and single sign-on through your identity provider.', { account: data.account.name })" >
 
         <ApiForm action="/api/app/account/security" method="PUT" class="!gap-10">
             <SettingsSection :title="t('Sign-in rules')" :description="t('Checked on every request. You can’t save a rule that would lock you out.')">
@@ -115,5 +114,5 @@ function scim(result: Record<string, unknown>): null {
                 </ApiForm>
             </div>
         </SettingsSection>
-    </div>
+    </SettingsFrame>
 </template>

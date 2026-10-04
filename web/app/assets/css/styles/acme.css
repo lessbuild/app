@@ -229,3 +229,37 @@ html:root.dark[data-frame="site"] {
      flex column. */
   :root .ui-alert { display: block; border-radius: 0.75rem; padding: 0.75rem 1rem; font-size: 0.875rem; line-height: 1.5rem; }
 }
+
+/* The Acme theme's own names (components/acme and pages copied from the theme), pointed at the tokens above. */
+@theme inline {
+  --color-panel: var(--acme-panel);
+  --color-canvas: var(--acme-canvas);
+  --color-accent: var(--ui-primary);
+  --color-accent-fg: var(--ui-on-primary);
+  --color-series-1: #2a78d6;
+  --color-series-2: #eb6834;
+  --color-series-3: #1baf7a;
+  --color-series-4: #eda100;
+  --shadow-card: var(--shadow-soft-value);
+  --shadow-lift: var(--shadow-panel-value);
+  --shadow-pop: var(--acme-shadow-pop);
+  --animate-pop: acme-pop 0.16s ease-out;
+}
+
+@keyframes acme-pop { from { opacity: 0; transform: scale(0.97) translateY(4px); } }
+
+@utility section-label {
+  @apply text-xs font-medium uppercase tracking-wider text-muted;
+}
+@utility control {
+  @apply w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-accent/15;
+}
+@utility nav-active {
+  @apply bg-surface font-medium shadow-card ring-1 ring-line dark:bg-white/10 dark:ring-white/5;
+}
+@utility skeleton {
+  @apply animate-pulse rounded-md bg-black/[.06] dark:bg-white/10;
+}
+@utility hatch {
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, currentColor 14%, transparent) 0 2px, transparent 2px 6px);
+}

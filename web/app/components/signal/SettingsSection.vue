@@ -1,19 +1,18 @@
 <script setup lang="ts">
-/** Signal's settings section: the title and description beside a card on wide screens, above it on phones. */
+/**
+ * A settings row (the Acme theme's settings row): the title and description on the left, the card with the controls on
+ * the right on wide screens, one above the other on phones.
+ */
 defineProps<{ title: string; description: string }>();
 </script>
 
 <template>
-    <div class="grid scroll-mt-6 gap-6 lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.5fr)]">
-        <div class="hidden lg:block">
-            <h2 class="text-lg font-bold leading-tight text-ink">{{ title }}</h2>
-            <p class="mt-1 text-sm text-muted">{{ description }}</p>
+    <div class="grid scroll-mt-6 gap-4 border-b border-line pb-7 last:border-b-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] md:gap-10">
+        <div>
+            <h2 class="text-[1.125rem] font-semibold text-ink">{{ title }}</h2>
+            <p class="mt-1 text-[0.9375rem] text-muted">{{ description }}</p>
         </div>
-        <div class="ui-card overflow-hidden">
-            <div class="border-b border-line px-4 py-4 lg:hidden">
-                <h2 class="font-bold text-ink">{{ title }}</h2>
-                <p class="mt-1 text-sm text-muted">{{ description }}</p>
-            </div>
+        <div class="min-w-0 self-start overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
             <div><slot /></div>
             <div v-if="$slots.footer" class="border-t border-line"><slot name="footer" /></div>
         </div>

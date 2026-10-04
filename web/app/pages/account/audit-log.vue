@@ -53,12 +53,10 @@ function added(result: Record<string, unknown>): null {
 </script>
 
 <template>
-    <div class="space-y-8">
-        <PageHeader :eyebrow="data.account.name" :title="t('Audit log')" :description="t('Who changed what in this account over the last :days days.', { days: data.retentionDays })">
+    <SettingsFrame :title="t('Audit log')" :description="t('Who changed what in this account over the last :days days.', { days: data.retentionDays })">
             <template #actions>
                 <a :href="exportUrl" class="ui-btn ui-btn-secondary" download><Icon name="arrow-down" class="h-4 w-4" />{{ t('Export CSV') }}</a>
             </template>
-        </PageHeader>
 
         <form class="ui-card grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto] lg:items-end" @submit.prevent="apply">
             <SelectField v-if="data.projects.length > 0" v-model="filters.project" name="project" :label="t('Project')" :placeholder="t('All of :account', { account: data.account.name })" :options="projectOptions" />
@@ -134,5 +132,5 @@ function added(result: Record<string, unknown>): null {
                 <div class="flex justify-end"><SubmitButton>{{ t('Add stream') }}</SubmitButton></div>
             </ApiForm>
         </UiDialog>
-    </div>
+    </SettingsFrame>
 </template>

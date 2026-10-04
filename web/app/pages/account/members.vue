@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { AcmeTone } from '~/utils/acme';
 import type { MemberRow, MembersPage } from '~/types/account';
 
 /** The people in the account: their roles and what they can reach, invitations waiting to be accepted, and leaving. */
 definePageMeta({ layout: 'app', area: 'account' });
-const { t, dateTime } = useT();
+const { t, tc, dateTime } = useT();
 const { data } = await useApi<MembersPage>('/account/members');
 const overview = computed(() => data.value.overview);
 const roleLabel = (value: string) => data.value.roles.find((role) => role.value === value)?.label ?? value;
@@ -26,30 +27,29 @@ function access(member: MemberRow): string {
 </script>
 
 <template>
-    <div class="space-y-8">
-        <PageHeader :eyebrow="data.account.name" :title="t('Members')" :description="t('People who can work in :account, and what they can do.', { account: data.account.name })">
+    <SettingsFrame :title="t('Members')" :description="t('People who can work in :account, and what they can do.', { account: data.account.name })">
             <template v-if="overview.canManage" #actions>
                 <UiButton variant="primary" :to="{ query: { dialog: 'invite-member' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Invite someone') }}</UiButton>
             </template>
-        </PageHeader>
 
-        <section aria-labelledby="people-heading" class="space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="people-heading" class="text-lg font-extrabold text-ink">{{ t('People') }}</h2>
-                <TextLink :to="{ query: { dialog: 'roles' } }" variant="muted" size="sm">{{ t('What each role can do') }}</TextLink>
+        <section aria-labelledby="people-heading" class="grid gap-4 border-b border-line pb-7 last:border-b-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] md:gap-10">
+            <div>
+                <h2 id="people-heading" class="text-[1.125rem] font-semibold text-ink">{{ t('People') }}</h2>
+                <p class="mt-1 text-[0.9375rem] text-muted">{{ tc(':count person|:count people', overview.members.length, { count: overview.members.length }) }}</p>
+                <TextLink :to="{ query: { dialog: 'roles' } }" variant="muted" size="sm" class="mt-2 inline-block">{{ t('What each role can do') }}</TextLink>
             </div>
-            <ul class="ui-card divide-y divide-line overflow-hidden">
-                <li v-for="member in overview.members" :key="member.membershipId" class="flex flex-wrap items-center gap-4 px-5 py-4">
-                    <span class="ui-avatar ui-avatar-sm shrink-0 text-xs" aria-hidden="true">{{ member.name.slice(0, 1).toUpperCase() }}</span>
+            <ul class="rounded-2xl border border-line bg-surface shadow-card min-w-0 divide-y divide-line self-start overflow-hidden">
+                <li v-for="member in overview.members" :key="member.membershipId" class="flex flex-wrap items-center gap-3 px-4 py-3">
+                    <AcmeAvatar :name="member.name" size="sm" aria-hidden="true" />
                     <div class="min-w-0 flex-1">
-                        <p class="flex flex-wrap items-center gap-2 font-bold text-ink">
+                        <p class="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
                             {{ member.name }}
                             <Badge v-if="member.isYou">{{ t('you') }}</Badge>
                         </p>
-                        <p class="truncate text-sm text-muted">{{ member.email }}</p>
+                        <p class="truncate text-xs text-muted">{{ member.email }}</p>
                         <p v-if="access(member)" class="mt-1 text-xs text-muted">{{ access(member) }}</p>
                     </div>
-                    <Badge :tone="member.role === 'owner' ? 'accent' : 'neutral'">{{ roleLabel(member.role) }}</Badge>
+                    <AcmeBadge :tone="({ owner: 'blue', admin: 'violet' } as Record<string, AcmeTone>)[member.role] ?? 'gray'">{{ roleLabel(member.role) }}</AcmeBadge>
                     <div v-if="member.manageable" class="flex flex-wrap gap-1">
                         <FormDialog :id="`role-${member.membershipId}`" :title="t('Role for :name', { name: member.name })" :description="t('Roles apply to the whole account.')" :action="`/api/app/account/members/${member.membershipId}`" method="PUT" :submit="t('Save')">
                             <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Role') }}</UiButton></template>
@@ -110,19 +110,22 @@ function access(member: MemberRow): string {
             </ul>
         </section>
 
-        <section v-if="overview.canManage" aria-labelledby="invitations-heading" class="space-y-4">
+        <section v-if="overview.canManage" aria-labelledby="invitations-heading" class="grid gap-4 border-b border-line pb-7 last:border-b-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] md:gap-10">
             <div>
-                <h2 id="invitations-heading" class="text-lg font-extrabold text-ink">{{ t('Pending invitations') }}</h2>
-                <p class="mt-1 text-sm text-muted">{{ t('Invitations that haven’t been accepted yet.') }}</p>
+                <h2 id="invitations-heading" class="text-[1.125rem] font-semibold text-ink">{{ t('Pending invitations') }}</h2>
+                <p class="mt-1 text-[0.9375rem] text-muted">{{ t('Invitations that haven’t been accepted yet.') }}</p>
             </div>
-            <p v-if="overview.invitations.length === 0" class="ui-card px-5 py-4 text-sm text-muted">{{ t('No pending invitations.') }}</p>
-            <ul v-else class="ui-card divide-y divide-line overflow-hidden">
-                <li v-for="invitation in overview.invitations" :key="invitation.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                    <div class="min-w-0">
-                        <p class="font-bold text-ink">{{ invitation.email }}</p>
+            <p v-if="overview.invitations.length === 0" class="self-start rounded-lg border border-dashed border-line px-4 py-3 text-sm text-muted">{{ t('No pending invitations.') }}</p>
+            <ul v-else class="min-w-0 space-y-2 self-start">
+                <li v-for="invitation in overview.invitations" :key="invitation.id" class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-line px-3 py-2">
+                    <div class="flex min-w-0 items-center gap-3">
+                        <AcmeIcon name="mail" :size="16" class="shrink-0 text-muted" />
+                        <div class="min-w-0">
+                        <p class="text-sm font-medium text-ink">{{ invitation.email }}</p>
                         <p class="text-xs text-muted">
                             {{ roleLabel(invitation.role) }}<template v-if="invitation.invitedBy"> · {{ t('Invited by :name', { name: invitation.invitedBy }) }}</template> · {{ t('Expires :time', { time: dateTime(invitation.expiresAt) }) }}
                         </p>
+                        </div>
                     </div>
                     <DeleteDialog :id="`revoke-${invitation.id}`" :title="t('Revoke the invitation for :email', { email: invitation.email })" :action="`/api/app/account/invitations/${invitation.id}`" :warning="t('You can invite them again later.')" :submit-label="t('Revoke')">
                         <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Revoke') }}</UiButton></template>
@@ -144,5 +147,5 @@ function access(member: MemberRow): string {
                 </div>
             </dl>
         </UiDialog>
-    </div>
+    </SettingsFrame>
 </template>

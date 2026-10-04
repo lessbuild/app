@@ -46,8 +46,7 @@ async function test() {
 </script>
 
 <template>
-    <div class="space-y-10">
-        <PageHeader :title="t('Notifications')" :description="data.account ? t('Emails you get from :account. Switch accounts to change another’s.', { account: data.account.name }) : t('Emails you get from your accounts.')" />
+    <SettingsFrame :title="t('Notifications')" :description="data.account ? t('Emails you get from :account. Switch accounts to change another’s.', { account: data.account.name }) : t('Emails you get from your accounts.')" >
 
         <SettingsSection v-if="data.account" :title="t('Daily issue digest')" :description="t('Each morning at 08:00 UTC: new and resolved issues across the account’s projects, and how many are still open. Owners get it unless they turn it off.')">
             <ApiForm v-if="data.digestAvailable" action="/api/app/settings/notifications" method="PUT" class="p-4 sm:p-6">
@@ -97,5 +96,5 @@ async function test() {
                 </div>
             </div>
         </SettingsSection>
-    </div>
+    </SettingsFrame>
 </template>

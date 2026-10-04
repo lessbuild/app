@@ -84,8 +84,7 @@ async function connect(provider: Provider) {
 </script>
 
 <template>
-    <div class="space-y-10">
-        <PageHeader :title="t('Security')" :description="t('How you sign in to :app.', { app: 'BuildPusher' })" />
+    <SettingsFrame :title="t('Security')" :description="t('How you sign in to :app.', { app: 'BuildPusher' })" >
         <Alert v-if="route.query.for === 'admin' && security.twoFactor !== 'on' && security.passkeys.length === 0" tone="warning" role="alert">{{ t('The admin panel needs a second factor. Add an authenticator app or a passkey below, then open it again.') }}</Alert>
         <Alert v-if="notice" :tone="notice.tone" :role="notice.tone === 'danger' ? 'alert' : 'status'">{{ notice.text }}</Alert>
 
@@ -198,5 +197,5 @@ async function connect(provider: Provider) {
                 </ApiForm>
             </div>
         </SettingsSection>
-    </div>
+    </SettingsFrame>
 </template>

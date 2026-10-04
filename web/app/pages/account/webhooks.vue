@@ -38,12 +38,10 @@ async function resend(endpoint: Endpoint, delivery?: Delivery) {
 </script>
 
 <template>
-    <div class="space-y-10">
-        <PageHeader :eyebrow="data.account.name" :title="t('Webhooks')" :description="t('Send :account’s events (deploys, incidents, servers, backups, security findings, billing and more) to your own automation as signed JSON.', { account: data.account.name })">
+    <SettingsFrame :title="t('Webhooks')" :description="t('Send :account’s events (deploys, incidents, servers, backups, security findings, billing and more) to your own automation as signed JSON.', { account: data.account.name })">
             <template v-if="data.endpoints.length > 0" #actions>
                 <UiButton variant="primary" :to="{ query: { dialog: 'add-endpoint' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Add an endpoint') }}</UiButton>
             </template>
-        </PageHeader>
 
         <EmptyState v-if="data.endpoints.length === 0" icon="link" :title="t('No endpoints yet')" :description="t('Add an endpoint to receive events as they happen, for chat bots, dashboards, ticketing or anything else you run.')">
             <template #action><UiButton variant="primary" :to="{ query: { dialog: 'add-endpoint' } }">{{ t('Add an endpoint') }}</UiButton></template>
@@ -129,5 +127,5 @@ async function resend(endpoint: Endpoint, delivery?: Delivery) {
                 <CodeBlock :code="secret" />
             </div>
         </UiDialog>
-    </div>
+    </SettingsFrame>
 </template>
