@@ -53,6 +53,12 @@ use App\Http\Controllers\Auth\DisconnectProviderController;
 use App\Http\Controllers\Auth\ShowCurrentUserController;
 use App\Http\Controllers\Auth\ShowSignInOptionsController;
 use App\Http\Controllers\Auth\StartSsoSignInController;
+use App\Http\Controllers\Billing\ChangePlanController;
+use App\Http\Controllers\Billing\OpenBillingPortalController;
+use App\Http\Controllers\Billing\ResumePlanController;
+use App\Http\Controllers\Billing\ShowBillingController;
+use App\Http\Controllers\Billing\UpdateBillingIntervalController;
+use App\Http\Controllers\Billing\UpdatePayAsYouGoController;
 use App\Http\Controllers\Dashboard\ShowDashboardController;
 use App\Http\Controllers\Feedback\StoreFeedbackController;
 use App\Http\Controllers\Invitations\AcceptInvitationController;
@@ -208,6 +214,14 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::get('/account/settings', ShowAccountSettingsController::class)->middleware('account.can:update')->name('account.settings');
     Route::put('/account/settings', RenameAccountController::class)->name('account.settings.update');
     Route::delete('/account/settings', DeleteAccountController::class)->middleware('password.confirm')->name('account.settings.destroy');
+
+    // Billing: a plan for each service, paid monthly or yearly, with pay-as-you-go past the allowances.
+    Route::get('/account/billing', ShowBillingController::class)->middleware('account.can:viewBilling')->name('account.billing');
+    Route::post('/account/billing/portal', OpenBillingPortalController::class)->name('account.billing.portal');
+    Route::put('/account/billing/interval', UpdateBillingIntervalController::class)->middleware('throttle:10,1')->name('account.billing.interval');
+    Route::post('/account/billing/{service}', ChangePlanController::class)->middleware('throttle:20,1')->name('account.billing.change');
+    Route::post('/account/billing/{service}/resume', ResumePlanController::class)->name('account.billing.resume');
+    Route::put('/account/billing/{service}/usage', UpdatePayAsYouGoController::class)->middleware('throttle:20,1')->name('account.billing.usage');
 
     // API tokens for /api/v1 and /api/v2: a token's value is shown once, when it's created.
     Route::get('/account/api-tokens', ShowApiTokensController::class)->middleware('account.can:manageApiTokens')->name('account.api-tokens');

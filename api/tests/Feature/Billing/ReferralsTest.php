@@ -50,17 +50,15 @@ final class ReferralsTest extends TestCase
     {
         $referrerOwner = User::factory()->create();
         $referrer = Account::factory()->withMember($referrerOwner)->create(['name' => 'Acme']);
-        $page = $this->actingAs($referrerOwner)->get('/account/billing')->assertOk()->assertSee('Refer a friend')->assertSee('$20 of credit');
+        $page = $this->actingAs($referrerOwner)->getJson('/api/app/account/billing')->assertOk()->assertJsonPath('referrals.credit_cents', 2000);
         $code = (string) $referrer->refresh()->referral_code;
         $this->assertSame(10, strlen($code));
-        $page->assertSee(route('referrals.show', $code));
+        $page->assertJsonPath('referrals.link', route('referrals.show', $code));
         auth()->logout();
 
         $this->get('/r/unknowncode')->assertRedirect(route('register'))->assertCookieMissing('bp_referral');
-        $this->get("/r/{$code}")->assertRedirect(route('register'))->assertCookie('bp_referral', $code);
-        $this->withCookie('bp_referral', $code)->get('/register')->assertOk()->assertSee('name="referral" value="'.$code.'"', false);
-
-        $this->post('/register', ['name' => 'Nia New', 'email' => 'nia@example.test', 'password' => 'correct-horse-battery-9', 'password_confirmation' => 'correct-horse-battery-9', 'referral' => $code])->assertRedirect();
+        $this->get("/r/{$code}")->assertRedirect(route('register'))->assertCookie('bp_referral', $code, false);
+        $this->postJson('/api/app/auth/register', ['name' => 'Nia New', 'email' => 'nia@example.test', 'password' => 'correct-horse-battery-9', 'password_confirmation' => 'correct-horse-battery-9', 'referral' => $code])->assertCreated();
         $newcomer = User::query()->where('email', 'nia@example.test')->sole();
         $referral = Referral::query()->sole();
         $this->assertSame([$referrer->id, $newcomer->id], [$referral->referrer_account_id, $referral->referred_user_id]);
@@ -82,7 +80,7 @@ final class ReferralsTest extends TestCase
         $this->assertSame(ReferralCredit::STATUS_APPLIED, ReferralCredit::query()->where('account_id', $referrer->id)->sole()->status);
         $this->assertCount(2, $this->stripe->credits);
 
-        $this->actingAs($referrerOwner)->get('/account/billing')->assertOk()->assertSee('Started paying')->assertSee('$20');
+        $this->actingAs($referrerOwner)->getJson('/api/app/account/billing')->assertOk()->assertJsonPath('referrals.qualified', 1)->assertJsonPath('referrals.earned_cents', 2000);
     }
 
     /**

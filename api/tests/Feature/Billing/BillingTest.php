@@ -52,6 +52,9 @@ final class BillingTest extends TestCase
         $this->account = Account::factory()->withMember($this->owner)->create(['name' => 'Acme']);
     }
 
+    /**
+     * Limits come from the tiers of services in use and combine generously.
+     */
     public function test_limits_come_from_the_tiers_of_services_in_use_and_combine_generously(): void
     {
         $entitlements = app(Entitlements::class);
@@ -73,6 +76,9 @@ final class BillingTest extends TestCase
         $this->assertFalse($paid->allows('infrastructure.servers.max', 6)->allowed);
     }
 
+    /**
+     * Invitations respect the member limit.
+     */
     public function test_invitations_respect_the_member_limit(): void
     {
         Notification::fake();
@@ -90,29 +96,37 @@ final class BillingTest extends TestCase
         $this->assertSame(1, $this->account->invitations()->count());
     }
 
+    /**
+     * The billing page shows every service with prices and what is not on sale.
+     */
     public function test_the_billing_page_shows_every_service_with_prices_and_what_is_not_on_sale(): void
     {
-        $this->actingAs($this->owner)->get('/account/billing')
-            ->assertOk()
-            ->assertSee('Deploy')->assertSee('Monitoring')->assertSee('Analytics')->assertSee('Infrastructure')
-            ->assertSee('$19')->assertSee('$299')
-            ->assertSee(__('Not on sale yet'));
+        $page = $this->actingAs($this->owner)->getJson('/api/app/account/billing')->assertOk()->assertJsonPath('canManage', true);
+        $this->assertSame(['deploy', 'infrastructure', 'monitoring', 'analytics'], array_values(array_intersect(['deploy', 'infrastructure', 'monitoring', 'analytics'], array_column((array) $page->json('services'), 'key'))));
+        $prices = array_merge(...array_map(fn (array $service): array => array_column(array_column($service['options'], 'tier'), 'monthlyCents'), (array) $page->json('services')));
+        $this->assertContains(1900, $prices);
+        $this->assertContains(29900, $prices);
+        $purchasable = array_merge(...array_map(fn (array $service): array => array_column($service['options'], 'purchasable'), (array) $page->json('services')));
+        $this->assertContains(false, $purchasable, 'Something is not on sale yet.');
 
         $viewer = User::factory()->create();
         $this->account->memberships()->forceCreate(['user_id' => $viewer->id, 'role' => AccountRole::Viewer]);
         $viewer->forceFill(['current_account_id' => $this->account->id])->save();
-        $this->actingAs($viewer)->get('/account/billing')->assertForbidden();
+        $this->actingAs($viewer)->getJson('/api/app/account/billing')->assertForbidden();
 
         $member = User::factory()->create();
         $this->account->memberships()->forceCreate(['user_id' => $member->id, 'role' => AccountRole::Member]);
         $member->forceFill(['current_account_id' => $this->account->id])->save();
-        $this->actingAs($member)->get('/account/billing')->assertOk()->assertDontSee(__('Switch :service plan', ['service' => 'Deploy']));
-        $this->actingAs($member)->post('/account/billing/deploy', ['tier' => 'pro'])->assertForbidden();
+        $this->actingAs($member)->getJson('/api/app/account/billing')->assertOk()->assertJsonPath('canManage', false);
+        $this->actingAs($member)->postJson('/api/app/account/billing/deploy', ['tier' => 'pro'])->assertForbidden();
     }
 
+    /**
+     * The first paid plan goes through checkout and the webhook applies it.
+     */
     public function test_the_first_paid_plan_goes_through_checkout_and_the_webhook_applies_it(): void
     {
-        $this->actingAs($this->owner)->post('/account/billing/deploy', ['tier' => 'pro'])->assertRedirect('https://checkout.stripe.test/session');
+        $this->actingAs($this->owner)->postJson('/api/app/account/billing/deploy', ['tier' => 'pro'])->assertOk()->assertJsonPath('redirect', 'https://checkout.stripe.test/session');
         $this->assertSame('price_deploy_pro', $this->stripe->checkouts[0]['items'][0]->priceId);
         $this->assertSame(0, BillingSelection::query()->count(), 'Nothing changes until Stripe confirms the payment.');
 
@@ -126,50 +140,47 @@ final class BillingTest extends TestCase
         $this->assertSame(1, AuditEntry::query()->where('action', AuditAction::PlanChanged)->count(), 'Webhook retries apply once.');
     }
 
-    public function test_the_billing_page_has_a_tab_per_service(): void
-    {
-        $page = $this->actingAs($this->owner)->get('/account/billing?tab=monitoring')->assertOk()
-            ->assertSee('id="page-tab-overview"', false)->assertSee('id="page-tab-deploy"', false)->assertSee('id="page-tab-infrastructure"', false)
-            ->assertSee('id="page-tab-monitoring"', false)->assertSee('id="page-tab-analytics"', false)->assertSee('id="page-tab-invoices"', false);
-        $html = (string) $page->getContent();
-        $panel = fn (string $name): string => preg_match('/<section\s+id="page-panel-'.$name.'"[^>]*>/', $html, $tag) === 1 ? $tag[0] : '';
-        $this->assertStringNotContainsString('hidden', $panel('monitoring'), 'The chosen tab is shown.');
-        $this->assertStringContainsString('hidden', $panel('deploy'), 'Other tabs are hidden.');
-        $this->actingAs($this->owner)->get('/account/billing?tab=nonsense')->assertOk()->assertSee('id="page-panel-overview"', false);
-    }
-
+    /**
+     * Changing one service only changes its item and downgrades wait for the period end.
+     */
     public function test_changing_one_service_only_changes_its_item_and_downgrades_wait_for_the_period_end(): void
     {
         $this->subscribe(['deploy' => 'starter', 'monitoring' => 'pro']);
 
-        $this->actingAs($this->owner)->post('/account/billing/deploy', ['tier' => 'team'])->assertRedirect('/account/billing?tab=deploy')->assertSessionHas('status');
+        $this->actingAs($this->owner)->postJson('/api/app/account/billing/deploy', ['tier' => 'team'])->assertOk()->assertJsonPath('redirect', '/account/billing?tab=deploy')->assertJsonPath('message', __('Plan changed. The difference is prorated on your next invoice.'));
         $this->assertSame(['price_deploy_team', 'price_mon_pro'], array_map(fn ($item) => $item->priceId, $this->stripe->subscriptions['sub_1']));
 
-        $this->actingAs($this->owner)->post('/account/billing/monitoring', ['tier' => 'free'])->assertRedirect('/account/billing?tab=monitoring');
+        $this->actingAs($this->owner)->postJson('/api/app/account/billing/monitoring', ['tier' => 'free'])->assertOk()->assertJsonPath('redirect', '/account/billing?tab=monitoring');
         $monitoring = BillingSelection::query()->where('service', 'monitoring')->sole();
         $this->assertNotNull($monitoring->ends_at, 'Paid until the end of the period.');
         $this->assertCount(2, $this->stripe->subscriptions['sub_1']);
 
-        $this->actingAs($this->owner)->post('/account/billing/monitoring/resume')->assertRedirect('/account/billing?tab=monitoring');
+        $this->actingAs($this->owner)->postJson('/api/app/account/billing/monitoring/resume')->assertOk()->assertJsonPath('redirect', '/account/billing?tab=monitoring');
         $this->assertNull($monitoring->refresh()->ends_at);
 
-        $this->actingAs($this->owner)->post('/account/billing/monitoring', ['tier' => 'free']);
+        $this->actingAs($this->owner)->postJson('/api/app/account/billing/monitoring', ['tier' => 'free'])->assertOk();
         $this->travel(32)->days();
         Artisan::call('billing:apply-ended');
         $this->assertFalse(BillingSelection::query()->where('service', 'monitoring')->exists());
         $this->assertSame(['price_deploy_team'], array_map(fn ($item) => $item->priceId, $this->stripe->subscriptions['sub_1']));
     }
 
+    /**
+     * Unknown or unpriced tiers and missing payments are refused.
+     */
     public function test_unknown_or_unpriced_tiers_and_missing_payments_are_refused(): void
     {
-        $this->actingAs($this->owner)->post('/account/billing/deploy', ['tier' => 'platinum'])->assertSessionHasErrors('tier');
-        $this->actingAs($this->owner)->post('/account/billing/deploy', ['tier' => 'unlimited'])->assertSessionHasErrors('tier');
-        $this->actingAs($this->owner)->post('/account/billing/nope', ['tier' => 'pro'])->assertSessionHasErrors('tier');
+        $this->actingAs($this->owner)->postJson('/api/app/account/billing/deploy', ['tier' => 'platinum'])->assertJsonValidationErrors('tier');
+        $this->actingAs($this->owner)->postJson('/api/app/account/billing/deploy', ['tier' => 'unlimited'])->assertJsonValidationErrors('tier');
+        $this->actingAs($this->owner)->postJson('/api/app/account/billing/nope', ['tier' => 'pro'])->assertJsonValidationErrors('tier');
 
         $this->app->instance(PaymentProvider::class, new UnavailablePaymentProvider);
-        $this->actingAs($this->owner)->post('/account/billing/deploy', ['tier' => 'pro'])->assertSessionHasErrors('tier');
+        $this->actingAs($this->owner)->postJson('/api/app/account/billing/deploy', ['tier' => 'pro'])->assertJsonValidationErrors('tier');
     }
 
+    /**
+     * Webhooks must be signed and a deleted subscription drops paid plans.
+     */
     public function test_webhooks_must_be_signed_and_a_deleted_subscription_drops_paid_plans(): void
     {
         $this->subscribe(['deploy' => 'pro']);
@@ -180,6 +191,9 @@ final class BillingTest extends TestCase
         $this->assertSame('canceled', BillingAccount::query()->findOrFail($this->account->id)->status);
     }
 
+    /**
+     * Usage is bucketed by hour and shown against the allowance.
+     */
     public function test_usage_is_bucketed_by_hour_and_shown_against_the_allowance(): void
     {
         Project::factory()->for($this->account)->withServices(['monitoring'])->create();
@@ -188,19 +202,24 @@ final class BillingTest extends TestCase
         $record->handle($this->account->id, 'monitoring.events', 300);
 
         $this->assertSame(1500, (int) \App\Models\UsageRecord::query()->sole()->quantity);
-        $this->actingAs($this->owner)->get('/account/billing')->assertOk()->assertSee('1,500 / 500,000 events');
+        $meter = $this->meter('monitoring', 'monitoring.events');
+        $this->assertSame([1500, 500000, 'events'], [$meter['used'], $meter['allowance'], $meter['unit']]);
     }
 
+    /**
+     * Pay as you go bills usage past the allowance up to a cap.
+     */
     public function test_pay_as_you_go_bills_usage_past_the_allowance_up_to_a_cap(): void
     {
         Project::factory()->for($this->account)->withServices(['monitoring'])->create();
         $this->subscribe(['monitoring' => 'pro']);
-        $this->actingAs($this->owner)->put('/account/billing/monitoring/usage', ['meter' => 'monitoring.events', 'enabled' => '1'])->assertSessionHasErrors('usage');
+        $this->actingAs($this->owner)->putJson('/api/app/account/billing/monitoring/usage', ['meter' => 'monitoring.events', 'enabled' => '1'])->assertJsonValidationErrors('usage');
 
         config(['billing.meters.monitoring.events' => 'bp_events', 'billing.prices.monitoring.usage.events' => 'price_events_usage']);
-        $this->actingAs($this->owner)->get('/account/billing?tab=monitoring')->assertOk()->assertSee(__('Pay as you go'))->assertSee('$0.50 per 100,000 events', false);
-        $this->actingAs($this->owner)->put('/account/billing/monitoring/usage', ['meter' => 'deploy.nope', 'enabled' => '1'])->assertSessionHasErrors('meter');
-        $this->actingAs($this->owner)->put('/account/billing/monitoring/usage', ['meter' => 'monitoring.events', 'enabled' => '1', 'cap' => '1'])->assertRedirect('/account/billing?tab=monitoring');
+        $meter = $this->meter('monitoring', 'monitoring.events');
+        $this->assertSame([true, 50, 100000], [$meter['payAsYouGoAvailable'], $meter['unitCents'], $meter['unitSize']]);
+        $this->actingAs($this->owner)->putJson('/api/app/account/billing/monitoring/usage', ['meter' => 'deploy.nope', 'enabled' => '1'])->assertJsonValidationErrors('meter');
+        $this->actingAs($this->owner)->putJson('/api/app/account/billing/monitoring/usage', ['meter' => 'monitoring.events', 'enabled' => '1', 'cap' => '1'])->assertOk()->assertJsonPath('redirect', '/account/billing?tab=monitoring');
         $usageItem = collect($this->stripe->subscriptions['sub_1'])->firstWhere('priceId', 'price_events_usage');
         $this->assertNotNull($usageItem);
         $this->assertNull($usageItem->quantity, 'Metered items carry no quantity.');
@@ -218,9 +237,9 @@ final class BillingTest extends TestCase
         app(RecordUsage::class)->handle($this->account->id, 'monitoring.events', 1_000);
         app(ReportUsage::class)->handle();
         $this->assertSame(1_000, $this->stripe->usage[1]['quantity']);
-        $this->actingAs($this->owner)->get('/account/billing?tab=monitoring')->assertSee(__('So far this month: :cost.', ['cost' => '$1.50']));
+        $this->assertSame(150, $this->meter('monitoring', 'monitoring.events')['overageCents']);
 
-        $this->actingAs($this->owner)->put('/account/billing/monitoring/usage', ['meter' => 'monitoring.events', 'enabled' => '0'])->assertRedirect();
+        $this->actingAs($this->owner)->putJson('/api/app/account/billing/monitoring/usage', ['meter' => 'monitoring.events', 'enabled' => '0'])->assertOk();
         $this->assertFalse(BillingSelection::query()->where('kind', SelectionKind::Usage)->exists());
         $this->assertNull(collect($this->stripe->subscriptions['sub_1'])->firstWhere('priceId', 'price_events_usage'));
         $this->assertFalse($overage->allows($this->account, 'monitoring.events', $allowance, 1));
@@ -248,5 +267,26 @@ final class BillingTest extends TestCase
     private function webhook(string $id, string $type, array $object): TestResponse
     {
         return $this->postJson('/webhooks/stripe', ['id' => $id, 'type' => $type, 'data' => ['object' => $object]], ['Stripe-Signature' => 'valid']);
+    }
+
+    /**
+     * Read one meter of a service from the billing page's data.
+     *
+     * @param  string  $service
+     * @param  string  $key
+     * @return array<string, mixed>
+     */
+    private function meter(string $service, string $key): array
+    {
+        foreach ((array) $this->actingAs($this->owner)->getJson('/api/app/account/billing')->assertOk()->json('services') as $card) {
+            if (is_array($card) && $card['key'] === $service) {
+                foreach ((array) $card['meters'] as $meter) {
+                    if (is_array($meter) && $meter['key'] === $key) {
+                        return $meter;
+                    }
+                }
+            }
+        }
+        $this->fail("No {$key} meter.");
     }
 }

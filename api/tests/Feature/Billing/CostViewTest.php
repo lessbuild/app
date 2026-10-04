@@ -24,6 +24,9 @@ final class CostViewTest extends TestCase
      *
      * @return void
      */
+    /**
+     * Costs are split by project: platform charges by the services each uses, servers by the websites on them.
+     */
     public function test_costs_are_split_by_project(): void
     {
         $shop = Project::factory()->withServices(['deploy'])->create(['name' => 'Shop']);
@@ -44,8 +47,11 @@ final class CostViewTest extends TestCase
         $bill = new ProviderBill;
         $bill->forceFill(['provider_id' => $provider->id, 'period' => now()->subMonthNoOverflow()->format('Y-m'), 'amount' => 36.2, 'currency' => 'USD', 'final' => true])->save();
 
-        $this->actingAs($owner)->get('/account/billing?tab=costs')->assertOk()
-            ->assertSeeInOrder(['Costs by project', 'Blog', '$9.50', '$5.00', 'Shop', '$9.50', '$29.00', 'Servers no project uses', '€8.00'])
-            ->assertSee('€8.00 + $34.00')->assertSee('$36.20')->assertSee('1 server has no known price');
+        $costs = $this->actingAs($owner)->getJson('/api/app/account/billing')->assertOk()->json('costs');
+        $this->assertEquals([['name' => 'Blog', 'platform' => 9.5, 'cloud' => ['USD' => 5.0]], ['name' => 'Shop', 'platform' => 9.5, 'cloud' => ['USD' => 29.0]]], $costs['projects']);
+        $this->assertEquals(['EUR' => 8.0], $costs['unassigned']);
+        $this->assertEqualsCanonicalizing(['EUR' => 8.0, 'USD' => 34.0], $costs['cloudTotal']);
+        $this->assertEquals(['USD' => 36.2], $costs['billed']);
+        $this->assertSame(1, $costs['unpriced']);
     }
 }
