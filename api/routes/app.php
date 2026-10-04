@@ -54,6 +54,7 @@ use App\Http\Controllers\Auth\ShowCurrentUserController;
 use App\Http\Controllers\Auth\ShowSignInOptionsController;
 use App\Http\Controllers\Auth\StartSsoSignInController;
 use App\Http\Controllers\Dashboard\ShowDashboardController;
+use App\Http\Controllers\Feedback\StoreFeedbackController;
 use App\Http\Controllers\Invitations\AcceptInvitationController;
 use App\Http\Controllers\Invitations\ShowInvitationController;
 use App\Http\Controllers\Notifications\ExportNotificationsController;
@@ -87,6 +88,7 @@ use App\Http\Controllers\SavedViews\DeleteSavedViewController;
 use App\Http\Controllers\SavedViews\ShowSavedViewsController;
 use App\Http\Controllers\SavedViews\StoreSavedViewController;
 use App\Http\Controllers\Search\SearchController;
+use App\Http\Controllers\Services\ShowServiceController;
 use App\Http\Controllers\Settings\DeletePushDeviceController;
 use App\Http\Controllers\Settings\DeleteSshKeyController;
 use App\Http\Controllers\Settings\DeleteUserController;
@@ -176,11 +178,17 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
         Route::delete('/services/{service}', DisableProjectServiceController::class)->name('services.destroy');
     });
 
+    // A service across the account: the projects using it, and turning it on for others.
+    Route::get('/services/{service}', ShowServiceController::class)->middleware('account.can:useService,service')->name('services.show');
+
     // Searching the account (the command palette), and the person's saved views of filtered pages.
     Route::get('/search', SearchController::class)->middleware('throttle:120,1')->name('search');
     Route::get('/saved-views', ShowSavedViewsController::class)->name('saved-views.index');
     Route::post('/saved-views', StoreSavedViewController::class)->middleware('throttle:30,1')->name('saved-views.store');
     Route::delete('/saved-views/{view}', DeleteSavedViewController::class)->whereNumber('view')->name('saved-views.destroy');
+
+    // Feedback from anywhere in the app, to the admins.
+    Route::post('/feedback', StoreFeedbackController::class)->middleware('throttle:10,1')->name('feedback.store');
 
     // The person's notifications, across their accounts.
     Route::get('/notifications', ShowNotificationsController::class)->name('notifications.index');

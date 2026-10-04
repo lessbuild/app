@@ -86,8 +86,15 @@ function shortcut(event: KeyboardEvent) {
         open();
     }
 }
-onMounted(() => window.addEventListener('keydown', shortcut));
-onBeforeUnmount(() => window.removeEventListener('keydown', shortcut));
+onMounted(() => {
+    window.addEventListener('keydown', shortcut);
+    // Other parts of the app (the footer's Search) open it with this event.
+    window.addEventListener('buildpusher:command-palette', open);
+});
+onBeforeUnmount(() => {
+    window.removeEventListener('keydown', shortcut);
+    window.removeEventListener('buildpusher:command-palette', open);
+});
 </script>
 
 <template>

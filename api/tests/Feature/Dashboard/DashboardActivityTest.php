@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature;
+namespace Tests\Feature\Dashboard;
 
 use App\Enums\AuditAction;
 use App\Models\AuditEntry;
@@ -30,6 +30,10 @@ final class DashboardActivityTest extends TestCase
      *
      * @return void
      */
+    /**
+     * The dashboard shows the team's recent deploys, incidents and changes (not personal ones, nor other accounts'),
+     * filtered by kind.
+     */
     public function test_the_dashboard_shows_the_teams_recent_activity(): void
     {
         $project = Project::factory()->withServices(['deploy', 'monitoring'])->create(['name' => 'Storefront']);
@@ -46,8 +50,7 @@ final class DashboardActivityTest extends TestCase
         $other = Project::factory()->withServices(['monitoring'])->create();
         Incident::factory()->for(Monitor::factory()->create(['environment_id' => $other->environments()->firstOrFail()->id]))->create(['title' => 'Someone else’s outage']);
 
-        $this->actingAs($owner)->get('/dashboard')->assertOk()
-            ->assertSee('Recent activity')
+        $this->actingAs($owner)->getJson('/api/app/dashboard')->assertOk()
             ->assertSee("Deploy #{$build->id} of shop-app to Production")
             ->assertSee('Failed')
             ->assertSee('Checkout is down')
@@ -55,7 +58,7 @@ final class DashboardActivityTest extends TestCase
             ->assertDontSee(AuditAction::PasswordChanged->describe([]))
             ->assertDontSee('Someone else’s outage');
 
-        $this->actingAs($owner)->get('/dashboard?activity=incident')->assertOk()
+        $this->actingAs($owner)->getJson('/api/app/dashboard?activity=incident')->assertOk()->assertJsonPath('activityKind', 'incident')
             ->assertSee('Checkout is down')
             ->assertDontSee("Deploy #{$build->id} of shop-app");
     }

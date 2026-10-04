@@ -68,6 +68,7 @@ async function switchAccount(id: string) {
                                 <div class="mt-1 grid gap-1 border-t border-line pt-1">
                                     <NuxtLink to="/settings/profile" class="topbar-nav-link w-full">{{ t('Your settings') }}</NuxtLink>
                                     <NuxtLink to="/help" class="topbar-nav-link w-full">{{ t('Help centre') }}</NuxtLink>
+                                    <NuxtLink :to="{ query: { ...$route.query, dialog: 'feedback' } }" class="topbar-nav-link w-full">{{ t('Send feedback') }}</NuxtLink>
                                     <SignOutButton action="/api/app/auth/logout" />
                                 </div>
                             </div>
@@ -92,6 +93,7 @@ async function switchAccount(id: string) {
             </Alert>
             <slot />
         </main>
+        <AppFooter :operational="shell.platformOperational" />
         <ConfirmIdentityDialog />
         <Toaster />
     </div>
