@@ -49,6 +49,8 @@ export default <RouterConfig>{
             return place(to, from, saved);
         }
         const nuxtApp = useNuxtApp();
-        return new Promise((resolve) => nuxtApp.hooks.hookOnce('page:finish', () => requestAnimationFrame(() => resolve(place(to, from, saved)))));
+        return new Promise((resolve) => nuxtApp.hooks.hookOnce('page:finish', () => {
+            requestAnimationFrame(() => resolve(place(to, from, saved)));
+        }));
     },
 };
