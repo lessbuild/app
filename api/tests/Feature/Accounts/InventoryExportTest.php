@@ -29,6 +29,9 @@ final class InventoryExportTest extends TestCase
      *
      * @return void
      */
+    /**
+     * The account's inventories download as CSV, safe to open in a spreadsheet, and limited to what the person sees.
+     */
     public function test_the_account_inventories_download_as_csv(): void
     {
         $project = Project::factory()->withServices(['deploy', 'infrastructure'])->create();
@@ -42,22 +45,21 @@ final class InventoryExportTest extends TestCase
         (new Recipe)->forceFill(['account_id' => $project->account_id, 'name' => 'Install ffmpeg', 'category' => 'utilities', 'script' => 'apt install ffmpeg'])->save();
         Server::factory()->create(['name' => 'someone-elses']);
 
-        $servers = $this->actingAs($owner)->get('/account/inventory/servers.csv')->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8')->streamedContent();
+        $servers = $this->actingAs($owner)->get('/api/app/account/inventory/servers.csv')->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8')->streamedContent();
         $this->assertStringContainsString('"Server ID",Name,"Cloud identifier"', $servers);
         $this->assertStringContainsString('web-1', $servers);
         $this->assertStringNotContainsString('someone-elses', $servers);
-        $this->assertStringContainsString("'=HYPERLINK", $this->actingAs($owner)->get('/account/inventory/websites.csv')->assertOk()->streamedContent());
-        $providers = $this->actingAs($owner)->get('/account/inventory/providers.csv')->assertOk()->streamedContent();
+        $this->assertStringContainsString("'=HYPERLINK", $this->actingAs($owner)->get('/api/app/account/inventory/websites.csv')->assertOk()->streamedContent());
+        $providers = $this->actingAs($owner)->get('/api/app/account/inventory/providers.csv')->assertOk()->streamedContent();
         $this->assertStringContainsString('Main cloud', $providers);
         $this->assertStringNotContainsString('do-secret-token', $providers);
-        $this->assertStringContainsString('"Install ffmpeg",,utilities,no,0,no,web-1,1', $this->actingAs($owner)->get('/account/inventory/recipes.csv')->assertOk()->streamedContent());
-        $this->assertStringContainsString(str_repeat('a', 40), $this->actingAs($owner)->get('/account/inventory/repositories.csv')->assertOk()->streamedContent());
-        $this->actingAs($owner)->get('/account/inventory/passwords.csv')->assertNotFound();
-        $this->actingAs($owner)->get("/projects/{$project->id}/infrastructure/servers")->assertOk()->assertSee(route('account.inventory', 'servers'));
+        $this->assertStringContainsString('"Install ffmpeg",,utilities,no,0,no,web-1,1', $this->actingAs($owner)->get('/api/app/account/inventory/recipes.csv')->assertOk()->streamedContent());
+        $this->assertStringContainsString(str_repeat('a', 40), $this->actingAs($owner)->get('/api/app/account/inventory/repositories.csv')->assertOk()->streamedContent());
+        $this->actingAs($owner)->get('/api/app/account/inventory/passwords.csv')->assertNotFound();
 
         $viewer = User::factory()->create();
         $this->addMember($project, $viewer, AccountRole::Viewer);
         $viewer->forceFill(['current_account_id' => $project->account_id])->save();
-        $this->assertStringNotContainsString('Main cloud', $this->actingAs($viewer)->get('/account/inventory/providers.csv')->assertOk()->streamedContent());
+        $this->assertStringNotContainsString('Main cloud', $this->actingAs($viewer)->get('/api/app/account/inventory/providers.csv')->assertOk()->streamedContent());
     }
 }

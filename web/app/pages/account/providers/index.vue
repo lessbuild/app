@@ -14,6 +14,7 @@ const back = computed(() => (typeof route.query.return === 'string' ? route.quer
     <div class="space-y-8">
         <PageHeader :eyebrow="data.account.name" :title="t('Providers')" :description="t('Credentials for the clouds that host your servers, Cloudflare for DNS, and the Git hosts Deploy builds from.')">
             <template v-if="data.providers.length > 0" #actions>
+                <a href="/api/app/account/inventory/providers.csv" class="ui-btn ui-btn-quiet" download>{{ t('Export CSV') }}</a>
                 <UiButton variant="primary" :to="{ query: { dialog: 'add-provider' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Connect a provider') }}</UiButton>
             </template>
         </PageHeader>

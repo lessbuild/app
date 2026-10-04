@@ -13,19 +13,25 @@ use App\Http\Controllers\Account\CheckProviderConnectionController;
 use App\Http\Controllers\Account\CreateApiTokenController;
 use App\Http\Controllers\Account\DeleteAccountController;
 use App\Http\Controllers\Account\DeleteAuditStreamController;
+use App\Http\Controllers\Account\DeleteClientController;
 use App\Http\Controllers\Account\DeleteProviderController;
 use App\Http\Controllers\Account\DeleteWebhookEndpointController;
 use App\Http\Controllers\Account\ExportAuditLogController;
+use App\Http\Controllers\Account\ExportClientCostsController;
+use App\Http\Controllers\Account\ExportInventoryController;
 use App\Http\Controllers\Account\InviteMemberController;
 use App\Http\Controllers\Account\RemoveMemberController;
 use App\Http\Controllers\Account\RenameAccountController;
 use App\Http\Controllers\Account\RevokeApiTokenController;
 use App\Http\Controllers\Account\RevokeInvitationController;
+use App\Http\Controllers\Account\SaveClientController;
 use App\Http\Controllers\Account\SendWebhookController;
 use App\Http\Controllers\Account\ShowAccountSecurityController;
 use App\Http\Controllers\Account\ShowAccountSettingsController;
 use App\Http\Controllers\Account\ShowApiTokensController;
 use App\Http\Controllers\Account\ShowAuditLogController;
+use App\Http\Controllers\Account\ShowClientReportController;
+use App\Http\Controllers\Account\ShowClientsController;
 use App\Http\Controllers\Account\ShowMembersController;
 use App\Http\Controllers\Account\ShowProviderController;
 use App\Http\Controllers\Account\ShowProvidersController;
@@ -35,6 +41,7 @@ use App\Http\Controllers\Account\StoreProviderController;
 use App\Http\Controllers\Account\StoreWebhookEndpointController;
 use App\Http\Controllers\Account\SwitchAccountController;
 use App\Http\Controllers\Account\UpdateAccountSecurityController;
+use App\Http\Controllers\Account\UpdateBrandingController;
 use App\Http\Controllers\Account\UpdateMemberProjectsController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Account\UpdateProviderController;
@@ -162,4 +169,16 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::put('/account/providers/{provider}', UpdateProviderController::class)->whereNumber('provider')->middleware(['can:update,provider', 'throttle:20,1'])->name('account.providers.update');
     Route::delete('/account/providers/{provider}', DeleteProviderController::class)->whereNumber('provider')->middleware(['can:delete,provider', 'password.confirm'])->name('account.providers.destroy');
     Route::post('/account/providers/{provider}/check', CheckProviderConnectionController::class)->whereNumber('provider')->middleware(['can:update,provider', 'throttle:10,1'])->name('account.providers.check');
+
+    // Clients, for agencies: white-label branding, monthly reports and costs by client with a markup.
+    Route::get('/account/clients', ShowClientsController::class)->middleware('account.can:update')->name('account.clients');
+    Route::put('/account/clients/branding', UpdateBrandingController::class)->middleware(['account.can:update', 'throttle:20,1'])->name('account.clients.branding');
+    Route::get('/account/clients/costs.csv', ExportClientCostsController::class)->middleware(['account.can:update', 'throttle:10,1'])->name('account.clients.costs');
+    Route::post('/account/clients', SaveClientController::class)->middleware(['account.can:update', 'throttle:30,1'])->name('account.clients.store');
+    Route::put('/account/clients/{client}', SaveClientController::class)->whereNumber('client')->middleware(['account.can:update', 'throttle:30,1'])->name('account.clients.update');
+    Route::delete('/account/clients/{client}', DeleteClientController::class)->whereNumber('client')->middleware(['account.can:update', 'throttle:30,1'])->name('account.clients.destroy');
+    Route::get('/account/clients/{client}/report', ShowClientReportController::class)->whereNumber('client')->middleware('account.can:update')->name('account.clients.report');
+
+    // Inventories of the account's servers, websites, providers, recipes and repositories, as CSV.
+    Route::get('/account/inventory/{kind}.csv', ExportInventoryController::class)->whereIn('kind', App\Queries\Accounts\InventoryQuery::KINDS)->middleware('throttle:20,1')->name('account.inventory');
 });
