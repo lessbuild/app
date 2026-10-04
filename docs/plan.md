@@ -98,4 +98,11 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   backups and schedules, files, PHP, Reverb, Caddy directives), backups, load balancers, storage buckets, costs and
   bills, and moves from Forge or Ploi. One-time passwords come back in the JSON (`secrets`) and show on the next page.
   Infrastructure's routes sit in their own project group without nested bindings: its records belong to the account.
-- **6. Monitoring**: next.
+- **6. Monitoring**: done. Monitors (HTTP, DNS, TLS, TCP, heartbeat, queue and multi-step flows, with keys shown
+  once), services you depend on, incidents (acknowledge, assign, notes, post-mortems drafted from the timeline and
+  published to a status page), alert rules with routing and escalation, destinations, on-call rotations and cover,
+  maintenance windows, alert noise, service level objectives with burn rate and CSV export, dashboards, status pages
+  (components, updates, badges, custom domains), and telemetry: issues with tickets, events, traces, the service
+  map, releases and deployments compared side by side, setup with ingest keys and browser errors, deliveries and
+  metrics. The public status pages themselves come in slice 9.
+- **7. Security**: next.

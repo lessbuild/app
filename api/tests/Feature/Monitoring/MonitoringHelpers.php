@@ -181,7 +181,7 @@ trait MonitoringHelpers
      */
     protected function postRule(array $payload): TestResponse
     {
-        return $this->post(route('monitoring.rules.store', Environment::query()->whereKey($payload['environment_id'])->value('project_id')), $payload);
+        return $this->postJson(route('app.monitoring.rules.store', Environment::query()->whereKey($payload['environment_id'])->value('project_id')), $payload);
     }
 
     /**
@@ -192,7 +192,7 @@ trait MonitoringHelpers
      */
     protected function postObjective(array $payload): TestResponse
     {
-        return $this->post(route('monitoring.objectives.store', Environment::query()->whereKey($payload['environment_id'])->value('project_id')), $payload);
+        return $this->postJson(route('app.monitoring.objectives.store', Environment::query()->whereKey($payload['environment_id'])->value('project_id')), $payload);
     }
 
     /** The retry URL for an alert delivery, under a project of the delivery's account (created if needed). */
@@ -201,6 +201,6 @@ trait MonitoringHelpers
         $project = Project::query()->where('account_id', $delivery->account_id)->first()
             ?? Project::factory()->for($delivery->account)->withServices(['monitoring'])->create();
 
-        return route('monitoring.deliveries.retry', [$project, $delivery->id]);
+        return route('app.monitoring.deliveries.retry', [$project, $delivery->id]);
     }
 }

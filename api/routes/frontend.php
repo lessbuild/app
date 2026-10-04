@@ -140,6 +140,10 @@ Route::get('/recipes/gallery/reports', FrontendPageController::class)->name('rec
 Route::get('/recipes/gallery/{recipe}', FrontendPageController::class)->name('recipes.gallery.show');
 Route::get('/register', FrontendPageController::class)->name('register');
 Route::get('/releases/{token}', FrontendPageController::class)->name('deploy.release-notes.public');
+// Public status pages (slice 9 builds them in Nuxt; the names already give monitoring its links).
+Route::get('/status/{slug}', FrontendPageController::class)->where('slug', '[a-z0-9-]+')->name('status.show');
+Route::get('/status/{slug}/uptime/{month}', FrontendPageController::class)->where('slug', '[a-z0-9-]+')->where('month', '\d{4}-\d{2}')->name('status.month');
+Route::get('/status/{slug}/embed', FrontendPageController::class)->where('slug', '[a-z0-9-]+')->name('status.embed');
 Route::get('/request-access', FrontendPageController::class)->name('access-requests.create');
 Route::get('/reset-password/{token}', FrontendPageController::class)->name('password.reset');
 Route::get('/roadmap', FrontendPageController::class)->name('roadmap');
@@ -156,9 +160,6 @@ Route::get('/status', FrontendPageController::class)->name('platform.status');
 Route::get('/status/subscriptions/{subscription}/confirm/{token}', FrontendPageController::class)->name('status.subscriptions.confirm');
 Route::get('/status/subscriptions/{subscription}/unsubscribe/{token}', FrontendPageController::class)->name('status.subscriptions.unsubscribe');
 Route::get('/status/webhooks/{subscription}/unsubscribe/{token}', FrontendPageController::class)->name('status.webhooks.unsubscribe');
-Route::get('/status/{slug}', FrontendPageController::class)->name('status.show');
-Route::get('/status/{slug}/embed', FrontendPageController::class)->name('status.embed');
-Route::get('/status/{slug}/uptime/{month}', FrontendPageController::class)->name('status.month');
 Route::get('/two-factor-challenge', FrontendPageController::class)->name('two-factor.login');
 Route::get('/user/confirm-password', FrontendPageController::class)->name('password.confirm');
 Route::get('/{page}', FrontendPageController::class)->name('legal');
