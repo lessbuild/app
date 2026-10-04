@@ -113,7 +113,8 @@ export async function useApi<T>(path: MaybeRefOrGetter<string>, query?: MaybeRef
             await nuxtApp.runWithContext(() => apiErrorNavigation(cause, route));
             return;
         }
-        throw nuxtApp.runWithContext(() => createError({ statusCode: cause instanceof ApiError && (cause.status === 403 || cause.status === 404) ? 404 : 500, fatal: true }));
+        // createError needs no Nuxt context; runWithContext would hand back a promise, which Vue would report as a 500.
+        throw createError({ statusCode: cause instanceof ApiError && (cause.status === 403 || cause.status === 404) ? 404 : 500, fatal: true });
     };
     await handle(error.value);
     watch(error, (problem) => handle(problem));
