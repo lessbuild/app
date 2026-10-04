@@ -40,7 +40,7 @@ watch(() => route.query.dialog, async (dialog) => {
                     <NuxtLink :to="`/projects/${project.id}/deploy/repositories/${repository.id}`" class="font-bold text-primary hover:underline">{{ repository.name }}</NuxtLink>
                     <span class="block font-mono text-xs text-muted">{{ repository.url }} · {{ repository.branch }}</span>
                 </td>
-                <td>{{ repository.website ?? '—' }} <span v-if="repository.environment" class="text-muted">· {{ repository.environment }}</span></td>
+                <td>{{ repository.website }} <span v-if="repository.environment" class="text-muted">· {{ repository.environment }}</span></td>
                 <td>
                     <NuxtLink v-if="repository.latestBuild" :to="`/projects/${project.id}/deploy/builds/${repository.latestBuild.id}`" class="inline-flex items-center gap-2">
                         <BuildStatusBadge :status="repository.latestBuild.status" />

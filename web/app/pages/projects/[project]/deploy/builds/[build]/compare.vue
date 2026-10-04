@@ -56,7 +56,7 @@ const rows = computed(() => {
 });
 const timing = computed(() => {
     const delta = comparison.value?.durationDelta;
-    const id = baseline.value?.id;
+    const id = baseline.value?.id ?? '';
     if (delta === null || delta === undefined) {
         return t('Timing unavailable');
     }

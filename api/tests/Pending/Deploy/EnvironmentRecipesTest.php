@@ -57,7 +57,6 @@ final class EnvironmentRecipesTest extends TestCase
      */
     public function test_recipes_are_ordered_snapshots_that_run_on_the_environments_servers(): void
     {
-        $this->markTestSkipped('Needs the Infrastructure API (slice 5): the account recipe library and websites.');
         [$firewall, $tools] = [$this->recipe('Firewall', 'ufw allow 22'), $this->recipe('Tools', 'apt-get install -y htop')];
         $this->as()->postJson("{$this->base}/recipes", ['recipe_id' => $tools->id])->assertJsonRedirect("{$this->base}?tab=recipes");
         $this->as()->postJson("{$this->base}/recipes", ['recipe_id' => $firewall->id])->assertSuccessful();
@@ -92,7 +91,6 @@ final class EnvironmentRecipesTest extends TestCase
      */
     public function test_only_the_accounts_recipes_can_be_added_and_viewers_cant_run_them(): void
     {
-        $this->markTestSkipped('Needs the Infrastructure API (slice 5): the account recipe library and websites.');
         $other = Project::factory()->withServices(['infrastructure'])->create();
         $theirs = new Recipe;
         $theirs->forceFill(['account_id' => $other->account_id, 'name' => 'Theirs', 'script' => 'echo hi'])->save();
@@ -110,7 +108,6 @@ final class EnvironmentRecipesTest extends TestCase
      */
     public function test_recipes_run_by_themselves_on_a_new_website_when_asked(): void
     {
-        $this->markTestSkipped('Needs the Infrastructure API (slice 5): the account recipe library and websites.');
         $this->as()->postJson("{$this->base}/recipes", ['recipe_id' => $this->recipe('Tools', 'echo tools')->id])->assertSuccessful();
         $this->as()->putJson("{$this->base}/recipes/settings", ['run_on_new_websites' => '1'])->assertSuccessful();
         $this->assertTrue($this->production->refresh()->recipes_run_on_new_websites);

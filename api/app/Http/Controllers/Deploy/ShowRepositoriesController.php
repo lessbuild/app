@@ -35,7 +35,7 @@ final class ShowRepositoriesController
                 'name' => $repository->name,
                 'url' => $repository->url,
                 'branch' => $repository->branch,
-                'website' => $repository->website?->name,
+                'website' => $repository->website->name,
                 'environment' => $repository->environment?->name,
                 'latestBuild' => ($build = $latest->get($repository->id)) instanceof Build ? ['id' => $build->id, 'status' => $build->status, 'createdAt' => $build->created_at?->toIso8601String()] : null,
             ])->values(),

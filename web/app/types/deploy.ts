@@ -14,7 +14,7 @@ export type RepositoryRow = {
     name: string;
     url: string;
     branch: string;
-    website: string | null;
+    website: string;
     environment: string | null;
     latestBuild: { id: number; status: BuildStatus; createdAt: string | null } | null;
 };
