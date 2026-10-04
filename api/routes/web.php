@@ -16,6 +16,9 @@ use App\Http\Controllers\Infrastructure\RecordServerProvisioningController;
 use App\Http\Controllers\Infrastructure\RecordWebsiteProvisioningController;
 use App\Http\Controllers\Platform\ShowPlatformStatusReportController;
 use App\Http\Controllers\Security\EvaluateSecurityGateController;
+use App\Http\Controllers\Site\ShowRobotsController;
+use App\Http\Controllers\Site\ShowSecurityTxtController;
+use App\Http\Controllers\Site\ShowSitemapController;
 use App\Http\Controllers\Site\ShowStatusBadgeController;
 use App\Http\Controllers\StatusPages\CheckStatusPageDomainController;
 use App\Http\Controllers\StatusPages\RedirectLegacyStatusPageController;
@@ -27,6 +30,10 @@ use App\Http\Controllers\StatusPages\UnsubscribeStatusWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
+// What search engines and security researchers read: the sitemap, robots.txt and security.txt.
+Route::get('/sitemap.xml', ShowSitemapController::class)->name('sitemap');
+Route::get('/robots.txt', ShowRobotsController::class)->name('robots');
+Route::get('/.well-known/security.txt', ShowSecurityTxtController::class)->name('security-txt');
 Route::get('/status/badge.svg', ShowStatusBadgeController::class)->middleware('throttle:120,1')->name('platform.status.badge');
 Route::get('/status/report.json', ShowPlatformStatusReportController::class)->middleware('throttle:120,1')->name('platform.status.report');
 Route::get('/status/{slug}/report.json', ShowStatusPageReportController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.report');

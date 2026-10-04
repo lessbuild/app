@@ -4,22 +4,18 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use Illuminate\Support\HtmlString;
-
 /** Builds the schema.org JSON-LD that tells search engines what a public page is: the organisation, its breadcrumbs, an article, its questions. */
 final class StructuredData
 {
     /**
-     * Render nodes as one JSON-LD script tag for the page's head, after the organisation and website they refer to.
+     * Build the JSON-LD graph: the organisation and website, then the page's own nodes.
      *
      * @param  list<array<string, mixed>>  $nodes
-     * @return HtmlString
+     * @return array{'@context': string, '@graph': list<array<string, mixed>>}
      */
-    public static function script(array $nodes): HtmlString
+    public static function graph(array $nodes): array
     {
-        $json = json_encode(['@context' => 'https://schema.org', '@graph' => [self::organization(), self::website(), ...$nodes]], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_THROW_ON_ERROR);
-
-        return new HtmlString('<script type="application/ld+json">'.$json.'</script>');
+        return ['@context' => 'https://schema.org', '@graph' => [self::organization(), self::website(), ...$nodes]];
     }
 
     /**

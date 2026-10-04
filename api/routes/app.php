@@ -175,7 +175,10 @@ use App\Http\Controllers\Deploy\UpdateRepositoryController;
 use App\Http\Controllers\Deploy\UpdateRepositoryPreviewsController;
 use App\Http\Controllers\Deploy\UpdateRepositoryWebhookController;
 use App\Http\Controllers\Deploy\UpdateSecretSyncController;
+use App\Http\Controllers\Docs\ShowApiReferenceController;
 use App\Http\Controllers\Feedback\StoreFeedbackController;
+use App\Http\Controllers\Help\ShowHelpController;
+use App\Http\Controllers\Help\ShowHelpGuideController;
 use App\Http\Controllers\Infrastructure\AddReadReplicaController;
 use App\Http\Controllers\Infrastructure\CancelServerCommandController;
 use App\Http\Controllers\Infrastructure\CheckBackupDestinationController;
@@ -387,6 +390,7 @@ use App\Http\Controllers\Recipes\ShowRecipeReportsController;
 use App\Http\Controllers\Recipes\ShowRecipesController;
 use App\Http\Controllers\Recipes\StoreRecipeController;
 use App\Http\Controllers\Recipes\UpdateRecipeController;
+use App\Http\Controllers\Roadmap\ToggleFeatureRequestVoteController;
 use App\Http\Controllers\SavedViews\DeleteSavedViewController;
 use App\Http\Controllers\SavedViews\ShowSavedViewsController;
 use App\Http\Controllers\SavedViews\StoreSavedViewController;
@@ -429,6 +433,14 @@ use App\Http\Controllers\Settings\UpdateGettingStartedEmailsController;
 use App\Http\Controllers\Settings\UpdateNotificationSettingsController;
 use App\Http\Controllers\Settings\UpdateWeeklyReportEmailsController;
 use App\Http\Controllers\Shell\ShowShellController;
+use App\Http\Controllers\Site\ShowChangelogController;
+use App\Http\Controllers\Site\ShowComparisonController;
+use App\Http\Controllers\Site\ShowFeaturesController;
+use App\Http\Controllers\Site\ShowHomeController;
+use App\Http\Controllers\Site\ShowLegalPageController;
+use App\Http\Controllers\Site\ShowPricingController;
+use App\Http\Controllers\Site\ShowRoadmapController;
+use App\Http\Controllers\Site\ShowSiteFrameController;
 use App\Http\Controllers\StatusPages\ConfirmStatusSubscriptionController;
 use App\Http\Controllers\StatusPages\ResolveStatusPageDomainController;
 use App\Http\Controllers\StatusPages\ShowPublicStatusPageController;
@@ -471,6 +483,21 @@ Route::get('/access-requests', ShowAccessRequestFormController::class)->middlewa
 Route::post('/access-requests', StoreAccessRequestController::class)->middleware('throttle:5,1')->name('access-requests.store');
 Route::get('/releases/{token}', App\Http\Controllers\Deploy\ShowPublicReleaseNotesController::class)->where('token', '[a-z0-9]{32}')->middleware('throttle:120,1')->name('deploy.release-notes.public');
 Route::get('/invitations/{token}', ShowInvitationController::class)->where('token', '[A-Za-z0-9_-]{1,100}')->middleware('throttle:30,1')->name('invitations.show');
+// The public site: its frame, home, service pages, pricing, changelog, roadmap, comparisons, legal pages, the help
+// centre and the API reference. Anyone may read them; their copy comes from config (marketing, help, compare, legal).
+Route::get('/site', ShowSiteFrameController::class)->middleware('throttle:240,1')->name('site');
+Route::get('/site/home', ShowHomeController::class)->middleware('throttle:240,1')->name('home');
+Route::get('/site/features/{service}', ShowFeaturesController::class)->where('service', '[a-z]+')->middleware('throttle:240,1')->name('features');
+Route::get('/site/pricing', ShowPricingController::class)->middleware('throttle:240,1')->name('pricing');
+Route::get('/site/changelog', ShowChangelogController::class)->middleware('throttle:240,1')->name('changelog');
+Route::get('/site/roadmap', ShowRoadmapController::class)->middleware('throttle:240,1')->name('roadmap');
+Route::get('/site/compare/{competitor}', ShowComparisonController::class)->where('competitor', '[a-z-]+')->middleware('throttle:240,1')->name('compare');
+Route::get('/site/legal/{page}', ShowLegalPageController::class)->whereIn('page', ['privacy', 'terms'])->middleware('throttle:240,1')->name('legal');
+Route::get('/help', ShowHelpController::class)->middleware('throttle:240,1')->name('help');
+Route::get('/help/{guide}', ShowHelpGuideController::class)->where('guide', '[a-z0-9-]+')->middleware('throttle:240,1')->name('help.guide');
+Route::get('/docs/api', ShowApiReferenceController::class)->middleware('throttle:240,1')->name('docs.api');
+Route::post('/roadmap/{featureRequest}/vote', ToggleFeatureRequestVoteController::class)->whereNumber('featureRequest')->middleware(['auth', 'throttle:30,1'])->name('roadmap.vote');
+
 // Public status pages: the page, its monthly uptime, subscribing by email, Slack or webhook, confirming and stopping
 // subscriptions from their emails' links, and which page a custom domain shows. No account needed.
 Route::get('/status/{slug}', ShowPublicStatusPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.show');

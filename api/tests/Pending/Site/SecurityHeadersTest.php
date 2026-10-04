@@ -7,6 +7,8 @@ namespace Tests\Feature\Site;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+// Pending until the cut-over (docs/plan.md, step 13): the Nuxt pages get their security headers there, with a CSP nonce for
+// the theme script. Laravel's SecurityHeaders only covers its own responses; security.txt is tested in Feature/Site.
 final class SecurityHeadersTest extends TestCase
 {
     use RefreshDatabase;
@@ -23,11 +25,5 @@ final class SecurityHeadersTest extends TestCase
         $nonce = preg_match("/'nonce-([A-Za-z0-9]+)'/", $policy, $match) === 1 ? $match[1] : '';
         $response->assertSee('<script nonce="'.$nonce.'">', false);
         $this->assertNotSame($policy, (string) $this->get('/')->headers->get('Content-Security-Policy'));
-    }
-
-    public function test_status_pages_can_be_embedded_and_security_txt_says_where_to_report(): void
-    {
-        $this->get('/.well-known/security.txt')->assertOk()->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
-            ->assertSee('Contact: mailto:'.config('legal.contact_email'))->assertSee('Expires: '.now('UTC')->addYear()->format('Y-m-d'));
     }
 }
