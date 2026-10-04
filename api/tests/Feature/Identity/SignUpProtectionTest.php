@@ -33,8 +33,8 @@ final class SignUpProtectionTest extends TestCase
      */
     public function test_the_hidden_field_stops_bots(): void
     {
-        $this->get('/register')->assertOk()->assertSee('name="website"', false)->assertDontSee('cf-turnstile');
-        $this->post('/register', $this->form('bot@example.test', ['website' => 'https://spam.test']))->assertSessionHasErrors('email');
+        $this->getJson('/api/app/auth/options')->assertOk()->assertJsonPath('turnstileSiteKey', null);
+        $this->postJson('/api/app/auth/register', $this->form('bot@example.test', ['website' => 'https://spam.test']))->assertJsonValidationErrors('email');
         $this->assertDatabaseMissing(User::class, ['email' => 'bot@example.test']);
     }
 
@@ -46,18 +46,18 @@ final class SignUpProtectionTest extends TestCase
     public function test_one_address_can_sign_up_five_times_an_hour(): void
     {
         foreach (range(1, 5) as $n) {
-            $this->post('/register', $this->form("person{$n}@example.test"))->assertSessionHasNoErrors();
-            $this->post('/logout');
+            $this->postJson('/api/app/auth/register', $this->form("person{$n}@example.test"))->assertCreated();
+            $this->postJson('/api/app/auth/logout');
         }
-        $this->post('/register', $this->form('person6@example.test'))->assertSessionHasErrors('email');
+        $this->postJson('/api/app/auth/register', $this->form('person6@example.test'))->assertJsonValidationErrors('email');
         $this->assertDatabaseMissing(User::class, ['email' => 'person6@example.test']);
 
         $this->travel(61)->minutes();
-        $this->post('/register', $this->form('person6@example.test'))->assertSessionHasNoErrors();
+        $this->postJson('/api/app/auth/register', $this->form('person6@example.test'))->assertCreated();
     }
 
     /**
-     * Check that when Turnstile is set up, the widget shows, the CSP allows it and a sign-up needs a good token.
+     * Check that when Turnstile is set up, the sign-up page gets its site key and a sign-up needs a good token.
      *
      * @return void
      */
@@ -66,12 +66,11 @@ final class SignUpProtectionTest extends TestCase
         config(['services.turnstile.site_key' => 'site-key', 'services.turnstile.secret_key' => 'secret-key']);
         Http::fake(['challenges.cloudflare.com/*' => fn (Request $request) => Http::response(['success' => $request['response'] === 'good-token'])]);
 
-        $page = $this->get('/register')->assertOk()->assertSee('data-sitekey="site-key"', false);
-        $this->assertStringContainsString('https://challenges.cloudflare.com', (string) $page->headers->get('Content-Security-Policy'));
+        $this->getJson('/api/app/auth/options')->assertOk()->assertJsonPath('turnstileSiteKey', 'site-key');
 
-        $this->post('/register', $this->form('a@example.test'))->assertSessionHasErrors('email');
-        $this->post('/register', $this->form('a@example.test', ['cf-turnstile-response' => 'bad-token']))->assertSessionHasErrors('email');
-        $this->post('/register', $this->form('a@example.test', ['cf-turnstile-response' => 'good-token']))->assertSessionHasNoErrors();
+        $this->postJson('/api/app/auth/register', $this->form('a@example.test'))->assertJsonValidationErrors('email');
+        $this->postJson('/api/app/auth/register', $this->form('a@example.test', ['cf-turnstile-response' => 'bad-token']))->assertJsonValidationErrors('email');
+        $this->postJson('/api/app/auth/register', $this->form('a@example.test', ['cf-turnstile-response' => 'good-token']))->assertCreated();
         $this->assertDatabaseHas(User::class, ['email' => 'a@example.test']);
         Http::assertSent(fn (Request $request) => $request['secret'] === 'secret-key');
     }

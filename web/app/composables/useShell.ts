@@ -25,4 +25,7 @@ export async function refreshShell(): Promise<void> {
     }
     const read = useApiReader();
     shell.value = await read<Shell>('/shell', shellQuery(useRoute())).catch(() => shell.value);
+    if (shell.value) {
+        await setLocale(shell.value.locale);
+    }
 }

@@ -68,5 +68,8 @@ New for v3:
    8. **Analytics**, 9. **Status pages**, 10. **Public site** (home, services, pricing, compare, changelog, roadmap,
    help, API docs, legal; SEO), 11. **Recipes, notifications, assistant, onboarding**, 12. **Audit** (off).
 13. **Cut-over**: deploy v3 next to v2, switch Caddy, retire v2.
+    Before it: security headers for the Nuxt pages (CSP with a nonce for the theme script, HSTS, frame and referrer
+    policies; Laravel's SecurityHeaders only covers its own responses), and Caddy routes for `POST` to the email
+    links that mail clients unsubscribe with in one click (`laravelPosts` in `web/server/middleware/laravel.ts`).
 
 Each slice moves the area's backend (JSON controllers, requests, tests rewritten as API tests) and its pages together.

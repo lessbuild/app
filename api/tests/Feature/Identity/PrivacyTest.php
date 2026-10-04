@@ -25,6 +25,9 @@ final class PrivacyTest extends TestCase
 
     private const CONFIRMED = ['auth.password_confirmed_at' => PHP_INT_MAX];
 
+    /**
+     * The export holds the person's data but no secrets.
+     */
     public function test_the_export_contains_personal_data_but_no_secrets(): void
     {
         $user = User::factory()->create(['name' => 'Ada Lovelace', 'password' => 'secret-password-123']);
@@ -34,7 +37,7 @@ final class PrivacyTest extends TestCase
         app(CreateApiToken::class)->handle($user, Account::query()->sole(), new CreateApiTokenData('CI', [ApiScope::AccountRead], 30));
         PasswordChanged::dispatch($user);
 
-        $response = $this->actingAs($user)->get('/settings/privacy/export')->assertOk()->assertDownload();
+        $response = $this->actingAs($user)->get('/api/app/settings/privacy/export')->assertOk()->assertDownload();
         $json = $response->streamedContent();
         $data = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
 
@@ -49,6 +52,9 @@ final class PrivacyTest extends TestCase
         }
     }
 
+    /**
+     * Deleting a user removes their solo accounts, leaves shared ones and erases their personal data.
+     */
     public function test_deleting_a_user_removes_solo_accounts_leaves_shared_ones_and_erases_personal_data(): void
     {
         $user = User::factory()->create(['email' => 'ada@example.com']);
@@ -60,13 +66,13 @@ final class PrivacyTest extends TestCase
         app(CreateApiToken::class)->handle($user, $shared, new CreateApiTokenData('CI', [ApiScope::AccountRead], 30));
         PasswordChanged::dispatch($user);
 
-        $this->actingAs($user)->get('/settings/privacy')->assertOk()->assertSee('Solo')->assertSee('Shared')->assertSee(__('Delete my user account'));
+        $this->actingAs($user)->getJson('/api/app/settings/privacy')->assertOk()->assertJsonPath('toDelete', ['Solo'])->assertJsonPath('toLeave', ['Shared'])->assertJsonPath('blockedBy', []);
 
-        $this->actingAs($user)->withSession(self::CONFIRMED)->delete('/settings/privacy/user', ['confirm_email' => 'wrong@example.com'])->assertSessionHasErrorsIn('deleteUser', 'confirm_email');
+        $this->actingAs($user)->withSession(self::CONFIRMED)->deleteJson('/api/app/settings/privacy/user', ['confirm_email' => 'wrong@example.com'])->assertJsonValidationErrors('confirm_email');
         $this->assertNotNull($user->fresh());
 
-        $this->actingAs($user)->withSession(self::CONFIRMED)->delete('/settings/privacy/user', ['confirm_email' => 'ADA@example.com'])
-            ->assertRedirect('/login')
+        $this->actingAs($user)->withSession(self::CONFIRMED)->deleteJson('/api/app/settings/privacy/user', ['confirm_email' => 'ADA@example.com'])
+            ->assertOk()->assertJsonPath('redirect', '/login')
             ->assertCookieExpired(auth()->guard('web')->getRecallerName());
 
         $this->assertGuest();
@@ -81,24 +87,30 @@ final class PrivacyTest extends TestCase
         $this->assertSame('Left the account', $left->action->describe($left->context ?? []));
     }
 
+    /**
+     * The only owner of a shared account can't delete their user.
+     */
     public function test_a_sole_owner_of_a_shared_account_cannot_delete_their_user(): void
     {
         $user = User::factory()->create();
         $account = Account::factory()->withMember($user)->create(['name' => 'Team']);
         $account->memberships()->forceCreate(['user_id' => User::factory()->create()->id, 'role' => AccountRole::Member]);
 
-        $this->actingAs($user)->get('/settings/privacy')->assertOk()->assertSee('Team')->assertDontSee(__('Delete my user account'));
-        $this->actingAs($user)->withSession(self::CONFIRMED)->delete('/settings/privacy/user', ['confirm_email' => $user->email])->assertSessionHasErrorsIn('deleteUser', 'confirm_email');
+        $this->actingAs($user)->getJson('/api/app/settings/privacy')->assertOk()->assertJsonPath('blockedBy', ['Team']);
+        $this->actingAs($user)->withSession(self::CONFIRMED)->deleteJson('/api/app/settings/privacy/user', ['confirm_email' => $user->email])->assertJsonValidationErrors('confirm_email');
 
         $this->assertNotNull($user->fresh());
         $this->assertNotNull($account->fresh());
     }
 
+    /**
+     * Deleting a user needs a recent confirmation of who they are.
+     */
     public function test_deletion_needs_a_recent_password_confirmation(): void
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->delete('/settings/privacy/user', ['confirm_email' => $user->email])->assertRedirect('/user/confirm-password');
+        $this->actingAs($user)->deleteJson('/api/app/settings/privacy/user', ['confirm_email' => $user->email])->assertStatus(423);
         $this->assertNotNull($user->fresh());
     }
 }

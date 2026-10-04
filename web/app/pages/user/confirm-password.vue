@@ -16,6 +16,7 @@ function back() {
 
 <template>
     <AuthFrame :eyebrow="t('Account security')" :heading="t('Confirm it’s you')" :description="t('This is a sensitive action. Confirm your identity to continue; you won’t be asked again for a while.')">
+        <Alert v-if="typeof route.query.social_error === 'string'" tone="danger" role="alert" class="mb-5">{{ route.query.social_error }}</Alert>
         <ConfirmIdentityOptions :return-to="redirect" @confirmed="back" />
     </AuthFrame>
 </template>

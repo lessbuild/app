@@ -68,7 +68,8 @@ export function useApiReader() {
 
 /**
  * Where to go when the API won't give a page its data: signed out (or the session expired) to sign in and back;
- * Laravel's check sending the person somewhere first (409) there; not theirs to see as a 404.
+ * Laravel's check sending the person somewhere first (409) there; a page that needs a recent confirmation (423) to
+ * confirm and back; not theirs to see as a 404.
  */
 export function apiErrorNavigation(error: unknown, to: { fullPath: string }) {
     if (error instanceof ApiError) {
@@ -77,6 +78,10 @@ export function apiErrorNavigation(error: unknown, to: { fullPath: string }) {
         }
         if (error.status === 409 && error.payload?.redirect) {
             return navigateTo(local(error.payload.redirect));
+        }
+        if (error.status === 423) {
+            // The page needs a recent confirmation of who the person is: confirm, then come back.
+            return navigateTo(`/user/confirm-password?redirect=${encodeURIComponent(to.fullPath)}`);
         }
         if (error.status === 403 || error.status === 404) {
             return abortNavigation(createError({ statusCode: 404, statusMessage: 'Not found', fatal: true }));
@@ -102,7 +107,7 @@ export async function useApi<T>(path: MaybeRefOrGetter<string>, query?: MaybeRef
             return;
         }
         const cause = (problem as { cause?: unknown }).cause ?? problem;
-        if (cause instanceof ApiError && (cause.status === 401 || cause.status === 419 || cause.status === 409)) {
+        if (cause instanceof ApiError && [401, 409, 419, 423].includes(cause.status)) {
             await apiErrorNavigation(cause, route);
             return;
         }

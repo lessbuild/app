@@ -20,6 +20,9 @@ final class GettingStartedEmailsTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * People are welcomed when they confirm their address.
+     */
     public function test_people_are_welcomed_when_they_confirm_their_address(): void
     {
         Notification::fake();
@@ -33,6 +36,9 @@ final class GettingStartedEmailsTest extends TestCase
         Notification::assertNotSentTo($quiet, Welcome::class);
     }
 
+    /**
+     * One reminder names the next step to people who stalled.
+     */
     public function test_one_reminder_names_the_next_step_to_people_who_stalled(): void
     {
         Notification::fake();
@@ -52,18 +58,20 @@ final class GettingStartedEmailsTest extends TestCase
         Notification::assertNothingSentTo($optedOut);
     }
 
+    /**
+     * The signed link stops them after a confirmation and settings turn them back on.
+     */
     public function test_the_signed_link_stops_them_after_a_confirmation_and_settings_turn_them_back_on(): void
     {
         $user = $this->person(daysAgo: 3);
         $link = URL::signedRoute('getting-started-emails.stop', ['user' => $user->id]);
 
-        $this->get($link)->assertOk()->assertSee('Stop getting-started emails?');
         $this->assertTrue($user->refresh()->getting_started_emails);
-        $this->post($link)->assertOk()->assertSee('You won’t get getting-started emails again.', false);
+        $this->postJson($link)->assertOk()->assertJsonPath('message', __('You won’t get getting-started emails again. You can turn them back on in your notification settings.'));
         $this->assertFalse($user->refresh()->getting_started_emails);
-        $this->post(route('getting-started-emails.stop.store', ['user' => $user->id]))->assertForbidden();
+        $this->postJson(route('getting-started-emails.stop.store', ['user' => $user->id]))->assertForbidden();
 
-        $this->actingAs($user)->put('/settings/notifications/getting-started', ['getting_started_emails' => '1'])->assertRedirect('/settings/notifications');
+        $this->actingAs($user)->putJson('/api/app/settings/notifications/getting-started', ['getting_started_emails' => '1'])->assertOk()->assertJsonPath('redirect', '/settings/notifications');
         $this->assertTrue($user->refresh()->getting_started_emails);
     }
 

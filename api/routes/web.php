@@ -63,6 +63,9 @@ Route::get('/sso/callback', App\Http\Controllers\Auth\SsoCallbackController::cla
 Route::post('/sso/saml/acs', App\Http\Controllers\Auth\ConsumeSamlResponseController::class)->middleware('throttle:20,1')->name('sso.saml.acs');
 Route::get('/sso/saml/finish', App\Http\Controllers\Auth\FinishSamlSignInController::class)->middleware('throttle:20,1')->name('sso.saml.finish');
 Route::get('/sso/saml/{account}/metadata', App\Http\Controllers\Auth\ShowSamlMetadataController::class)->whereUlid('account')->middleware('throttle:60,1')->name('sso.saml.metadata');
+// The signed link in getting-started emails: one-click unsubscribe posts here (the app shows the page for a GET).
+Route::post('/email/getting-started/{user}/stop', App\Http\Controllers\Onboarding\StopGettingStartedEmailsController::class)->whereUlid('user')->middleware(['signed', 'throttle:20,1'])->name('getting-started-emails.stop.store');
+
 Route::get('/r/{code}', App\Http\Controllers\Referrals\ShowReferralController::class)->where('code', '[A-Za-z0-9]{6,16}')->middleware('throttle:60,1')->name('referrals.show');
 
 Route::middleware(['auth', 'verified', 'account.security'])->group(function (): void {

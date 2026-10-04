@@ -48,6 +48,8 @@ use App\Http\Controllers\Account\UpdateProviderController;
 use App\Http\Controllers\Account\UpdateSamlSettingsController;
 use App\Http\Controllers\Account\UpdateScimSettingsController;
 use App\Http\Controllers\Account\UpdateWebhookEndpointController;
+use App\Http\Controllers\Auth\ConnectProviderController;
+use App\Http\Controllers\Auth\DisconnectProviderController;
 use App\Http\Controllers\Auth\ShowCurrentUserController;
 use App\Http\Controllers\Auth\ShowSignInOptionsController;
 use App\Http\Controllers\Auth\StartSsoSignInController;
@@ -77,6 +79,23 @@ use App\Http\Controllers\Projects\StoreProjectTemplateController;
 use App\Http\Controllers\Projects\StoreSampleProjectController;
 use App\Http\Controllers\Projects\UpdateProjectController;
 use App\Http\Controllers\Projects\VerifyDomainController;
+use App\Http\Controllers\Settings\DeletePushDeviceController;
+use App\Http\Controllers\Settings\DeleteSshKeyController;
+use App\Http\Controllers\Settings\DeleteUserController;
+use App\Http\Controllers\Settings\ExportPersonalDataController;
+use App\Http\Controllers\Settings\SendTestPushController;
+use App\Http\Controllers\Settings\ShowNotificationSettingsController;
+use App\Http\Controllers\Settings\ShowPrivacyController;
+use App\Http\Controllers\Settings\ShowProfileController;
+use App\Http\Controllers\Settings\ShowSecurityController;
+use App\Http\Controllers\Settings\ShowSessionsController;
+use App\Http\Controllers\Settings\SignOutBrowserController;
+use App\Http\Controllers\Settings\SignOutOtherBrowsersController;
+use App\Http\Controllers\Settings\StorePushDeviceController;
+use App\Http\Controllers\Settings\StoreSshKeyController;
+use App\Http\Controllers\Settings\UpdateGettingStartedEmailsController;
+use App\Http\Controllers\Settings\UpdateNotificationSettingsController;
+use App\Http\Controllers\Settings\UpdateWeeklyReportEmailsController;
 use App\Http\Controllers\Shell\ShowShellController;
 use Illuminate\Support\Facades\Route;
 
@@ -92,6 +111,30 @@ Route::post('/auth/confirm-with/{provider}', App\Http\Controllers\Auth\ConfirmWi
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/invitations/{token}', AcceptInvitationController::class)->where('token', '[A-Za-z0-9]{20,100}')->middleware('throttle:10,1')->name('invitations.accept');
+});
+
+// Personal settings: the person's own profile, security, sessions, notifications and data. Outside the account's
+// security rules, so someone a rule blocks can always put things right.
+Route::middleware(['auth', 'verified'])->group(function (): void {
+    Route::get('/settings/profile', ShowProfileController::class)->name('settings.profile');
+    Route::get('/settings/security', ShowSecurityController::class)->middleware('password.confirm')->name('settings.security');
+    Route::post('/settings/ssh-keys', StoreSshKeyController::class)->middleware(['password.confirm', 'throttle:20,1'])->name('settings.ssh-keys.store');
+    Route::delete('/settings/ssh-keys/{key}', DeleteSshKeyController::class)->whereNumber('key')->middleware('password.confirm')->name('settings.ssh-keys.destroy');
+    Route::post('/settings/security/social/{provider}', ConnectProviderController::class)->middleware(['password.confirm', 'throttle:10,1'])->name('social.connect');
+    Route::delete('/settings/security/social/{provider}', DisconnectProviderController::class)->middleware('password.confirm')->name('social.disconnect');
+    Route::get('/settings/sessions', ShowSessionsController::class)->name('settings.sessions');
+    Route::delete('/settings/sessions', SignOutOtherBrowsersController::class)->name('settings.sessions.destroy-others');
+    Route::delete('/settings/sessions/{session}', SignOutBrowserController::class)->name('settings.sessions.destroy');
+    Route::get('/settings/notifications', ShowNotificationSettingsController::class)->name('settings.notifications');
+    Route::put('/settings/notifications', UpdateNotificationSettingsController::class)->name('settings.notifications.update');
+    Route::put('/settings/notifications/getting-started', UpdateGettingStartedEmailsController::class)->name('settings.getting-started-emails.update');
+    Route::put('/settings/notifications/weekly-report', UpdateWeeklyReportEmailsController::class)->name('settings.weekly-report-emails.update');
+    Route::post('/settings/push-devices', StorePushDeviceController::class)->middleware('throttle:20,1')->name('settings.push-devices.store');
+    Route::post('/settings/push-devices/test', SendTestPushController::class)->middleware('throttle:6,1')->name('settings.push-devices.test');
+    Route::delete('/settings/push-devices/{device}', DeletePushDeviceController::class)->whereNumber('device')->name('settings.push-devices.destroy');
+    Route::get('/settings/privacy', ShowPrivacyController::class)->name('settings.privacy');
+    Route::get('/settings/privacy/export', ExportPersonalDataController::class)->middleware('throttle:6,1')->name('settings.privacy.export');
+    Route::delete('/settings/privacy/user', DeleteUserController::class)->middleware('password.confirm')->name('settings.privacy.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'account.security'])->group(function (): void {

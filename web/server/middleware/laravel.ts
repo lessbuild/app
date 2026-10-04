@@ -42,9 +42,17 @@ function pattern(path: string): RegExp {
 
 const patterns = laravelPaths.map(pattern);
 
+/**
+ * Pages whose POST is Laravel's: signed links in emails that mail clients unsubscribe with in one click (RFC 8058),
+ * while a GET of the same address shows the page here.
+ */
+export const laravelPosts = ['/email/getting-started/*/stop', '/status/subscriptions/*/unsubscribe/*', '/status/webhooks/*/unsubscribe/*'];
+
+const postPatterns = laravelPosts.map(pattern);
+
 export default defineEventHandler((event) => {
     const path = event.path.split('?')[0] ?? '/';
-    if (patterns.some((pattern) => pattern.test(path))) {
+    if (patterns.some((pattern) => pattern.test(path)) || (event.method === 'POST' && postPatterns.some((pattern) => pattern.test(path)))) {
         const host = getRequestHeader(event, 'x-forwarded-host') ?? getRequestHeader(event, 'host') ?? '';
         const proto = getRequestHeader(event, 'x-forwarded-proto') ?? getRequestProtocol(event);
 

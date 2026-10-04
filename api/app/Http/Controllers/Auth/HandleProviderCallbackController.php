@@ -115,7 +115,8 @@ final class HandleProviderCallbackController
     {
         $intent = $this->intents->pull($request, $user, $provider);
         $confirming = ($intent['type'] ?? null) === ProviderIntents::CONFIRM;
-        $failed = fn (string $message): RedirectResponse => to_route($confirming ? 'password.confirm' : 'settings.security')->withErrors(['social' => $message], 'social');
+        // The app's pages read what went wrong from the address (they don't see Laravel's flashed errors).
+        $failed = fn (string $message): RedirectResponse => to_route($confirming ? 'password.confirm' : 'settings.security', ['social_error' => $message]);
 
         if ($intent === null || ! $intent['valid']) {
             return $failed(__('That request expired. Please start again.'));
@@ -144,6 +145,7 @@ final class HandleProviderCallbackController
             return $failed($violation->getMessage());
         }
 
-        return to_route('settings.security')->with('status', $connected ? 'social-connected' : 'social-already-connected');
+        // The settings page says which, from the address.
+        return to_route('settings.security', ['connected' => $connected ? 'new' : 'already']);
     }
 }

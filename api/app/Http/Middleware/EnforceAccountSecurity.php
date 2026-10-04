@@ -24,7 +24,11 @@ final class EnforceAccountSecurity
      *
      * @var list<string>
      */
-    private const ALWAYS_ALLOWED = ['logout', 'accounts.switch', 'sso.*', 'settings.*', 'two-factor.*', 'password.confirm*', 'passkeys.*', 'user-password.*', 'user-profile-information.*'];
+    private const ALWAYS_ALLOWED = [
+        'logout', 'accounts.switch', 'sso.*', 'settings.*', 'two-factor.*', 'password.confirm*', 'passkey.*', 'user-password.*', 'user-profile-information.*',
+        // The same, as the app's API names them (routes/app.php, under app.).
+        'app.accounts.switch', 'app.settings.*', 'app.auth.*',
+    ];
 
     /**
      * Create a new EnforceAccountSecurity instance.
