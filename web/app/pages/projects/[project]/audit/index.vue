@@ -24,7 +24,7 @@ useHead({ title: () => t('Audits') });
         </p>
 
         <EmptyState v-if="data.audits.length === 0" icon="search" :title="t('No audits yet')" :description="t('Add your site and a few competitors. A visitor tries real tasks on each, and the report shows what to improve first.')">
-            <UiButton v-if="data.plan.canManage" variant="primary" :to="{ query: { dialog: 'new-audit' } }">{{ t('Set up your first audit') }}</UiButton>
+            <template #action><UiButton v-if="data.plan.canManage" variant="primary" :to="{ query: { dialog: 'new-audit' } }">{{ t('Set up your first audit') }}</UiButton></template>
         </EmptyState>
         <ul v-else class="grid gap-3 md:grid-cols-2">
             <li v-for="audit in data.audits" :key="audit.id">

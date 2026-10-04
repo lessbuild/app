@@ -59,7 +59,7 @@ const exportFields = computed(() => ({ days: period.value && !period.value.custo
         </ProjectHeader>
 
         <EmptyState v-if="!site" icon="view-grid" :title="t('Add the website you want to understand')" :description="t('Create a site, add one small script, and your first pageview shows up here as soon as it’s processed.')">
-            <UiButton v-if="data.canManage" variant="primary" :to="{ query: { ...route.query, dialog: 'add-site' } }">{{ t('Add a site') }}</UiButton>
+            <template #action><UiButton v-if="data.canManage" variant="primary" :to="{ query: { ...route.query, dialog: 'add-site' } }">{{ t('Add a site') }}</UiButton></template>
         </EmptyState>
         <template v-else>
             <form class="ui-card grid gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5 lg:items-end" role="search" @submit.prevent="apply">

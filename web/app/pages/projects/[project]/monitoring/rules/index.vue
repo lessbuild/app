@@ -20,7 +20,7 @@ const tones: Record<string, 'danger' | 'success' | 'neutral' | 'warning'> = { br
         </ProjectHeader>
         <SectionNav section="alerts" :project-id="project.id" />
         <EmptyState v-if="data.rules.length === 0" icon="bell" :title="t('No alert rules yet')" :description="t('Add a rule to be told when errors rise, requests slow down or a metric crosses a line.')">
-            <UiButton v-if="data.canManage" variant="primary" :to="`/projects/${project.id}/monitoring/rules/create`">{{ t('Add a rule') }}</UiButton>
+            <template #action><UiButton v-if="data.canManage" variant="primary" :to="`/projects/${project.id}/monitoring/rules/create`">{{ t('Add a rule') }}</UiButton></template>
         </EmptyState>
         <section v-else class="ui-card overflow-hidden">
             <ul class="divide-y divide-line" :aria-label="t('Alert rules')">

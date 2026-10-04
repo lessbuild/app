@@ -42,7 +42,7 @@ function apply() {
         <SavedViews page="monitoring.issues" :keys="['environment', 'ownership', 'q', 'status']" :project="project.id" />
 
         <EmptyState v-if="data.issues.length === 0" icon="check-circle" :title="t('No issues here')" :description="t('Exceptions your apps send become issues. Connect an app on the Setup page to start collecting them.')">
-            <UiButton :to="`/projects/${project.id}/monitoring/setup`">{{ t('Open setup') }}</UiButton>
+            <template #action><UiButton :to="`/projects/${project.id}/monitoring/setup`">{{ t('Open setup') }}</UiButton></template>
         </EmptyState>
         <template v-else>
             <section class="ui-card overflow-hidden">

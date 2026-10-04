@@ -21,7 +21,7 @@ const state = (site: SiteRow) => (!site.verified ? { tone: 'warning' as const, l
         </ProjectHeader>
 
         <EmptyState v-if="data.sites.length === 0" icon="view-grid" :title="t('Add your first site')" :description="t('You’ll get a one-line snippet to paste into your pages. No cookies, no personal data.')">
-            <UiButton v-if="data.canManage" variant="primary" :to="{ query: { dialog: 'add-site' } }">{{ t('Add a site') }}</UiButton>
+            <template #action><UiButton v-if="data.canManage" variant="primary" :to="{ query: { dialog: 'add-site' } }">{{ t('Add a site') }}</UiButton></template>
         </EmptyState>
         <section v-else class="ui-card overflow-hidden">
             <ul class="divide-y divide-line" :aria-label="t('Sites')">
