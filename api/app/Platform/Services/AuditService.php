@@ -62,7 +62,7 @@ final class AuditService implements PlatformService
     public function navItems(string $projectId): array
     {
         return [
-            new ServiceNavItem(__('Audits'), url("/projects/{$projectId}/audit"), 'audit.*'),
+            new ServiceNavItem(__('Audits'), route('audit.index', $projectId), 'audit.*'),
         ];
     }
 

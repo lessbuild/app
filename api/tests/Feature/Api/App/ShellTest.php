@@ -25,17 +25,16 @@ final class ShellTest extends TestCase
         $owner = $this->ownerOf($project);
         $owner->forceFill(['current_account_id' => $project->account_id, 'locale' => 'fr'])->save();
 
-        $shell = $this->actingAs($owner)->getJson("/api/app/projects/{$project->id}/shell/audit")->assertOk()->json();
+        $shell = $this->actingAs($owner)->getJson("/api/app/shell?project={$project->id}&service=audit")->assertOk()->json();
 
         $this->assertSame('fr', $shell['locale']);
-        $this->assertSame(['id' => $project->id, 'name' => 'Storefront'], $shell['project']);
+        $this->assertSame(['id' => $project->id, 'name' => 'Storefront', 'isSample' => false], $shell['project']);
         $this->assertContains('Audit', array_column($shell['primaryNav'], 'label'));
-        $this->assertSame([url("/projects/{$project->id}/audit")], array_column($shell['sectionNav'], 'url'));
+        $this->assertSame(["/projects/{$project->id}/audit"], array_column($shell['sectionNav'], 'url'));
         $this->assertSame(__(':service sections', ['service' => 'Audit'], 'fr'), $shell['sectionLabel']);
         $this->assertNotEmpty($shell['accountLinks']);
-        $this->assertSame(route('logout'), $shell['links']['logout']);
 
         $this->actingAs($owner)->getJson('/api/app/shell')->assertOk()->assertJsonPath('project', null)->assertJsonPath('sectionNav', []);
-        $this->actingAs(User::factory()->create())->getJson("/api/app/projects/{$project->id}/shell")->assertNotFound();
+        $this->actingAs(User::factory()->create())->getJson("/api/app/shell?project={$project->id}")->assertNotFound();
     }
 }

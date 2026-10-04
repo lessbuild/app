@@ -125,6 +125,9 @@ Route::get('/projects/{project}/monitoring/status-pages/create', FrontendPageCon
 Route::get('/projects/{project}/monitoring/status-pages/{page}', FrontendPageController::class)->name('monitoring.status-pages.show');
 Route::get('/projects/{project}/monitoring/status-pages/{page}/edit', FrontendPageController::class)->name('monitoring.status-pages.edit');
 Route::get('/projects/{project}/monitoring/traces/{trace}', FrontendPageController::class)->name('monitoring.traces.show');
+Route::get('/projects/{project}/audit', FrontendPageController::class)->name('audit.index');
+Route::get('/projects/{project}/audit/{siteAudit}', FrontendPageController::class)->name('audit.show');
+Route::get('/projects/{project}/audit/runs/{siteAuditRun}', FrontendPageController::class)->name('audit.runs.show');
 Route::get('/projects/{project}/security', FrontendPageController::class)->name('security.overview');
 Route::get('/projects/{project}/security/access', FrontendPageController::class)->name('security.access');
 Route::get('/projects/{project}/security/attacks', FrontendPageController::class)->name('security.attacks');

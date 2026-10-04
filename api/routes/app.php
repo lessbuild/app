@@ -443,6 +443,15 @@ use App\Http\Controllers\Site\ShowLegalPageController;
 use App\Http\Controllers\Site\ShowPricingController;
 use App\Http\Controllers\Site\ShowRoadmapController;
 use App\Http\Controllers\Site\ShowSiteFrameController;
+use App\Http\Controllers\SiteAudits\DeleteSiteAuditController;
+use App\Http\Controllers\SiteAudits\ListSiteAuditsController;
+use App\Http\Controllers\SiteAudits\ShowSiteAuditController;
+use App\Http\Controllers\SiteAudits\ShowSiteAuditFileController;
+use App\Http\Controllers\SiteAudits\ShowSiteAuditReportController;
+use App\Http\Controllers\SiteAudits\StartSiteAuditRunController;
+use App\Http\Controllers\SiteAudits\StoreSiteAuditController;
+use App\Http\Controllers\SiteAudits\SuggestCompetitorsController;
+use App\Http\Controllers\SiteAudits\UpdateSiteAuditController;
 use App\Http\Controllers\StatusPages\ConfirmStatusSubscriptionController;
 use App\Http\Controllers\StatusPages\ResolveStatusPageDomainController;
 use App\Http\Controllers\StatusPages\ShowPublicStatusPageController;
@@ -1058,5 +1067,21 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::post('/sites/{site}/exports', RequestExportController::class)->whereNumber('site')->middleware(['can:export,site', 'throttle:10,1'])->name('exports.store');
         Route::get('/exports/{token}', ShowExportController::class)->name('exports.show');
         Route::get('/exports/{token}/download', DownloadExportController::class)->name('exports.download');
+    });
+});
+
+// Audit: simulated visitors walk a site and its competitors and rate the flows (switched off until the bigger server;
+// config site_audits.enabled). Audits and runs belong to the project; RouteBindingServiceProvider scopes both.
+Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{project}')->middleware('project.context')->group(function (): void {
+    Route::prefix('/audit')->middleware('service:audit')->name('audit.')->group(function (): void {
+        Route::get('/', ListSiteAuditsController::class)->name('index');
+        Route::post('/', StoreSiteAuditController::class)->middleware('throttle:20,1')->name('store');
+        Route::post('/competitor-suggestions', SuggestCompetitorsController::class)->middleware('throttle:10,1')->name('suggestions');
+        Route::get('/runs/{siteAuditRun}', ShowSiteAuditReportController::class)->whereNumber('siteAuditRun')->name('runs.show');
+        Route::get('/runs/{siteAuditRun}/files/{file}', ShowSiteAuditFileController::class)->whereNumber('siteAuditRun')->where('file', '[A-Za-z0-9-]{1,60}\\.(jpg|png)')->name('files');
+        Route::get('/{siteAudit}', ShowSiteAuditController::class)->whereNumber('siteAudit')->name('show');
+        Route::put('/{siteAudit}', UpdateSiteAuditController::class)->whereNumber('siteAudit')->middleware('throttle:30,1')->name('update');
+        Route::delete('/{siteAudit}', DeleteSiteAuditController::class)->whereNumber('siteAudit')->middleware('throttle:30,1')->name('destroy');
+        Route::post('/{siteAudit}/runs', StartSiteAuditRunController::class)->whereNumber('siteAudit')->middleware('throttle:10,1')->name('runs.store');
     });
 });

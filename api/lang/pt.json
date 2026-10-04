@@ -86,6 +86,7 @@
     ":app test email": "E-mail de teste do :app",
     ":app vs :other": ":app vs :other",
     ":app: :event — :environment": ":app: :event — :environment",
+    ":audit was deleted.": ":audit foi eliminado.",
     ":average★ from :count": ":average★ de :count",
     ":average★ from :count ratings": ":average★ de :count avaliações",
     ":browser on :system": ":browser em :system",

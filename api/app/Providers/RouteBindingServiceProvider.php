@@ -32,6 +32,8 @@ use App\Models\Repository;
 use App\Models\Server;
 use App\Models\ServerTerminalSession;
 use App\Models\ServiceLevelObjective;
+use App\Models\SiteAudit;
+use App\Models\SiteAuditRun;
 use App\Models\StatusPage;
 use App\Models\TelemetryEvent;
 use App\Models\User;
@@ -80,6 +82,8 @@ final class RouteBindingServiceProvider extends ServiceProvider
         'incident' => [Incident::class, 'project', ['monitoring.*']],
         'issue' => [Issue::class, 'project', ['monitoring.*']],
         'release' => [Release::class, 'project', ['monitoring.*']],
+        'siteAudit' => [SiteAudit::class, 'project', ['audit.*']],
+        'siteAuditRun' => [SiteAuditRun::class, 'project', ['audit.*']],
         'monitor' => [Monitor::class, 'environment', ['monitoring.*']],
         'rule' => [AlertRule::class, 'environment', ['monitoring.*']],
         'objective' => [ServiceLevelObjective::class, 'environment', ['monitoring.*']],

@@ -197,9 +197,10 @@ final class SiteAuditsTest extends TestCase
         $other = Project::factory()->create(['account_id' => $this->project->account_id]);
         $this->actingAs($this->owner)->getJson("/api/app/projects/{$other->id}/audit/{$id}")->assertNotFound();
         $this->app['auth']->forgetGuards();
-        $this->getJson($this->base)->assertUnauthorized();
+        // Like every project route in the API, a guest gets a 404 (the app sends signed-out people to sign in first).
+        $this->getJson($this->base)->assertNotFound();
 
-        $this->actingAs($this->owner)->deleteJson("{$this->base}/{$id}")->assertNoContent();
+        $this->actingAs($this->owner)->deleteJson("{$this->base}/{$id}")->assertJsonRedirect("/projects/{$this->project->id}/audit");
         $this->assertSame(0, SiteAudit::query()->count());
     }
 
