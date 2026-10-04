@@ -45,29 +45,24 @@ onBeforeUnmount(() => window.clearInterval(timer));
         </DataTable>
 
         <template v-if="data.canManage && data.options">
-            <template v-if="data.options.hosts.length === 0">
-                <UiDialog v-for="id in ['create-website', 'import-website']" :id="id" :key="id" :title="id === 'create-website' ? t('Create a website') : t('Import a website')">
-                    <EmptyState icon="server" :title="t('No app servers ready')" :description="t('Websites need an active app server with MySQL. Create one first.')">
-                        <template #action><UiButton variant="primary" :to="`/projects/${project.id}/infrastructure/servers?dialog=create-server`">{{ t('Create a server') }}</UiButton></template>
-                    </EmptyState>
-                </UiDialog>
-            </template>
-            <template v-else>
-                <FormDialog id="create-website" :title="t('Create a website')" :description="t('We set up the Caddy site, a MySQL database and user, and the .env file.')" :action="base" :submit="t('Create website')" size="large">
-                    <PlanLimitAlert billing-url="/account/billing" />
-                    <WebsiteFields :options="data.options" />
-                </FormDialog>
-                <FormDialog
-                    id="import-website"
-                    :title="t('Import a website')"
-                    :description="t('Adopt an application already in /var/www on an app server. Its files, Caddy site and database are left as they are.')"
-                    :action="`${base}/import`"
-                    :submit="t('Import website')"
-                    size="wide"
-                >
-                    <WebsiteImportFields :hosts="data.options.hosts" />
-                </FormDialog>
-            </template>
+            <CreateWebsiteDialog :project-id="project.id" :options="data.options" />
+            <CreateServerDialog :project-id="project.id" />
+            <UiDialog v-if="data.options.hosts.length === 0" id="import-website" :title="t('Import a website')">
+                <EmptyState icon="server" :title="t('No app servers ready')" :description="t('Websites need an active app server with MySQL. Create one first.')">
+                    <template #action><UiButton variant="primary" :to="{ query: { ...route.query, dialog: 'create-server' } }">{{ t('Create a server') }}</UiButton></template>
+                </EmptyState>
+            </UiDialog>
+            <FormDialog
+                v-else
+                id="import-website"
+                :title="t('Import a website')"
+                :description="t('Adopt an application already in /var/www on an app server. Its files, Caddy site and database are left as they are.')"
+                :action="`${base}/import`"
+                :submit="t('Import website')"
+                size="wide"
+            >
+                <WebsiteImportFields :hosts="data.options.hosts" />
+            </FormDialog>
         </template>
     </div>
 </template>

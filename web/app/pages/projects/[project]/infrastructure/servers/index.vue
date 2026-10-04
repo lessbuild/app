@@ -51,9 +51,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
         </DataTable>
 
         <template v-if="data.canManage">
-            <UiDialog id="create-server" :title="t('Create a server')" :description="t('The server provisions itself with the software its type needs. It takes about ten minutes.')" size="large">
-                <ServerCreateForm :project-id="project.id" />
-            </UiDialog>
+            <CreateServerDialog :project-id="project.id" />
             <FormDialog
                 id="import-server"
                 :title="t('Import a server')"

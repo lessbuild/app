@@ -136,7 +136,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
                 <h2 id="properties-heading" class="text-lg font-extrabold text-ink">{{ t('Custom property breakdown') }}</h2>
                 <p v-if="data.customProperties.length === 0" class="text-sm text-muted">
                     {{ t('List the property names to keep in the site’s settings, then send them with custom events, such as buildpusher.track(\'signup\', { plan: \'pro\' }).') }}
-                    <NuxtLink :to="`/projects/${project.id}/analytics/sites/${site.id}?dialog=site-settings`" class="ui-link">{{ t('Site settings') }}</NuxtLink>
+                    <NuxtLink :to="{ query: { ...route.query, dialog: 'site-settings' } }" class="ui-link">{{ t('Site settings') }}</NuxtLink>
                 </p>
                 <p v-else-if="result.values.length === 0" class="text-sm text-muted">{{ t('Choose an event and a property to see its values.') }}</p>
                 <DataTable v-else :caption="t('Values of :property on :event', { property: data.property ?? '', event: data.event ?? '' })" :framed="false">
@@ -291,5 +291,6 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
                 </DataTable>
             </section>
         </template>
+        <SiteSettingsDialog v-if="data.canManage && site" :project-id="project.id" :site-id="site.id" />
     </div>
 </template>

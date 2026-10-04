@@ -7,7 +7,6 @@ import type { EnvironmentPage } from '~/types/deploy';
  */
 const props = defineProps<{ page: EnvironmentPage; base: string }>();
 const { t, date } = useT();
-const scopes = computed(() => Object.entries(props.page.scopes).map(([value, label]) => ({ value, label })));
 const providers = computed(() => Object.entries(props.page.secretProviders).map(([value, label]) => ({ value, label })));
 const provider = ref<string | null>(providers.value[0]?.value ?? null);
 const scopeLabel = (scope: string) => props.page.scopes[scope] ?? scope;
@@ -58,22 +57,9 @@ const scopeLabel = (scope: string) => props.page.scopes[scope] ?? scope;
                 </ul>
                 <p v-else class="text-sm text-muted">{{ t('No variables yet.') }}</p>
                 <template v-if="page.canManage">
-                    <FormDialog
-                        id="add-variable"
-                        :title="t('Add a variable to :environment', { environment: page.environment.name })"
-                        :description="t('Saving a key that exists makes a new version of it. Secrets are encrypted and never shown again.')"
-                        :action="`${base}/variables`"
-                        :submit="t('Save variable')"
-                    >
+                    <AddVariableDialog :project-id="page.overview.project.id" :environment-id="page.environment.id" :page="page">
                         <template #trigger="{ open }"><div><UiButton @click="open"><Icon name="plus" class="h-4 w-4" />{{ t('Add a variable') }}</UiButton></div></template>
-                        <div class="grid items-start gap-4 sm:grid-cols-2">
-                            <InputField name="key" :label="t('Key')" placeholder="STRIPE_SECRET" maxlength="255" required autofocus class="font-mono" />
-                            <InputField name="value" :label="t('Value')" autocomplete="off" class="font-mono" />
-                            <SelectField name="scope" :label="t('Used for')" :options="scopes" />
-                            <InputField name="rotation_due_at" type="date" :label="t('Rotate by (optional)')" />
-                            <div class="sm:col-span-2"><CheckboxField name="is_secret" :label="t('Secret (hide the value)')" checked /></div>
-                        </div>
-                    </FormDialog>
+                    </AddVariableDialog>
                     <Disclosure :title="t('Replace all from a .env file')">
                         <ApiForm :action="`${base}/variables`" method="PUT" class="grid gap-3" :confirm="t('Every variable not listed is removed.')">
                             <TextareaField name="variables" :label="t('KEY=value lines')" rows="6" class="font-mono" :description="t('Every variable not listed is removed.')" />

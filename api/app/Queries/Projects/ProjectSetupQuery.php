@@ -70,7 +70,7 @@ final class ProjectSetupQuery
         return new SetupStep('provider', __('Connect a cloud provider'), __('Connect your cloud account (DigitalOcean, Hetzner, AWS, Google Cloud, Azure and more) so servers are created in it. Already have a server? You can import it instead.'),
             $provider !== null || $imported ? SetupStep::DONE : SetupStep::TODO,
             $provider !== null ? $this->text(':name is connected.', ['name' => $provider->name]) : ($imported ? $this->text('Using an imported server.') : null),
-            __('Add a provider'), route('account.providers', ['dialog' => 'add-provider', 'return' => route('projects.setup', $project, false)]), 'layers');
+            __('Add a provider'), route('account.providers', ['dialog' => 'add-provider', 'return' => route('projects.setup', $project, false)]), 'layers', 'add-provider');
     }
 
     /**
@@ -109,7 +109,7 @@ final class ProjectSetupQuery
         return match (true) {
             $active !== null => new SetupStep('website', __('Add a website'), __('A website on the server, with its domain and certificate.'), SetupStep::DONE, __(':website is live.', ['website' => $active->name]), __('Open it'), route('infrastructure.websites.show', [$project, $active->id]), 'globe'),
             $pending !== null => new SetupStep('website', __('Add a website'), __('A website on the server, with its domain and certificate.'), SetupStep::WORKING, __(':website is being set up.', ['website' => $pending->name]), __('Open it'), route('infrastructure.websites.show', [$project, $pending->id]), 'globe'),
-            default => new SetupStep('website', __('Add a website'), __('Choose the server and domain; point the domain’s DNS at the server and a certificate is issued for you.'), SetupStep::TODO, null, $label, $url, 'globe'),
+            default => new SetupStep('website', __('Add a website'), __('Choose the server and domain; point the domain’s DNS at the server and a certificate is issued for you.'), SetupStep::TODO, null, $label, $url, 'globe', $project->hasService('infrastructure') ? 'create-website' : null),
         };
     }
 
@@ -133,7 +133,8 @@ final class ProjectSetupQuery
         return new SetupStep('environment', __('Connect a repository and set up its environment'), __('Choose the repository, branch and website, then add the environment variables your app needs.'), SetupStep::DONE,
             trans_choice(':repository is connected, with :count variable.|:repository is connected, with :count variables.', $variables, ['repository' => $repository->name, 'count' => $variables]),
             $repository->environment_id !== null ? __('Add a variable') : __('Open it'),
-            $repository->environment_id !== null ? route('deploy.environments.show', [$project, $repository->environment_id, 'tab' => 'variables', 'dialog' => 'add-variable']) : route('deploy.repositories.show', [$project, $repository->id]), 'code');
+            $repository->environment_id !== null ? route('deploy.environments.show', [$project, $repository->environment_id, 'tab' => 'variables', 'dialog' => 'add-variable']) : route('deploy.repositories.show', [$project, $repository->id]), 'code',
+            $repository->environment_id !== null ? 'add-variable' : null, $repository->environment_id !== null ? (string) $repository->environment_id : null);
     }
 
     /**
@@ -189,7 +190,7 @@ final class ProjectSetupQuery
         return match (true) {
             $site?->last_event_at !== null => new SetupStep('analytics', __('Measure visits'), __('See how people find and use the site, without cookies.'), SetupStep::DONE, __(':site is counting visits.', ['site' => $site->name]), __('Open Analytics'), route('analytics.sites.show', [$project, $site->id]), 'chart'),
             $site !== null => new SetupStep('analytics', __('Measure visits'), __('See how people find and use the site, without cookies.'), SetupStep::WORKING, __('Waiting for the first visit to :site. Add its snippet to your pages.', ['site' => $site->name]), __('Get the snippet'), route('analytics.sites.show', [$project, $site->id]), 'chart'),
-            default => new SetupStep('analytics', __('Measure visits'), __('Add the site to Analytics and paste one line into your pages. No cookies, no personal data.'), SetupStep::TODO, null, $label, $url, 'chart'),
+            default => new SetupStep('analytics', __('Measure visits'), __('Add the site to Analytics and paste one line into your pages. No cookies, no personal data.'), SetupStep::TODO, null, $label, $url, 'chart', $project->hasService('analytics') ? 'add-site' : null),
         };
     }
 

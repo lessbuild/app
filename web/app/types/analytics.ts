@@ -56,3 +56,6 @@ export type SitePage = { overview: ProjectOverview; sites: SiteRow[]; site: Site
 
 /** One step of a funnel. */
 export type FunnelStep = { kind: string; match: string; value: string };
+
+/** A site's settings, as its settings form shows them. */
+export type SiteSettings = { name: string; domains: string[]; timezone: string; excludedPaths: string[]; excludedIps: string[]; customProperties: string[]; contentGroups: Array<{ name: string; pattern: string }>; blockedReferrers: string[] };

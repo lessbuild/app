@@ -39,6 +39,8 @@ final readonly class SetupStep
      * @param  string|null  $actionLabel  The button that starts or continues the step.
      * @param  string|null  $actionUrl  Where that button goes.
      * @param  string  $icon  The Signal icon for the step.
+     * @param  string|null  $dialog  The dialog the button opens over the guide instead, e.g. "add-provider".
+     * @param  string|null  $dialogFor  What that dialog is for, when it needs it (the environment of "add-variable").
      */
     public function __construct(
         public string $key,
@@ -49,6 +51,8 @@ final readonly class SetupStep
         public ?string $actionLabel = null,
         public ?string $actionUrl = null,
         public string $icon = 'check',
+        public ?string $dialog = null,
+        public ?string $dialogFor = null,
     ) {}
 
     /**

@@ -40,6 +40,8 @@ final class ChecklistTest extends TestCase
         $this->assertSame(['provider', 'server', 'website', 'environment', 'deploy', 'monitor', 'analytics'], array_column($steps->json('setup.steps'), 'key'));
         $this->assertSame('todo', $this->step($steps, 'provider')['state']);
         $this->assertStringContainsString('/account/providers', (string) $this->step($steps, 'provider')['actionUrl']);
+        $this->assertSame('add-provider', $this->step($steps, 'provider')['dialog']);
+        $this->assertNull($this->step($steps, 'website')['dialog'], 'Turning Infrastructure on comes first.');
 
         foreach (['infrastructure', 'deploy', 'monitoring', 'analytics'] as $service) {
             $project->enabledServices()->forceCreate(['service' => $service]);
@@ -50,12 +52,14 @@ final class ChecklistTest extends TestCase
         $this->assertSame(['done', 'Main cloud is connected.'], [$this->step($steps, 'provider')['state'], $this->step($steps, 'provider')['detail']]);
         $this->assertSame('working', $this->step($steps, 'server')['state']);
         $this->assertStringContainsString('web-1 is being set up', (string) $this->step($steps, 'server')['detail']);
+        $this->assertSame(['create-website', 'add-site'], [$this->step($steps, 'website')['dialog'], $this->step($steps, 'analytics')['dialog']]);
 
         $server->forceFill(['provisioning_status' => Server::STATUS_ACTIVE])->save();
         $website = Website::factory()->create(['server_id' => $server->id, 'environment_id' => $production->id, 'name' => 'Shop']);
         $repository = Repository::factory()->create(['project_id' => $project->id, 'website_id' => $website->id, 'environment_id' => $production->id]);
         $steps = $this->actingAs($owner)->getJson($guide);
         $this->assertSame('Shop is live.', $this->step($steps, 'website')['detail']);
+        $this->assertSame(['add-variable', (string) $production->id], [$this->step($steps, 'environment')['dialog'], $this->step($steps, 'environment')['dialogFor']]);
         $this->assertSame(4, count(array_filter($steps->json('setup.steps'), fn (array $step): bool => $step['state'] === 'done')));
 
         Build::factory()->succeeded()->create(['repository_id' => $repository->id]);
@@ -67,6 +71,25 @@ final class ChecklistTest extends TestCase
 
         $site->forceFill(['last_event_at' => now()])->save();
         $this->assertSame([], array_filter($this->actingAs($owner)->getJson($guide)->json('setup.steps'), fn (array $step): bool => $step['state'] !== 'done'));
+    }
+
+    /**
+     * A variable added from the setup guide's dialog goes back to the guide; anywhere else is ignored.
+     */
+    public function test_a_variable_added_from_the_setup_guide_goes_back_to_it(): void
+    {
+        $owner = User::factory()->create();
+        $account = Account::factory()->withMember($owner)->create();
+        $project = Project::factory()->for($account)->create();
+        $project->enabledServices()->forceCreate(['service' => 'deploy']);
+        $production = $project->environments()->where('slug', 'production')->firstOrFail();
+        $store = "/api/app/projects/{$project->id}/deploy/environments/{$production->id}/variables";
+        $variable = ['value' => 'x', 'scope' => 'runtime', 'is_secret' => '1'];
+
+        $this->actingAs($owner)->postJson($store, ['key' => 'FIRST', '_return' => "/projects/{$project->id}/setup"] + $variable)
+            ->assertOk()->assertJsonPath('redirect', url("/projects/{$project->id}/setup"));
+        $this->actingAs($owner)->postJson($store, ['key' => 'SECOND', '_return' => 'https://evil.example/'] + $variable)
+            ->assertOk()->assertJsonPath('redirect', "/projects/{$project->id}/deploy/environments/{$production->id}?tab=variables");
     }
 
     /**

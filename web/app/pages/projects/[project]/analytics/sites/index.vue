@@ -42,8 +42,6 @@ const state = (site: SiteRow) => (!site.verified ? { tone: 'warning' as const, l
             </ul>
         </section>
 
-        <FormDialog v-if="data.canManage" id="add-site" :title="t('Add a site')" :description="t('A hostname must be a verified domain of this project (or a subdomain of one) before the site collects.')" :action="`/api/app/projects/${project.id}/analytics/sites`" :submit="t('Add site')" size="wide">
-            <SiteFields id="new-site" :timezones="data.timezones" />
-        </FormDialog>
+        <AddSiteDialog v-if="data.canManage" :project-id="project.id" :timezones="data.timezones" />
     </div>
 </template>

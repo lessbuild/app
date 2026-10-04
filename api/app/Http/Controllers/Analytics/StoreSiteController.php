@@ -28,9 +28,7 @@ final class StoreSiteController
         $site = $save->handle($user, $project, $request->toDetails());
 
         if (($guide = SetupGuideReturn::from($request)) !== null) {
-
             return response()->json(['redirect' => $guide, 'message' => __('Site added. Paste its snippet into your pages to finish this step.')]);
-
         }
 
         return response()->json(['redirect' => route('analytics.sites.show', [$project, $site->id], false), 'message' => __('Site added. Paste the snippet below into your pages.')]);

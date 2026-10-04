@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { SiteSettings } from '~/types/analytics';
+
 /** A site's settings fields, for adding a site and for its settings: the essentials first, the rest folded away. */
-type SiteSettings = { name: string; domains: string[]; timezone: string; excludedPaths: string[]; excludedIps: string[]; customProperties: string[]; contentGroups: Array<{ name: string; pattern: string }>; blockedReferrers: string[] };
 const props = defineProps<{ id: string; timezones: string[]; site?: SiteSettings | null }>();
 const { t } = useT();
 const zones = computed(() => props.timezones.map((zone) => ({ value: zone, label: zone })));

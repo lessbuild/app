@@ -33,6 +33,10 @@ export type SetupStep = {
     actionLabel: string | null;
     actionUrl: string | null;
     icon: string;
+    /** The dialog the button opens over the guide instead of going to actionUrl. */
+    dialog: 'add-provider' | 'create-website' | 'add-variable' | 'add-site' | null;
+    /** What that dialog is for, when it needs it (the environment of add-variable). */
+    dialogFor: string | null;
 };
 
 export type ProjectSetup = { steps: SetupStep[] };

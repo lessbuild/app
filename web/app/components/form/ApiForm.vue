@@ -15,7 +15,9 @@ const props = withDefaults(defineProps<{
      * follows `{ redirect }`.
      */
     after?: (data: Record<string, unknown>) => string | null | undefined;
-}>(), { method: 'POST', confirm: undefined, after: undefined });
+    /** Stay on this page whatever `{ redirect }` says (as a dialog opened over another page does), loading its data again. */
+    stay?: boolean;
+}>(), { method: 'POST', confirm: undefined, after: undefined, stay: false });
 const emit = defineEmits<{ success: [redirect: string | null] }>();
 const { t } = useT();
 const route = useRoute();
@@ -114,7 +116,7 @@ async function submit(event: SubmitEvent) {
             return;
         }
     }
-    const target = payload.redirect ? local(payload.redirect) : null;
+    const target = payload.redirect && !props.stay ? local(payload.redirect) : null;
     emit('success', target);
     if (target !== null && target !== route.fullPath) {
         await navigateTo(target);

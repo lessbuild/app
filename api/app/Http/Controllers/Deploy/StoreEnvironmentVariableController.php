@@ -9,6 +9,7 @@ use App\Actions\Deploy\SaveEnvironmentVariable;
 use App\Models\Environment;
 use App\Models\Project;
 use App\Models\User;
+use App\Support\SetupGuideReturn;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ use Illuminate\Http\Request;
 final class StoreEnvironmentVariableController
 {
     /**
-     * Add or changes one variable on an environment.
+     * Add or change one variable on an environment, then go back to its variables (or to the setup guide it came from).
      *
      * @param  Request  $request
      * @param  User  $user
@@ -34,14 +35,15 @@ final class StoreEnvironmentVariableController
             'scope' => ['required', 'in:runtime,build,all'],
             'rotation_due_at' => ['nullable', 'date', 'after:today'],
         ]);
+        $redirect = SetupGuideReturn::from($request) ?? route('deploy.environments.show', [$project, $environment, 'tab' => 'variables'], false);
         $variable = ['key' => $data['key'], 'value' => (string) ($data['value'] ?? ''), 'is_secret' => $request->boolean('is_secret'), 'scope' => $data['scope'], 'rotation_due_at' => $data['rotation_due_at'] ?? null];
         if ($environment->require_variable_approval) {
             $requestChange->handle($user, $environment, 'save', $variable);
 
-            return response()->json(['redirect' => route('deploy.environments.show', [$project, $environment, 'tab' => 'variables'], false), 'message' => __(':key is waiting for someone else to approve it.', ['key' => $data['key']])]);
+            return response()->json(['redirect' => $redirect, 'message' => __(':key is waiting for someone else to approve it.', ['key' => $data['key']])]);
         }
         $save->handle($user, $environment, $variable);
 
-        return response()->json(['redirect' => route('deploy.environments.show', [$project, $environment, 'tab' => 'variables'], false), 'message' => __(':key saved.', ['key' => $data['key']])]);
+        return response()->json(['redirect' => $redirect, 'message' => __(':key saved.', ['key' => $data['key']])]);
     }
 }

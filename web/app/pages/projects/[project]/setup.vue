@@ -3,7 +3,9 @@ import type { ProjectOverview, ProjectSetup } from '~/types/projects';
 
 /**
  * The setup guide: one step at a time from an empty project to a deployed, monitored and measured site. While a step
- * finishes by itself (a server being set up, a deploy, the first visit), the guide checks again every 15 seconds.
+ * finishes by itself (a server being set up, a deploy, the first visit), the guide checks again every 15 seconds. A
+ * step done in a form (a provider, a website, a variable, an Analytics site) opens it in a dialog over the guide, and
+ * saving it comes back here.
  */
 definePageMeta({ layout: 'app' });
 const { t } = useT();
@@ -13,6 +15,7 @@ const project = computed(() => data.value.overview.project);
 const steps = computed(() => data.value.setup.steps);
 const done = computed(() => steps.value.filter((step) => step.state === 'done').length);
 const current = computed(() => steps.value.find((step) => step.state !== 'done') ?? null);
+const here = computed(() => `/projects/${project.value.id}/setup`);
 const position = computed(() => (current.value ? steps.value.indexOf(current.value) + 1 : steps.value.length));
 const guides: Record<string, string> = { provider: 'connect-a-provider', server: 'create-a-server', website: 'add-a-website', environment: 'environments-and-variables', deploy: 'deploy-from-git', monitor: 'monitor-uptime', analytics: 'add-analytics' };
 const labels = computed(() => ({ done: t('Done'), working: t('In progress'), todo: t('To do') }));
@@ -61,13 +64,23 @@ onBeforeUnmount(() => window.clearInterval(timer));
                 {{ current.detail }}
             </p>
             <div class="flex flex-wrap items-center gap-3">
-                <UiButton v-if="data.canChange && current.actionUrl && current.actionLabel" :to="local(current.actionUrl)" variant="primary" size="lg">
+                <UiButton v-if="data.canChange && current.actionUrl && current.actionLabel" :to="current.dialog ? { query: { ...route.query, dialog: current.dialog } } : local(current.actionUrl)" variant="primary" size="lg">
                     {{ current.actionLabel }} <Icon name="arrow-right" class="size-4" />
                 </UiButton>
                 <p v-else-if="!data.canChange" class="text-sm text-muted">{{ t('Someone who can change this project needs to do this step.') }}</p>
                 <TextLink v-if="guides[current.key]" :to="`/help/${guides[current.key]}`" variant="muted">{{ t('How to do this') }}</TextLink>
             </div>
         </section>
+
+        <template v-if="data.canChange && current?.dialog">
+            <AddProviderDialog v-if="current.dialog === 'add-provider'" :back="here" />
+            <template v-else-if="current.dialog === 'create-website'">
+                <CreateWebsiteDialog :project-id="project.id" :back="here" />
+                <CreateServerDialog :project-id="project.id" />
+            </template>
+            <AddVariableDialog v-else-if="current.dialog === 'add-variable' && current.dialogFor" :project-id="project.id" :environment-id="current.dialogFor" :back="here" />
+            <AddSiteDialog v-else-if="current.dialog === 'add-site'" :project-id="project.id" :back="here" />
+        </template>
 
         <Disclosure :title="t('See all steps')">
             <ol class="divide-y divide-line">

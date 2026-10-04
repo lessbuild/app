@@ -6,7 +6,7 @@ definePageMeta({ layout: 'app', area: 'account' });
 const { t, tc } = useT();
 const route = useRoute();
 const { data } = await useApi<{ account: { id: string; name: string }; providers: ProviderSummary[]; types: ProviderType[] }>('/account/providers');
-// The setup guide opens this dialog and comes back to itself afterwards.
+// A link from the setup guide can ask to go back to it afterwards (`?return=`).
 const back = computed(() => (typeof route.query.return === 'string' ? route.query.return : ''));
 </script>
 
@@ -34,14 +34,6 @@ const back = computed(() => (typeof route.query.return === 'string' ? route.quer
             </li>
         </ul>
 
-        <UiDialog id="add-provider" :title="t('Connect a provider')" :description="t('Use an API token scoped to what we need. We check it straight away and then on a schedule.')" size="large">
-            <ApiForm action="/api/app/account/providers">
-                <input v-if="back" type="hidden" name="_return" :value="back">
-                <div class="grid items-start gap-5 sm:grid-cols-2">
-                    <ProviderFields :types="data.types" />
-                </div>
-                <div class="flex justify-end"><SubmitButton>{{ t('Connect provider') }}</SubmitButton></div>
-            </ApiForm>
-        </UiDialog>
+        <AddProviderDialog :types="data.types" :back="back" />
     </div>
 </template>

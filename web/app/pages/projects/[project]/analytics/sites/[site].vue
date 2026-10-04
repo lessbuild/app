@@ -275,9 +275,7 @@ const away = (result: Record<string, unknown>) => (typeof result.redirect === 's
                 </div>
             </SettingsSection>
 
-            <FormDialog id="site-settings" :title="t('Site settings')" :description="t('Changing hostnames takes effect for the next visit.')" :action="base" method="PUT" :submit="t('Save')" size="wide">
-                <SiteFields id="site" :timezones="data.timezones" :site="site" />
-            </FormDialog>
+            <SiteSettingsDialog :project-id="project.id" :site-id="site.id" :page="data" />
         </template>
     </div>
 </template>

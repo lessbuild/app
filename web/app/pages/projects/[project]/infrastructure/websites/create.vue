@@ -23,7 +23,7 @@ const back = computed(() => (typeof route.query._return === 'string' ? route.que
             :description="importing ? t('Adopt an application already in /var/www on an app server. Its files, Caddy site and database are left as they are.') : t('We set up the Caddy site, a MySQL database and user, and the .env file.')"
         />
         <EmptyState v-if="data.options.hosts.length === 0" icon="server" :title="t('No app servers ready')" :description="t('Websites need an active app server with MySQL. Create one first.')">
-            <template #action><UiButton :to="`/projects/${project.id}/infrastructure/servers?dialog=create-server`">{{ t('Create a server') }}</UiButton></template>
+            <template #action><UiButton :to="{ query: { ...route.query, dialog: 'create-server' } }">{{ t('Create a server') }}</UiButton></template>
         </EmptyState>
         <section v-else class="ui-card">
             <ApiForm :action="`/api/app/projects/${project.id}/infrastructure/websites${importing ? '/import' : ''}`" class="grid gap-5 p-4 sm:p-6">
@@ -37,5 +37,6 @@ const back = computed(() => (typeof route.query._return === 'string' ? route.que
                 </div>
             </ApiForm>
         </section>
+        <CreateServerDialog v-if="data.options.hosts.length === 0" :project-id="project.id" />
     </div>
 </template>
