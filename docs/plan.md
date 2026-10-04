@@ -89,7 +89,13 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   destructive migrations, release analysis, promotion, cancel / redeploy / roll back), comparing two deploys,
   approving from chat links, previews, pipelines, environments (controls and freezes, settings and build server,
   variables and secret syncs, workers, resources, automation, recipes, notifications), configuration as code with
-  reviews and receipts, the public release notes page and the GitHub App's repositories. Waiting on slice 5: the
-  account recipe library and website deletion (five tests are skipped until the Infrastructure API exists; remove
-  the `markTestSkipped` calls in `tests/Feature/Deploy/EnvironmentRecipesTest.php` and `PreviewsTest.php`).
-- **5. Infrastructure**: next.
+  reviews and receipts, the public release notes page and the GitHub App's repositories.
+- **5. Infrastructure**: done, with the recipe library and gallery (slice 11 keeps notifications, assistant and
+  onboarding). Servers (create from a provider's catalog, import over SSH, provisioning followed live, resources,
+  alerts, diagnostics and disk clean-up, database recovery and read replicas, cron jobs, processes, firewall,
+  services, logs and log shipping, snapshots, Node.js, the command history and the in-browser terminal), websites
+  (create or adopt, health, domains with Cloudflare's CDN and firewall, database inspection, users and copies,
+  backups and schedules, files, PHP, Reverb, Caddy directives), backups, load balancers, storage buckets, costs and
+  bills, and moves from Forge or Ploi. One-time passwords come back in the JSON (`secrets`) and show on the next page.
+  Infrastructure's routes sit in their own project group without nested bindings: its records belong to the account.
+- **6. Monitoring**: next.

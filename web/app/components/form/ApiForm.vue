@@ -19,6 +19,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ success: [redirect: string | null] }>();
 const { t } = useT();
 const route = useRoute();
+const secrets = useSecrets();
 const form = ref<HTMLFormElement | null>(null);
 const state = reactive<FormState>({ errors: {}, busy: false });
 provide(formKey, state);
@@ -93,8 +94,14 @@ async function submit(event: SubmitEvent) {
 
     const text = await response.text();
     const payload = (text ? JSON.parse(text) : {}) as { redirect?: string } & Record<string, unknown>;
-    if (typeof payload.message === 'string') {
+    if (typeof payload.warning === 'string') {
+        flash(payload.warning, 'warning');
+    } else if (typeof payload.message === 'string') {
         flash(payload.message);
+    }
+    if (payload.secrets && typeof payload.secrets === 'object') {
+        // Passwords shown once: the next page (often the one the API sends the app to) shows them.
+        secrets.value = payload.secrets as Record<string, string>;
     }
     if (props.after) {
         const next = props.after(payload);

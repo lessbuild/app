@@ -401,8 +401,6 @@ final class PreviewsTest extends TestCase
      */
     public function test_previews_expire_and_close_with_their_source_repository(): void
     {
-        $this->markTestSkipped('Needs the Infrastructure API (slice 5): the account recipe library and websites.');
-        // @phpstan-ignore deadCode.unreachable (the skip goes once the Infrastructure API exists)
         $this->pullRequest('d-1')->assertStatus(202);
         $this->pullRequest('d-2', ['number' => 13])->assertStatus(202);
         [$first, $second] = Preview::query()->orderBy('id')->get()->all();
@@ -458,8 +456,6 @@ final class PreviewsTest extends TestCase
      */
     public function test_deleting_a_website_stops_only_its_own_units(): void
     {
-        $this->markTestSkipped('Needs the Infrastructure API (slice 5): the account recipe library and websites.');
-        // @phpstan-ignore deadCode.unreachable (the skip goes once the Infrastructure API exists)
         $website = $this->source->website;
         $this->source->delete();
         $this->actingAs($this->owner)->deleteJson("/api/app/projects/{$this->project->id}/infrastructure/websites/{$website->id}")->assertSuccessful();

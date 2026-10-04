@@ -1,0 +1,32 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Infrastructure;
+
+use App\Actions\Infrastructure\RefreshServerLog;
+use App\Models\Project;
+use App\Models\Server;
+use App\Models\User;
+use Illuminate\Container\Attributes\CurrentUser;
+use Illuminate\Http\JsonResponse;
+
+final class RefreshServerLogController
+{
+    /**
+     * Fetch a fresh copy of one of the server's logs, for active servers.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  string  $type
+     * @param  RefreshServerLog  $refresh
+     * @return JsonResponse
+     */
+    public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $type, RefreshServerLog $refresh): JsonResponse
+    {
+        $queued = $refresh->handle($project->account, $user, $server, $type);
+
+        return response()->json(['redirect' => route('infrastructure.servers.show', [$project, $server->id, 'log' => $type, 'tab' => 'logs'], false), 'message' => $queued ? __('Fetching the log.') : __('Logs are only available for active servers.')]);
+    }
+}

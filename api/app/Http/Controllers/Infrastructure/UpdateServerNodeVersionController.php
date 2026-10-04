@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Infrastructure;
+
+use App\Actions\Infrastructure\ChangeRuntimeVersion;
+use App\Models\Project;
+use App\Models\Server;
+use App\Models\User;
+use Illuminate\Container\Attributes\CurrentUser;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+final class UpdateServerNodeVersionController
+{
+    /**
+     * Switch the server's Node.js version and return to its settings.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  ChangeRuntimeVersion  $change
+     * @return JsonResponse
+     */
+    public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ChangeRuntimeVersion $change): JsonResponse
+    {
+        $change->handle($user, $server, (string) $request->validate(['node_version' => ['required', 'string', 'max:4']])['node_version']);
+
+        return response()->json(['redirect' => route('infrastructure.servers.show', [$project, $server->id, 'tab' => 'settings'], false), 'message' => __('Switching the server to Node.js :version.', ['version' => $server->node_version])]);
+    }
+}

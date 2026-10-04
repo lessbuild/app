@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Infrastructure;
+
+use App\Actions\Infrastructure\RemoveServerTask;
+use App\Models\Project;
+use App\Models\Server;
+use App\Models\User;
+use App\Support\Infrastructure\ServerTaskKinds;
+use Illuminate\Container\Attributes\CurrentUser;
+use Illuminate\Http\JsonResponse;
+
+final class DeleteServerTaskController
+{
+    /**
+     * Take a cron job, process or firewall rule off a server and return to its tab.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  string  $kind
+     * @param  string  $task
+     * @param  RemoveServerTask  $remove
+     * @return JsonResponse
+     */
+    public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $kind, string $task, RemoveServerTask $remove): JsonResponse
+    {
+        $remove->handle($user, ServerTaskKinds::find($server, $kind, $task));
+
+        return response()->json(['redirect' => route('infrastructure.servers.show', [$project, $server->id, 'tab' => ServerTaskKinds::tab($kind)], false), 'message' => __('It’s being removed from the server.')]);
+    }
+}
