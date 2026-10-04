@@ -15,6 +15,10 @@ export default defineNuxtConfig({
     runtimeConfig: {
         // Where the server reaches Laravel (NUXT_LARAVEL_URL); browsers use the same origin.
         laravelUrl: process.env.LARAVEL_URL ?? 'http://127.0.0.1:8000',
+        public: {
+            // The app's own host (NUXT_PUBLIC_APP_HOST), so requests to it skip the status page domain lookup.
+            appHost: '',
+        },
     },
     app: {
         head: {
@@ -34,6 +38,8 @@ export default defineNuxtConfig({
         '/share/analytics/**': { headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } },
         '/share/analytics/*/embed': { headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex', 'Content-Security-Policy': 'frame-ancestors *' } },
         '/analytics/view/**': { headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } },
+        // Public status pages may be framed by other sites, as before.
+        '/status/**': { headers: { 'Cache-Control': 'private, no-store', 'Content-Security-Policy': 'frame-ancestors *' } },
     },
     eslint: { config: { stylistic: false } },
 });

@@ -20,8 +20,8 @@ use LogicException;
  *
  * @phpstan-import-type History from UptimeHistory
  *
- * @phpstan-type Component array{name: string, type: string, state: string, stateLabel: string, checkedAt: ?CarbonImmutable, incidents: list<Incident>, history: ?History}
- * @phpstan-type Report array{overall: string, overallLabel: string, components: list<Component>, incidents: list<Incident>, recentIncidents: list<Incident>, activeUpdates: list<StatusUpdate>, upcomingMaintenance: list<StatusUpdate>, pastUpdates: list<StatusUpdate>}
+ * @phpstan-type Component array{name: string, group: string|null, type: string, state: string, stateLabel: string, checkedAt: ?CarbonImmutable, incidents: list<Incident>, history: ?History}
+ * @phpstan-type Report array{overall: string, overallLabel: string, components: list<Component>, groups: array<string, string>, incidents: list<Incident>, recentIncidents: list<Incident>, activeUpdates: list<StatusUpdate>, upcomingMaintenance: list<StatusUpdate>, pastUpdates: list<StatusUpdate>}
  */
 final class StatusPageReportQuery
 {

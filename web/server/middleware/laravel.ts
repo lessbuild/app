@@ -27,6 +27,13 @@ export const laravelPaths = [
     '/status/report.json',
     '/status/*/report.json',
     '/status/*/badge.svg',
+    '/status/*/embed',
+    '/status/deployer/*',
+    '/status/monitor/*',
+    // A status page's custom domain: its badge, JSON report and embed at the root (ServeStatusPageDomains maps them).
+    '/badge.svg',
+    '/report.json',
+    '/embed',
     '/internal/**',
     '/servers/*/provisioning/**',
     '/websites/*/provisioning/**',

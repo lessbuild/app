@@ -23,24 +23,23 @@ final class PublicStatusPageTest extends TestCase
         [$page, $monitor] = $this->page(['health' => 'down', 'checked_at' => now()]);
         Incident::factory()->for($monitor)->create(['title' => 'Payments API is down']);
 
-        $this->get('/status/acme')->assertOk()->assertHeader('Cache-Control', 'no-store, private')
-            ->assertSee('<meta name="robots" content="index, follow">', false)->assertSee('<link rel="canonical" href="'.route('status.show', 'acme').'">', false)
-            ->assertSee('Major outage')->assertSee('Payments API is down')->assertSee('Payments')->assertDontSee('private.internal.example');
+        $this->getJson('/api/app/status/acme')->assertOk()->assertJsonPath('page.url', route('status.show', 'acme'))->assertJsonPath('overall', 'major_outage')
+            ->assertJsonHasText('Major outage')->assertJsonHasText('Payments API is down')->assertJsonHasText('Payments')->assertJsonLacksText('private.internal.example');
 
         $page->forceFill(['published' => false])->save();
-        $this->get('/status/acme')->assertNotFound();
+        $this->getJson('/api/app/status/acme')->assertNotFound();
         $this->get('/status/acme/report.json')->assertNotFound();
-        $this->get('/status/unknown')->assertNotFound();
+        $this->getJson('/api/app/status/unknown')->assertNotFound();
     }
 
     public function test_healthy_components_and_archived_monitors(): void
     {
         [, $monitor] = $this->page(['health' => 'up', 'checked_at' => now()]);
 
-        $this->get('/status/acme')->assertOk()->assertSee('All systems operational');
+        $this->getJson('/api/app/status/acme')->assertOk()->assertJsonHasText('All systems operational');
 
         $monitor->delete();
-        $this->get('/status/acme')->assertOk()->assertSee('No systems have been added to this page yet.');
+        $this->getJson('/api/app/status/acme')->assertOk()->assertJsonCount(0, 'components');
     }
 
     public function test_team_updates_set_the_overall_state_and_list_maintenance_and_history(): void
@@ -51,15 +50,15 @@ final class PublicStatusPageTest extends TestCase
         StatusUpdate::factory()->for($page)->resolved()->create(['title' => 'Login errors', 'root_cause' => 'An expired certificate.']);
         StatusUpdate::factory()->for($page)->resolved()->create(['title' => 'Ancient history', 'resolved_at' => now()->subDays(40)]);
 
-        $this->get('/status/acme')->assertOk()->assertSee('Degraded performance')->assertSee('Slow checkout')
-            ->assertSee('Planned maintenance')->assertSee('Database upgrade')
-            ->assertSee('Past 30 days')->assertSee('Login errors')->assertSee('An expired certificate.')->assertDontSee('Ancient history');
+        $this->getJson('/api/app/status/acme')->assertOk()->assertJsonHasText('Degraded performance')->assertJsonHasText('Slow checkout')
+            ->assertJsonPath('upcomingMaintenance.0.title', 'Database upgrade')
+            ->assertJsonFragment(['title' => 'Login errors'])->assertJsonHasText('An expired certificate.')->assertJsonLacksText('Ancient history');
 
         $incident->forceFill(['severity' => 'critical'])->save();
-        $this->get('/status/acme')->assertSee('Major outage');
+        $this->getJson('/api/app/status/acme')->assertJsonHasText('Major outage');
         $incident->forceFill(['status' => 'resolved', 'resolved_at' => now()])->save();
         StatusUpdate::factory()->for($page)->maintenance()->create(['status' => 'in_progress', 'starts_at' => now()->subMinutes(5)]);
-        $this->get('/status/acme')->assertSee('Under maintenance');
+        $this->getJson('/api/app/status/acme')->assertJsonHasText('Under maintenance');
     }
 
     public function test_recent_resolved_monitor_incidents_are_listed_but_old_ones_are_not(): void
@@ -69,7 +68,7 @@ final class PublicStatusPageTest extends TestCase
         Incident::factory()->for($monitor)->resolved()->create(['title' => 'Payments API recovered', 'opened_at' => now()->subHours(3), 'resolved_at' => now()->subHours(2)]);
         Incident::factory()->for($monitor)->resolved()->create(['title' => 'Old incident', 'opened_at' => now()->subDays(32), 'resolved_at' => now()->subDays(31)]);
 
-        $this->get('/status/acme')->assertOk()->assertSee('Payments API recovered')->assertDontSee('Old incident');
+        $this->getJson('/api/app/status/acme')->assertOk()->assertJsonHasText('Payments API recovered')->assertJsonLacksText('Old incident');
     }
 
     public function test_history_counts_only_the_current_configuration_and_leaves_unknown_checks_out_of_uptime(): void
@@ -91,7 +90,7 @@ final class PublicStatusPageTest extends TestCase
         $this->assertSame('outage', $history['days'][29]['state']);
         $this->assertSame('operational', $history['days'][28]['state']);
         $this->assertSame('no_data', $history['days'][0]['state']);
-        $this->get('/status/acme')->assertSee('66.67% uptime')->assertSee('30-day history for Payments: 66.67%');
+        $this->getJson('/api/app/status/acme')->assertJsonPath('components.0.name', 'Payments')->assertJsonPath('components.0.history.uptime', fn ($uptime): bool => abs((float) $uptime - 66.67) < 0.01);
     }
 
     public function test_the_json_report_keeps_deployers_shape(): void

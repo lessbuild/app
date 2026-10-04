@@ -8,6 +8,7 @@ use App\Http\Controllers\Analytics\Concerns\ReadsReportParameters;
 use App\Models\AnalyticsSiteViewer;
 use App\Queries\Analytics\AnalyticsReportQuery;
 use App\Queries\Analytics\LiveVisitorsQuery;
+use App\Services\Accounts\AccountBranding;
 use App\Support\Analytics\ReportPayload;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,9 +25,10 @@ final class ShowViewerReportController
      * @param  string  $token
      * @param  AnalyticsReportQuery  $report
      * @param  LiveVisitorsQuery  $live
+     * @param  AccountBranding  $branding
      * @return JsonResponse
      */
-    public function __invoke(Request $request, string $token, AnalyticsReportQuery $report, LiveVisitorsQuery $live): JsonResponse
+    public function __invoke(Request $request, string $token, AnalyticsReportQuery $report, LiveVisitorsQuery $live, AccountBranding $branding): JsonResponse
     {
         $viewer = AnalyticsSiteViewer::query()->where('token_hash', hash('sha256', $token))->with('site')->firstOrFail();
         $site = $viewer->site;
@@ -43,6 +45,7 @@ final class ShowViewerReportController
             'filters' => $filters,
             'report' => ReportPayload::from($report->handle($site, $this->reportPeriod($request, $site), $filters), $site),
             'today' => now($site->timezone)->toDateString(),
+            'branding' => $branding->for($site->project->account),
         ]);
     }
 }

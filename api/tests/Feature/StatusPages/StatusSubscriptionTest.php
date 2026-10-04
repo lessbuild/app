@@ -21,7 +21,7 @@ final class StatusSubscriptionTest extends TestCase
         Notification::fake();
         $page = StatusPage::factory()->create(['slug' => 'acme', 'name' => 'Acme status']);
 
-        $this->post('/status/acme/subscribe', ['email' => ' Fan@Example.com '])->assertRedirect('/status/acme')->assertSessionHas('status', 'Check your email to confirm status updates.');
+        $this->postJson('/api/app/status/acme/subscribe', ['email' => ' Fan@Example.com '])->assertSuccessful()->assertJsonPath('message', 'Check your email to confirm status updates.');
         $subscription = StatusSubscription::query()->sole();
         $this->assertSame('fan@example.com', $subscription->email);
         $this->assertSame(hash('sha256', 'fan@example.com'), $subscription->email_hash);
@@ -35,16 +35,16 @@ final class StatusSubscriptionTest extends TestCase
             return $notifiable->routes['mail'] === 'fan@example.com';
         });
         $this->assertIsString($token);
-        $this->get("/status/subscriptions/{$subscription->id}/confirm/wrong")->assertNotFound();
-        $this->get("/status/subscriptions/{$subscription->id}/confirm/{$token}")->assertRedirect('/status/acme');
+        $this->postJson("/api/app/status/subscriptions/{$subscription->id}/confirm/wrong")->assertNotFound();
+        $this->postJson("/api/app/status/subscriptions/{$subscription->id}/confirm/{$token}")->assertJsonRedirect('/api/app/status/acme');
         $this->assertNotNull($subscription->fresh()?->verified_at);
-        $this->get("/status/subscriptions/{$subscription->id}/confirm/{$token}")->assertNotFound();
+        $this->postJson("/api/app/status/subscriptions/{$subscription->id}/confirm/{$token}")->assertNotFound();
 
         $unsubscribe = $subscription->unsubscribe_token;
-        $this->get("/status/subscriptions/{$subscription->id}/unsubscribe/wrong")->assertNotFound();
-        $this->get("/status/subscriptions/{$subscription->id}/unsubscribe/{$unsubscribe}")->assertOk()->assertSee('Stop Acme status emails?');
+        $this->getJson("/api/app/status/subscriptions/{$subscription->id}/unsubscribe/wrong")->assertNotFound();
+        $this->getJson("/api/app/status/subscriptions/{$subscription->id}/unsubscribe/{$unsubscribe}")->assertOk()->assertJsonPath('page.name', 'Acme status');
         $this->assertModelExists($subscription);
-        $this->post("/status/subscriptions/{$subscription->id}/unsubscribe/{$unsubscribe}")->assertRedirect('/status/acme');
+        $this->postJson("/api/app/status/subscriptions/{$subscription->id}/unsubscribe/{$unsubscribe}")->assertJsonRedirect('/api/app/status/acme');
         $this->assertModelMissing($subscription);
     }
 
@@ -52,7 +52,7 @@ final class StatusSubscriptionTest extends TestCase
     {
         $subscription = StatusSubscription::factory()->create();
 
-        $this->withMiddleware()->call('POST', "/status/subscriptions/{$subscription->id}/unsubscribe/{$subscription->unsubscribe_token}", ['List-Unsubscribe' => 'One-Click'])->assertRedirect();
+        $this->withMiddleware()->call('POST', "/status/subscriptions/{$subscription->id}/unsubscribe/{$subscription->unsubscribe_token}", ['List-Unsubscribe' => 'One-Click'])->assertSuccessful();
 
         $this->assertModelMissing($subscription);
     }
@@ -63,13 +63,13 @@ final class StatusSubscriptionTest extends TestCase
         $subscription = StatusSubscription::factory()->create(['email' => 'fan@example.com', 'email_hash' => StatusSubscription::hashEmail('fan@example.com')]);
         $page = $subscription->statusPage;
 
-        $this->post("/status/{$page->slug}/subscribe", ['email' => 'FAN@example.com'])->assertRedirect();
+        $this->postJson("/api/app/status/{$page->slug}/subscribe", ['email' => 'FAN@example.com'])->assertSuccessful();
         $this->assertNull($subscription->fresh()?->verified_at);
         $this->assertDatabaseCount('status_subscriptions', 1);
-        $this->post("/status/{$page->slug}/subscribe", ['email' => 'not an email'])->assertSessionHasErrors('email');
+        $this->postJson("/api/app/status/{$page->slug}/subscribe", ['email' => 'not an email'])->assertJsonValidationErrors('email');
 
         $draft = StatusPage::factory()->draft()->create();
-        $this->post("/status/{$draft->slug}/subscribe", ['email' => 'fan@example.com'])->assertNotFound();
+        $this->postJson("/api/app/status/{$draft->slug}/subscribe", ['email' => 'fan@example.com'])->assertNotFound();
         Notification::assertSentOnDemandTimes(StatusSubscriptionConfirmation::class, 1);
     }
 }

@@ -43,7 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Stripe signs its webhooks; there is no session or CSRF token. One-click unsubscribe (RFC 8058) posts from the mail client with the token in the URL; provisioning scripts post signed callbacks.
         // The referral code isn't secret, and the Nuxt app reads it to pass to sign-up.
         $middleware->encryptCookies(except: ['bp_referral']);
-        $middleware->validateCsrfTokens(except: ['webhooks/stripe', 'status/subscriptions/*/unsubscribe/*', 'email/getting-started/*/stop', 'servers/*/provisioning/callback/*', 'websites/*/provisioning/callback/*', 'builds/*/deployment/callback/*', 'environments/*/wake', 'sso/saml/acs']);
+        $middleware->validateCsrfTokens(except: ['webhooks/stripe', 'status/subscriptions/*/unsubscribe/*', 'status/webhooks/*/unsubscribe/*', 'email/getting-started/*/stop', 'servers/*/provisioning/callback/*', 'websites/*/provisioning/callback/*', 'builds/*/deployment/callback/*', 'environments/*/wake', 'sso/saml/acs']);
         // Monitor signals are checked byte for byte; monitor secrets are stored exactly as typed.
         $middleware->prepend([ReceiveMonitorSignal::class, DecodeTelemetryPayload::class]);
         // Customers' own status page domains see only their status page.

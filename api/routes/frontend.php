@@ -143,7 +143,6 @@ Route::get('/releases/{token}', FrontendPageController::class)->name('deploy.rel
 // Public status pages (slice 9 builds them in Nuxt; the names already give monitoring its links).
 Route::get('/status/{slug}', FrontendPageController::class)->where('slug', '[a-z0-9-]+')->name('status.show');
 Route::get('/status/{slug}/uptime/{month}', FrontendPageController::class)->where('slug', '[a-z0-9-]+')->where('month', '\d{4}-\d{2}')->name('status.month');
-Route::get('/status/{slug}/embed', FrontendPageController::class)->where('slug', '[a-z0-9-]+')->name('status.embed');
 Route::get('/request-access', FrontendPageController::class)->name('access-requests.create');
 Route::get('/reset-password/{token}', FrontendPageController::class)->name('password.reset');
 Route::get('/roadmap', FrontendPageController::class)->name('roadmap');

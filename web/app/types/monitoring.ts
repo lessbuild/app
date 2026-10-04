@@ -189,3 +189,31 @@ export type DashboardWidgetData = {
     objectives?: ObjectiveSummary[];
     projects?: Array<{ id: string; name: string; environments: number; lastReceivedAt: string | null }>;
 };
+
+/** A day in a component's 30-day history on a public status page. */
+export type StatusDay = { date: string; label: string; state: 'operational' | 'outage' | 'degraded' | 'no_data'; summary?: string };
+
+/** An update as a public status page shows it. */
+export type PublicStatusUpdate = {
+    id: number; kind: 'incident' | 'maintenance'; status: string; statusLabel: string; severity: string; title: string; message: string;
+    rootCause: string | null; remediation: string | null; followUp: string | null; startsAt: string; endsAt: string | null; updatedAt: string | null;
+};
+
+/** A published status page, as anyone sees it. */
+export type PublicStatusPage = {
+    page: { slug: string; name: string; description: string | null; owner: string; url: string; reportUrl: string };
+    branding: { name: string; logo: string | null; color: string | null } | null;
+    overall: 'operational' | 'degraded' | 'major_outage' | 'maintenance';
+    overallLabel: string;
+    groups: Record<string, string>;
+    components: Array<{
+        name: string; group: string | null; type: string; state: string; stateLabel: string; checkedAt: string | null;
+        incidents: Array<{ title: string; openedAt: string }>;
+        history: { uptime: number | null; days: StatusDay[] } | null;
+    }>;
+    activeUpdates: PublicStatusUpdate[];
+    upcomingMaintenance: PublicStatusUpdate[];
+    pastUpdates: PublicStatusUpdate[];
+    recentIncidents: Array<{ title: string; openedAt: string; resolvedAt: string | null }>;
+    checkedAt: string;
+};

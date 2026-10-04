@@ -44,7 +44,7 @@ final class StatusPageShareTest extends TestCase
         $monitor->forceFill(['health' => 'down'])->save();
         $this->get('/status/acme/badge.svg')->assertOk()->assertSee('#dc2626', false);
 
-        $this->actingAs($owner)->get("/projects/{$project->id}/monitoring/status-pages/{$page->id}")->assertOk()->assertSee('Share and embed')->assertSee(route('status.embed', 'acme'));
+        $this->actingAs($owner)->getJson("/api/app/projects/{$project->id}/monitoring/status-pages/{$page->id}")->assertOk()->assertJsonPath('page.embedUrl', route('status.embed', 'acme'));
 
         $page->forceFill(['published' => false])->save();
         $this->get('/status/acme/badge.svg')->assertNotFound();

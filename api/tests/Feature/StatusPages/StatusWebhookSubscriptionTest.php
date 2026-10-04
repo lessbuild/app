@@ -41,16 +41,15 @@ final class StatusWebhookSubscriptionTest extends TestCase
             },
         ]);
 
-        $this->get('/status/acme')->assertOk()->assertSee('Post updates to Slack or a webhook instead');
-        $this->post('/status/acme/subscribe/webhook', ['channel' => 'slack', 'url' => 'https://example.com/not-slack'])->assertSessionHasErrors('url');
-        $this->post('/status/acme/subscribe/webhook', ['channel' => 'slack', 'url' => $slackUrl])->assertRedirect('/status/acme');
-        $this->post('/status/acme/subscribe/webhook', ['channel' => 'webhook', 'url' => $hookUrl])->assertRedirect('/status/acme')->assertSessionHas('webhook_secret');
+        $this->postJson('/api/app/status/acme/subscribe/webhook', ['channel' => 'slack', 'url' => 'https://example.com/not-slack'])->assertJsonValidationErrors('url');
+        $this->postJson('/api/app/status/acme/subscribe/webhook', ['channel' => 'slack', 'url' => $slackUrl])->assertSuccessful()->assertJsonPath('secrets', null);
+        $this->postJson('/api/app/status/acme/subscribe/webhook', ['channel' => 'webhook', 'url' => $hookUrl])->assertSuccessful()->assertJsonPath('secrets.webhook_secret', fn ($secret): bool => is_string($secret) && $secret !== '');
         $this->assertSame(2, StatusWebhookSubscription::query()->whereNotNull('verified_at')->count());
         Http::assertSent(fn (Request $request): bool => $request->url() === $slackUrl && str_contains((string) $request['text'], 'Subscribed to Acme status updates'));
         $hook = StatusWebhookSubscription::query()->where('type', 'webhook')->sole();
 
         $update = ['kind' => 'incident', 'status' => 'investigating', 'severity' => 'major', 'title' => 'Checkout errors', 'message' => 'We’re looking into it.', 'starts_at' => now()->format('Y-m-d\TH:i')];
-        $this->actingAs($owner)->post("/projects/{$project->id}/monitoring/status-pages/{$page->id}/updates", $update)->assertRedirect();
+        $this->actingAs($owner)->postJson("/api/app/projects/{$project->id}/monitoring/status-pages/{$page->id}/updates", $update)->assertSuccessful();
         Http::assertSent(fn (Request $request): bool => $request->url() === $slackUrl && str_contains((string) $request['text'], '*Acme: Checkout errors*'));
         Http::assertSent(function (Request $request) use ($hookUrl, $hook): bool {
             if ($request->url() !== $hookUrl || $request['event'] !== 'status_update') {
@@ -64,16 +63,16 @@ final class StatusWebhookSubscriptionTest extends TestCase
         // Five failures in a row end the webhook subscription.
         $hookStatus = 500;
         for ($i = 0; $i < 5; $i++) {
-            $this->actingAs($owner)->post("/projects/{$project->id}/monitoring/status-pages/{$page->id}/updates", [...$update, 'title' => "Update {$i}"]);
+            $this->actingAs($owner)->postJson("/api/app/projects/{$project->id}/monitoring/status-pages/{$page->id}/updates", [...$update, 'title' => "Update {$i}"]);
         }
         $this->assertNull(StatusWebhookSubscription::query()->find($hook->id));
 
         $slack = StatusWebhookSubscription::query()->sole();
-        $link = "/status/webhooks/{$slack->id}/unsubscribe/{$slack->unsubscribe_token}";
-        $this->get("/status/webhooks/{$slack->id}/unsubscribe/wrong")->assertNotFound();
-        $this->get($link)->assertOk()->assertSee('Stop Acme updates?');
+        $link = "/api/app/status/webhooks/{$slack->id}/unsubscribe/{$slack->unsubscribe_token}";
+        $this->getJson("/api/app/status/webhooks/{$slack->id}/unsubscribe/wrong")->assertNotFound();
+        $this->getJson($link)->assertOk()->assertJsonPath('page.name', 'Acme')->assertJsonPath('type', 'slack');
         $this->assertNotNull($slack->fresh());
-        $this->post($link)->assertRedirect('/status/acme');
+        $this->postJson($link)->assertJsonRedirect('/api/app/status/acme');
         $this->assertSame(0, StatusWebhookSubscription::query()->count());
     }
 }

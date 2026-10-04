@@ -25,8 +25,8 @@ final class WhiteLabelTest extends TestCase
         $project->account->forceFill(['brand_name' => 'Acme Studio', 'brand_logo_url' => 'https://acme.test/logo.png', 'brand_color' => '#1f6feb'])->save();
         $page = StatusPage::factory()->create(['account_id' => $project->account_id]);
 
-        $this->get($page->publicUrl())->assertOk()->assertSee('Powered by')->assertDontSee('https://acme.test/logo.png');
+        $this->getJson("/api/app/status/{$page->slug}")->assertOk()->assertJsonPath('branding', null)->assertJsonLacksText('https://acme.test/logo.png');
         $this->onTier($project, 'deploy', 'team');
-        $this->get($page->publicUrl())->assertOk()->assertDontSee('Powered by')->assertSee('https://acme.test/logo.png')->assertSee('--ui-primary: #1f6feb', false)->assertSee('Acme Studio');
+        $this->getJson("/api/app/status/{$page->slug}")->assertOk()->assertJsonPath('branding', ['name' => 'Acme Studio', 'logo' => 'https://acme.test/logo.png', 'color' => '#1f6feb'])->assertJsonPath('page.owner', 'Acme Studio');
     }
 }

@@ -18,8 +18,12 @@ use App\Http\Controllers\Platform\ShowPlatformStatusReportController;
 use App\Http\Controllers\Security\EvaluateSecurityGateController;
 use App\Http\Controllers\Site\ShowStatusBadgeController;
 use App\Http\Controllers\StatusPages\CheckStatusPageDomainController;
+use App\Http\Controllers\StatusPages\RedirectLegacyStatusPageController;
 use App\Http\Controllers\StatusPages\ShowStatusPageBadgeController;
+use App\Http\Controllers\StatusPages\ShowStatusPageEmbedController;
 use App\Http\Controllers\StatusPages\ShowStatusPageReportController;
+use App\Http\Controllers\StatusPages\UnsubscribeFromStatusPageController;
+use App\Http\Controllers\StatusPages\UnsubscribeStatusWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +31,12 @@ Route::get('/status/badge.svg', ShowStatusBadgeController::class)->middleware('t
 Route::get('/status/report.json', ShowPlatformStatusReportController::class)->middleware('throttle:120,1')->name('platform.status.report');
 Route::get('/status/{slug}/report.json', ShowStatusPageReportController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.report');
 Route::get('/status/{slug}/badge.svg', ShowStatusPageBadgeController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('status.badge');
+Route::get('/status/{slug}/embed', ShowStatusPageEmbedController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('status.embed');
+// The unified app served pages at /status/{product}/{slug}.
+Route::get('/status/{product}/{slug}', RedirectLegacyStatusPageController::class)->whereIn('product', ['deployer', 'monitor'])->where('slug', '[a-z0-9-]+');
+// Mail clients' one-click unsubscribe posts to the address in the email (no CSRF token); the app's page uses the API.
+Route::post('/status/subscriptions/{subscription}/unsubscribe/{token}', UnsubscribeFromStatusPageController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.one-click');
+Route::post('/status/webhooks/{subscription}/unsubscribe/{token}', UnsubscribeStatusWebhookController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.webhooks.one-click');
 // Caddy asks before issuing a certificate for a customer's status page domain.
 Route::get('/internal/tls/status-domain', CheckStatusPageDomainController::class)->name('status.domains.check');
 

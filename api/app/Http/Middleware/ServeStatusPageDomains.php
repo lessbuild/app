@@ -17,11 +17,11 @@ use Symfony\Component\HttpFoundation\Response;
 final class ServeStatusPageDomains
 {
     /**
-     * Paths that pass through unchanged on a status page domain.
+     * Paths that pass through unchanged on a status page domain, including the API the status page itself calls.
      *
      * @var list<string>
      */
-    private const PASS_THROUGH = ['status/*', 'up', 'favicon.ico', 'robots.txt', 'build/*'];
+    private const PASS_THROUGH = ['status/*', 'api/app/status/*', 'sanctum/csrf-cookie', 'up', 'favicon.ico', 'robots.txt', 'build/*'];
 
     /**
      * Rewrite requests to a verified status page domain onto the page's routes, and refuse everything else there.

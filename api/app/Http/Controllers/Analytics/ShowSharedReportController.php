@@ -8,6 +8,7 @@ use App\Http\Controllers\Analytics\Concerns\ReadsReportParameters;
 use App\Models\AnalyticsSite;
 use App\Queries\Analytics\AnalyticsReportQuery;
 use App\Queries\Analytics\LiveVisitorsQuery;
+use App\Services\Accounts\AccountBranding;
 use App\Support\Analytics\ReportPayload;
 use App\Support\Analytics\SharedReportAccess;
 use Illuminate\Http\JsonResponse;
@@ -27,9 +28,10 @@ final class ShowSharedReportController
      * @param  string  $token
      * @param  AnalyticsReportQuery  $report
      * @param  LiveVisitorsQuery  $live
+     * @param  AccountBranding  $branding
      * @return JsonResponse
      */
-    public function __invoke(Request $request, string $token, AnalyticsReportQuery $report, LiveVisitorsQuery $live): JsonResponse
+    public function __invoke(Request $request, string $token, AnalyticsReportQuery $report, LiveVisitorsQuery $live, AccountBranding $branding): JsonResponse
     {
         $site = AnalyticsSite::query()->where('share_token', $token)->firstOrFail();
         $embed = $request->boolean('embed');
@@ -48,6 +50,7 @@ final class ShowSharedReportController
             'filters' => $filters,
             'report' => ReportPayload::from($report->handle($site, $this->reportPeriod($request, $site), $filters), $site),
             'today' => now($site->timezone)->toDateString(),
+            'branding' => $branding->for($site->project->account),
         ]);
     }
 }

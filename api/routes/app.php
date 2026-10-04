@@ -346,6 +346,7 @@ use App\Http\Controllers\Notifications\ExportNotificationsController;
 use App\Http\Controllers\Notifications\MarkAllNotificationsReadController;
 use App\Http\Controllers\Notifications\OpenNotificationController;
 use App\Http\Controllers\Notifications\ShowNotificationsController;
+use App\Http\Controllers\Platform\ShowPlatformStatusController;
 use App\Http\Controllers\Projects\AddDomainController;
 use App\Http\Controllers\Projects\CloneEnvironmentController;
 use App\Http\Controllers\Projects\DeleteEnvironmentController;
@@ -428,6 +429,16 @@ use App\Http\Controllers\Settings\UpdateGettingStartedEmailsController;
 use App\Http\Controllers\Settings\UpdateNotificationSettingsController;
 use App\Http\Controllers\Settings\UpdateWeeklyReportEmailsController;
 use App\Http\Controllers\Shell\ShowShellController;
+use App\Http\Controllers\StatusPages\ConfirmStatusSubscriptionController;
+use App\Http\Controllers\StatusPages\ResolveStatusPageDomainController;
+use App\Http\Controllers\StatusPages\ShowPublicStatusPageController;
+use App\Http\Controllers\StatusPages\ShowStatusPageMonthController;
+use App\Http\Controllers\StatusPages\ShowStatusWebhookUnsubscribeController;
+use App\Http\Controllers\StatusPages\ShowUnsubscribeController;
+use App\Http\Controllers\StatusPages\SubscribeStatusWebhookController;
+use App\Http\Controllers\StatusPages\SubscribeToStatusPageController;
+use App\Http\Controllers\StatusPages\UnsubscribeFromStatusPageController;
+use App\Http\Controllers\StatusPages\UnsubscribeStatusWebhookController;
 use App\Http\Controllers\Telemetry\CreateIngestTokenController;
 use App\Http\Controllers\Telemetry\CreateIssueTicketController;
 use App\Http\Controllers\Telemetry\DeleteIssueTrackerController;
@@ -460,6 +471,20 @@ Route::get('/access-requests', ShowAccessRequestFormController::class)->middlewa
 Route::post('/access-requests', StoreAccessRequestController::class)->middleware('throttle:5,1')->name('access-requests.store');
 Route::get('/releases/{token}', App\Http\Controllers\Deploy\ShowPublicReleaseNotesController::class)->where('token', '[a-z0-9]{32}')->middleware('throttle:120,1')->name('deploy.release-notes.public');
 Route::get('/invitations/{token}', ShowInvitationController::class)->where('token', '[A-Za-z0-9_-]{1,100}')->middleware('throttle:30,1')->name('invitations.show');
+// Public status pages: the page, its monthly uptime, subscribing by email, Slack or webhook, confirming and stopping
+// subscriptions from their emails' links, and which page a custom domain shows. No account needed.
+Route::get('/status/{slug}', ShowPublicStatusPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.show');
+Route::get('/status/{slug}/uptime/{month}', ShowStatusPageMonthController::class)->where('slug', '[a-z0-9-]+')->where('month', '\\d{4}-\\d{2}')->middleware('throttle:120,1')->name('status.month');
+Route::post('/status/{slug}/subscribe', SubscribeToStatusPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:5,1')->name('status.subscribe');
+Route::post('/status/{slug}/subscribe/webhook', SubscribeStatusWebhookController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:5,1')->name('status.subscribe.webhook');
+Route::post('/status/subscriptions/{subscription}/confirm/{token}', ConfirmStatusSubscriptionController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.confirm');
+Route::get('/status/subscriptions/{subscription}/unsubscribe/{token}', ShowUnsubscribeController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe');
+Route::post('/status/subscriptions/{subscription}/unsubscribe/{token}', UnsubscribeFromStatusPageController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe.store');
+Route::get('/status/webhooks/{subscription}/unsubscribe/{token}', ShowStatusWebhookUnsubscribeController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.webhooks.unsubscribe');
+Route::post('/status/webhooks/{subscription}/unsubscribe/{token}', UnsubscribeStatusWebhookController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.webhooks.unsubscribe.store');
+Route::get('/status-domains/{host}', ResolveStatusPageDomainController::class)->where('host', '[a-z0-9.-]{1,253}')->middleware('throttle:600,1')->name('status.domains.resolve');
+Route::get('/platform-status', ShowPlatformStatusController::class)->middleware('throttle:120,1')->name('platform.status');
+
 // Analytics reports shared by link, and the view-only reports of people invited to a site: no account needed.
 Route::get('/share/analytics/{token}', ShowSharedReportController::class)->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:120,1')->name('analytics.shared');
 Route::post('/share/analytics/{token}/unlock', UnlockSharedReportController::class)->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:10,1')->name('analytics.shared.unlock');

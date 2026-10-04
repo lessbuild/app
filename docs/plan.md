@@ -118,4 +118,11 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   ad account) and Explore's tabs (insights, paths, properties, items, attribution, clicks, forms, A/B tests,
   retention). Shared reports, their embed (the one page other sites may frame) and view-only links are public Nuxt
   pages on public endpoints. OAuth returns report back with `?notice=` or `?error=`.
-- **9. Status pages**: next.
+- **9. Status pages**: done. Public pages in Nuxt on public endpoints: the status page (white-label branding,
+  systems with 30-day history, current and planned updates, the last 30 days, subscribing by email, Slack or a signed
+  webhook), monthly uptime, BuildPusher's own status, confirming a subscription (posted once the page loads, so mail
+  scanners don't confirm it) and unsubscribing. A custom domain's root renders its page (the home page asks
+  `/api/app/status-domains/{host}`), and server/middleware/status-domains.ts 404s the rest of the app there. The embed
+  widget, badges, JSON reports, legacy addresses and one-click unsubscribe stay in Laravel, unchanged. Set
+  NUXT_PUBLIC_APP_HOST in production so the app's own host skips the domain lookup.
+- **10. Public site**: next.

@@ -38,10 +38,10 @@ final class StatusPageUpgradesTest extends TestCase
         $environment = $project->environments()->firstOrFail();
         $api = Monitor::factory()->create(['environment_id' => $environment->id, 'name' => 'API', 'health' => 'down']);
         $web = Monitor::factory()->create(['environment_id' => $environment->id, 'name' => 'Website']);
-        $this->actingAs($owner)->post("/projects/{$project->id}/monitoring/status-pages", [
+        $this->actingAs($owner)->postJson("/api/app/projects/{$project->id}/monitoring/status-pages", [
             'name' => 'Acme status', 'slug' => 'acme', 'published' => '1', 'monthly_report' => '1',
             'monitor_ids' => [$api->id, $web->id], 'component_groups' => [$api->id => 'Backend', $web->id => ''],
-        ])->assertRedirect();
+        ])->assertSuccessful();
         $page = StatusPage::query()->sole();
         $this->assertSame(['Backend', null], $page->components()->orderBy('position')->pluck('group_name')->all());
         $this->assertTrue($page->monthly_report);
@@ -52,10 +52,10 @@ final class StatusPageUpgradesTest extends TestCase
         }
         Incident::factory()->for($api)->create(['title' => 'API down', 'opened_at' => CarbonImmutable::parse('2026-09-10 00:00', 'UTC'), 'resolved_at' => CarbonImmutable::parse('2026-09-10 00:30', 'UTC'), 'status' => 'resolved', 'active_slot' => null, 'closure_reason' => 'recovered']);
 
-        $this->get('/status/acme')->assertOk()->assertSeeInOrder(['Backend', 'API', 'Website'])->assertSee('Monthly uptime');
-        $this->get('/status/acme/uptime/2026-09')->assertOk()->assertSee('Uptime in September 2026')->assertSee('90.000%')->assertSee('API down')->assertSee('30 minutes of downtime');
-        $this->get('/status/acme/uptime/2026-12')->assertNotFound();
-        $this->get('/status/acme/uptime/2025-01')->assertNotFound();
+        $this->getJson('/api/app/status/acme')->assertOk()->assertJsonPath('components.0.group', 'Backend')->assertJsonPath('components.0.name', 'API')->assertJsonPath('components.1.name', 'Website');
+        $this->getJson('/api/app/status/acme/uptime/2026-09')->assertOk()->assertJsonPath('label', 'September 2026')->assertJsonPath('uptime', fn ($uptime): bool => (float) $uptime === 90.0)->assertJsonPath('incidents.0.title', 'API down')->assertJsonPath('downtimeMinutes', 30);
+        $this->getJson('/api/app/status/acme/uptime/2026-12')->assertNotFound();
+        $this->getJson('/api/app/status/acme/uptime/2025-01')->assertNotFound();
 
         $confirmed = StatusSubscription::factory()->for($page)->create(['email' => 'fan@example.com']);
         StatusSubscription::factory()->for($page)->pending()->create(['email' => 'pending@example.com']);
