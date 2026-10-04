@@ -5,14 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Filament\Resources\Feedback\Pages\ManageFeedback;
-use App\Models\Account;
 use App\Models\Feedback;
 use App\Models\User;
-use App\Notifications\NewFeedback;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
 
