@@ -27,23 +27,24 @@ final class AdPlatformCallbackController
         abort_unless(is_array($pending) && ($pending['platform'] ?? null) === $platform && is_string($request->query('state'))
             && hash_equals((string) ($pending['state'] ?? ''), $request->query('state')), 403);
         $site = AnalyticsSite::query()->where('project_id', (string) ($pending['project'] ?? ''))->whereKey((int) ($pending['site'] ?? 0))->firstOrFail();
-        $back = to_route('analytics.campaigns', [$site->project_id, 'site' => $site->id]);
+        // The app's page shows what happened from ?notice= or ?error=: it can't read this session's flash.
+        $back = fn (array $query): RedirectResponse => to_route('analytics.campaigns', [$site->project_id, 'site' => $site->id, ...$query]);
         $code = $request->query('code');
         if (! is_string($code) || $code === '') {
-            return $back->withErrors(['ads' => __('The ad account wasn’t connected: access was not allowed.')]);
+            return $back(['error' => __('The ad account wasn’t connected: access was not allowed.')]);
         }
         try {
             $client = $platforms->for($platform);
             $credential = $client->exchange($code);
             $accounts = $client->accounts($credential);
         } catch (RuntimeException $exception) {
-            return $back->withErrors(['ads' => $exception->getMessage()]);
+            return $back(['error' => $exception->getMessage()]);
         }
         if ($accounts === []) {
-            return $back->withErrors(['ads' => __('That login can’t read any ad accounts.')]);
+            return $back(['error' => __('That login can’t read any ad accounts.')]);
         }
         $request->session()->put('ads.choose', ['platform' => $platform, 'site' => $site->id, 'credential' => encrypt($credential), 'accounts' => $accounts]);
 
-        return $back->with('status', __('Choose the ad account to read spend from.'));
+        return $back(['notice' => __('Choose the ad account to read spend from.')]);
     }
 }

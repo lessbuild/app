@@ -3,8 +3,8 @@ includes:
 
 parameters:
     ignoreErrors:
-        # TestResponse::assertJsonRedirect() is a macro added in tests/TestCase.php.
-        - message: '#Call to an undefined method Illuminate\\Testing\\TestResponse(<.*>)?::assertJsonRedirect\(\)#'
+        # TestResponse::assertJsonRedirect(), assertJsonHasText() and assertJsonLacksText() are macros added in tests/TestCase.php.
+        - message: '#Call to an undefined method Illuminate\\Testing\\TestResponse(<.*>)?::(assertJsonRedirect|assertJsonHasText|assertJsonLacksText)\(\)#'
           identifier: method.notFound
     level: 8
     paths:

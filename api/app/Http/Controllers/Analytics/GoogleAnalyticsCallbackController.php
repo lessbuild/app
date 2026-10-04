@@ -28,17 +28,18 @@ final class GoogleAnalyticsCallbackController
         $pending = $request->session()->pull('google-analytics.connect');
         abort_unless(is_array($pending) && is_string($request->query('state')) && hash_equals((string) ($pending['state'] ?? ''), $request->query('state')), 403);
         $site = AnalyticsSite::query()->where('project_id', (string) ($pending['project'] ?? ''))->whereKey((int) ($pending['site'] ?? 0))->firstOrFail();
-        $back = to_route('analytics.sites.show', [$site->project_id, $site->id]);
+        // The app's page shows what happened from ?notice= or ?error=: it can't read this session's flash.
+        $back = fn (array $query): RedirectResponse => to_route('analytics.sites.show', [$site->project_id, $site->id, ...$query]);
         $code = $request->query('code');
         if (! is_string($code) || $code === '') {
-            return $back->withErrors(['property' => __('Google Analytics wasn’t connected: Google access was not allowed.')]);
+            return $back(['error' => __('Google Analytics wasn’t connected: Google access was not allowed.')]);
         }
         try {
             $connect->handle($user, $site, $code);
         } catch (RuntimeException $exception) {
-            return $back->withErrors(['property' => $exception->getMessage()]);
+            return $back(['error' => $exception->getMessage()]);
         }
 
-        return $back->with('status', __('Google Analytics is connected. Choose what to import.'));
+        return $back(['notice' => __('Google Analytics is connected. Choose what to import.')]);
     }
 }
