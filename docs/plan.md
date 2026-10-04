@@ -131,4 +131,10 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   in the public layout. Each page's endpoint returns a meta block (title, description, canonical address, preview
   image, schema.org graph) that usePublicPage() puts in the head. The sitemap, robots.txt and security.txt stay in
   Laravel. The CSP-nonce test waits in tests/Pending for the cut-over.
-- **11. Recipes, notifications, assistant, onboarding**: next.
+- **11. Recipes, notifications, assistant, onboarding**: done. The assistant (conversations polled while an answer is
+  worked out, Markdown rendered by Laravel with raw HTML stripped, the MCP address for other AI tools), "What's new" as
+  a dialog in the app header with "Got it", and the weekly report, CLI and compatibility tests back in Feature.
+  Recipes and notifications came with slices 5 and 2; onboarding is the setup guide (slice 2) and the getting-started
+  emails. Still pending: the Filament admin tests (tests/Pending/Admin), the shell test that needs Audit, and the CSP
+  test for the cut-over.
+- **12. Audit**: next (built, switched off).

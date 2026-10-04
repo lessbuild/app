@@ -89,7 +89,7 @@ final class PublicContractsTest extends TestCase
     public function test_every_contract_route_is_still_named(): void
     {
         foreach (['analytics.collect', 'api.heartbeats.store', 'api.queues.snapshots.store', 'api.queues.workers.store', 'api.ingest', 'api.ingest.receipts.show', 'api.otlp',
-            'webhooks.repositories.receive', 'github-app.webhook', 'webhooks.stripe', 'status.show', 'status.report', 'status.subscribe', 'platform.status', 'platform.status.report',
+            'webhooks.repositories.receive', 'github-app.webhook', 'webhooks.stripe', 'status.show', 'status.report', 'app.status.subscribe', 'platform.status', 'platform.status.report',
             'api.v1.me', 'api.v1.projects', 'api.v1.deployments', 'api.v1.environments.deploy', 'api.v1.environments.scale', 'api.v1.environments.runtime', 'api.v1.projects.workflow'] as $name) {
             $this->assertTrue(Route::has($name), "The {$name} route is gone.");
         }
@@ -117,13 +117,13 @@ final class PublicContractsTest extends TestCase
         $report->assertJsonStructure(['status', 'operational', 'checked_at', 'components' => [['name', 'description', 'status', 'operational']]]);
         $this->assertSame(['operational', true], [$report->json('status'), $report->json('operational')]);
         $this->assertContains('Deploy', $report->collect('components')->pluck('name')->all());
-        $this->get('/status')->assertOk()->assertSee('All systems operational')->assertSee('Background processing');
+        $this->getJson('/api/app/platform-status')->assertOk()->assertJsonPath('operational', true)->assertJsonFragment(['name' => 'Background processing']);
 
         Cache::forget(SystemHealth::HEARTBEAT_KEY);
         Cache::forget('platform:status');
         $this->assertSame('degraded', $this->getJson('/status/report.json')->json('status'));
 
         config(['platform.status_page' => 'our-status']);
-        $this->get('/status')->assertRedirect('/status/our-status');
+        $this->getJson('/api/app/platform-status')->assertJsonRedirect('/status/our-status');
     }
 }

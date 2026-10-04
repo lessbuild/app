@@ -33,10 +33,7 @@ async function switchAccount(id: string) {
                     </NuxtLink>
                     <NavLinks :items="shell.primaryNav" :label="t('Platform')" class="hidden flex-1 pl-2 xl:flex" />
                     <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-                        <NuxtLink to="/changelog" class="ui-icon-btn relative" :aria-label="shell.unseenChanges > 0 ? t('What’s new (:count new)', { count: shell.unseenChanges }) : t('What’s new')">
-                            <Icon name="sparkles" class="h-[18px] w-[18px]" />
-                            <span v-if="shell.unseenChanges > 0" class="absolute right-1 top-1 size-2 rounded-full bg-primary" aria-hidden="true" />
-                        </NuxtLink>
+                        <WhatsNewDialog :unseen="shell.unseenChanges" />
                         <CommandPalette :shell="shell" />
                         <NotificationsBell :unread="shell.unreadNotifications" />
                         <ThemeToggle />

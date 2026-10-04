@@ -35,7 +35,7 @@ final class CliDownloadTest extends TestCase
         $this->assertSame(0, $code);
         $this->assertStringContainsString('buildpusher deploy <project> [environment] [--wait]', implode("\n", $help));
 
-        $this->get('/help/use-the-cli')->assertOk()->assertSee('Deploy from the command line');
-        $this->actingAs($this->ownerOf(Project::factory()->create()))->get('/account/api-tokens')->assertOk()->assertSee('curl -fsSL '.route('cli.install').' | sh');
+        $this->getJson('/api/app/help/use-the-cli')->assertOk()->assertJsonPath('title', 'Deploy from the command line');
+        $this->actingAs($this->ownerOf(Project::factory()->create()))->getJson('/api/app/account/api-tokens')->assertOk()->assertJsonPath('cliInstallUrl', route('cli.install'));
     }
 }

@@ -100,9 +100,9 @@ final class WeeklyReportTest extends TestCase
      */
     public function test_people_can_turn_the_weekly_report_off(): void
     {
-        $user = User::factory()->create();
-        $this->actingAs($user)->get('/settings/notifications')->assertOk()->assertSee('Email me the weekly report');
-        $this->actingAs($user)->put('/settings/notifications/weekly-report', ['weekly_report_emails' => '0'])->assertRedirect('/settings/notifications');
+        $user = User::factory()->create()->refresh();
+        $this->actingAs($user)->getJson('/api/app/settings/notifications')->assertOk()->assertJsonPath('weeklyReportEmails', true);
+        $this->actingAs($user)->putJson('/api/app/settings/notifications/weekly-report', ['weekly_report_emails' => '0'])->assertSuccessful();
         $this->assertFalse($user->refresh()->weekly_report_emails);
     }
 

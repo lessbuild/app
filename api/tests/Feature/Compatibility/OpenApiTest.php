@@ -58,6 +58,6 @@ final class OpenApiTest extends TestCase
     public function test_the_description_and_reference_are_served(): void
     {
         $this->getJson('/api/openapi.json')->assertOk()->assertJsonPath('openapi', '3.1.0')->assertJsonPath('paths./v1/me.get.security.0.apiToken.0', 'deploy:read');
-        $this->get('/docs/api')->assertOk()->assertSee('GET')->assertSee('/api/v1/environments/{environment}/deploy')->assertSee('deploy:write');
+        $this->getJson('/api/app/docs/api')->assertOk()->assertJsonFragment(['path' => '/api/v1/environments/{environment}/deploy'])->assertJsonHasText('deploy:write');
     }
 }

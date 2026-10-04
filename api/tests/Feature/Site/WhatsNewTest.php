@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature;
+namespace Tests\Feature\Site;
 
 use App\Models\Project;
 use App\Support\Changelog;
@@ -29,15 +29,17 @@ final class WhatsNewTest extends TestCase
         ]]);
         $owner = $this->ownerOf(Project::factory()->create());
 
-        $this->actingAs($owner)->get('/dashboard')->assertOk()->assertSee('What’s new (2 new)')->assertSee('Funnels arrived.')->assertSee(route('roadmap'));
-        $this->actingAs($owner)->from('/dashboard')->post('/whats-new/seen')->assertRedirect('/dashboard');
+        $this->actingAs($owner)->getJson('/api/app/shell')->assertOk()->assertJsonPath('unseenChanges', 2);
+        $this->actingAs($owner)->getJson('/api/app/whats-new')->assertOk()->assertJsonPath('entries.0.changes.0', 'Funnels arrived.');
+        $this->assertNull($owner->refresh()->last_seen_changelog_at, 'Reading the dialog doesn’t mark it seen.');
+        $this->actingAs($owner)->postJson('/api/app/whats-new/seen')->assertOk()->assertJsonPath('unseenChanges', 0);
         $this->assertSame('2026-09-29', $owner->refresh()->last_seen_changelog_at?->format('Y-m-d'));
-        $this->actingAs($owner)->get('/dashboard')->assertOk()->assertDontSee('What’s new (')->assertSee('What’s new');
+        $this->actingAs($owner)->getJson('/api/app/shell')->assertOk()->assertJsonPath('unseenChanges', 0);
 
         config(['changelog' => [['date' => '2026-10-02', 'title' => 'Newer still', 'changes' => ['More.']], ...config('changelog')]]);
         $this->assertSame(1, Changelog::unseen('2026-09-29'));
-        $this->actingAs($owner)->get('/dashboard')->assertSee('What’s new (1 new)');
-        $this->actingAs($owner)->get('/changelog')->assertOk()->assertSee('Newer still');
+        $this->actingAs($owner)->getJson('/api/app/shell')->assertJsonPath('unseenChanges', 1);
+        $this->actingAs($owner)->getJson('/api/app/site/changelog')->assertOk()->assertJsonPath('entries.0.title', 'Newer still');
         $this->assertSame('2026-10-02', $owner->refresh()->last_seen_changelog_at?->format('Y-m-d'));
     }
 }

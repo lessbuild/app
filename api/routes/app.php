@@ -94,6 +94,8 @@ use App\Http\Controllers\Analytics\UpdateGoalController;
 use App\Http\Controllers\Analytics\UpdateRawExportController;
 use App\Http\Controllers\Analytics\UpdateSiteController;
 use App\Http\Controllers\Analytics\VerifySiteController;
+use App\Http\Controllers\Assistant\AskAssistantController;
+use App\Http\Controllers\Assistant\ShowAssistantController;
 use App\Http\Controllers\Auth\ConnectProviderController;
 use App\Http\Controllers\Auth\DisconnectProviderController;
 use App\Http\Controllers\Auth\ShowCurrentUserController;
@@ -474,6 +476,8 @@ use App\Http\Controllers\Telemetry\StoreDeploymentController;
 use App\Http\Controllers\Telemetry\StoreIssueTrackerController;
 use App\Http\Controllers\Telemetry\UpdateBrowserErrorsController;
 use App\Http\Controllers\Telemetry\UpdateIssueController;
+use App\Http\Controllers\WhatsNew\MarkChangelogSeenController;
+use App\Http\Controllers\WhatsNew\ShowWhatsNewController;
 use Illuminate\Support\Facades\Route;
 
 // Before signing in.
@@ -591,6 +595,12 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     // Feedback from anywhere in the app, to the admins.
     Route::post('/feedback', StoreFeedbackController::class)->middleware('throttle:10,1')->name('feedback.store');
 
+    // What's new: the latest changelog entries, and marking them seen.
+    Route::get('/whats-new', ShowWhatsNewController::class)->name('whats-new');
+    Route::post('/whats-new/seen', MarkChangelogSeenController::class)->name('whats-new.seen');
+    // The assistant: questions about the account's deploys, errors, checks, incidents, Analytics and servers.
+    Route::get('/assistant', ShowAssistantController::class)->name('assistant');
+    Route::post('/assistant', AskAssistantController::class)->middleware('throttle:20,1')->name('assistant.ask');
     // The person's notifications, across their accounts.
     Route::get('/notifications', ShowNotificationsController::class)->name('notifications.index');
     Route::get('/notifications/export', ExportNotificationsController::class)->middleware('throttle:10,1')->name('notifications.export');

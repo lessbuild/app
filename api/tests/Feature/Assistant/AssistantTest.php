@@ -118,8 +118,8 @@ final class AssistantTest extends TestCase
     {
         $project = Project::factory()->withServices(['monitoring'])->create(['name' => 'Shop']);
         $owner = $this->ownerOf($project);
-        $this->actingAs($owner)->get('/assistant')->assertOk()->assertSee('isn’t set up on this installation yet', false)->assertSee(route('api.mcp'));
-        $this->actingAs($owner)->post('/assistant', ['question' => 'Anything broken?'])->assertSessionHasErrors('question');
+        $this->actingAs($owner)->getJson('/api/app/assistant')->assertOk()->assertJsonPath('configured', false)->assertJsonPath('mcpUrl', route('api.mcp'));
+        $this->actingAs($owner)->postJson('/api/app/assistant', ['question' => 'Anything broken?'])->assertJsonValidationErrors('question');
 
         config(['services.anthropic.key' => 'sk-ant-test', 'services.anthropic.questions_per_day' => 2]);
         Http::fake(['api.anthropic.com/*' => Http::sequence()
@@ -128,22 +128,23 @@ final class AssistantTest extends TestCase
             ->push(['content' => [['type' => 'text', 'text' => 'Still fine.']], 'stop_reason' => 'end_turn']),
         ]);
 
-        $this->actingAs($owner)->post('/assistant', ['question' => 'Anything broken?'])->assertRedirect();
+        $this->actingAs($owner)->postJson('/api/app/assistant', ['question' => 'Anything broken?'])->assertSuccessful()->assertJsonPath('redirect', fn ($url): bool => str_starts_with((string) $url, '/assistant?conversation='));
         $conversation = AssistantConversation::query()->sole();
         $this->assertSame(['idle', 'Anything broken?'], [$conversation->status, $conversation->title]);
         Http::assertSent(fn (Request $request): bool => $request->hasHeader('x-api-key', 'sk-ant-test') && $request['model'] === config('services.anthropic.model')
             && in_array('deploy_impact', array_column((array) $request['tools'], 'name'), true) && str_contains($request['system'], $project->account->name) && count($request['messages']) === 1);
         Http::assertSent(fn (Request $request): bool => count($request['messages']) === 3 && $request['messages'][2]['content'][0]['type'] === 'tool_result'
             && str_contains($request['messages'][2]['content'][0]['content'], '"name":"Shop"'));
-        $this->actingAs($owner)->get('/assistant?conversation='.$conversation->id)->assertOk()->assertSee('Anything broken?')->assertSee('<strong>Shop</strong>', false)->assertDontSee('toolu_1');
+        $this->actingAs($owner)->getJson('/api/app/assistant?conversation='.$conversation->id)->assertOk()->assertJsonPath('conversation.lines.0.text', 'Anything broken?')
+            ->assertJsonHasText('<strong>Shop</strong>')->assertJsonLacksText('toolu_1');
 
         $colleague = User::factory()->create();
         $this->addMember($project, $colleague, \App\Enums\AccountRole::Member);
         $colleague->forceFill(['current_account_id' => $project->account_id])->save();
-        $this->actingAs($colleague)->get('/assistant?conversation='.$conversation->id)->assertNotFound();
+        $this->actingAs($colleague)->getJson('/api/app/assistant?conversation='.$conversation->id)->assertNotFound();
 
-        $this->actingAs($owner)->post('/assistant', ['question' => 'And now?', 'conversation' => $conversation->id])->assertRedirect();
+        $this->actingAs($owner)->postJson('/api/app/assistant', ['question' => 'And now?', 'conversation' => $conversation->id])->assertSuccessful();
         $this->assertCount(4, $conversation->refresh()->transcript());
-        $this->actingAs($owner)->post('/assistant', ['question' => 'Third?'])->assertSessionHasErrors('question');
+        $this->actingAs($owner)->postJson('/api/app/assistant', ['question' => 'Third?'])->assertJsonValidationErrors('question');
     }
 }
