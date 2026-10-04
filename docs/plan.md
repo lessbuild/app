@@ -73,3 +73,14 @@ New for v3:
     links that mail clients unsubscribe with in one click (`laravelPosts` in `web/server/middleware/laravel.ts`).
 
 Each slice moves the area's backend (JSON controllers, requests, tests rewritten as API tests) and its pages together.
+
+## Progress
+
+- **0–1. Scaffold and identity**: done.
+- **2. Projects and account**: done. Projects (overview, setup guide, domains, settings, services, templates);
+  account (members, invitations, API tokens, audit log with streams, webhooks, security with SSO/SAML/SCIM,
+  providers, clients, inventories, settings); personal settings; notifications; search with the command palette;
+  saved views; feedback; the footer. Left for later slices: the GitHub App connect flow (Deploy), the setup guide's
+  in-page forms for adding a website or an Analytics site (Infrastructure, Analytics), and white-label branding on
+  status pages (Status pages).
+- **3. Billing**: next.
