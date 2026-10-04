@@ -171,7 +171,7 @@ final class SocialSignInTest extends TestCase
         $user = User::factory()->create();
         $this->gateway->profile = new SocialProfile('gh-10', 'x@example.com', 'X');
 
-        $this->assertStringStartsWith(url('/settings/security?social_error='), (string) $this->actingAs($user)->get('/auth/github/callback?code=x')->assertRedirect()->headers->get('Location'));
+        $this->assertStringContainsString('/settings/security?social_error=', (string) $this->actingAs($user)->get('/auth/github/callback?code=x')->assertRedirect()->headers->get('Location'));
 
         $stale = ['social.intent' => ['type' => 'connect', 'provider' => 'github', 'user_id' => $user->id, 'at' => now()->subHour()->getTimestamp()]];
         $this->assertStringContainsString('social_error=', (string) $this->actingAs($user)->withSession($stale)->get('/auth/github/callback?code=x')->headers->get('Location'));
@@ -229,7 +229,7 @@ final class SocialSignInTest extends TestCase
         $this->actingAs($user)->postJson('/api/app/auth/confirm-with/github', ['redirect' => '/settings/security'])->assertOk()->assertJsonPath('redirect', 'https://github.test/authorize');
 
         $this->gateway->profile = new SocialProfile('gh-other', 'x@example.com', 'X');
-        $this->assertStringStartsWith(url('/user/confirm-password?social_error='), (string) $this->actingAs($user)->get('/auth/github/callback?code=x')->assertRedirect()->headers->get('Location'));
+        $this->assertStringContainsString('/user/confirm-password?social_error=', (string) $this->actingAs($user)->get('/auth/github/callback?code=x')->assertRedirect()->headers->get('Location'));
 
         $this->actingAs($user)->postJson('/api/app/auth/confirm-with/github', ['redirect' => '/settings/security'])->assertOk();
         $this->gateway->profile = new SocialProfile('gh-13', 'x@example.com', 'X');

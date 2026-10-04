@@ -56,6 +56,10 @@ use App\Http\Controllers\Auth\StartSsoSignInController;
 use App\Http\Controllers\Dashboard\ShowDashboardController;
 use App\Http\Controllers\Invitations\AcceptInvitationController;
 use App\Http\Controllers\Invitations\ShowInvitationController;
+use App\Http\Controllers\Notifications\ExportNotificationsController;
+use App\Http\Controllers\Notifications\MarkAllNotificationsReadController;
+use App\Http\Controllers\Notifications\OpenNotificationController;
+use App\Http\Controllers\Notifications\ShowNotificationsController;
 use App\Http\Controllers\Projects\AddDomainController;
 use App\Http\Controllers\Projects\CloneEnvironmentController;
 use App\Http\Controllers\Projects\DeleteEnvironmentController;
@@ -167,6 +171,12 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
         Route::post('/services/{service}', EnableProjectServiceController::class)->name('services.store');
         Route::delete('/services/{service}', DisableProjectServiceController::class)->name('services.destroy');
     });
+
+    // The person's notifications, across their accounts.
+    Route::get('/notifications', ShowNotificationsController::class)->name('notifications.index');
+    Route::get('/notifications/export', ExportNotificationsController::class)->middleware('throttle:10,1')->name('notifications.export');
+    Route::post('/notifications/read', MarkAllNotificationsReadController::class)->name('notifications.read');
+    Route::post('/notifications/{notification}/open', OpenNotificationController::class)->whereUuid('notification')->name('notifications.open');
 
     // The account: switching between accounts, members and invitations, and the account's own settings.
     Route::post('/accounts/{account}/switch', SwitchAccountController::class)->name('accounts.switch');

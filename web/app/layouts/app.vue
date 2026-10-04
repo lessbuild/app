@@ -3,7 +3,7 @@
  * The signed-in frame: two topbar rows (the platform's services and the person's menu; then the account or project
  * and its section navigation), then the page. The signed-in middleware has loaded the shell.
  */
-const { t, tc } = useT();
+const { t } = useT();
 const shell = useShell();
 
 /** Switch to another of the person's accounts and load its dashboard in full, so nothing from the old one lingers. */
@@ -37,12 +37,7 @@ async function switchAccount(id: string) {
                             <Icon name="sparkles" class="h-[18px] w-[18px]" />
                             <span v-if="shell.unseenChanges > 0" class="absolute right-1 top-1 size-2 rounded-full bg-primary" aria-hidden="true" />
                         </NuxtLink>
-                        <NuxtLink to="/notifications" class="ui-icon-btn relative" :aria-label="shell.unreadNotifications > 0 ? tc('Notifications, :count unread|Notifications, :count unread', shell.unreadNotifications) : t('Notifications')">
-                            <Icon name="bell" class="h-[18px] w-[18px]" />
-                            <span v-if="shell.unreadNotifications > 0" class="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-extrabold leading-4 text-white" aria-hidden="true">
-                                {{ shell.unreadNotifications > 9 ? '9+' : shell.unreadNotifications }}
-                            </span>
-                        </NuxtLink>
+                        <NotificationsBell :unread="shell.unreadNotifications" />
                         <ThemeToggle />
                         <details class="ui-topbar-menu group relative">
                             <summary class="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-control px-1.5 text-sm font-bold text-ink hover:bg-surface-muted" :aria-label="t('Account menu for :name', { name: shell.user.name })">

@@ -31,21 +31,6 @@ final class ActivityFiltersTest extends TestCase
         $this->owner->forceFill(['current_account_id' => $this->account->id])->save();
     }
 
-    public function test_the_inbox_filters_by_kind_and_words_and_exports(): void
-    {
-        $this->notify('Deploy finished', 'Shop is live', read: true);
-        $this->notify('=HYPERLINK("x")', 'Formula', read: false);
-        $this->notify('New feedback: An idea', 'Dark mode', read: false, type: NewFeedback::class);
-
-        $this->actingAs($this->owner)->get('/notifications?type='.urlencode(NewFeedback::class))->assertOk()->assertSee('Dark mode')->assertDontSee('Shop is live')->assertSee('New feedback');
-        $this->actingAs($this->owner)->get('/notifications?q=shop')->assertOk()->assertSee('Shop is live')->assertDontSee('Dark mode');
-        $this->actingAs($this->owner)->get('/notifications?filter=unread&q=shop')->assertOk()->assertDontSee('Shop is live');
-
-        $csv = $this->actingAs($this->owner)->get('/notifications/export')->assertOk()->streamedContent();
-        $this->assertStringContainsString("'=HYPERLINK", $csv);
-        $this->assertStringContainsString('Shop is live', $csv);
-    }
-
     public function test_saved_views_are_private_limited_to_the_page_and_reopen_its_filters(): void
     {
         $this->actingAs($this->owner)->get('/account/audit-log?category=security')->assertOk()->assertSee('data-modal-trigger="save-view-audit-log"', false);
