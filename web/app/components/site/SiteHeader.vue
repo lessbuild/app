@@ -19,14 +19,16 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 type MenuItem = { icon: string; title: string; text: string; to: string };
 type Menu = { key: string; label: string; columns: Array<{ title: string; items: MenuItem[] }>; feature?: { title: string; text: string; to: string } };
 
-const services = computed<MenuItem[]>(() => props.frame.services.map((service) => ({ icon: service.icon, title: service.name, text: service.eyebrow, to: `/features/${service.key}` })));
+const services = computed<Array<MenuItem & { key: string }>>(() => props.frame.services.map((service) => ({ key: service.key, icon: service.icon, title: service.name, text: service.eyebrow, to: `/features/${service.key}` })));
+// Services are grouped by what they're for; a service that isn't offered (such as Audit while it's off) is left out.
+const pick = (keys: string[]) => services.value.filter((service) => keys.includes(service.key));
 const menus = computed<Menu[]>(() => [
     {
         key: 'services',
         label: t('Services'),
         columns: [
-            { title: t('Ship and run'), items: services.value.slice(0, 2) },
-            { title: t('Watch and protect'), items: services.value.slice(2) },
+            { title: t('Ship and run'), items: pick(['deploy', 'infrastructure', 'security']) },
+            { title: t('Understand and improve'), items: pick(['monitoring', 'analytics', 'audit']) },
         ],
         feature: { title: t('Every service has a free tier'), text: t('Turn on only what a project needs.'), to: '/pricing' },
     },

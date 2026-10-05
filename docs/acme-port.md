@@ -21,7 +21,7 @@ deploy with scripts/deploy-preview.sh <run-id> after each phase.
 - [x] 6 Security (score ring with 7-day trend, check icons, scan everything, expandable finding rows, status tabs with counts, blocks per day)
 - [x] 7 Audit (Acme cards; service stays off)
 - [x] 8 Account pages (two-factor and protected-deploy badges), Ask chat with suggestions, notifications
-- [ ] 9 Public: Stratus home/service/pricing/compare updates, help centre
+- [x] 9 Public: services menu grouped as in Stratus (Audit joins when enabled), Audit integration copy behind AUDIT_ENABLED; the theme's fictional Audit comparison (made-up competitor and quotes) is not ported
 
 ## Page map (Acme → v3)
 platform/index → dashboard; projects/new → projects/create; templates → projects/templates;
