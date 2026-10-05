@@ -38,7 +38,6 @@ const groups = computed(() => [
 const chosen = reactive<Record<number, string>>({});
 const current = (index: number) => groups.value[index]!.find((list) => list.key === chosen[index]) ?? groups.value[index]![0]!;
 const items = (list: ReportList) => list.items.map((item) => ({ label: item.label, value: item.count, to: list.filter && item.value !== 'Unknown' ? router.resolve(narrow(list.filter, item.value)).fullPath : undefined }));
-const spark = (label: string) => (label === props.report.metrics[0]?.label ? props.report.series.map((point) => point.value) : undefined);
 const activeFilters = computed(() => Object.fromEntries(Object.entries(props.filters).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== '')));
 /** The address of this report narrowed to one more filter (or one page, for the page lists). */
 const narrow = (key: string, value: string) => props.link({ ...activeFilters.value, [key]: value });
@@ -81,7 +80,6 @@ const duration = (seconds: number) => (seconds >= 60 ? `${Math.floor(seconds / 6
                 :delta="metric.change && metric.change !== 'New' ? metric.change.replace(/\.0%$/, '%') : undefined"
                 :down="metric.change?.startsWith('-')"
                 :period="metric.change && metric.change !== 'New' ? (report.period.compare === 'year' ? t('vs last year') : t('vs previous period')) : changeText(metric.change)"
-                :spark="spark(metric.label)"
             />
         </div>
 
