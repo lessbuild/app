@@ -44,12 +44,12 @@ function apply() {
         <div class="space-y-6">
             <AcmeCard :padded="false">
                 <div class="px-5 pt-4 sm:px-6">
-                    <nav class="flex gap-6 overflow-x-auto border-b border-line [scrollbar-width:none]" :aria-label="t('Status')">
+                    <nav class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="t('Status')">
                         <NuxtLink
                             v-for="option in statusOptions"
                             :key="option.value"
                             :to="{ query: { ...route.query, status: option.value === 'open' ? undefined : option.value, page: undefined } }"
-                            :class="['-mb-px shrink-0 whitespace-nowrap flex items-center gap-2 border-b-2 pb-3 text-sm font-medium', data.filters.status === option.value ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']"
+                            :class="['shrink-0 whitespace-nowrap flex items-center gap-2 border-b-2 pb-3 text-sm font-medium', data.filters.status === option.value ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']"
                             :aria-current="data.filters.status === option.value ? 'page' : undefined"
                         >
                             {{ option.label }}<span class="rounded-full bg-black/[.06] px-1.5 text-xs tabular-nums dark:bg-white/10">{{ data.counts[option.value] ?? 0 }}</span>

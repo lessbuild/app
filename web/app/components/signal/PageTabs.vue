@@ -8,12 +8,12 @@ withDefaults(defineProps<{ tabs: Record<string, string>; current: string; label:
 </script>
 
 <template>
-    <nav class="flex gap-6 overflow-x-auto border-b border-line [scrollbar-width:none]" :aria-label="label">
+    <nav class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="label">
         <NuxtLink
             v-for="(title, key) in tabs"
             :key="key"
             :to="{ query: { ...keep, tab: key } }"
-            :class="['-mb-px flex items-center gap-2 whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors', key === current ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']"
+            :class="['flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors', key === current ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']"
             :aria-current="key === current ? 'page' : undefined"
         >
             {{ title }}<span v-if="counts[key] !== undefined" class="rounded-full bg-black/[.06] px-1.5 text-xs tabular-nums dark:bg-white/10">{{ counts[key] }}</span>

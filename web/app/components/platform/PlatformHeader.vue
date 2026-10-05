@@ -49,11 +49,11 @@ const switcher = computed<MenuItem[]>(() => {
                 <slot name="actions" />
             </div>
         </header>
-        <nav v-if="sections.length > 0" class="mb-6 overflow-x-auto border-b border-line [scrollbar-width:none]" :aria-label="shell?.sectionLabel ?? t('Sections')">
+        <nav v-if="sections.length > 0" class="mb-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="shell?.sectionLabel ?? t('Sections')">
             <ul class="flex w-max gap-1">
                 <li v-for="item in sections" :key="item.url" class="shrink-0">
                     <NuxtLink :to="item.url" :class="['relative block whitespace-nowrap px-3 pb-3 pt-1 text-sm transition-colors', item.url === current ? 'font-medium text-ink' : 'text-muted hover:text-ink']" :aria-current="item.url === current ? 'page' : undefined">
-                        {{ item.label }}<span v-if="item.url === current" class="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent" aria-hidden="true" />
+                        {{ item.label }}<span v-if="item.url === current" class="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-accent" aria-hidden="true" />
                     </NuxtLink>
                 </li>
             </ul>

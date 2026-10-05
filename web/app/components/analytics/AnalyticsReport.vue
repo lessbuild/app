@@ -104,12 +104,12 @@ const duration = (seconds: number) => (seconds >= 60 ? `${Math.floor(seconds / 6
         <div class="grid gap-6 xl:grid-cols-2">
             <AcmeCard v-for="(group, index) in groups" :key="group[0]!.key" :padded="false">
                 <div class="px-5 pt-4 sm:px-6">
-                    <nav class="flex gap-5 overflow-x-auto border-b border-line [scrollbar-width:none]" :aria-label="current(index).title">
+                    <nav class="flex gap-5 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="current(index).title">
                         <button
                             v-for="list in group"
                             :key="list.key"
                             type="button"
-                            :class="['-mb-px whitespace-nowrap border-b-2 pb-3 text-sm font-medium', list.key === current(index).key ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']"
+                            :class="['shrink-0 whitespace-nowrap border-b-2 pb-3 text-sm font-medium', list.key === current(index).key ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']"
                             :aria-pressed="list.key === current(index).key"
                             @click="chosen[index] = list.key"
                         >

@@ -37,7 +37,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
     <div>
         <ProjectHeader :overview="data.overview" :title="t('Setup guide')" :description="t('From an empty project to a deployed, monitored and measured site, one step at a time.')" />
         <div class="space-y-6">
-            <nav :aria-label="t('Setup progress')" class="overflow-x-auto">
+            <nav :aria-label="t('Setup progress')" class="overflow-x-auto overflow-y-hidden overscroll-x-contain">
                 <ol class="flex min-w-max items-center gap-2">
                     <li v-for="(step, index) in steps" :key="step.key" class="flex items-center gap-2" :aria-current="index === currentIndex ? 'step' : undefined">
                         <span :class="['flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm', step.state === 'done' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : index === currentIndex ? 'border-accent bg-accent/10 font-medium text-ink' : 'border-line text-muted']">

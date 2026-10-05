@@ -55,12 +55,12 @@ onBeforeUnmount(() => window.clearInterval(timer));
 
             <AcmeCard :padded="false">
                 <div class="px-5 pt-4 sm:px-6">
-                    <nav class="flex gap-6 overflow-x-auto border-b border-line [scrollbar-width:none]" :aria-label="t('Incident status')">
+                    <nav class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="t('Incident status')">
                         <NuxtLink
                             v-for="(title, key) in tabs"
                             :key="key"
                             :to="key === 'maintenance' ? `/projects/${project.id}/monitoring/maintenance` : { query: key === 'open' ? {} : { status: key } }"
-                            :class="['-mb-px shrink-0 whitespace-nowrap flex items-center gap-2 border-b-2 pb-3 text-sm font-medium', key === data.status ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']"
+                            :class="['shrink-0 whitespace-nowrap flex items-center gap-2 border-b-2 pb-3 text-sm font-medium', key === data.status ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']"
                             :aria-current="key === data.status ? 'page' : undefined"
                         >
                             {{ title }}<span class="rounded-full bg-black/[.06] px-1.5 text-xs tabular-nums dark:bg-white/10">{{ key === 'open' ? stats.open : key === 'resolved' ? stats.resolved : data.maintenance }}</span>

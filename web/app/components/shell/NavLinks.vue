@@ -12,7 +12,7 @@ const current = computed(() => currentNavUrl(props.items, route));
 </script>
 
 <template>
-    <nav class="ui-horizontal-scroll flex min-w-0 items-center gap-1 overflow-x-auto" :aria-label="label">
+    <nav class="ui-horizontal-scroll flex min-w-0 items-center gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain" :aria-label="label">
         <NuxtLink v-for="item in items" :key="item.url" :to="item.url" class="topbar-nav-link" :aria-current="item.url === current ? 'page' : undefined">{{ item.label }}</NuxtLink>
     </nav>
 </template>
