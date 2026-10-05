@@ -318,7 +318,11 @@ final class EnvironmentsTest extends TestCase
         $this->addMember($this->project, $viewer, AccountRole::Viewer);
         $this->actingAs($viewer)->getJson($this->base)->assertOk()->assertJsonPath('canManage', false);
         $this->actingAs($viewer)->postJson("{$this->base}/variables", ['key' => 'X', 'value' => 'y', 'scope' => 'runtime'])->assertForbidden();
-        $this->actingAs($this->owner)->getJson("/api/app/projects/{$this->project->id}/deploy/environments")->assertOk()->assertSee('Production');
+        $this->production->forceFill(['protected' => true, 'deployment_locked_at' => now(), 'deployment_lock_reason' => 'Incident', 'deployment_window_days' => [1, 2], 'deployment_window_start' => '09:00', 'deployment_window_end' => '16:00', 'deployment_window_timezone' => 'UTC'])->save();
+        $list = $this->actingAs($this->owner)->getJson("/api/app/projects/{$this->project->id}/deploy/environments")->assertOk()->assertSee('Production');
+        $row = collect((array) $list->json('environments'))->firstWhere('id', $this->production->id);
+        $this->assertSame([true, 'Incident', [1, 2], '09:00'], [$row['protected'] ?? null, $row['lockReason'] ?? null, $row['window']['days'] ?? null, $row['window']['start'] ?? null]);
+        $this->assertArrayHasKey('replicas', $row);
         $this->actingAs($this->owner)->getJson('/api/app/projects/'.$this->project->id.'/deploy/environments/'.Environment::factory()->create()->id)->assertNotFound();
     }
 

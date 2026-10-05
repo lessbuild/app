@@ -107,9 +107,10 @@ final class Previews
      * @param  Repository  $source
      * @param  string  $branch
      * @param  CarbonImmutable  $expiresAt
+     * @param  string|null  $author  who's opening it
      * @return Preview|string
      */
-    public function openBranch(Repository $source, string $branch, CarbonImmutable $expiresAt): Preview|string
+    public function openBranch(Repository $source, string $branch, CarbonImmutable $expiresAt, ?string $author = null): Preview|string
     {
         $source->loadMissing(['project.account', 'provider', 'website', 'environment']);
         if (! $source->previews_enabled || $source->preview_domain === null) {
@@ -118,7 +119,7 @@ final class Previews
         if (! $this->entitlements->for($source->project->account)->has('deploy.previews')) {
             return 'preview_plan_required';
         }
-        $preview = DB::transaction(function () use ($source, $branch, $expiresAt): ?Preview {
+        $preview = DB::transaction(function () use ($source, $branch, $expiresAt, $author): ?Preview {
             $account = Account::query()->lockForUpdate()->findOrFail($source->project->account_id);
             $open = Preview::query()->where('source_repository_id', $source->id)->whereNull('pull_request_number')->where('source_branch', $branch)
                 ->where('status', '!=', Preview::STATUS_CLOSED)->lockForUpdate()->first();
@@ -132,7 +133,7 @@ final class Previews
                 return null;
             }
 
-            return $this->create($source, null, $branch, '', __('Branch :branch', ['branch' => $branch]), $entitlements, $expiresAt);
+            return $this->create($source, null, $branch, '', __('Branch :branch', ['branch' => $branch]), $entitlements, $expiresAt, $author);
         }, attempts: 3);
 
         return $preview ?? 'preview_limit_reached';
@@ -328,7 +329,7 @@ final class Previews
             return null;
         }
         if ($preview === null) {
-            return $this->create($source, (int) $webhook->pullRequestNumber, (string) $webhook->sourceBranch, (string) $webhook->revision, $webhook->pullRequestTitle, $entitlements);
+            return $this->create($source, (int) $webhook->pullRequestNumber, (string) $webhook->sourceBranch, (string) $webhook->revision, $webhook->pullRequestTitle, $entitlements, null, $webhook->pullRequestAuthor);
         }
 
         $reopening = ! $preview->isOpen();
@@ -336,7 +337,7 @@ final class Previews
             $preview->secretApprovals()->whereNull('revoked_at')->update(['revoked_at' => now()]);
         }
         $preview->forceFill([
-            'title' => $webhook->pullRequestTitle, 'source_branch' => (string) $webhook->sourceBranch, 'revision' => (string) $webhook->revision,
+            'title' => $webhook->pullRequestTitle, 'author' => $webhook->pullRequestAuthor ?? $preview->author, 'source_branch' => (string) $webhook->sourceBranch, 'revision' => (string) $webhook->revision,
             'source_environment_id' => $source->environment_id, 'last_activity_at' => now(), 'closed_at' => null,
         ]);
         $preview->repository?->forceFill(['branch' => $webhook->sourceBranch])->save();
@@ -386,9 +387,10 @@ final class Previews
      * @param  string|null  $title
      * @param  AccountEntitlements  $entitlements
      * @param  CarbonImmutable|null  $expiresAt  a branch preview's expiry
+     * @param  string|null  $author  who opened the pull request or the branch preview
      * @return Preview
      */
-    private function create(Repository $source, ?int $number, string $branch, string $revision, ?string $title, AccountEntitlements $entitlements, ?CarbonImmutable $expiresAt = null): Preview
+    private function create(Repository $source, ?int $number, string $branch, string $revision, ?string $title, AccountEntitlements $entitlements, ?CarbonImmutable $expiresAt = null, ?string $author = null): Preview
     {
         $project = $source->project;
         $label = $number !== null ? "PR #{$number}" : "Branch {$branch}";
@@ -415,7 +417,7 @@ final class Previews
         $preview->forceFill([
             'project_id' => $project->id, 'source_repository_id' => $source->id, 'source_environment_id' => $source->environment_id,
             'environment_id' => $environment->id, 'website_id' => $website->id, 'repository_id' => $repository->id, 'pull_request_number' => $number,
-            'title' => $title, 'source_branch' => $branch, 'revision' => $revision, 'expires_at' => $expiresAt,
+            'title' => $title, 'author' => $author, 'source_branch' => $branch, 'revision' => $revision, 'expires_at' => $expiresAt,
             'status' => Preview::STATUS_PROVISIONING, 'url' => $website->url, 'last_activity_at' => now(),
         ])->save();
         $website->forceFill(['env_file' => $this->configuration->environmentFile($preview, $website)])->save();

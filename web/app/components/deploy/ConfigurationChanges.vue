@@ -25,18 +25,12 @@ const kinds = computed<Record<string, string>>(() => ({
 </script>
 
 <template>
-    <DataTable :caption="t('Planned changes')">
-        <template #head>
-            <tr><th scope="col">{{ t('Environment') }}</th><th scope="col">{{ t('What') }}</th><th scope="col">{{ t('Change') }}</th><th scope="col">{{ t('Fields') }}</th></tr>
-        </template>
-        <tr v-for="(change, index) in changes" :key="index">
-            <td class="font-mono text-xs">{{ change.environment ?? '—' }}</td>
-            <td><span class="text-muted">{{ kinds[change.kind] ?? change.kind }}</span> <span class="font-mono text-xs">{{ change.name }}</span></td>
-            <td>
-                <Badge :tone="actions[change.action]?.tone ?? 'neutral'">{{ actions[change.action]?.label ?? change.action }}</Badge>
-                <span v-if="change.requires_approval" class="ml-1 text-xs text-muted">{{ t('needs approval') }}</span>
-            </td>
-            <td class="font-mono text-xs text-muted">{{ change.fields?.length ? change.fields.join(', ') : '—' }}</td>
-        </tr>
-    </DataTable>
+    <ul class="divide-y divide-line text-sm" :aria-label="t('Planned changes')">
+        <li v-for="(change, index) in changes" :key="index" class="flex flex-wrap items-center gap-3 py-2.5 first:pt-0">
+            <AcmeBadge :tone="acmeTone(actions[change.action]?.tone)">{{ actions[change.action]?.label ?? change.action }}</AcmeBadge>
+            <span class="min-w-0 flex-1 truncate text-ink"><span class="text-muted">{{ kinds[change.kind] ?? change.kind }}</span> <span class="font-mono text-xs">{{ change.name }}</span><template v-if="change.environment"> · <span class="font-mono text-xs text-muted">{{ change.environment }}</span></template></span>
+            <span class="text-xs text-muted">{{ change.fields?.length ? change.fields.join(', ') : '' }}<template v-if="change.requires_approval"> · {{ t('needs approval') }}</template></span>
+        </li>
+        <li v-if="changes.length === 0" class="py-2.5 text-muted">{{ t('Nothing would change.') }}</li>
+    </ul>
 </template>

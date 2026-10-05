@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { BuildChange, ComparedBuild, ComparisonPage } from '~/types/deploy';
-import type { Tone } from '~/types/ui';
 
 /**
- * A deploy beside another of the same repository (the last good one unless `?with=` picks one): timing, code and the
+ * A deploy beside another of the same repository (the Acme theme's compare page; the last good one unless `?with=`
+ * picks one): timing, code and the
  * environment settings that changed between them. Secret values are compared by name only.
  */
 definePageMeta({ layout: 'app', service: 'deploy' });
@@ -29,10 +29,10 @@ watch(chosen, (value) => {
         navigateTo({ query: { with: value } });
     }
 });
-const kinds = computed<Record<BuildChange['kind'], { tone: Tone; label: string }>>(() => ({
-    added: { tone: 'success', label: t('Added') },
-    removed: { tone: 'danger', label: t('Removed') },
-    changed: { tone: 'warning', label: t('Changed') },
+const kinds = computed<Record<BuildChange['kind'], { tone: 'green' | 'red' | 'amber'; label: string }>>(() => ({
+    added: { tone: 'green', label: t('Added') },
+    removed: { tone: 'red', label: t('Removed') },
+    changed: { tone: 'amber', label: t('Changed') },
 }));
 const areas = computed<Record<string, string>>(() => ({ Runtime: t('Runtime'), Variables: t('Variables'), 'Build variables': t('Build variables'), Workers: t('Workers'), Resources: t('Resources'), 'Environment file': t('Environment file') }));
 const startedBy = (side: ComparedBuild) => `${side.requester ?? t('A push')} · ${labels.trigger(side.trigger)}`;
@@ -68,65 +68,57 @@ const timing = computed(() => {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div>
         <ProjectHeader :overview="data.overview" :title="t('Compare deploy #:id', { id: build.id })" :description="`${build.repository} → ${build.website}`">
-            <template #actions>
-                <UiButton :to="`/projects/${project.id}/deploy/builds/${build.id}`" variant="quiet" size="sm">{{ t('Back to deploy #:id', { id: build.id }) }}</UiButton>
-            </template>
+            <template #actions><AcmeBtn :to="`/projects/${project.id}/deploy/builds/${build.id}`" icon="chevronLeft">{{ t('Back to deploy') }}</AcmeBtn></template>
         </ProjectHeader>
-
-        <div v-if="candidates.length > 0" class="max-w-xl">
-            <SelectField id="compare-with" v-model="chosen" name="with" :label="t('Compare with')" :options="candidates" />
-        </div>
-
-        <EmptyState v-if="comparison === null || baseline === null" icon="list" :title="t('Nothing to compare with yet')" :description="t('This repository has no other deploys. Compare becomes useful after the next one.')" />
-        <template v-else>
-            <div class="grid gap-4 sm:grid-cols-3">
-                <StatCard :label="t('Took')" :value="labels.duration(build.seconds)" :description="timing" />
-                <StatCard
-                    :label="t('Settings changed')"
-                    :value="comparison.snapshotsAvailable ? String(comparison.changes.length) : '—'"
-                    :description="comparison.snapshotsAvailable ? t('Between the two environment snapshots') : t('One of them didn’t record its environment')"
-                />
-                <StatCard
-                    :label="t('Code')"
-                    :value="baseline.revision === build.revision ? t('Same commit') : t('Different commits')"
-                    :description="comparison.compareUrl ? t('See the diff at your Git provider') : t('No commit range to show')"
-                />
-            </div>
-            <div v-if="comparison.compareUrl">
-                <a :href="comparison.compareUrl" target="_blank" rel="noopener" class="ui-btn ui-btn-secondary">{{ t('View code changes') }} <Icon name="external" class="size-4" /></a>
-            </div>
-
-            <DataTable :caption="t('Side by side')">
-                <template #head>
-                    <tr><th scope="col"><span class="sr-only">{{ t('Measure') }}</span></th><th scope="col">{{ t('#:id (baseline)', { id: baseline.id }) }}</th><th scope="col">{{ t('#:id', { id: build.id }) }}</th></tr>
-                </template>
-                <tr v-for="row in rows" :key="row.label" :class="{ 'bg-warning-soft/40': row.before !== row.after }">
-                    <th scope="row" class="text-left font-semibold">{{ row.label }}</th>
-                    <td class="text-muted">{{ row.before }}</td>
-                    <td class="text-ink">{{ row.after }}</td>
-                </tr>
-            </DataTable>
-
-            <template v-if="comparison.snapshotsAvailable">
-                <Alert v-if="comparison.changes.length === 0" tone="info" role="status">{{ t('Both deploys ran with the same environment settings, variables and workers.') }}</Alert>
-                <template v-else>
-                    <DataTable :caption="t('Settings that changed')">
-                        <template #head>
-                            <tr><th scope="col">{{ t('Where') }}</th><th scope="col">{{ t('Name') }}</th><th scope="col">{{ t('Change') }}</th><th scope="col">{{ t('Before') }}</th><th scope="col">{{ t('After') }}</th></tr>
-                        </template>
-                        <tr v-for="(change, index) in comparison.changes" :key="index">
-                            <td>{{ areas[change.area] ?? change.area }}</td>
-                            <td class="font-mono text-xs">{{ change.name }}</td>
-                            <td><Badge :tone="kinds[change.kind].tone">{{ kinds[change.kind].label }}</Badge></td>
-                            <td class="max-w-xs break-all font-mono text-xs text-muted">{{ change.from ?? (change.kind === 'added' ? '—' : t('hidden')) }}</td>
-                            <td class="max-w-xs break-all font-mono text-xs">{{ change.to ?? (change.kind === 'removed' ? '—' : t('hidden')) }}</td>
-                        </tr>
-                    </DataTable>
-                    <p class="text-xs text-muted">{{ t('Variable values, the .env file and resource settings are secret, so only their names are compared.') }}</p>
+        <div class="space-y-6">
+            <AcmeEmptyCard v-if="comparison === null || baseline === null" icon="layers" :title="t('Nothing to compare with yet')" :description="t('This repository has no other deploys. Compare becomes useful after the next one.')" />
+            <template v-else>
+                <AcmeCard>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="text-sm font-semibold text-ink">#{{ build.id }}</span>
+                        <span class="text-sm text-muted">{{ t('compared with') }}</span>
+                        <SelectField id="compare-with" v-model="chosen" name="with" :label="t('Compare with')" :options="candidates" class="min-w-64 [&_label]:sr-only" />
+                    </div>
+                </AcmeCard>
+                <div class="grid gap-4 md:grid-cols-3">
+                    <StatCard :label="t('Timing')" :value="labels.duration(build.seconds)" :description="timing" />
+                    <StatCard :label="t('Code')" :value="baseline.revision === build.revision ? t('Same commit') : t('Different commits')">
+                        <a v-if="comparison.compareUrl" :href="comparison.compareUrl" target="_blank" rel="noopener" class="mt-1 inline-block text-xs text-ink underline">{{ t('View code changes') }}</a>
+                        <p v-else class="mt-1 text-xs text-muted">{{ t('No commit range to show') }}</p>
+                    </StatCard>
+                    <StatCard :label="t('Settings')" :value="comparison.snapshotsAvailable ? t(':count changed', { count: comparison.changes.length }) : '—'" :description="comparison.snapshotsAvailable ? t('Between the two environment snapshots') : t('One of them didn’t record its environment')" />
+                </div>
+                <AcmeCard :title="t('Side by side')" :padded="false">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[32rem] text-sm">
+                            <caption class="sr-only">{{ t('Side by side') }}</caption>
+                            <thead><tr class="border-b border-line text-left text-xs text-muted"><th scope="col" class="px-5 py-2.5 font-medium"><span class="sr-only">{{ t('Measure') }}</span></th><th scope="col" class="px-5 py-2.5 font-medium">#{{ build.id }}</th><th scope="col" class="px-5 py-2.5 font-medium">{{ t('#:id (baseline)', { id: baseline.id }) }}</th></tr></thead>
+                            <tbody class="divide-y divide-line">
+                                <tr v-for="row in rows" :key="row.label" :class="row.before !== row.after && 'bg-amber-500/[.04]'">
+                                    <th scope="row" class="px-5 py-3 text-left font-normal text-muted">{{ row.label }}</th>
+                                    <td :class="['px-5 py-3 text-ink', row.label === t('Commit') && 'font-mono']">{{ row.after }}</td>
+                                    <td :class="['px-5 py-3 text-muted', row.label === t('Commit') && 'font-mono']">{{ row.before }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </AcmeCard>
+                <template v-if="comparison.snapshotsAvailable">
+                    <AcmeAlert v-if="comparison.changes.length === 0" tone="info">{{ t('Both deploys ran with the same environment settings, variables and workers.') }}</AcmeAlert>
+                    <AcmeCard v-else :title="t('Settings that changed')" :description="t('Variable values, the .env file and resource settings are secret, so only their names are compared.')" :padded="false">
+                        <ul class="divide-y divide-line text-sm">
+                            <li v-for="(change, index) in comparison.changes" :key="index" class="flex flex-wrap items-center gap-3 px-5 py-3 sm:px-6">
+                                <AcmeBadge>{{ areas[change.area] ?? change.area }}</AcmeBadge>
+                                <span class="flex-1 font-mono text-xs text-ink">{{ change.name }}</span>
+                                <AcmeBadge :tone="kinds[change.kind].tone">{{ kinds[change.kind].label }}</AcmeBadge>
+                                <span v-if="change.kind === 'changed'" class="max-w-xs break-all font-mono text-xs text-muted">{{ change.from ?? t('hidden') }} → {{ change.to ?? t('hidden') }}</span>
+                            </li>
+                        </ul>
+                    </AcmeCard>
                 </template>
             </template>
-        </template>
+        </div>
     </div>
 </template>

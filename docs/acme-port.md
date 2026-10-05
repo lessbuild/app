@@ -14,7 +14,7 @@ deploy with scripts/deploy-preview.sh <run-id> after each phase.
 ## Phases
 - [x] 0 Foundation: re-sync components (incl. Platform*, Audit*, charts), dialogs as right-side drawers, PlatformPage
 - [x] 1 Projects: dashboard, new, templates, project overview, setup, domains, settings
-- [ ] 2 Deploy
+- [x] 2 Deploy
 - [ ] 3 Infrastructure
 - [ ] 4 Monitoring
 - [ ] 5 Analytics
@@ -42,3 +42,11 @@ ask → assistant; notifications → notifications.
   the new-project wizard dialog (all links point there), templates (cards then form; API adds services + icon),
   project overview (service cards with section links from API), setup guide, domains (inline add, copy record),
   settings (inline add/clone environment, typed delete). SubmitButton has a `disabled` prop.
+- Phase 2: Deploy. New API: delivery stats/waiting/recent deploys (DeployActivityQuery), reachable repositories per
+  Git provider (GitRepositories + /deploy/repositories/reachable; self-hosted GitLab falls back to typing), webhook
+  URL on repositories, environment cards data (protected, lock reason, window, replicas, last deploy, regions),
+  preview author (migration; from PR webhooks and branch openers) and deploy counts. UI: repositories, connect page
+  (picker), repository (tabs, toggles), deploy (status tiles, inline approval, steps+log, analysis, actions menu),
+  compare, environments (cards; settings tab with toggles, day pills, On this page), pipelines (reorderable steps),
+  previews (cards, usage bar, branch dialog), configuration (editor beside plan/reviews/bindings). New shared:
+  ToggleField, PageTabs restyled as the theme's tabs, StatCard as the theme's stat tile, BuildStatusBadge with dot.

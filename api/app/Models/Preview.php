@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $pull_request_number null for a branch preview
  * @property CarbonImmutable|null $expires_at a branch preview closes then
  * @property string|null $title
+ * @property string|null $author who opened it: the pull request's author, or whoever opened a branch preview
  * @property string $source_branch
  * @property string $revision the pull request's head commit, which the preview deploys
  * @property string $status see the STATUS_ constants

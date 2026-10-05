@@ -63,6 +63,7 @@ final class ShowRepositoryController
                 'autoDeployIncludePaths' => $repository->auto_deploy_include_paths ?? [],
                 'autoDeployExcludePaths' => $repository->auto_deploy_exclude_paths ?? [],
                 'webhookEnabled' => $repository->webhook_enabled,
+                'webhookUrl' => route('webhooks.repositories.receive', $repository->id),
                 'webhookLastReceivedAt' => $repository->webhook_last_received_at?->toIso8601String(),
                 'buildCacheEnabled' => $repository->build_cache_enabled,
                 'previewsEnabled' => $repository->previews_enabled,

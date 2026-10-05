@@ -39,9 +39,9 @@ const runtimes: Option[] = [
             <ApiForm :action="`${base}/settings`" method="PUT" class="p-4 sm:p-6">
                 <fieldset :disabled="!page.canManage" class="grid items-start gap-4 sm:grid-cols-2">
                     <div class="grid gap-1 sm:col-span-2">
-                        <CheckboxField name="requires_deployment_approval" :label="t('Deploys need approval from someone else')" :checked="environment.requiresApproval" />
-                        <CheckboxField name="automatic_rollback" :label="t('Roll back automatically when a live deploy fails')" :checked="environment.automaticRollback" />
-                        <CheckboxField
+                        <ToggleField name="requires_deployment_approval" :label="t('Deploys need approval from someone else')" :checked="environment.requiresApproval" />
+                        <ToggleField name="automatic_rollback" :label="t('Roll back automatically when a live deploy fails')" :checked="environment.automaticRollback" />
+                        <ToggleField
                             name="migration_safety"
                             :label="t('Stop before destructive migrations')"
                             :checked="environment.migrationSafety"
@@ -102,7 +102,7 @@ const runtimes: Option[] = [
                         <InputField name="maximum_replicas" type="number" min="1" max="20" :label="t('Max replicas')" :model-value="String(environment.maximumReplicas)" />
                     </div>
                     <div class="grid items-end gap-3 sm:col-span-2 sm:grid-cols-2">
-                        <CheckboxField
+                        <ToggleField
                             name="autoscale_enabled"
                             :label="t('Scale automatically')"
                             :checked="environment.autoscaleEnabled"

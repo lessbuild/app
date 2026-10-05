@@ -4,7 +4,8 @@
 // `tinted` swaps the white card for a pastel wash in the tone's colour.
 import type { AcmeTone as Tone } from '~/utils/acme'
 
-const props = defineProps<{ label: string; value: string; delta?: string; down?: boolean; spark?: number[]; icon?: string; tone?: Tone | 'sky'; tinted?: boolean }>()
+const props = defineProps<{ label: string; value: string; delta?: string; down?: boolean; spark?: number[]; icon?: string; tone?: Tone | 'sky'; tinted?: boolean; period?: string }>()
+const { t } = useT()
 const guesses: [RegExp, string, Tone | 'sky'][] = [
   [/overdue|low stock|expiring|bounce/i, 'alert', 'red'],
   [/win|award/i, 'award', 'violet'],
@@ -42,13 +43,13 @@ const washes: Record<string, string> = {
     </div>
     <div class="mt-4 flex items-end justify-between gap-3">
       <p class="text-xl font-semibold tabular-nums tracking-tight sm:text-[1.75rem] sm:leading-none">{{ value }}</p>
-      <AcmeSparkline v-if="spark" :values="spark" :label="`${label} trend`" area class="hidden h-10 w-24 sm:block" />
+      <AcmeSparkline v-if="spark" :values="spark" :label="t(':label trend', { label })" area class="hidden h-10 w-24 sm:block" />
     </div>
     <p v-if="delta" class="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
       <span class="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold" :class="down ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'">
         <AcmeIcon :name="down ? 'sortDown' : 'sortUp'" :size="14" />{{ delta }}
       </span>
-      <span class="hidden text-muted sm:inline">vs last month</span>
+      <span class="hidden text-muted sm:inline">{{ period ?? t('vs last month') }}</span>
     </p>
   </div>
 </template>

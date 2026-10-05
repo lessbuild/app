@@ -87,7 +87,28 @@ class RepositoryWebhookVerifier
             $isFork,
             $targetRepository,
             $changedPaths,
+            $previewAction !== null ? $this->pullRequestAuthor($provider, $payload) : null,
         );
+    }
+
+    /**
+     * Read who opened the pull or merge request: GitHub's user login, GitLab's user (the merge request's author is only
+     * an id) and Bitbucket's author display name.
+     *
+     * @param  ProviderType  $provider
+     * @param  array<mixed>  $payload
+     * @return string|null
+     */
+    private function pullRequestAuthor(ProviderType $provider, array $payload): ?string
+    {
+        $author = match ($provider) {
+            ProviderType::GitHub => data_get($payload, 'pull_request.user.login'),
+            ProviderType::GitLab => data_get($payload, 'user.name') ?? data_get($payload, 'user.username'),
+            ProviderType::Bitbucket => data_get($payload, 'pullrequest.author.display_name') ?? data_get($payload, 'pullrequest.author.nickname'),
+            default => null,
+        };
+
+        return is_string($author) && trim($author) !== '' ? mb_substr(trim($author), 0, 120) : null;
     }
 
     /**

@@ -2,7 +2,7 @@
 import type { BuildStatus } from '~/types/deploy';
 import type { Tone } from '~/types/ui';
 
-/** Where a deploy is, as a badge: live, failed, deploying, waiting for approval… */
+/** Where a deploy is, as a badge with a dot (the Acme theme's status badge): live, failed, deploying, waiting… */
 const props = defineProps<{ status: BuildStatus | string | null }>();
 const { t } = useT();
 const badge = computed<{ tone: Tone; label: string }>(() => {
@@ -27,8 +27,5 @@ const badge = computed<{ tone: Tone; label: string }>(() => {
 </script>
 
 <template>
-    <Badge :tone="badge.tone">
-        <span v-if="status === 'running' || status === 'deploying'" class="ui-status-dot animate-pulse" aria-hidden="true" />
-        {{ badge.label }}
-    </Badge>
+    <AcmeBadge :tone="acmeTone(badge.tone)" dot>{{ badge.label }}</AcmeBadge>
 </template>

@@ -38,7 +38,7 @@ final class OpenBranchPreview
         if (GitRef::normalize($branch) !== $branch || $branch === '' || $days < 1 || $days > 30) {
             throw new AccountRuleViolation('branch', __('Enter a branch name, and one to 30 days.'));
         }
-        $result = $this->previews->openBranch($source, $branch, now()->toImmutable()->addDays($days));
+        $result = $this->previews->openBranch($source, $branch, now()->toImmutable()->addDays($days), $actor->name);
         if (is_string($result)) {
             throw new AccountRuleViolation('branch', match ($result) {
                 'preview_plan_required' => __('Previews come with the Pro Deploy plan and above.'),

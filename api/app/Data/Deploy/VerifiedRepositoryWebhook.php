@@ -24,6 +24,7 @@ final readonly class VerifiedRepositoryWebhook
      * @param  bool|null  $isFork  Whether the source repository differs from the target repository, or null when the provider did not supply enough metadata.
      * @param  string|null  $targetRepository  Provider identity of the pull/merge request target repository or project, if supplied.
      * @param  list<string>|null  $changedPaths  Bounded normalized paths from a push payload, or null when the provider did not provide them.
+     * @param  string|null  $pullRequestAuthor  Who opened the pull/merge request, if supplied.
      */
     public function __construct(
         public string $deliveryId,
@@ -39,6 +40,7 @@ final readonly class VerifiedRepositoryWebhook
         public ?bool $isFork = null,
         public ?string $targetRepository = null,
         public ?array $changedPaths = null,
+        public ?string $pullRequestAuthor = null,
     ) {}
 
     /**

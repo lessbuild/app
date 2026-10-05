@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { MenuItem } from '~/components/acme/Menu.vue';
 import type { BuildLiveStatus, BuildPage, ObservationMeasures } from '~/types/deploy';
 
 /**
- * One deploy: its status (followed live while it runs), commit, release notes, approvals, release analysis,
- * promotion to another environment, the actions on it (cancel, redeploy, roll back) and its log.
+ * One deploy (the Acme theme's deploy page): its status (followed live while it runs), approval inline, the stages
+ * beside the log, release analysis and notes, and the actions on it (redeploy, roll back, promote, cancel) in a menu.
  */
 definePageMeta({ layout: 'app', service: 'deploy' });
 const { t, tc } = useT();
@@ -38,6 +39,44 @@ const observationBadge = computed(() => {
     }
 });
 const logBox = ref<HTMLElement | null>(null);
+// Lower is better for failures and request time; higher for the rest.
+const lowerIsBetter = new Set<keyof ObservationMeasures>(['error_rate', 'latency_ms']);
+const better = (key: keyof ObservationMeasures, before: number | null | undefined, after: number | null | undefined) => (before == null || after == null || before === after ? null : lowerIsBetter.has(key) ? after < before : after > before);
+const actions = computed<MenuItem[]>(() => {
+    if (!data.value.canDeploy) {
+        return [];
+    }
+    const items: MenuItem[] = [];
+    if (!active.value && build.value.revision) {
+        items.push({ label: t('Redeploy this commit'), icon: 'refresh', onSelect: () => submit('redeploy-form') });
+    }
+    if (status.value === 'succeeded' && build.value.releaseName) {
+        items.push({ label: t('Make this release live again'), icon: 'arrowUp', onSelect: () => submit('rollback-form') });
+    }
+    if (data.value.promotionTargets.length > 0) {
+        items.push({ label: t('Promote this commit…'), icon: 'transfer', onSelect: () => navigateTo({ query: { ...route.query, dialog: 'promote' } }) });
+    }
+    if (active.value) {
+        items.push({ divider: true }, { label: t('Cancel deploy'), icon: 'close', danger: true, onSelect: () => submit('cancel-form') });
+    }
+    return items;
+});
+
+/**
+ * Send one of the page's hidden action forms (they ask to confirm and check identity as any form does).
+ *
+ * @param id The form's id.
+ */
+function submit(id: string) {
+    (document.getElementById(id) as HTMLFormElement | null)?.requestSubmit();
+}
+
+/** Save the log as a text file. */
+function download() {
+    const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([log.value ?? ''], { type: 'text/plain' })), download: `deploy-${build.value.id}.log` });
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
 let timer: number | undefined;
 
 /** Ask how the deploy is going; once it's finished, load the whole page again. */
@@ -82,33 +121,37 @@ watch(log, async () => {
 </script>
 
 <template>
-    <div class="space-y-6">
-        <ProjectHeader :overview="data.overview" :title="t('Deploy #:id', { id: build.id })" :description="`${build.repository.name} → ${build.website}`">
+    <div>
+        <ProjectHeader :overview="data.overview" :title="t('Deploy #:id', { id: build.id })" :description="`${(build.commitMessage ?? '').split('\n')[0] || build.repository.name} · ${build.repository.name} → ${build.website}`">
             <template #actions>
-                <template v-if="data.telemetry">
-                    <UiButton :to="`/projects/${project.id}/monitoring/deployments/${data.telemetry.id}`" variant="quiet" size="sm">{{ t('Errors and latency') }}</UiButton>
-                    <UiButton :to="`/projects/${project.id}/monitoring/events?release=${data.telemetry.releaseId}&environment=${data.telemetry.environmentId}&has_trace=yes&range=all`" variant="quiet" size="sm">{{ t('Requests and traces') }}</UiButton>
-                </template>
-                <UiButton :to="`/projects/${project.id}/deploy/builds/${build.id}/compare`" variant="quiet" size="sm">{{ t('Compare') }}</UiButton>
+                <AcmeBtn :to="`/projects/${project.id}/deploy/builds/${build.id}/compare`" icon="layers">{{ t('Compare') }}</AcmeBtn>
+                <AcmeMenu v-if="actions.length > 0" :items="actions" :label="t('More actions')" icon="dots" align="right" />
             </template>
         </ProjectHeader>
-
-        <section class="ui-card grid gap-5 p-5 sm:p-6" :aria-busy="active || undefined">
-            <div class="flex flex-wrap items-center gap-3">
-                <span role="status" aria-live="polite"><BuildStatusBadge :status="status" /></span>
-                <a v-if="build.shortRevision && build.revisionUrl" :href="build.revisionUrl" target="_blank" rel="noopener" class="font-mono text-sm text-primary hover:underline">{{ build.shortRevision }}</a>
-                <span v-else-if="build.shortRevision" class="font-mono text-sm">{{ build.shortRevision }}</span>
-                <Badge v-if="build.ref" tone="accent" :title="t('Requested version')">{{ build.ref }}</Badge>
-                <span class="min-w-0 text-sm text-ink">{{ (build.commitMessage ?? '').split('\n')[0] }}</span>
+        <div class="space-y-6">
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" :aria-busy="active || undefined">
+                <div class="rounded-2xl border border-line bg-surface p-4 shadow-card xl:col-span-2">
+                    <p class="text-xs text-muted">{{ t('Status') }}</p>
+                    <p class="mt-2" role="status" aria-live="polite"><BuildStatusBadge :status="status" /></p>
+                    <p class="mt-2 text-xs text-muted"><RelativeTime v-if="build.startedAt" :at="build.startedAt" /><template v-else>—</template> · {{ t('took :time', { time: took }) }}</p>
+                </div>
+                <div class="rounded-2xl border border-line bg-surface p-4 shadow-card">
+                    <p class="text-xs text-muted">{{ t('Revision') }}</p>
+                    <p class="mt-2 truncate font-mono font-medium text-ink"><a v-if="build.shortRevision && build.revisionUrl" :href="build.revisionUrl" target="_blank" rel="noopener" class="hover:underline">{{ build.shortRevision }}</a><template v-else>{{ build.shortRevision ?? '—' }}</template></p>
+                    <p v-if="build.ref" class="mt-1 truncate text-xs text-muted">{{ build.ref }}</p>
+                </div>
+                <div class="rounded-2xl border border-line bg-surface p-4 shadow-card">
+                    <p class="text-xs text-muted">{{ t('Started by') }}</p>
+                    <p class="mt-2 truncate font-medium text-ink">{{ labels.trigger(build.trigger) }} · {{ build.requester ?? t('A push') }}</p>
+                </div>
+                <div class="rounded-2xl border border-line bg-surface p-4 shadow-card">
+                    <p class="text-xs text-muted">{{ t('Release') }}</p>
+                    <p class="mt-2 truncate font-mono text-sm font-medium text-ink">{{ build.releaseName ?? '—' }}</p>
+                </div>
             </div>
-            <dl class="grid gap-4 text-sm sm:grid-cols-4">
-                <div><dt class="text-xs text-muted">{{ t('Started by') }}</dt><dd class="mt-1">{{ build.requester ?? t('A push') }} · {{ labels.trigger(build.trigger) }}</dd></div>
-                <div><dt class="text-xs text-muted">{{ t('Started') }}</dt><dd class="mt-1"><RelativeTime v-if="build.startedAt" :at="build.startedAt" /><template v-else>—</template></dd></div>
-                <div><dt class="text-xs text-muted">{{ t('Took') }}</dt><dd class="mt-1">{{ took }}</dd></div>
-                <div><dt class="text-xs text-muted">{{ t('Release') }}</dt><dd class="mt-1 break-all font-mono text-xs">{{ build.releaseName ?? '—' }}</dd></div>
-            </dl>
 
-            <div v-if="build.rolledBackFrom || build.redeployedFrom || build.promotedFrom || build.promotions.length > 0" class="grid gap-1 text-sm text-muted">
+            <AcmeAlert v-if="build.failureMessage" tone="danger">{{ build.failureMessage }}</AcmeAlert>
+            <AcmeAlert v-if="build.rolledBackFrom || build.redeployedFrom || build.promotedFrom || build.promotions.length > 0" tone="info">
                 <p v-if="build.rolledBackFrom">{{ t('Rolled back to the release from deploy #:id.', { id: build.rolledBackFrom }) }}</p>
                 <p v-if="build.redeployedFrom">{{ t('Redeploy of #:id.', { id: build.redeployedFrom }) }}</p>
                 <p v-if="build.promotedFrom">
@@ -117,83 +160,83 @@ watch(log, async () => {
                 </p>
                 <p v-for="promotion in build.promotions" :key="promotion.id">
                     {{ t('Promoted to :environment as', { environment: promotion.environment ?? '—' }) }}
-                    <NuxtLink :to="`/projects/${project.id}/deploy/builds/${promotion.id}`" class="font-bold text-primary hover:underline">#{{ promotion.id }}</NuxtLink>.
+                    <NuxtLink :to="`/projects/${project.id}/deploy/builds/${promotion.id}`" class="font-medium underline">#{{ promotion.id }}</NuxtLink>.
                 </p>
-            </div>
-            <Alert v-if="build.failureMessage" tone="danger">{{ build.failureMessage }}</Alert>
+            </AcmeAlert>
 
-            <section v-if="Object.keys(build.releaseNotes).length > 0" class="grid gap-2" aria-labelledby="release-notes">
-                <h2 id="release-notes" class="text-sm font-bold text-ink">
-                    {{ t('Release notes') }} <span class="font-normal text-muted">· {{ tc(':count commit|:count commits', build.commitCount, { count: build.commitCount }) }}</span>
-                </h2>
-                <ReleaseNotes :sections="build.releaseNotes" />
-            </section>
-
-            <section v-if="build.destructiveMigrations" class="grid gap-2" aria-labelledby="destructive-migrations">
-                <h2 id="destructive-migrations" class="text-sm font-bold text-ink">{{ t('Destructive migrations') }}</h2>
-                <p class="text-sm text-muted">{{ t('The deploy stopped before running these. Check they’re intended and that nothing still reads what they remove.') }}</p>
-                <CodeBlock :code="build.destructiveMigrations" class="max-h-64 overflow-auto whitespace-pre-wrap text-xs" />
-                <ApiForm v-if="data.canApprove && status === 'failed'" :action="`${base}/approve-migrations`" :confirm="t('Run these migrations and deploy?')">
-                    <SubmitButton variant="danger">{{ t('Approve these migrations and deploy') }}</SubmitButton>
-                </ApiForm>
-            </section>
-
-            <section v-if="build.observation" class="grid gap-2" aria-labelledby="release-analysis">
-                <h2 id="release-analysis" class="flex items-center gap-2 text-sm font-bold text-ink">{{ t('Release analysis') }} <Badge :tone="observationBadge.tone">{{ observationBadge.label }}</Badge></h2>
-                <p v-if="build.observation.error" class="text-sm text-danger">{{ build.observation.error }}</p>
-                <DataTable :caption="t('Before and after this release went live')" :framed="false">
-                    <template #head>
-                        <tr><th scope="col">{{ t('Measure') }}</th><th scope="col" class="text-right">{{ t('Before') }}</th><th scope="col" class="text-right">{{ t('After') }}</th></tr>
-                    </template>
-                    <template v-for="measure in measures" :key="measure.key">
-                        <tr v-if="build.observation.before[measure.key] != null || build.observation.after[measure.key] != null">
-                            <td>{{ measure.label }}</td>
-                            <td class="text-right tabular-nums">{{ build.observation.before[measure.key] ?? '—' }}</td>
-                            <td class="text-right tabular-nums">{{ build.observation.after[measure.key] ?? '—' }}</td>
-                        </tr>
-                    </template>
-                </DataTable>
+            <section v-if="status === 'awaiting_approval' || build.destructiveMigrations" class="rounded-2xl border border-amber-500/40 bg-amber-500/[.05] p-5 sm:p-6" aria-labelledby="approve-title">
+                <h2 id="approve-title" class="flex items-center gap-2 font-semibold text-ink"><AcmeIcon name="alert" :size="18" class="text-amber-600" />{{ t('Approve deploy #:id', { id: build.id }) }}</h2>
+                <template v-if="build.destructiveMigrations">
+                    <p class="mt-1 text-sm text-muted">{{ t('The deploy stopped before running these. Check they’re intended and that nothing still reads what they remove.') }}</p>
+                    <pre class="mt-4 max-h-64 overflow-auto rounded-xl bg-zinc-950 p-4 font-mono text-xs leading-6 text-rose-200">{{ build.destructiveMigrations }}</pre>
+                    <ApiForm v-if="data.canApprove && status === 'failed'" :action="`${base}/approve-migrations`" :confirm="t('Run these migrations and deploy?')" class="mt-4 !block">
+                        <SubmitButton variant="danger">{{ t('Approve these migrations and deploy') }}</SubmitButton>
+                    </ApiForm>
+                </template>
+                <template v-if="status === 'awaiting_approval'">
+                    <ApiForm v-if="data.canApprove" :action="`${base}/review`" class="mt-4 !flex flex-wrap items-end gap-3">
+                        <InputField id="review-note" name="note" :label="t('Note (optional)')" maxlength="1000" class="min-w-60 max-w-xl flex-1" />
+                        <SubmitButton name="decision" value="approve">{{ t('Approve and deploy') }}</SubmitButton>
+                        <SubmitButton name="decision" value="reject" variant="secondary">{{ t('Reject') }}</SubmitButton>
+                    </ApiForm>
+                    <p v-else class="mt-2 text-sm text-muted">{{ t('Waiting for someone else with deploy rights to approve it.') }}</p>
+                </template>
             </section>
             <p v-if="build.approvalNote" class="text-sm text-muted">{{ t('Note: :note', { note: build.approvalNote }) }}</p>
 
-            <template v-if="status === 'awaiting_approval'">
-                <ApiForm v-if="data.canApprove" :action="`${base}/review`" class="flex flex-wrap items-end gap-3 rounded-panel border border-warning/40 bg-warning-soft/40 p-4">
-                    <div class="min-w-60 flex-1"><InputField name="note" :label="t('Note (optional)')" maxlength="1000" /></div>
-                    <SubmitButton name="decision" value="approve">{{ t('Approve') }}</SubmitButton>
-                    <SubmitButton name="decision" value="reject" variant="secondary">{{ t('Reject') }}</SubmitButton>
-                </ApiForm>
-                <p v-else class="text-sm text-muted">{{ t('Waiting for someone else with deploy rights to approve it.') }}</p>
-            </template>
-
-            <ApiForm v-if="data.promotionTargets.length > 0" :action="`${base}/promote`" class="flex flex-wrap items-end gap-3 border-t border-line pt-4">
-                <SelectField name="environment_id" :label="t('Promote this commit to')" :options="data.promotionTargets" />
-                <div class="min-w-60 flex-1"><InputField name="note" :label="t('Note (optional)')" maxlength="2000" /></div>
-                <SubmitButton>{{ t('Promote') }}</SubmitButton>
-            </ApiForm>
-
-            <div v-if="data.canDeploy" class="flex flex-wrap gap-2 border-t border-line pt-4">
-                <ApiForm v-if="active" :action="`${base}/cancel`" :confirm="t('Cancel this deploy?')"><SubmitButton variant="secondary" size="sm">{{ t('Cancel deploy') }}</SubmitButton></ApiForm>
-                <ApiForm v-if="!active && build.revision" :action="`${base}/redeploy`"><SubmitButton variant="secondary" size="sm">{{ t('Redeploy this commit') }}</SubmitButton></ApiForm>
-                <ApiForm v-if="status === 'succeeded' && build.releaseName" :action="`${base}/rollback`" :confirm="t('Make this release live again?')"><SubmitButton variant="quiet" size="sm">{{ t('Make this release live again') }}</SubmitButton></ApiForm>
+            <div class="grid gap-6 xl:grid-cols-[22rem_1fr]">
+                <AcmeCard :title="t('Steps')">
+                    <ol v-if="showStages && data.stages.length > 0" class="space-y-1">
+                        <li v-for="(title, index) in data.stages" :key="index" :class="['flex items-center gap-3 rounded-lg px-2 py-2 text-sm', status === 'failed' && stage === index && 'bg-rose-500/[.06]']">
+                            <AcmeIcon v-if="stage > index" name="checkCircle" :size="17" class="text-emerald-600" />
+                            <AcmeIcon v-else-if="status === 'failed' && stage === index" name="circleX" :size="17" class="text-rose-600" />
+                            <AcmeIcon v-else-if="active && stage === index" name="circleDashed" :size="17" class="animate-spin text-sky-600" />
+                            <AcmeIcon v-else name="circle" :size="17" class="text-muted" />
+                            <span :class="['flex-1', stage > index || (active && stage === index) ? 'text-ink' : 'text-muted']">{{ title }}</span>
+                        </li>
+                    </ol>
+                    <p v-else class="text-sm text-muted">{{ build.trigger === 'rollback' ? t('A rollback switches to the earlier release; there’s nothing to build.') : t('The steps show once the deploy starts.') }}</p>
+                </AcmeCard>
+                <AcmeCard :title="t('Log')" :description="active ? t('Follows the deploy live.') : t('The end of the deployment log.')" :padded="false">
+                    <template #action><AcmeBtn v-if="log" size="sm" variant="ghost" icon="download" @click="download">{{ t('Download') }}</AcmeBtn></template>
+                    <pre v-if="log" ref="logBox" class="max-h-[32rem] overflow-auto rounded-b-2xl bg-zinc-950 px-5 py-4 font-mono text-xs leading-6 text-zinc-300" aria-live="off">{{ log }}</pre>
+                    <p v-else class="px-5 pb-5 text-sm text-muted sm:px-6">{{ t('No log yet.') }}</p>
+                </AcmeCard>
             </div>
-        </section>
 
-        <section v-if="showStages && data.stages.length > 0" class="ui-card p-5">
-            <ol class="grid gap-2 text-sm sm:grid-cols-3" :aria-label="t('Stages')">
-                <li v-for="(title, index) in data.stages" :key="index" :class="['flex items-center gap-2', stage > index ? 'text-ink' : 'text-muted']">
-                    <Icon v-if="stage > index" name="check" class="h-4 w-4 text-success" />
-                    <span v-else-if="active && stage === index" class="ui-status-dot animate-pulse" aria-hidden="true" />
-                    <span v-else class="grid h-4 w-4 place-items-center" aria-hidden="true">·</span>
-                    {{ title }}
-                </li>
-            </ol>
-        </section>
+            <AcmeCard v-if="build.observation" :title="t('Release analysis')" :description="t('Before and after this release went live, from Monitoring and Analytics.')">
+                <template #action><AcmeBadge :tone="acmeTone(observationBadge.tone)">{{ observationBadge.label }}</AcmeBadge></template>
+                <p v-if="build.observation.error" class="mb-4 text-sm text-rose-600">{{ build.observation.error }}</p>
+                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    <template v-for="measure in measures" :key="measure.key">
+                        <div v-if="build.observation.before[measure.key] != null || build.observation.after[measure.key] != null" class="rounded-xl border border-line p-4">
+                            <p class="text-xs text-muted">{{ measure.label }}</p>
+                            <p class="mt-2 flex items-baseline gap-2"><span class="text-sm text-muted line-through">{{ build.observation.before[measure.key] ?? '—' }}</span><AcmeIcon name="arrowRight" :size="12" class="text-muted" /><span class="text-xl font-semibold tabular-nums text-ink">{{ build.observation.after[measure.key] ?? '—' }}</span></p>
+                            <p v-if="better(measure.key, build.observation.before[measure.key], build.observation.after[measure.key]) !== null" :class="['mt-1 text-xs', better(measure.key, build.observation.before[measure.key], build.observation.after[measure.key]) ? 'text-emerald-600' : 'text-rose-600']">
+                                {{ better(measure.key, build.observation.before[measure.key], build.observation.after[measure.key]) ? t('Better than before') : t('Worse than before') }}
+                            </p>
+                        </div>
+                    </template>
+                </div>
+                <div v-if="data.telemetry" class="mt-4 flex flex-wrap gap-2">
+                    <AcmeBtn size="sm" icon="alert" :to="`/projects/${project.id}/monitoring/deployments/${data.telemetry.id}`">{{ t('Errors and latency') }}</AcmeBtn>
+                    <AcmeBtn size="sm" icon="list" :to="`/projects/${project.id}/monitoring/events?release=${data.telemetry.releaseId}&environment=${data.telemetry.environmentId}&has_trace=yes&range=all`">{{ t('Requests and traces') }}</AcmeBtn>
+                </div>
+            </AcmeCard>
 
-        <SettingsSection :title="t('Log')" :description="active ? t('Follows the deploy live.') : t('The end of the deployment log.')">
-            <div v-if="log" ref="logBox" class="m-4 max-h-[32rem] overflow-auto sm:m-6">
-                <CodeBlock :code="log" class="whitespace-pre-wrap" aria-live="off" />
-            </div>
-            <p v-else class="p-4 text-sm text-muted sm:p-6">{{ t('No log yet.') }}</p>
-        </SettingsSection>
+            <AcmeCard v-if="Object.keys(build.releaseNotes).length > 0" :title="t('Release notes')" :description="tc(':count commit|:count commits', build.commitCount, { count: build.commitCount })">
+                <ReleaseNotes :sections="build.releaseNotes" />
+            </AcmeCard>
+        </div>
+
+        <FormDialog v-if="data.promotionTargets.length > 0" id="promote" :title="t('Promote this commit')" :description="t('Deploys :revision to another environment with that environment’s own settings and approvals.', { revision: build.shortRevision ?? '' })" :action="`${base}/promote`" :submit="t('Promote')">
+            <SelectField id="promote-environment" name="environment_id" :label="t('Environment')" :options="data.promotionTargets" />
+            <InputField id="promote-note" name="note" :label="t('Note (optional)')" maxlength="2000" />
+        </FormDialog>
+        <div class="hidden">
+            <ApiForm id="redeploy-form" :action="`${base}/redeploy`" />
+            <ApiForm id="rollback-form" :action="`${base}/rollback`" :confirm="t('Make this release live again?')" />
+            <ApiForm id="cancel-form" :action="`${base}/cancel`" :confirm="t('Cancel this deploy?')" />
+        </div>
     </div>
 </template>

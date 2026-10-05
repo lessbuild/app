@@ -96,6 +96,7 @@ final class PreviewsTest extends TestCase
         $this->pullRequest('d-1')->assertOk()->assertJson(['status' => 'duplicate']);
 
         $preview = Preview::query()->sole();
+        $this->assertSame('maya', $preview->author);
         $website = $preview->website;
         $environment = $preview->environment;
         $repository = $preview->repository;
@@ -154,6 +155,7 @@ final class PreviewsTest extends TestCase
         $this->actingAs($this->owner)->postJson("{$this->base}/previews/branch", ['repository_id' => $this->source->id, 'branch' => 'feature/new-cart', 'days' => 3])->assertSuccessful();
 
         $preview = Preview::query()->sole();
+        $this->assertSame($this->owner->name, $preview->author);
         $this->assertSame([null, 'feature/new-cart', 'br-feature-new-cart-shop.preview.example.com', 'Branch feature/new-cart'], [$preview->pull_request_number, $preview->source_branch, $preview->url, $preview->label()]);
         $this->assertSame(['br-feature-new-cart', 'Branch feature/new-cart'], [$preview->environment?->slug, $preview->environment?->name]);
         $this->assertTrue($preview->expiresAt()->between(now()->addDays(3)->subMinute(), now()->addDays(3)->addMinute()));
@@ -521,6 +523,7 @@ final class PreviewsTest extends TestCase
             'action' => 'opened', 'number' => 12,
             'pull_request' => [
                 'title' => 'New checkout',
+                'user' => ['login' => 'maya'],
                 'head' => ['ref' => 'feature/checkout', 'sha' => self::REVISION, 'repo' => ['full_name' => 'acme/shop']],
                 'base' => ['ref' => 'main', 'repo' => ['full_name' => 'acme/shop']],
             ],

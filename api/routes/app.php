@@ -120,6 +120,7 @@ use App\Http\Controllers\Deploy\DecideVariableChangeController;
 use App\Http\Controllers\Deploy\DeleteEnvironmentSettingController;
 use App\Http\Controllers\Deploy\DeletePipelineController;
 use App\Http\Controllers\Deploy\DeleteRepositoryController;
+use App\Http\Controllers\Deploy\ListReachableRepositoriesController;
 use App\Http\Controllers\Deploy\MoveEnvironmentRecipeController;
 use App\Http\Controllers\Deploy\OpenBranchPreviewController;
 use App\Http\Controllers\Deploy\PlanConfigurationController;
@@ -714,6 +715,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::post('/pipelines/{pipeline}/run', RunPipelineController::class)->whereNumber('pipeline')->middleware('throttle:20,1')->name('pipelines.run');
         Route::delete('/pipelines/{pipeline}', DeletePipelineController::class)->whereNumber('pipeline')->middleware('throttle:20,1')->name('pipelines.destroy');
         Route::get('/repositories/create', CreateRepositoryController::class)->middleware('can:create,App\\Models\\Repository,project')->name('repositories.create');
+        Route::get('/repositories/reachable', ListReachableRepositoriesController::class)->middleware(['can:create,App\\Models\\Repository,project', 'throttle:30,1'])->name('repositories.reachable');
         Route::post('/repositories', StoreRepositoryController::class)->middleware(['can:create,App\\Models\\Repository,project', 'throttle:20,1'])->name('repositories.store');
         Route::get('/repositories/{repository}', ShowRepositoryController::class)->whereNumber('repository')->middleware('can:view,repository')->name('repositories.show');
         Route::put('/repositories/{repository}', UpdateRepositoryController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:20,1'])->name('repositories.update');

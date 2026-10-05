@@ -239,7 +239,7 @@ final class DeploymentsTest extends TestCase
         $repository = Repository::factory()->create(['website_id' => $this->website->id, 'project_id' => $this->project->id, 'provider_id' => $this->github->id]);
         $viewer = User::factory()->create();
         $this->addMember($this->project, $viewer, AccountRole::Viewer);
-        $this->actingAs($viewer)->getJson("{$this->base}/repositories/{$repository->id}")->assertOk()->assertJsonPath('canDeploy', false);
+        $this->actingAs($viewer)->getJson("{$this->base}/repositories/{$repository->id}")->assertOk()->assertJsonPath('canDeploy', false)->assertJsonPath('repository.webhookUrl', route('webhooks.repositories.receive', $repository->id));
         $this->actingAs($viewer)->postJson("{$this->base}/repositories/{$repository->id}/builds")->assertForbidden();
 
         $foreign = Repository::factory()->create();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Deploy;
 
+use App\Models\Build;
 use App\Models\Preview;
 use App\Models\Project;
 use App\Models\Repository;
@@ -30,6 +31,8 @@ final class ShowPreviewsController
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, PreviewsQuery $previews): JsonResponse
     {
         $data = $previews->handle($project, $user);
+        $deploys = Build::query()->whereIn('repository_id', $data['open']->pluck('repository_id')->filter()->all())
+            ->selectRaw('repository_id, count(*) as total')->groupBy('repository_id')->pluck('total', 'repository_id');
 
         return response()->json([
             'overview' => $overview->handle($project, $user),
@@ -37,7 +40,7 @@ final class ShowPreviewsController
             'limit' => $data['limit'],
             'allowed' => $data['allowed'],
             'repositories' => $data['repositories']->map(fn (Repository $repository): array => ['value' => (string) $repository->id, 'label' => $repository->name])->values(),
-            'open' => $data['open']->map(function (Preview $preview) use ($data, $user): array {
+            'open' => $data['open']->map(function (Preview $preview) use ($data, $user, $deploys): array {
                 $approval = $preview->secretApprovals->firstWhere('revision', $preview->revision);
 
                 return [
@@ -52,6 +55,8 @@ final class ShowPreviewsController
                     'approvedSecrets' => $approval === null ? null : ['count' => count($approval->variable_versions), 'approver' => $approval->approver?->name],
                     'approvable' => $data['approvable'][$preview->id] ?? [],
                     'canOperate' => $user->can('operate', $preview),
+                    'author' => $preview->author,
+                    'deploys' => (int) ($deploys[$preview->repository_id] ?? 0),
                 ];
             })->values(),
             'closed' => $data['closed']->map(fn (Preview $preview): array => [

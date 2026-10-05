@@ -11,32 +11,12 @@ const regions = computed(() => new Set(props.page.placements.filter((placement) 
 
 <template>
     <div class="space-y-10">
-        <SettingsSection
-            id="regions"
-            :title="t('Regions')"
-            :description="t('Where this environment runs: each website it deploys to, and the provider region of its server. Add a website in another region, then connect this environment’s repository to it, to run in more than one.')"
-        >
-            <div class="grid gap-3 p-4 sm:p-6">
-                <Alert v-if="regions > 1" tone="info">
-                    {{ tc('Runs in :count regions. Keep each region’s database close to its servers, or requests pay for the distance.|Runs in :count regions. Keep each region’s database close to its servers, or requests pay for the distance.', regions, { count: regions }) }}
-                </Alert>
-                <ul class="divide-y divide-line text-sm">
-                    <li v-for="(placement, index) in page.placements" :key="index" class="flex flex-wrap items-center justify-between gap-2 py-2">
-                        <span class="font-bold text-ink">{{ placement.name }}</span>
-                        <span v-if="placement.server" class="text-muted">{{ placement.provider }} · <span class="font-mono">{{ placement.region ?? '—' }}</span> · {{ placement.server }}</span>
-                        <span v-else class="text-muted">{{ t('No server') }}</span>
-                    </li>
-                    <li v-if="page.placements.length === 0" class="py-2 text-muted">{{ t('Not deployed to a website yet.') }}</li>
-                </ul>
-                <div v-if="page.canManage"><UiButton :to="`/projects/${page.overview.project.id}/infrastructure/websites/create`" size="sm">{{ t('Add a website in another region') }}</UiButton></div>
-            </div>
-        </SettingsSection>
 
         <SettingsSection id="controls" :title="t('Deployment controls')" :description="t('Lock deploys during an incident or freeze, or allow them only in a weekly window.')">
             <ApiForm :action="`${base}/controls`" method="PUT" class="p-4 sm:p-6">
                 <fieldset :disabled="!page.canManage" class="grid items-start gap-4 sm:grid-cols-2">
                     <div class="sm:col-span-2">
-                        <CheckboxField
+                        <ToggleField
                             name="protected"
                             :label="t('Protected environment')"
                             :checked="environment.protected"
@@ -44,28 +24,25 @@ const regions = computed(() => new Set(props.page.placements.filter((placement) 
                         />
                     </div>
                     <div class="sm:col-span-2">
-                        <CheckboxField
+                        <ToggleField
                             name="require_variable_approval"
                             :label="t('Variable changes need a second person')"
                             :checked="environment.requireVariableApproval"
                             :description="t('Adding, changing or removing a variable waits until someone else who can configure this environment approves it.')"
                         />
                     </div>
-                    <div class="sm:col-span-2"><CheckboxField name="locked" :label="t('Lock deploys')" :checked="environment.locked" /></div>
+                    <div class="sm:col-span-2"><ToggleField name="locked" :label="t('Lock deploys')" :checked="environment.locked" /></div>
                     <InputField name="lock_reason" :label="t('Reason (shown to people who try)')" :model-value="environment.lockReason" maxlength="500" />
-                    <div class="sm:col-span-2"><CheckboxField name="window" :label="t('Only deploy in a window')" :checked="environment.windowDays !== null" /></div>
-                    <fieldset class="flex flex-wrap gap-x-4 sm:col-span-2">
-                        <legend class="mb-1 text-sm font-bold text-ink">{{ t('Days') }}</legend>
-                        <CheckboxField
-                            v-for="day in days"
-                            :id="`day-${day.value}`"
-                            :key="day.value"
-                            name="days[]"
-                            error-key="days"
-                            :value="String(day.value)"
-                            :label="day.label"
-                            :checked="environment.windowDays?.includes(day.value) ?? false"
-                        />
+                    <div class="sm:col-span-2"><ToggleField name="window" :label="t('Only deploy in a window')" :checked="environment.windowDays !== null" /></div>
+                    <fieldset class="sm:col-span-2">
+                        <legend class="text-sm font-medium text-ink">{{ t('Days') }}</legend>
+                        <div class="mt-2 flex flex-wrap gap-1">
+                            <label v-for="day in days" :key="day.value" class="cursor-pointer">
+                                <input :id="`day-${day.value}`" type="checkbox" name="days[]" :value="String(day.value)" class="peer sr-only" :checked="environment.windowDays?.includes(day.value) ?? false">
+                                <span class="grid h-8 w-10 place-items-center rounded-lg border border-line text-xs font-medium text-ink peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-fg peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--ui-focus)]">{{ day.label }}</span>
+                            </label>
+                        </div>
+                        <FieldError id="days-error" name="days" />
                     </fieldset>
                     <InputField name="start" type="time" :label="t('From')" :model-value="environment.windowStart" />
                     <InputField name="end" type="time" :label="t('Until')" :model-value="environment.windowEnd" />
@@ -97,6 +74,27 @@ const regions = computed(() => new Set(props.page.placements.filter((placement) 
                         <InputField id="freeze-reason" name="reason" :label="t('Reason (shown to people who try)')" maxlength="255" />
                     </div>
                 </FormDialog>
+            </div>
+        </SettingsSection>
+
+        <SettingsSection
+            id="regions"
+            :title="t('Regions')"
+            :description="t('Where this environment runs: each website it deploys to, and the provider region of its server. Add a website in another region, then connect this environment’s repository to it, to run in more than one.')"
+        >
+            <div class="grid gap-3 p-4 sm:p-6">
+                <Alert v-if="regions > 1" tone="info">
+                    {{ tc('Runs in :count regions. Keep each region’s database close to its servers, or requests pay for the distance.|Runs in :count regions. Keep each region’s database close to its servers, or requests pay for the distance.', regions, { count: regions }) }}
+                </Alert>
+                <ul class="divide-y divide-line text-sm">
+                    <li v-for="(placement, index) in page.placements" :key="index" class="flex flex-wrap items-center justify-between gap-2 py-2">
+                        <span class="font-bold text-ink">{{ placement.name }}</span>
+                        <span v-if="placement.server" class="text-muted">{{ placement.provider }} · <span class="font-mono">{{ placement.region ?? '—' }}</span> · {{ placement.server }}</span>
+                        <span v-else class="text-muted">{{ t('No server') }}</span>
+                    </li>
+                    <li v-if="page.placements.length === 0" class="py-2 text-muted">{{ t('Not deployed to a website yet.') }}</li>
+                </ul>
+                <div v-if="page.canManage"><UiButton :to="`/projects/${page.overview.project.id}/infrastructure/websites/create`" size="sm">{{ t('Add a website in another region') }}</UiButton></div>
             </div>
         </SettingsSection>
     </div>

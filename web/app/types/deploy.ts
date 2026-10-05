@@ -10,6 +10,8 @@ export type BuildStatus = 'queued' | 'running' | 'deploying' | 'awaiting_approva
 export type RepositoryFormOptions = { providers: Option[]; websites: Option[]; environments: Option[] };
 
 export type RepositoryRow = {
+    pushDeploys: boolean;
+    previews: boolean;
     id: number;
     name: string;
     url: string;
@@ -19,7 +21,21 @@ export type RepositoryRow = {
     latestBuild: { id: number; status: BuildStatus; createdAt: string | null } | null;
 };
 
-export type RepositoriesPage = { overview: ProjectOverview; repositories: RepositoryRow[]; canCreate: boolean };
+export type DeliveryStats = {
+    deploysThisWeek: number; deploysLastWeek: number; daily: number[]; successRate: number | null; successRateBefore: number | null;
+    medianSeconds: number | null; medianSecondsBefore: number | null; rollbacks: number; rollbacksBefore: number;
+};
+
+/** A deploy in the recent-deploys table on Deploy's front page. */
+export type RecentDeploy = {
+    id: number; status: BuildStatus; commitMessage: string | null; revision: string | null; repository: string; repositoryId: number;
+    environment: string | null; production: boolean; trigger: string; requester: string | null; seconds: number | null; createdAt: string | null;
+};
+
+export type RepositoriesPage = {
+    overview: ProjectOverview; repositories: RepositoryRow[]; canCreate: boolean;
+    stats: DeliveryStats; waiting: Array<{ id: number; repository: string; commitMessage: string | null }>; recent: RecentDeploy[];
+};
 
 export type BuildRow = { id: number; status: BuildStatus; revision: string | null; commitMessage: string | null; trigger: string; requester: string | null; createdAt: string | null };
 
@@ -44,6 +60,7 @@ export type RepositoryDetail = {
     autoDeployIncludePaths: string[];
     autoDeployExcludePaths: string[];
     webhookEnabled: boolean;
+    webhookUrl: string;
     webhookLastReceivedAt: string | null;
     buildCacheEnabled: boolean;
     previewsEnabled: boolean;
@@ -161,6 +178,8 @@ export type OpenPreview = PreviewSummary & {
     /** The source environment's variables this person may approve for the preview, by name. */
     approvable: string[];
     canOperate: boolean;
+    author: string | null;
+    deploys: number;
 };
 
 export type ClosedPreview = PreviewSummary & { closedAt: string | null; cleanupStatus: string | null; cleanupError: string | null; canOperate: boolean };
@@ -188,6 +207,12 @@ export type EnvironmentRow = {
     variables: number;
     processes: number;
     resources: number;
+    protected: boolean;
+    lockReason: string | null;
+    window: { days: number[]; start: string; end: string | null; timezone: string | null } | null;
+    replicas: { min: number; max: number; autoscale: boolean };
+    lastDeployAt: string | null;
+    regions: number;
 };
 
 export type EnvironmentsPage = { overview: ProjectOverview; environments: EnvironmentRow[] };
