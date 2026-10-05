@@ -99,7 +99,7 @@ onBeforeUnmount(() => {
 
 <template>
     <button type="button" class="ui-icon-btn" :aria-label="t('Search')" :title="t('Search (⌘K)')" @click="open"><Icon name="search" class="h-[18px] w-[18px]" /></button>
-    <dialog ref="dialog" class="ui-dialog ui-dialog-large text-left" :aria-label="t('Search')" @click="(event) => event.target === dialog && close()">
+    <dialog ref="dialog" class="ui-dialog ui-dialog-large ui-dialog-center text-left" :aria-label="t('Search')" @click="(event) => event.target === dialog && close()">
         <div class="flex items-center gap-3 border-b border-line px-4 py-3">
             <Icon name="search" class="h-5 w-5 text-muted" />
             <input

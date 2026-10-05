@@ -45,3 +45,27 @@ export const statusTone = (status: string): AcmeTone => tones[status] ?? 'gray';
 export function initials(name: string): string {
     return name.replace(/^(Col|Dr|Mr|Ms)\.\s*/, '').split(/\s+/).filter((part) => /^[\p{L}\p{N}]/u.test(part)).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 }
+
+/**
+ * A smooth SVG path through points (Catmull-Rom as cubic Béziers, with low tension so it doesn't overshoot), for the
+ * theme's line charts and sparklines.
+ *
+ * @param points The points, as [x, y].
+ * @param tension How far the curve bends towards its neighbours.
+ */
+export function smoothPath(points: readonly (readonly [number, number])[], tension = 0.18): string {
+    if (points.length < 2) {
+        return '';
+    }
+    let d = `M${points[0]![0]},${points[0]![1]}`;
+    for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i - 1] ?? points[i]!;
+        const p1 = points[i]!;
+        const p2 = points[i + 1]!;
+        const p3 = points[i + 2] ?? p2;
+        const c1 = [p1[0] + (p2[0] - p0[0]) * tension, p1[1] + (p2[1] - p0[1]) * tension];
+        const c2 = [p2[0] - (p3[0] - p1[0]) * tension, p2[1] - (p3[1] - p1[1]) * tension];
+        d += ` C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${p2[0]},${p2[1]}`;
+    }
+    return d;
+}

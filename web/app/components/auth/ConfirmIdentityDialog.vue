@@ -30,7 +30,7 @@ onBeforeUnmount(() => setConfirmHandler(null));
 </script>
 
 <template>
-    <dialog ref="dialog" class="ui-dialog text-left" :aria-labelledby="titleId" @cancel.prevent="finish(false)">
+    <dialog ref="dialog" class="ui-dialog ui-dialog-center text-left" :aria-labelledby="titleId" @cancel.prevent="finish(false)">
         <div v-if="open" data-modal-panel>
             <header class="flex items-start justify-between gap-4 border-b border-line p-5 sm:p-6">
                 <div class="min-w-0">

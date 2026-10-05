@@ -12,7 +12,7 @@ Rules: theme components live in web/app/components/acme (prefix Acme). Translate
 deploy with scripts/deploy-preview.sh <run-id> after each phase.
 
 ## Phases
-- [ ] 0 Foundation: re-sync components (incl. Platform*, Audit*, charts), dialogs as right-side drawers, PlatformPage
+- [x] 0 Foundation: re-sync components (incl. Platform*, Audit*, charts), dialogs as right-side drawers, PlatformPage
 - [ ] 1 Projects: dashboard, new, templates, project overview, setup, domains, settings
 - [ ] 2 Deploy
 - [ ] 3 Infrastructure
@@ -32,3 +32,9 @@ security/* → projects/[project]/security/*; audit/* → projects/[project]/aud
 ask → assistant; notifications → notifications.
 
 ## Progress notes
+- Phase 0 (2026-10-05): scripts/sync-acme.py re-syncs the theme's generic components (re-run it when the theme
+  changes; patches fail loudly). Forms keep BuildPusher's fields/dialogs (ApiForm, validation); UiDialog/FormDialog/
+  DeleteDialog are right-side drawers with a Cancel/submit footer; command palette stays centred (ui-dialog-center).
+  PlatformHeader (components/platform) = the theme's PlatformPage header: title, project switcher, actions, section
+  tabs from shell.sectionNav. ProjectHeader wraps it. Sidebar: services as AcmeAppTile tiles (utils/platform.ts
+  serviceStyle), one Account tile, notifications; sections are tabs now.

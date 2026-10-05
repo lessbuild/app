@@ -2,8 +2,8 @@
 import type { Shell } from '~/types/shell';
 
 /**
- * The signed-in app's sidebar: the account (and switching to another), search, the platform's services, the project
- * or area's sections, the account's pages and the person's menu. On phones it opens as a drawer (`mobile`), which
+ * The signed-in app's sidebar (the Acme theme's): the account (and switching to another), search, Projects and the
+ * platform's services as coloured tiles, the account's pages and notifications, and the person's menu. On phones it opens as a drawer (`mobile`), which
  * closes as soon as a link is chosen.
  */
 const props = defineProps<{ shell: Shell; mobile?: boolean }>();
@@ -11,10 +11,10 @@ const emit = defineEmits<{ close: [] }>();
 const { t } = useT();
 const route = useRoute();
 const root = ref<HTMLElement | null>(null);
-const accountOpen = ref(true);
 const primary = computed(() => currentNavUrl(props.shell.primaryNav, route));
-const section = computed(() => currentNavUrl(props.shell.sectionNav, route));
-const accountPage = computed(() => currentNavUrl(props.shell.accountLinks, route));
+// The account's pages are one tile here; their own sections are the tabs on those pages.
+const accountHome = computed(() => props.shell.accountLinks.find((link) => link.url === '/account/members')?.url ?? props.shell.accountLinks[0]?.url ?? null);
+const inAccount = computed(() => route.meta.area === 'account' || route.path.startsWith('/account/') || route.path === '/assistant');
 const otherAccounts = computed(() => props.shell.accounts.filter((account) => account.id !== props.shell.account?.id));
 const name = computed(() => props.shell.account?.name ?? 'BuildPusher');
 
@@ -85,39 +85,27 @@ async function switchAccount(id: string) {
             <ul class="space-y-0.5 px-4">
                 <li v-for="item in shell.primaryNav" :key="item.url">
                     <NuxtLink :to="item.url" class="acme-nav-item" :aria-current="item.url === primary ? 'page' : undefined">
-                        <Icon :name="item.icon ?? 'grid'" class="size-[1.125rem] text-ink/70" />
+                        <AcmeAppTile :icon="serviceStyle(item.service ?? 'projects').icon" :color="serviceStyle(item.service ?? 'projects').tone" />
                         <span class="truncate">{{ item.label }}</span>
                     </NuxtLink>
                 </li>
             </ul>
 
-            <div v-if="shell.sectionNav.length > 0" class="mt-4 border-t border-line px-4 pt-4">
-                <NuxtLink v-if="shell.project" :to="`/projects/${shell.project.id}`" class="mb-1 flex min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium text-ink hover:bg-[var(--acme-hover)]">
-                    <Icon name="layers" class="size-4 shrink-0 text-muted" />
-                    <span class="truncate">{{ shell.project.name }}</span>
-                </NuxtLink>
-                <p v-else class="acme-section-label mb-1 px-2.5 py-1.5">{{ shell.sectionLabel }}</p>
-                <ul class="space-y-0.5" :class="shell.project && 'ml-4 border-l border-line pl-2'" :aria-label="shell.sectionLabel">
-                    <li v-for="item in shell.sectionNav" :key="item.url">
-                        <NuxtLink :to="item.url" class="acme-sub-item truncate" :aria-current="item.url === section ? 'page' : undefined">{{ item.label }}</NuxtLink>
-                    </li>
-                </ul>
-            </div>
-
-            <div v-if="shell.accountLinks.length > 0" class="mt-4 border-t border-line px-4 pt-4">
-                <button type="button" class="mb-1 flex w-full items-center justify-between rounded-md px-2.5 py-1.5 hover:bg-[var(--acme-hover)]" :aria-expanded="accountOpen" @click="accountOpen = !accountOpen">
-                    <span class="acme-section-label">{{ t('Account') }}</span>
-                    <Icon name="chevron-down" class="size-4 text-muted transition-transform" :class="!accountOpen && '-rotate-90'" />
-                </button>
-                <ul v-show="accountOpen" class="space-y-0.5" :aria-label="t('Account')">
-                    <li v-for="item in shell.accountLinks" :key="item.url">
-                        <NuxtLink :to="item.url" class="acme-nav-item" :aria-current="item.url === accountPage ? 'page' : undefined">
-                            <Icon :name="item.icon ?? 'grid'" class="size-[1.125rem] text-ink/70" />
-                            <span class="truncate">{{ item.label }}</span>
-                        </NuxtLink>
-                    </li>
-                </ul>
-            </div>
+            <ul v-if="accountHome" class="mt-4 space-y-0.5 border-t border-line px-4 pt-4">
+                <li>
+                    <NuxtLink :to="accountHome" class="acme-nav-item" :aria-current="inAccount ? 'page' : undefined">
+                        <AcmeAppTile :icon="serviceStyle('account').icon" :color="serviceStyle('account').tone" />
+                        <span class="truncate">{{ t('Account') }}</span>
+                    </NuxtLink>
+                </li>
+                <li>
+                    <NuxtLink to="/notifications" class="acme-nav-item" :aria-current="route.path === '/notifications' ? 'page' : undefined">
+                        <AcmeIcon name="bell" :size="20" class="text-ink/70" />
+                        <span class="flex-1 truncate">{{ t('Notifications') }}</span>
+                        <span v-if="shell.unreadNotifications > 0" class="grid min-w-6 place-items-center rounded-full border border-blue-200 bg-blue-50 px-1.5 text-xs tabular-nums text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">{{ shell.unreadNotifications }}</span>
+                    </NuxtLink>
+                </li>
+            </ul>
         </nav>
 
         <div class="border-t border-line p-4">
