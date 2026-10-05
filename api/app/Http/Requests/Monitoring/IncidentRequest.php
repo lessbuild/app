@@ -19,7 +19,7 @@ final class IncidentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'action' => ['required', 'string', Rule::in(['acknowledge', 'note', 'assign'])],
+            'action' => ['required', 'string', Rule::in(['acknowledge', 'note', 'assign', 'resolve'])],
             'version' => ['required', 'integer', 'min:0'],
             'assignee_id' => ['exclude_unless:action,assign', 'present', 'nullable', 'string', 'max:26'],
             'note' => ['required_if:action,note', 'nullable', 'string', 'max:1000'],

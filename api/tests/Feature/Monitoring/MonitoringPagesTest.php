@@ -13,11 +13,17 @@ use App\Models\Account;
 use App\Models\AlertDelivery;
 use App\Models\AlertDestination;
 use App\Models\AuditEntry;
+use App\Models\Build;
 use App\Models\Incident;
 use App\Models\MaintenanceWindow;
 use App\Models\Monitor;
+use App\Models\MonitorCheck;
 use App\Models\Project;
+use App\Models\Provider;
+use App\Models\Repository;
+use App\Models\Server;
 use App\Models\User;
+use App\Models\Website;
 use App\Services\Monitoring\MonitorResults;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -125,6 +131,69 @@ final class MonitoringPagesTest extends TestCase
     }
 
     /**
+     * Monitors show their uptime over 30 days, their response time and the last day as half-hour bars, and can be
+     * paused and turned back on without changing their settings.
+     */
+    public function test_monitors_show_recent_activity_and_can_be_paused(): void
+    {
+        $monitor = Monitor::factory()->create(['environment_id' => $this->project->environments()->value('id')]);
+        foreach ([['up', 100, 70], ['up', 300, 40], ['down', 900, 10], ['up', 100, 5]] as [$outcome, $duration, $minutesAgo]) {
+            (new MonitorCheck)->forceFill([
+                'monitor_id' => $monitor->id, 'config_revision' => $monitor->config_revision, 'location' => 'eu', 'status' => 'completed', 'outcome' => $outcome,
+                'duration_ms' => $duration, 'scheduled_at' => now()->subMinutes($minutesAgo), 'skipped_intervals' => 0,
+            ])->save();
+        }
+        $base = "/api/app/projects/{$this->project->id}/monitoring";
+
+        $list = $this->actingAs($this->owner)->getJson($base)->assertOk()
+            ->assertJsonPath('monitors.0.uptime', 75)
+            ->assertJsonPath('monitors.0.latencyMs', 167)
+            ->assertJsonPath('monitors.0.incidents', 0);
+        $strip = (array) $list->json('monitors.0.strip');
+        $this->assertCount(48, $strip);
+        $this->assertSame('degraded', $strip[47]);
+        $this->assertSame('up', $strip[45]);
+        $this->assertSame('none', $strip[0]);
+
+        $this->putJson("{$base}/monitors/{$monitor->id}/enabled", ['enabled' => false, 'version' => $monitor->state_version])->assertOk();
+        $this->assertFalse($monitor->fresh()?->enabled);
+        $this->getJson("{$base}/monitors/{$monitor->id}")->assertOk()->assertJsonPath('monitor.health', 'Paused')->assertJsonPath('monitor.enabled', false);
+        $this->putJson("{$base}/monitors/{$monitor->id}/enabled", ['enabled' => true, 'version' => $monitor->state_version])->assertStatus(409);
+        $this->putJson("{$base}/monitors/{$monitor->id}/enabled", ['enabled' => true, 'version' => $monitor->fresh()?->state_version])->assertOk();
+        $this->assertTrue($monitor->fresh()?->enabled);
+
+        $viewer = User::factory()->create();
+        $this->member($viewer, AccountRole::Viewer);
+        $this->actingAs($viewer)->putJson("{$base}/monitors/{$monitor->id}/enabled", ['enabled' => false, 'version' => $monitor->fresh()?->state_version])->assertForbidden();
+    }
+
+    /**
+     * An incident points at a deploy that went live in its environment shortly before it opened, and can be resolved
+     * by hand.
+     */
+    public function test_an_incident_shows_a_likely_cause_and_can_be_resolved_by_hand(): void
+    {
+        $incident = $this->incident(['opened_at' => now()->subMinutes(5)]);
+        $environmentId = (string) $incident->monitor?->environment_id;
+        $provider = Provider::factory()->create(['account_id' => $this->project->account_id]);
+        $website = Website::factory()->create(['server_id' => Server::factory()->create(['provider_id' => $provider->id])->id]);
+        $repository = Repository::factory()->create(['name' => 'shop-app', 'website_id' => $website->id, 'project_id' => $this->project->id, 'provider_id' => $provider->id, 'environment_id' => $environmentId]);
+        $build = Build::factory()->succeeded()->create(['repository_id' => $repository->id, 'environment_id' => $environmentId, 'commit_message' => 'Move cart totals', 'started_at' => now()->subMinutes(12), 'finished_at' => now()->subMinutes(9)]);
+        $url = "/api/app/projects/{$this->project->id}/monitoring/incidents/{$incident->id}";
+
+        $this->actingAs($this->owner)->getJson($url)->assertOk()
+            ->assertJsonPath('likelyCause.id', $build->id)
+            ->assertJsonPath('likelyCause.repository', 'shop-app')
+            ->assertJsonPath('likelyCause.minutes', 4)
+            ->assertJsonPath('told', []);
+
+        $this->patchJson($url, ['action' => 'resolve', 'version' => (int) $incident->fresh()?->state_version])->assertSuccessful();
+        $this->assertSame('resolved', $incident->fresh()?->status);
+        $this->getJson($url)->assertJsonPath('incident.statusLabel', 'Resolved by hand')->assertJsonPath('activities.0.label', 'Resolved by hand');
+        $this->patchJson($url, ['action' => 'resolve', 'version' => (int) $incident->fresh()?->state_version])->assertStatus(409);
+    }
+
+    /**
      * Heartbeat keys are shown once and can be revoked.
      */
     public function test_heartbeat_keys_are_shown_once_and_can_be_revoked(): void
@@ -157,7 +226,7 @@ final class MonitoringPagesTest extends TestCase
         $incident = $this->incident();
         $url = "/api/app/projects/{$this->project->id}/monitoring/incidents/{$incident->id}";
 
-        $this->actingAs($this->owner)->getJson("/api/app/projects/{$this->project->id}/monitoring/incidents")->assertOk()->assertSee($incident->title);
+        $this->actingAs($this->owner)->getJson("/api/app/projects/{$this->project->id}/monitoring/incidents")->assertOk()->assertSee($incident->title)->assertJsonPath('stats.open', 1)->assertJsonPath('stats.last30', 1)->assertJsonPath('incidents.0.source', $incident->monitor?->name);
         $this->actingAs($this->owner)->getJson($url)->assertOk()->assertJsonPath('canRespond', true)->assertJsonFragment(['label' => $member->name])->assertJsonMissing(['label' => $viewer->name]);
 
         $this->actingAs($this->owner)->patchJson($url, ['action' => 'acknowledge', 'version' => 0])->assertJsonRedirect($url);

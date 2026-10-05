@@ -161,6 +161,7 @@ class Incident extends Model
             'acknowledged' => 'Acknowledged',
             'resolved' => match ($this->closure_reason) {
                 'recovered' => 'Recovered',
+                'resolved_by_hand' => 'Resolved by hand',
                 'rule_changed' => 'Closed: rule changed',
                 'rule_archived' => 'Closed: rule archived',
                 'monitor_changed' => 'Closed: monitor changed',

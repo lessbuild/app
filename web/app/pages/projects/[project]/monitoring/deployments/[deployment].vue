@@ -77,7 +77,7 @@ const eventsLink = computed(() => ({ path: `/projects/${project.value.id}/monito
         </div>
         <form class="flex flex-wrap items-end gap-3" @submit.prevent="navigateTo({ query: { window: windowMinutes ?? undefined } })">
             <SelectField v-model="windowMinutes" name="window" :label="t('Compare')" :options="data.windows" />
-            <UiButton type="submit">{{ t('Compare') }}</UiButton>
+            <AcmeBtn type="submit">{{ t('Compare') }}</AcmeBtn>
         </form>
         <EmptyState v-if="rows.length === 0" icon="clock" :title="t('Too soon to compare')" :description="t('Come back once some time has passed since the deployment.')" />
         <template v-else>

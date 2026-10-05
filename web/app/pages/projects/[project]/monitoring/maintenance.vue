@@ -34,7 +34,7 @@ const inTwoHours = () => {
             :description="t('During a maintenance window no monitor in :account opens an incident or sends alerts. Checks keep running and are recorded.', { account: data.accountName })"
         >
             <template v-if="data.canManage" #actions>
-                <UiButton variant="primary" :to="{ query: { dialog: 'schedule-maintenance' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Schedule maintenance') }}</UiButton>
+                <AcmeBtn variant="primary" :to="{ query: { dialog: 'schedule-maintenance' } }" icon="plus">{{ t('Schedule maintenance') }}</AcmeBtn>
             </template>
         </ProjectHeader>
         <SectionNav section="alerts" :project-id="project.id" />
@@ -44,12 +44,12 @@ const inTwoHours = () => {
             <ul class="divide-y divide-line" :aria-label="t('Maintenance windows')">
                 <li v-for="window in data.windows" :key="window.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                     <div class="min-w-0">
-                        <p class="flex flex-wrap items-center gap-2 font-extrabold text-ink">{{ window.name }} <Badge :tone="states[window.state].tone">{{ states[window.state].label }}</Badge></p>
+                        <p class="flex flex-wrap items-center gap-2 font-semibold text-ink">{{ window.name }} <AcmeBadge :tone="acmeTone(states[window.state].tone)">{{ states[window.state].label }}</AcmeBadge></p>
                         <p class="mt-0.5 text-xs text-muted">{{ dateTime(window.startsAt) }} – {{ dateTime(window.endsAt) }}<template v-if="window.reason"> · {{ window.reason }}</template></p>
                     </div>
                     <div v-if="data.canManage" class="flex gap-1">
                         <FormDialog v-if="window.state !== 'past'" :id="`edit-window-${window.id}`" :title="t('Edit')" :description="t('Times are in UTC.')" :action="`${base}/${window.id}`" method="PUT" :submit="t('Save')">
-                            <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Edit') }}</UiButton></template>
+                            <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Edit') }}</AcmeBtn></template>
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <InputField :id="`window-${window.id}-name`" name="name" :label="t('Name')" :model-value="window.name" maxlength="120" required />
                                 <InputField :id="`window-${window.id}-reason`" name="reason" :label="t('Reason')" :model-value="window.reason" maxlength="1000" />
@@ -58,7 +58,7 @@ const inTwoHours = () => {
                             </div>
                         </FormDialog>
                         <DeleteDialog :id="`delete-window-${window.id}`" :title="t('Delete :window?', { window: window.name })" :description="t('Monitors alert normally again during this time.')" :action="`${base}/${window.id}`" :submit-label="t('Delete')">
-                            <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Delete') }}</UiButton></template>
+                            <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Delete') }}</AcmeBtn></template>
                         </DeleteDialog>
                     </div>
                 </li>

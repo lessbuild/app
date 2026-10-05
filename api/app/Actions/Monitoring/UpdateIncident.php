@@ -8,6 +8,7 @@ use App\Exceptions\StateConflict;
 use App\Models\Incident;
 use App\Models\Membership;
 use App\Models\User;
+use App\Services\Monitoring\IncidentLifecycle;
 use App\Services\Monitoring\IncidentLocks;
 use App\Services\Monitoring\TelemetryRedactor;
 use Carbon\CarbonImmutable;
@@ -24,11 +25,13 @@ final class UpdateIncident
      *
      * @param  TelemetryRedactor  $redactor  Redacts notes before they're stored.
      * @param  IncidentLocks  $locks  Locks the incident with its project.
+     * @param  IncidentLifecycle  $lifecycle  Resolves it by hand.
      */
-    public function __construct(private readonly TelemetryRedactor $redactor, private readonly IncidentLocks $locks) {}
+    public function __construct(private readonly TelemetryRedactor $redactor, private readonly IncidentLocks $locks, private readonly IncidentLifecycle $lifecycle) {}
 
     /**
-     * Acknowledge an incident, change who is working on it, or add a note to its timeline.
+     * Acknowledge an incident, change who is working on it, add a note to its timeline, or resolve it by hand. A
+     * monitor or rule that's still failing opens a new incident on its next failed check.
      *
      * @param  Incident  $incident
      * @param  User  $actor
@@ -59,8 +62,13 @@ final class UpdateIncident
                     return $incident;
                 }
                 $incident->forceFill(['status' => 'acknowledged', 'acknowledged_at' => CarbonImmutable::now('UTC'), 'acknowledged_by' => $actor->id]);
+            } elseif ($data['action'] === 'resolve') {
+                StateConflict::unless($incident->status !== 'resolved', __('This incident is already closed.'));
+                $this->lifecycle->close($incident, 'resolved_by_hand', CarbonImmutable::now('UTC'), $actor);
+
+                return $incident;
             } elseif ($data['action'] !== 'note') {
-                throw ValidationException::withMessages(['action' => __('Choose acknowledge, assign or note.')]);
+                throw ValidationException::withMessages(['action' => __('Choose acknowledge, assign, note or resolve.')]);
             }
 
             $incident->forceFill(['state_version' => $incident->state_version + 1])->save();

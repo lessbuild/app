@@ -299,6 +299,7 @@ use App\Http\Controllers\Monitoring\EditMonitorController;
 use App\Http\Controllers\Monitoring\EditObjectiveController;
 use App\Http\Controllers\Monitoring\EditStatusPageController;
 use App\Http\Controllers\Monitoring\ExportObjectiveController;
+use App\Http\Controllers\Monitoring\PauseMonitorController;
 use App\Http\Controllers\Monitoring\PublishIncidentPostmortemController;
 use App\Http\Controllers\Monitoring\RetryAlertDeliveryController;
 use App\Http\Controllers\Monitoring\RevokeMonitorKeyController;
@@ -899,6 +900,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::get('/monitors/{monitor}', ShowMonitorController::class)->whereNumber('monitor')->name('monitors.show');
         Route::get('/monitors/{monitor}/edit', EditMonitorController::class)->whereNumber('monitor')->middleware('can:update,monitor')->name('monitors.edit');
         Route::put('/monitors/{monitor}', UpdateMonitorController::class)->whereNumber('monitor')->middleware(['can:update,monitor', 'throttle:30,1'])->name('monitors.update');
+        Route::put('/monitors/{monitor}/enabled', PauseMonitorController::class)->whereNumber('monitor')->middleware(['can:update,monitor', 'throttle:30,1'])->name('monitors.enabled');
         Route::delete('/monitors/{monitor}', ArchiveMonitorController::class)->whereNumber('monitor')->middleware(['can:delete,monitor', 'throttle:30,1'])->name('monitors.archive');
         Route::post('/monitors/{monitor}/key', RotateMonitorKeyController::class)->whereNumber('monitor')->middleware(['can:rotateKey,monitor', 'throttle:10,1'])->name('monitors.key.rotate');
         Route::delete('/monitors/{monitor}/key', RevokeMonitorKeyController::class)->whereNumber('monitor')->middleware(['can:rotateKey,monitor', 'throttle:10,1'])->name('monitors.key.revoke');

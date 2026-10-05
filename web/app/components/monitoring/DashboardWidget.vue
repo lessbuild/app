@@ -17,27 +17,27 @@ const incidentTone = (status: string): Tone => (status === 'acknowledged' ? 'war
 
 <template>
     <section class="ui-card min-w-0 p-5 sm:p-6" :class="{ 'xl:col-span-2': type === 'telemetry' }" :aria-label="label">
-        <h2 class="text-lg font-extrabold text-ink">{{ label }}</h2>
+        <h2 class="text-lg font-semibold text-ink">{{ label }}</h2>
 
         <template v-if="type === 'telemetry' && data.summary">
             <dl class="mt-4 grid gap-3 sm:grid-cols-4">
                 <div class="rounded-control bg-surface-muted p-4">
                     <dt class="text-xs text-muted">{{ t('Events') }}</dt>
-                    <dd class="mt-1 text-2xl font-extrabold text-ink tabular-nums">{{ number(data.summary.eventCount) }}</dd>
+                    <dd class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{ number(data.summary.eventCount) }}</dd>
                     <dd class="text-xs text-muted">{{ change(data.summary.changes.events) }}</dd>
                 </div>
                 <div class="rounded-control bg-surface-muted p-4">
                     <dt class="text-xs text-muted">{{ t('Requests') }}</dt>
-                    <dd class="mt-1 text-2xl font-extrabold text-ink tabular-nums">{{ number(data.summary.requestCount) }}</dd>
+                    <dd class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{ number(data.summary.requestCount) }}</dd>
                 </div>
                 <div class="rounded-control bg-surface-muted p-4">
                     <dt class="text-xs text-muted">{{ t('Average duration') }}</dt>
-                    <dd class="mt-1 text-2xl font-extrabold text-ink tabular-nums">{{ data.summary.averageDuration === null ? '—' : `${decimal(data.summary.averageDuration)} ms` }}</dd>
+                    <dd class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{ data.summary.averageDuration === null ? '—' : `${decimal(data.summary.averageDuration)} ms` }}</dd>
                     <dd class="text-xs text-muted">{{ change(data.summary.changes.duration) }}</dd>
                 </div>
                 <div class="rounded-control bg-surface-muted p-4">
                     <dt class="text-xs text-muted">{{ t('Failed requests') }}</dt>
-                    <dd class="mt-1 text-2xl font-extrabold text-ink tabular-nums">{{ data.summary.requestErrorRate === null ? '—' : `${decimal(data.summary.requestErrorRate)}%` }}</dd>
+                    <dd class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{ data.summary.requestErrorRate === null ? '—' : `${decimal(data.summary.requestErrorRate)}%` }}</dd>
                     <dd class="text-xs text-muted">{{ change(data.summary.changes.errorRate) }}</dd>
                 </div>
             </dl>
@@ -62,7 +62,7 @@ const incidentTone = (status: string): Tone => (status === 'acknowledged' ? 'war
                         <NuxtLink :to="`/projects/${incident.projectId}/monitoring/incidents/${incident.id}`" class="font-bold text-ink hover:underline">{{ incident.title }}</NuxtLink>
                         <p class="text-xs text-muted">{{ incident.project }} · <Rich :text="t('since :time')"><template #time><RelativeTime :at="incident.openedAt" /></template></Rich></p>
                     </div>
-                    <Badge :tone="incidentTone(incident.status)">{{ incident.statusLabel }}</Badge>
+                    <AcmeBadge :tone="acmeTone(incidentTone(incident.status))">{{ incident.statusLabel }}</AcmeBadge>
                 </li>
             </ul>
         </template>

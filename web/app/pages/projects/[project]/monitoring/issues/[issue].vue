@@ -42,12 +42,12 @@ const snooze = ref<string | null>(data.value.snoozeOptions[0]?.value ?? null);
             <template v-if="data.canUpdate" #actions>
                 <template v-if="issue.open">
                     <FormDialog id="resolve-issue" :title="t('Resolve this issue?')" :description="t('A new occurrence reopens it.')" :action="base" method="PATCH" :submit="t('Resolve')">
-                        <template #trigger="{ open }"><UiButton variant="primary" size="sm" @click="open"><Icon name="check" class="h-4 w-4" />{{ t('Resolve') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="primary" size="sm" icon="check" @click="open">{{ t('Resolve') }}</AcmeBtn></template>
                         <input type="hidden" name="action" value="resolve"><input type="hidden" name="version" :value="issue.version">
                         <TextareaField id="resolve-note" name="note" :label="t('Note (optional)')" rows="2" maxlength="1000" />
                     </FormDialog>
                     <FormDialog id="snooze-issue" :title="t('Snooze this issue')" :description="t('It’s hidden from open issues until then, unless it happens again.')" :action="base" method="PATCH" :submit="t('Snooze')">
-                        <template #trigger="{ open }"><UiButton size="sm" @click="open"><Icon name="clock" class="h-4 w-4" />{{ t('Snooze') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn size="sm" icon="clock" @click="open">{{ t('Snooze') }}</AcmeBtn></template>
                         <input type="hidden" name="action" value="snooze"><input type="hidden" name="version" :value="issue.version">
                         <div class="grid gap-4">
                             <SelectField id="snooze-minutes" v-model="snooze" name="snooze_minutes" :label="t('Snooze for')" :options="data.snoozeOptions" />
@@ -55,7 +55,7 @@ const snooze = ref<string | null>(data.value.snoozeOptions[0]?.value ?? null);
                         </div>
                     </FormDialog>
                     <FormDialog id="ignore-issue" :title="t('Ignore this issue?')" :description="t('It stays out of open issues and digests, even when it happens again.')" :action="base" method="PATCH" :submit="t('Ignore')">
-                        <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Ignore') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Ignore') }}</AcmeBtn></template>
                         <input type="hidden" name="action" value="ignore"><input type="hidden" name="version" :value="issue.version">
                         <TextareaField id="ignore-note" name="note" :label="t('Note (optional)')" rows="2" maxlength="1000" />
                     </FormDialog>
@@ -108,8 +108,8 @@ const snooze = ref<string | null>(data.value.snoozeOptions[0]?.value ?? null);
             <aside class="order-first grid gap-5 xl:order-none">
                 <div class="ui-card grid gap-2 p-4 text-sm">
                     <p class="flex flex-wrap gap-2">
-                        <Badge :tone="issue.statusTone">{{ issue.statusLabel }}</Badge>
-                        <Badge :tone="issue.severity === 'critical' ? 'danger' : 'neutral'">{{ issue.severityLabel }}</Badge>
+                        <AcmeBadge :tone="acmeTone(issue.statusTone)">{{ issue.statusLabel }}</AcmeBadge>
+                        <AcmeBadge :tone="acmeTone(issue.severity === 'critical' ? 'danger' : 'neutral')">{{ issue.severityLabel }}</AcmeBadge>
                     </p>
                     <p v-if="issue.snoozedUntil" class="text-muted">{{ t('Snoozed until :time', { time: dateTime(issue.snoozedUntil) }) }}</p>
                     <p class="text-muted">{{ t('Assigned to: :name', { name: issue.assignee ?? t('no one') }) }}</p>

@@ -12,6 +12,7 @@ use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\Project;
 use App\Models\User;
+use App\Queries\Monitoring\MonitorActivityQuery;
 use App\Queries\Monitoring\MonitorHistoryQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Support\Monitoring\ObservationText;
@@ -29,9 +30,10 @@ final class ShowMonitorController
      * @param  Monitor  $monitor
      * @param  ProjectOverviewQuery  $overview
      * @param  MonitorHistoryQuery  $history
+     * @param  MonitorActivityQuery  $activity
      * @return JsonResponse
      */
-    public function __invoke(#[CurrentUser] User $user, Project $project, Monitor $monitor, ProjectOverviewQuery $overview, MonitorHistoryQuery $history): JsonResponse
+    public function __invoke(#[CurrentUser] User $user, Project $project, Monitor $monitor, ProjectOverviewQuery $overview, MonitorHistoryQuery $history, MonitorActivityQuery $activity): JsonResponse
     {
         $record = $history->handle($monitor);
         $signals = in_array($monitor->type, ['heartbeat', 'queue'], true);
@@ -49,6 +51,8 @@ final class ShowMonitorController
                 'hasKey' => $monitor->type === 'heartbeat' ? $monitor->heartbeat_token_hash !== null : $monitor->queue_token_hash !== null,
                 'endpoint' => ! $signals ? null : ($monitor->type === 'heartbeat' ? route('api.heartbeats.store', ['heartbeat' => $monitor->id]) : route('api.queues.snapshots.store', ['queue' => $monitor->id])),
                 'workersEndpoint' => $monitor->type === 'queue' ? route('api.queues.workers.store', ['queue' => $monitor->id]) : null,
+                'enabled' => $monitor->enabled,
+                ...$activity->handle([$monitor])[$monitor->id],
             ],
             'queue' => $monitor->type !== 'queue' ? null : ['pending' => $record->snapshot?->pending, 'failed' => $record->snapshot?->failed, 'workers' => count($record->workers)],
             'incidents' => array_map(fn (Incident $incident): array => ['id' => $incident->id, 'title' => $incident->title, 'status' => $incident->status, 'openedAt' => $incident->opened_at->toIso8601String()], $record->incidents),

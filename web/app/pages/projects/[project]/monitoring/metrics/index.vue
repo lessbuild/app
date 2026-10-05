@@ -36,7 +36,7 @@ function apply() {
             <InputField v-model="filters.q" name="q" type="search" :label="t('Metric, unit or resource')" placeholder="system.memory.usage" maxlength="200" />
             <SelectField v-model="filters.environment" name="environment" :label="t('Environment')" :placeholder="t('All')" :options="environments" />
             <SelectField v-model="filters.kind" name="kind" :label="t('Type')" :placeholder="t('All')" :options="kinds" />
-            <UiButton type="submit">{{ t('Filter') }}</UiButton>
+            <AcmeBtn type="submit">{{ t('Filter') }}</AcmeBtn>
         </form>
         <SavedViews page="monitoring.metrics" :keys="['environment', 'kind', 'q']" :project="project.id" />
 
@@ -65,7 +65,7 @@ function apply() {
 
         <section class="grid gap-4" aria-labelledby="collector-setups">
             <div>
-                <h2 id="collector-setups" class="text-xl font-extrabold text-ink">{{ t('Collector setups') }}</h2>
+                <h2 id="collector-setups" class="text-xl font-semibold text-ink">{{ t('Collector setups') }}</h2>
                 <p class="mt-1 text-sm text-muted">{{ t('OpenTelemetry Collector configurations that send metrics to this project as OTLP JSON. Set BEACON_INGEST_TOKEN to an ingest key from the Setup page, and the other variables as secrets.') }}</p>
             </div>
             <div class="ui-card overflow-hidden">
@@ -74,7 +74,7 @@ function apply() {
                         <details class="px-5 py-4">
                             <summary class="flex cursor-pointer flex-wrap items-center justify-between gap-3">
                                 <span class="font-bold text-ink">{{ profile.label }}</span>
-                                <Badge tone="neutral">{{ profile.stability }}</Badge>
+                                <AcmeBadge tone="gray">{{ profile.stability }}</AcmeBadge>
                             </summary>
                             <p class="mt-3 text-sm leading-6 text-muted">{{ profile.requirements }}</p>
                             <CodeBlock class="mt-3 max-h-96 overflow-auto" :code="profile.yaml" />

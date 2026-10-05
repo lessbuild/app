@@ -9,6 +9,7 @@ use App\Models\Monitor;
 use App\Models\Project;
 use App\Models\ThirdPartyService;
 use App\Models\User;
+use App\Queries\Monitoring\MonitorActivityQuery;
 use App\Queries\Monitoring\ProjectMonitorsQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Support\Monitoring\StatusProviders;
@@ -24,13 +25,17 @@ final class ShowMonitorsController
      * @param  Project  $project
      * @param  ProjectOverviewQuery  $overview
      * @param  ProjectMonitorsQuery  $monitors
+     * @param  MonitorActivityQuery  $activity
      * @return JsonResponse
      */
-    public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectMonitorsQuery $monitors): JsonResponse
+    public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectMonitorsQuery $monitors, MonitorActivityQuery $activity): JsonResponse
     {
+        $list = $monitors->handle($project);
+        $recent = $activity->handle($list);
+
         return response()->json([
             'overview' => $overview->handle($project, $user),
-            'monitors' => array_map(fn (Monitor $monitor): MonitorSummary => MonitorSummary::from($monitor), $monitors->handle($project)),
+            'monitors' => array_map(fn (Monitor $monitor): array => [...(array) MonitorSummary::from($monitor), ...$recent[$monitor->id]], $list),
             'thirdParty' => ThirdPartyService::query()->where('project_id', $project->id)->orderBy('name')->get()->map(fn (ThirdPartyService $service): array => [
                 'id' => $service->id,
                 'name' => $service->name,

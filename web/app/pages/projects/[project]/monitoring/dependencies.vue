@@ -34,9 +34,9 @@ function apply() {
         <form class="ui-card flex flex-wrap items-end gap-3 p-4" @submit.prevent="apply">
             <SelectField v-model="range" name="range" :label="t('Time')" :options="ranges" />
             <SelectField v-model="environment" name="environment" :label="t('Environment')" :placeholder="t('All')" :options="environments" />
-            <UiButton type="submit">{{ t('Show') }}</UiButton>
+            <AcmeBtn type="submit">{{ t('Show') }}</AcmeBtn>
         </form>
-        <Alert v-if="data.map.truncated" tone="warning">{{ t('Only the first :count spans are included. Pick a shorter time range for a complete map.', { count: number(20000) }) }}</Alert>
+        <AcmeAlert v-if="data.map.truncated" tone="warning">{{ t('Only the first :count spans are included. Pick a shorter time range for a complete map.', { count: number(20000) }) }}</AcmeAlert>
         <div class="grid gap-4 sm:grid-cols-3">
             <StatCard :label="t('Services')" :value="number(data.map.service_count)" />
             <StatCard :label="t('Dependencies')" :value="number(data.map.dependency_count)" />

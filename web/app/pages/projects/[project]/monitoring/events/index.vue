@@ -35,7 +35,7 @@ function apply() {
 <template>
     <div class="space-y-6">
         <ProjectHeader :overview="data.overview" :title="t('Events')" :description="t('Every request, query, job, log, exception and metric your environments sent.')">
-            <template #actions><UiButton :to="`/projects/${project.id}/monitoring/dependencies`" size="sm">{{ t('Service map') }}</UiButton></template>
+            <template #actions><AcmeBtn :to="`/projects/${project.id}/monitoring/dependencies`" size="sm">{{ t('Service map') }}</AcmeBtn></template>
         </ProjectHeader>
         <form class="ui-card grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end" role="search" @submit.prevent="apply">
             <InputField v-model="filters.q" name="q" type="search" :label="t('Search')" maxlength="255" />
@@ -45,7 +45,7 @@ function apply() {
             <SelectField v-model="filters.range" name="range" :label="t('Time')" :options="options(data.ranges)" />
             <SelectField v-model="filters.sort" name="sort" :label="t('Order')" :options="options(data.sorts)" />
             <InputField v-model="filters.trace" name="trace" :label="t('Trace ID')" maxlength="64" />
-            <UiButton type="submit">{{ t('Filter') }}</UiButton>
+            <AcmeBtn type="submit">{{ t('Filter') }}</AcmeBtn>
         </form>
         <SavedViews page="monitoring.events" :keys="['environment', 'q', 'range', 'severity', 'sort', 'trace', 'type']" :project="project.id" />
 
@@ -56,7 +56,7 @@ function apply() {
             <tr v-for="event in data.events" :key="event.id">
                 <td class="whitespace-nowrap"><NuxtLink :to="`/projects/${project.id}/monitoring/events/${event.id}`" class="text-primary hover:underline">{{ dateTime(event.occurredAt) }}</NuxtLink></td>
                 <td class="min-w-48">
-                    <span class="flex flex-wrap items-center gap-2"><Badge :tone="event.tone as Tone">{{ event.typeLabel }}</Badge><span class="break-all">{{ event.name }}</span></span>
+                    <span class="flex flex-wrap items-center gap-2"><AcmeBadge :tone="acmeTone(event.tone as Tone)">{{ event.typeLabel }}</AcmeBadge><span class="break-all">{{ event.name }}</span></span>
                     <span class="text-xs text-muted">{{ event.environment ?? '—' }}<template v-if="event.statusCode"> · {{ event.statusCode }}</template></span>
                 </td>
                 <td>{{ event.service }}</td>

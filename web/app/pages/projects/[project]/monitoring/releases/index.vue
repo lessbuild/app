@@ -27,12 +27,12 @@ const environments = computed(() => data.value.overview.environments.map((item) 
     <div class="space-y-6">
         <ProjectHeader :overview="data.overview" :title="t('Releases')" :description="t('Versions your apps report (service.version), and the deployments that shipped them.')">
             <template v-if="data.canRecord" #actions>
-                <UiButton variant="primary" :to="{ query: { ...route.query, dialog: 'record-deployment' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Record a deployment') }}</UiButton>
+                <AcmeBtn variant="primary" :to="{ query: { ...route.query, dialog: 'record-deployment' } }" icon="plus">{{ t('Record a deployment') }}</AcmeBtn>
             </template>
         </ProjectHeader>
         <form class="flex flex-wrap items-end gap-3" role="search" @submit.prevent="navigateTo({ query: { q: q || undefined } })">
             <div class="min-w-56 flex-1"><InputField v-model="q" name="q" type="search" :label="t('Search')" maxlength="128" /></div>
-            <UiButton type="submit">{{ t('Search') }}</UiButton>
+            <AcmeBtn type="submit">{{ t('Search') }}</AcmeBtn>
         </form>
 
         <EmptyState v-if="data.releases.length === 0" icon="tasks" :title="t('No releases yet')" :description="t('Send a service.version attribute with your telemetry, or record a deployment.')" />
@@ -40,7 +40,7 @@ const environments = computed(() => data.value.overview.environments.map((item) 
             <section class="ui-card overflow-hidden">
                 <ul class="divide-y divide-line" :aria-label="t('Releases')">
                     <li v-for="release in data.releases" :key="release.id" class="px-5 py-4">
-                        <NuxtLink :to="`/projects/${project.id}/monitoring/releases/${release.id}`" class="font-extrabold text-ink hover:underline">{{ release.version }}</NuxtLink>
+                        <NuxtLink :to="`/projects/${project.id}/monitoring/releases/${release.id}`" class="font-semibold text-ink hover:underline">{{ release.version }}</NuxtLink>
                         <p class="mt-0.5 text-xs text-muted">
                             {{ release.service }}<template v-if="release.lastSeenAt"> · <Rich :text="t('last seen :time')"><template #time><RelativeTime :at="release.lastSeenAt" /></template></Rich></template>
                         </p>

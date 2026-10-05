@@ -37,19 +37,19 @@ function apply() {
             <InputField v-model="filters.q" name="q" type="search" :label="t('Search')" :placeholder="t('Title or location')" maxlength="100" />
             <SelectField v-model="filters.status" name="status" :label="t('Status')" :options="statusOptions" />
             <SelectField v-model="filters.ownership" name="ownership" :label="t('Assigned')" :options="ownershipOptions" />
-            <UiButton type="submit">{{ t('Filter') }}</UiButton>
+            <AcmeBtn type="submit">{{ t('Filter') }}</AcmeBtn>
         </form>
         <SavedViews page="monitoring.issues" :keys="['environment', 'ownership', 'q', 'status']" :project="project.id" />
 
         <EmptyState v-if="data.issues.length === 0" icon="check-circle" :title="t('No issues here')" :description="t('Exceptions your apps send become issues. Connect an app on the Setup page to start collecting them.')">
-            <template #action><UiButton :to="`/projects/${project.id}/monitoring/setup`">{{ t('Open setup') }}</UiButton></template>
+            <template #action><AcmeBtn :to="`/projects/${project.id}/monitoring/setup`">{{ t('Open setup') }}</AcmeBtn></template>
         </EmptyState>
         <template v-else>
             <section class="ui-card overflow-hidden">
                 <ul class="divide-y divide-line" :aria-label="t('Issues')">
                     <li v-for="issue in data.issues" :key="issue.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                         <div class="min-w-0">
-                            <NuxtLink :to="`/projects/${project.id}/monitoring/issues/${issue.id}`" class="font-extrabold text-ink hover:underline">{{ issue.title }}</NuxtLink>
+                            <NuxtLink :to="`/projects/${project.id}/monitoring/issues/${issue.id}`" class="font-semibold text-ink hover:underline">{{ issue.title }}</NuxtLink>
                             <p class="mt-0.5 break-all text-xs text-muted">
                                 {{ issue.location ?? t('Unknown location') }} · {{ tc(':count occurrence|:count occurrences', issue.occurrences, { count: number(issue.occurrences) }) }}
                                 <template v-if="issue.lastSeenAt"> · <Rich :text="t('last :time')"><template #time><RelativeTime :at="issue.lastSeenAt" /></template></Rich></template>
@@ -57,8 +57,8 @@ function apply() {
                             </p>
                         </div>
                         <span class="flex gap-2">
-                            <Badge :tone="issue.severity === 'critical' ? 'danger' : 'neutral'">{{ issue.severityLabel }}</Badge>
-                            <Badge :tone="issue.statusTone">{{ issue.statusLabel }}</Badge>
+                            <AcmeBadge :tone="acmeTone(issue.severity === 'critical' ? 'danger' : 'neutral')">{{ issue.severityLabel }}</AcmeBadge>
+                            <AcmeBadge :tone="acmeTone(issue.statusTone)">{{ issue.statusLabel }}</AcmeBadge>
                         </span>
                     </li>
                 </ul>

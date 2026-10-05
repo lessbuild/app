@@ -23,7 +23,7 @@ const project = computed(() => data.value.overview.project);
         <ProjectHeader :overview="data.overview" :title="t('Dashboards')" :description="t('Saved views of telemetry, incidents, monitors and SLOs across every project in :account.', { account: data.accountName })">
             <template v-if="data.canManage" #actions>
                 <span v-if="data.limit !== null" class="text-sm text-muted">{{ t(':used of :limit dashboards on your plan', { used: data.dashboards.length, limit: data.limit }) }}</span>
-                <UiButton variant="primary" :to="{ query: { dialog: 'add-dashboard' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Add a dashboard') }}</UiButton>
+                <AcmeBtn variant="primary" :to="{ query: { dialog: 'add-dashboard' } }" icon="plus">{{ t('Add a dashboard') }}</AcmeBtn>
             </template>
         </ProjectHeader>
         <SectionNav section="metrics" :project-id="project.id" />
@@ -32,7 +32,7 @@ const project = computed(() => data.value.overview.project);
         <section v-else class="ui-card overflow-hidden">
             <ul class="divide-y divide-line" :aria-label="t('Dashboards')">
                 <li v-for="dashboard in data.dashboards" :key="dashboard.id" class="px-5 py-4">
-                    <NuxtLink :to="`/projects/${project.id}/monitoring/dashboards/${dashboard.id}`" class="font-extrabold text-ink hover:underline">{{ dashboard.name }}</NuxtLink>
+                    <NuxtLink :to="`/projects/${project.id}/monitoring/dashboards/${dashboard.id}`" class="font-semibold text-ink hover:underline">{{ dashboard.name }}</NuxtLink>
                     <p class="mt-0.5 text-xs text-muted">
                         {{ tc(':count widget|:count widgets', dashboard.widgets) }} · {{ dashboard.range }}<template v-if="dashboard.creator"> · {{ t('by :name', { name: dashboard.creator }) }}</template>
                     </p>

@@ -32,7 +32,7 @@ const stepRows = computed(() => Math.min(data.value.escalationSteps, Math.max(3,
     <div class="space-y-6">
         <ProjectHeader :overview="data.overview" :title="rule.name" :description="`${rule.condition} · ${rule.environment}`">
             <template v-if="data.canManage && !rule.archived" #actions>
-                <UiButton :to="`/projects/${project.id}/monitoring/rules/${rule.id}/edit`" size="sm">{{ t('Edit') }}</UiButton>
+                <AcmeBtn :to="`/projects/${project.id}/monitoring/rules/${rule.id}/edit`" size="sm">{{ t('Edit') }}</AcmeBtn>
                 <DeleteDialog
                     id="archive-rule"
                     :title="t('Archive :rule?', { rule: rule.name })"
@@ -40,7 +40,7 @@ const stepRows = computed(() => Math.min(data.value.escalationSteps, Math.max(3,
                     :action="base"
                     :submit-label="t('Archive rule')"
                 >
-                    <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Archive') }}</UiButton></template>
+                    <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Archive') }}</AcmeBtn></template>
                     <input type="hidden" name="version" :value="rule.version">
                 </DeleteDialog>
             </template>
@@ -48,11 +48,11 @@ const stepRows = computed(() => Math.min(data.value.escalationSteps, Math.max(3,
         <SectionNav section="alerts" :project-id="project.id" />
 
         <div class="flex flex-wrap items-center gap-3 text-sm text-muted">
-            <Badge :tone="tones[rule.state] ?? 'neutral'">{{ rule.stateLabel }}</Badge>
+            <AcmeBadge :tone="acmeTone(tones[rule.state] ?? 'neutral')">{{ rule.stateLabel }}</AcmeBadge>
             <span v-if="rule.value !== null || rule.samples !== null">{{ t('Last value: :value from :samples samples', { value: rule.value === null ? '—' : number(rule.value), samples: number(rule.samples ?? 0) }) }}</span>
             <span v-if="rule.checkedAt">· <Rich :text="t('Checked :time')"><template #time><RelativeTime :at="rule.checkedAt" /></template></Rich></span>
         </div>
-        <Alert v-if="rule.archived" tone="info">{{ t('This rule is archived. It no longer runs; its history stays here.') }}</Alert>
+        <AcmeAlert v-if="rule.archived" tone="info">{{ t('This rule is archived. It no longer runs; its history stays here.') }}</AcmeAlert>
 
         <section v-if="data.incidents.length > 0" class="ui-card overflow-hidden" aria-labelledby="rule-incidents">
             <h2 id="rule-incidents" class="border-b border-line px-5 py-3 text-sm font-bold text-ink">{{ t('Incidents') }}</h2>
@@ -65,8 +65,8 @@ const stepRows = computed(() => Math.min(data.value.escalationSteps, Math.max(3,
         </section>
 
         <template v-if="data.canManage && !rule.archived">
-            <SettingsSection :title="t('Where alerts go')" :description="t('Destinations told when an incident opens or recovers.')">
-                <ApiForm :action="`${base}/routing`" method="PUT" class="grid gap-3 p-4 sm:p-6">
+            <AcmeCard :padded="false" :title="t('Where alerts go')" :description="t('Destinations told when an incident opens or recovers.')">
+                <ApiForm :action="`${base}/routing`" method="PUT" class="grid gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
                     <input type="hidden" name="version" :value="rule.version">
                     <p v-if="data.destinations.length === 0" class="text-sm text-muted">
                         {{ t('No alert destinations yet.') }}
@@ -89,11 +89,11 @@ const stepRows = computed(() => Math.min(data.value.escalationSteps, Math.max(3,
                     </div>
                     <div><SubmitButton variant="secondary" size="sm">{{ t('Save routing') }}</SubmitButton></div>
                 </ApiForm>
-            </SettingsSection>
+            </AcmeCard>
 
-            <SettingsSection :title="t('Escalation')" :description="t('If the incident is still open after each delay, alert one more destination. Delays must increase.')">
+            <AcmeCard :padded="false" :title="t('Escalation')" :description="t('If the incident is still open after each delay, alert one more destination. Delays must increase.')">
                 <p v-if="data.escalationSteps === 0" class="p-4 text-sm text-muted sm:p-6">{{ t('Escalation steps come with Monitoring Pro and above.') }}</p>
-                <ApiForm v-else :action="`${base}/escalations`" method="PUT" class="grid gap-4 p-4 sm:p-6">
+                <ApiForm v-else :action="`${base}/escalations`" method="PUT" class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
                     <input type="hidden" name="version" :value="rule.version">
                     <FieldError name="escalations" />
                     <div v-for="index in stepRows" :key="index" class="grid items-start gap-3 sm:grid-cols-2">
@@ -120,7 +120,7 @@ const stepRows = computed(() => Math.min(data.value.escalationSteps, Math.max(3,
                     <p class="text-xs text-muted">{{ t('Minutes after the incident opens. Leave a step empty to skip it.') }}</p>
                     <div><SubmitButton variant="secondary" size="sm">{{ t('Save escalation') }}</SubmitButton></div>
                 </ApiForm>
-            </SettingsSection>
+            </AcmeCard>
         </template>
     </div>
 </template>

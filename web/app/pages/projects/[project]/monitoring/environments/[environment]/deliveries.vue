@@ -24,13 +24,13 @@ const project = computed(() => data.value.overview.project);
 <template>
     <div class="space-y-6">
         <ProjectHeader :overview="data.overview" :title="t(':environment deliveries', { environment: data.environment.name })" :description="t('Every batch of events this environment sent, and whether it was processed.')">
-            <template #actions><UiButton :to="`/projects/${project.id}/monitoring/setup`" size="sm">{{ t('Setup') }}</UiButton></template>
+            <template #actions><AcmeBtn :to="`/projects/${project.id}/monitoring/setup`" size="sm">{{ t('Setup') }}</AcmeBtn></template>
         </ProjectHeader>
         <nav :aria-label="t('Delivery status')" class="flex flex-wrap gap-2">
-            <UiButton :to="{ query: {} }" :variant="data.status === null ? 'soft' : 'quiet'" size="sm" :aria-current="data.status === null ? 'page' : undefined">{{ t('All') }}</UiButton>
-            <UiButton v-for="option in data.statuses" :key="option.value" :to="{ query: { status: option.value } }" :variant="data.status === option.value ? 'soft' : 'quiet'" size="sm" :aria-current="data.status === option.value ? 'page' : undefined">
+            <AcmeBtn :to="{ query: {} }" :variant="data.status === null ? 'primary' : 'quiet'" size="sm" :aria-current="data.status === null ? 'page' : undefined">{{ t('All') }}</AcmeBtn>
+            <AcmeBtn v-for="option in data.statuses" :key="option.value" :to="{ query: { status: option.value } }" :variant="data.status === option.value ? 'primary' : 'quiet'" size="sm" :aria-current="data.status === option.value ? 'page' : undefined">
                 {{ option.label }}
-            </UiButton>
+            </AcmeBtn>
         </nav>
         <DataTable :caption="t('Deliveries')">
             <template #head>
@@ -42,7 +42,7 @@ const project = computed(() => data.value.overview.project);
             <tr v-for="receipt in data.receipts" :key="receipt.id">
                 <td class="whitespace-nowrap">{{ dateTime(receipt.receivedAt) }}</td>
                 <td>{{ receipt.source }}</td>
-                <td><Badge :tone="receipt.statusTone">{{ receipt.statusLabel }}</Badge><p v-if="receipt.error" class="mt-1 text-xs text-muted">{{ receipt.error }}</p></td>
+                <td><AcmeBadge :tone="acmeTone(receipt.statusTone)">{{ receipt.statusLabel }}</AcmeBadge><p v-if="receipt.error" class="mt-1 text-xs text-muted">{{ receipt.error }}</p></td>
                 <td class="text-right tabular-nums">{{ number(receipt.accepted) }}</td>
                 <td class="text-right tabular-nums">{{ number(receipt.duplicates) }}</td>
                 <td class="text-right">

@@ -11,10 +11,8 @@ const environments = computed(() => data.value.overview.environments.map((enviro
 </script>
 
 <template>
-    <div v-if="data.monitor" class="space-y-6">
+    <div v-if="data.monitor">
         <ProjectHeader :overview="data.overview" :title="t('Edit :monitor', { monitor: data.monitor.name })" :description="t('Only monitor endpoints, domains and jobs you own or are allowed to check.')" />
-        <section class="ui-card p-4 sm:p-6">
-            <MonitorForm :form="data" :project-id="data.overview.project.id" :environments="environments" :type="data.monitor.type" />
-        </section>
+        <MonitorForm :form="data" :project-id="data.overview.project.id" :environments="environments" :type="data.monitor.type" />
     </div>
 </template>

@@ -40,7 +40,7 @@ const barClass = (row: EventRow) => (row.hasError ? 'bg-[var(--ui-danger)]' : ro
             </template>
             <span v-else class="text-muted">{{ t('No deploy recorded before this trace.') }}</span>
         </div>
-        <section class="ui-card overflow-x-auto p-4 sm:p-6" :aria-label="t('Trace timeline')">
+        <section class="ui-card overflow-x-auto px-5 pb-5 sm:px-6 sm:pb-6" :aria-label="t('Trace timeline')">
             <div class="min-w-[640px]">
                 <div class="mb-2 grid grid-cols-[minmax(200px,1fr)_minmax(260px,1.6fr)_96px] gap-4 text-xs text-muted">
                     <span>{{ t('Operation') }}</span>

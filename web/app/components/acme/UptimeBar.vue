@@ -1,10 +1,11 @@
 <script setup lang="ts">
 // Uptime strip, 90 days by default. Each bar: 'up' | 'degraded' | 'down'. Hover shows the bar's time.
 // `step` is minutes per bar (default a day, e.g. 30 for a 24-hour strip of 48 bars); `compact` hides the legend.
-const props = withDefaults(defineProps<{ days: ('up' | 'degraded' | 'down')[]; label: string; step?: number; compact?: boolean }>(), { step: 1440 })
-const colors = { up: 'bg-emerald-500', degraded: 'bg-amber-400', down: 'bg-rose-500' }
+const props = withDefaults(defineProps<{ days: ('up' | 'degraded' | 'down' | 'none')[]; label: string; step?: number; compact?: boolean }>(), { step: 1440 })
+const colors = { up: 'bg-emerald-500', degraded: 'bg-amber-400', down: 'bg-rose-500', none: 'bg-black/10 dark:bg-white/10' }
 const hover = ref<number | null>(null)
-const pct = computed(() => ((props.days.filter(d => d === 'up').length + props.days.filter(d => d === 'degraded').length * 0.5) / props.days.length * 100).toFixed(2))
+const measured = computed(() => props.days.filter(d => d !== 'none').length)
+const pct = computed(() => (measured.value === 0 ? '—' : ((props.days.filter(d => d === 'up').length + props.days.filter(d => d === 'degraded').length * 0.5) / measured.value * 100).toFixed(2)))
 const daily = computed(() => props.step >= 1440)
 const { t, locale } = useT()
 // The last bar is now (or today); the others step back from it.
@@ -12,7 +13,7 @@ const dayLabel = (i: number) => {
   const d = new Date(Date.now() - (props.days.length - 1 - i) * props.step * 6e4)
   return daily.value ? d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' }) : d.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
 }
-const states = computed(() => ({ up: t('No incidents'), degraded: t('Degraded'), down: t('Outage') }))
+const states = computed(() => ({ up: t('No incidents'), degraded: t('Degraded'), down: t('Outage'), none: t('No data') }))
 const span = computed(() => {
   const mins = props.days.length * props.step
   return mins >= 2880 ? t(':count days', { count: Math.round(mins / 1440) }) : t(':count hours', { count: Math.round(mins / 60) })

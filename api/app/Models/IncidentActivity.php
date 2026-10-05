@@ -68,6 +68,7 @@ class IncidentActivity extends Model
             'note' => 'Note added',
             'assign' => ($this->metadata['assignee_id'] ?? null) === null ? 'Unassigned' : 'Assignee changed',
             'recovered' => 'Automatically recovered',
+            'resolved_by_hand' => 'Resolved by hand',
             'rule_changed' => 'Closed because monitoring conditions changed',
             'rule_archived' => 'Closed because the rule was archived',
             'rule_paused' => 'Evaluations paused',

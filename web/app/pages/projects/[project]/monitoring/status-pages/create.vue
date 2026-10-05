@@ -12,7 +12,7 @@ const { data } = await useApi<{ overview: ProjectOverview; form: StatusPageForm 
 <template>
     <div class="space-y-6">
         <ProjectHeader :overview="data.overview" :title="t('Add a status page')" :description="t('Choose which monitors to show, publish the page, and post updates when something goes wrong.')" />
-        <section class="ui-card p-4 sm:p-6">
+        <section class="ui-card px-5 pb-5 sm:px-6 sm:pb-6">
             <ApiForm :action="`/api/app/projects/${data.overview.project.id}/monitoring/status-pages`" class="grid gap-6">
                 <PlanLimitAlert billing-url="/account/billing" />
                 <StatusPageFields :form="data.form" prefix="page" />

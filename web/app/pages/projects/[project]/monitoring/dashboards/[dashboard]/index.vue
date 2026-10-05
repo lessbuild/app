@@ -27,9 +27,9 @@ onBeforeUnmount(() => window.clearInterval(timer));
     <div class="space-y-6">
         <ProjectHeader :overview="data.overview" :title="dashboard.name" :description="dashboard.description ? `${dashboard.description} · ${dashboard.range}` : dashboard.range">
             <template v-if="data.canManage" #actions>
-                <UiButton :to="`/projects/${project.id}/monitoring/dashboards/${dashboard.id}/edit`" size="sm">{{ t('Edit') }}</UiButton>
+                <AcmeBtn :to="`/projects/${project.id}/monitoring/dashboards/${dashboard.id}/edit`" size="sm">{{ t('Edit') }}</AcmeBtn>
                 <DeleteDialog id="delete-dashboard" :title="t('Delete :dashboard?', { dashboard: dashboard.name })" :description="t('Only the dashboard goes; the data it shows stays.')" :action="base" :submit-label="t('Delete dashboard')">
-                    <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Delete') }}</UiButton></template>
+                    <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Delete') }}</AcmeBtn></template>
                 </DeleteDialog>
             </template>
         </ProjectHeader>

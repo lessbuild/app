@@ -5,6 +5,9 @@ import type { Option } from '~/types/ui';
 /** A monitor as lists show it. */
 export type MonitorSummary = { id: number; name: string; type: string; typeLabel: string; environment: string; target: string; health: string; healthLabel: string; checkedAt: string | null };
 
+/** How a monitor has done lately: uptime over 30 days, response time over the last day, incidents, and the last day in half hours. */
+export type MonitorActivity = { uptime: number | null; latencyMs: number | null; incidents: number; strip: Array<'up' | 'degraded' | 'down' | 'none'> };
+
 /** The monitor form's choices and, when editing, the monitor's settings (never its secrets). */
 export type MonitorForm = {
     types: Record<string, string>;

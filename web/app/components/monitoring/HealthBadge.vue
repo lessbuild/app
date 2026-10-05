@@ -7,5 +7,5 @@ const tone = computed<Tone>(() => ({ Up: 'success', Down: 'danger', Paused: 'neu
 </script>
 
 <template>
-    <Badge :tone="tone">{{ label }}</Badge>
+    <AcmeBadge :tone="acmeTone(tone)" dot>{{ label }}</AcmeBadge>
 </template>

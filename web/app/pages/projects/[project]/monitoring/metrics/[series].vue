@@ -62,23 +62,23 @@ const anomalyMessage = computed(() => {
             :description="[series.environment, series.resource, series.unit || t('unitless'), series.temporality ? `${series.kind} / ${series.temporality}` : series.kind].join(' · ')"
         >
             <template #actions>
-                <UiButton :to="`/projects/${project.id}/monitoring/metrics`" variant="quiet" size="sm">{{ t('All metrics') }}</UiButton>
-                <UiButton v-if="data.canManage" :to="`/projects/${project.id}/monitoring/rules/create?metric=numeric_metric&series=${series.id}`" variant="primary" size="sm">{{ t('Create alert') }}</UiButton>
+                <AcmeBtn :to="`/projects/${project.id}/monitoring/metrics`" variant="ghost" size="sm">{{ t('All metrics') }}</AcmeBtn>
+                <AcmeBtn v-if="data.canManage" :to="`/projects/${project.id}/monitoring/rules/create?metric=numeric_metric&series=${series.id}`" variant="primary" size="sm">{{ t('Create alert') }}</AcmeBtn>
             </template>
         </ProjectHeader>
         <form class="flex flex-wrap items-end gap-3" @submit.prevent="navigateTo({ query: { range: range ?? undefined, mode: mode === 'value' ? undefined : mode ?? undefined } })">
             <SelectField v-model="range" name="range" :label="t('Range')" :options="ranges" />
             <SelectField v-model="mode" name="mode" :label="t('Show')" :options="modes" />
-            <UiButton type="submit">{{ t('Update') }}</UiButton>
+            <AcmeBtn type="submit">{{ t('Update') }}</AcmeBtn>
         </form>
 
         <section class="ui-card p-5" aria-labelledby="series-chart">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 id="series-chart" class="font-extrabold text-ink">{{ data.filters.mode === 'rate' ? t('Rate over time') : t('Value over time') }}</h2>
+                    <h2 id="series-chart" class="font-semibold text-ink">{{ data.filters.mode === 'rate' ? t('Rate over time') : t('Value over time') }}</h2>
                     <p class="mt-0.5 text-xs text-muted">{{ tc(':count usable point|:count usable points', chart.valid, { count: number(chart.valid) }) }} · {{ dateTime(data.from) }} – {{ dateTime(data.until) }}</p>
                 </div>
-                <Badge v-if="chart.truncated" tone="warning">{{ t('Showing the latest :count points', { count: data.chartLimit }) }}</Badge>
+                <AcmeBadge v-if="chart.truncated" tone="amber">{{ t('Showing the latest :count points', { count: data.chartLimit }) }}</AcmeBadge>
             </div>
             <template v-if="polyline !== ''">
                 <div class="mt-5 overflow-x-auto rounded-control bg-surface-muted p-3">
@@ -99,11 +99,11 @@ const anomalyMessage = computed(() => {
             <p v-else class="mt-5 rounded-control bg-surface-muted p-8 text-center text-sm text-muted">{{ t('No usable points in this range. Missing values, unsupported distributions and counter resets are listed below.') }}</p>
         </section>
 
-        <Alert v-if="data.anomalies" :tone="chart.anomalies > 0 ? 'warning' : 'info'">
+        <AcmeAlert v-if="data.anomalies" :tone="chart.anomalies > 0 ? 'warning' : 'info'">
             <p class="font-bold">{{ chart.anomalies > 0 ? tc(':count unusual point|:count unusual points', chart.anomalies) : t('No unusual shifts') }}</p>
             <p class="mt-1 text-sm">{{ anomalyMessage }}</p>
-        </Alert>
-        <Alert v-else tone="info">{{ t('Anomaly detection marks unusual shifts against a rolling baseline, with no threshold to tune. It comes with Monitoring Pro and above.') }}</Alert>
+        </AcmeAlert>
+        <AcmeAlert v-else tone="info">{{ t('Anomaly detection marks unusual shifts against a rolling baseline, with no threshold to tune. It comes with Monitoring Pro and above.') }}</AcmeAlert>
 
         <DataTable :caption="t('Latest samples')">
             <template #head><tr><th scope="col">{{ t('Time') }}</th><th scope="col">{{ t('Value') }}</th><th scope="col">{{ t('State') }}</th><th scope="col">{{ t('Event') }}</th></tr></template>
@@ -116,8 +116,8 @@ const anomalyMessage = computed(() => {
             <tr v-if="latestSamples.length === 0"><td colspan="4" class="py-8 text-center text-muted">{{ t('No samples in this range.') }}</td></tr>
         </DataTable>
 
-        <SettingsSection :title="t('Resource identity')" :description="t('Resource attributes and point labels, kept separately. Sensitive values are redacted.')">
+        <AcmeCard :padded="false" :title="t('Resource identity')" :description="t('Resource attributes and point labels, kept separately. Sensitive values are redacted.')">
             <CodeBlock class="m-4 max-h-96 overflow-auto sm:m-6" :code="series.descriptor" />
-        </SettingsSection>
+        </AcmeCard>
     </div>
 </template>

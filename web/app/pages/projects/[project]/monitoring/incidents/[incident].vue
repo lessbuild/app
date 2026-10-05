@@ -2,7 +2,10 @@
 import type { ProjectOverview } from '~/types/projects';
 import type { Option } from '~/types/ui';
 
-/** One incident: what failed, its timeline, acknowledging, assigning and notes, and its post-mortem. */
+/**
+ * One incident (the Acme theme's incident page): a deploy that likely caused it, what failed, its timeline with notes,
+ * acknowledging, resolving and assigning it, who was told, and its post-mortem.
+ */
 definePageMeta({ layout: 'app', service: 'monitoring' });
 type IncidentPage = {
     overview: ProjectOverview;
@@ -27,14 +30,17 @@ type IncidentPage = {
     };
     sections: Record<string, string>;
     draft: Record<string, string>;
-    activities: Array<{ id: number; label: string; actor: string | null; note: string | null; at: string | null }>;
+    activities: Array<{ id: number; action: string; label: string; actor: string | null; note: string | null; at: string | null }>;
     assignees: Option[];
     statusPages: Option[];
     severities: Option[];
     report: { statusPageId: number; page: string; url: string | null; severity: string; title: string } | null;
+    told: Array<{ name: string; type: string; status: string }>;
+    likelyCause: { id: number; commitMessage: string | null; repository: string; minutes: number } | null;
     canRespond: boolean;
 };
 const { t, dateTime } = useT();
+const labels = useDeployLabels();
 const route = useRoute();
 const { data } = await useApi<IncidentPage>(() => `/projects/${route.params.project}/monitoring/incidents/${route.params.incident}`);
 const project = computed(() => data.value.overview.project);
@@ -48,6 +54,23 @@ const hints = computed<Record<string, string>>(() => ({
     resolution: t('What was done to fix it.'),
 }));
 const canPublish = computed(() => incident.value.postmortem !== null && incident.value.resolvedAt !== null && data.value.statusPages.length > 0);
+const icons: Record<string, string> = {
+    opened: 'alert', monitor_failed: 'alert', acknowledge: 'check', note: 'message', assign: 'user', recovered: 'checkCircle', resolved_by_hand: 'checkCircle',
+    postmortem_saved: 'fileText', postmortem_published: 'send', self_healed: 'refresh', monitor_paused: 'pause', monitor_resumed: 'play', rule_paused: 'pause', rule_resumed: 'play',
+};
+const red = 'bg-rose-500 text-white';
+const green = 'bg-emerald-500 text-white';
+const tones: Record<string, string> = { opened: red, monitor_failed: red, acknowledge: 'bg-amber-400 text-white', recovered: green, resolved_by_hand: green };
+const timeline = computed(() => [...data.value.activities].reverse().map((activity) => ({
+    title: activity.label,
+    time: [activity.at ? dateTime(activity.at) : null, activity.actor ?? t('Automatic')].filter(Boolean).join(' · '),
+    body: activity.note ?? undefined,
+    icon: icons[activity.action] ?? 'circle',
+    tone: tones[activity.action],
+})));
+const lasted = computed(() => labels.duration(Math.round(((incident.value.resolvedAt ? Date.parse(incident.value.resolvedAt) : Date.now()) - Date.parse(incident.value.openedAt)) / 1000)));
+const statusTone = computed(() => (incident.value.status === 'open' ? 'red' : incident.value.status === 'acknowledged' ? 'amber' : 'green'));
+const channelIcon = (type: string) => (/mail/i.test(type) ? 'mail' : /slack|discord|teams/i.test(type) ? 'message' : /sms|phone|twilio/i.test(type) ? 'phone' : 'globe');
 let timer: number | undefined;
 
 // The timeline keeps itself current while the incident is open.
@@ -56,28 +79,58 @@ onBeforeUnmount(() => window.clearInterval(timer));
 </script>
 
 <template>
-    <div class="space-y-6">
-        <ProjectHeader :overview="data.overview" :title="incident.title" :description="`#${incident.id} · ${incident.statusLabel}`" />
-        <div class="grid items-start gap-6 xl:grid-cols-3">
-            <div class="grid gap-6 xl:col-span-2">
-                <section class="ui-card grid gap-3 p-5 text-sm">
-                    <p class="flex flex-wrap items-center gap-2">
-                        <Badge :tone="incident.status === 'open' ? 'danger' : incident.status === 'acknowledged' ? 'warning' : 'neutral'">{{ incident.statusLabel }}</Badge>
-                        <span class="text-muted">{{ incident.observation }}</span>
-                    </p>
-                    <p v-for="(line, index) in incident.details" :key="index" class="text-xs text-muted">{{ line }}</p>
-                    <p class="text-muted">{{ incident.configuration }}</p>
-                    <p class="text-muted">{{ t('Opened :opened · last failure :breached', { opened: dateTime(incident.openedAt), breached: dateTime(incident.lastBreachedAt) }) }}</p>
-                    <p v-if="incident.resolvedAt">{{ t(':status at :time.', { status: incident.statusLabel, time: dateTime(incident.resolvedAt) }) }}</p>
-                    <p v-if="incident.acknowledgedAt">{{ t('Acknowledged by :name at :time.', { name: incident.acknowledgedBy ?? t('a former member'), time: dateTime(incident.acknowledgedAt) }) }}</p>
-                    <p>{{ t('Assigned to: :name', { name: incident.assignee ?? t('no one') }) }}</p>
-                    <p v-if="incident.monitorId"><NuxtLink :to="`/projects/${project.id}/monitoring/monitors/${incident.monitorId}`" class="font-bold text-primary hover:underline">{{ t('View the monitor and its checks') }}</NuxtLink></p>
-                </section>
+    <div>
+        <ProjectHeader :overview="data.overview" :title="`#${incident.id} · ${incident.title}`" :description="incident.configuration">
+            <template v-if="data.canRespond" #actions>
+                <ApiForm v-if="incident.status === 'open'" :action="base" method="PATCH">
+                    <input type="hidden" name="action" value="acknowledge">
+                    <input type="hidden" name="version" :value="incident.version">
+                    <SubmitButton variant="secondary">{{ t('Acknowledge') }}</SubmitButton>
+                </ApiForm>
+                <ApiForm v-if="incident.status !== 'resolved'" :action="base" method="PATCH" :confirm="t('Resolve this incident? If it’s still failing, the next failed check opens a new one.')">
+                    <input type="hidden" name="action" value="resolve">
+                    <input type="hidden" name="version" :value="incident.version">
+                    <SubmitButton>{{ t('Resolve') }}</SubmitButton>
+                </ApiForm>
+                <AcmeBtn v-if="data.statusPages.length > 0" icon="send" :to="`/projects/${project.id}/monitoring/status-pages`">{{ t('Update status page') }}</AcmeBtn>
+            </template>
+        </ProjectHeader>
 
-                <section class="ui-card grid gap-4 p-5" aria-labelledby="postmortem-heading">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <h2 id="postmortem-heading" class="text-sm font-bold text-ink">{{ t('Post-mortem') }}</h2>
-                        <div v-if="data.canRespond" class="flex flex-wrap gap-2">
+        <div class="grid items-start gap-6 xl:grid-cols-[1fr_20rem]">
+            <div class="min-w-0 space-y-6">
+                <AcmeCard v-if="data.likelyCause" :title="t('Likely cause')" :description="t('Something that changed shortly before the first failure.')">
+                    <div class="flex flex-wrap items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/[.06] p-4 text-sm">
+                        <AcmeIcon name="rocket" class="text-amber-600" />
+                        <span class="flex-1 text-ink">
+                            {{ t('Deploy #:id of :repository (“:message”) went live :minutes minutes before the first failure.', { id: data.likelyCause.id, repository: data.likelyCause.repository, message: data.likelyCause.commitMessage ?? '—', minutes: data.likelyCause.minutes }) }}
+                        </span>
+                        <AcmeBtn size="sm" :to="`/projects/${project.id}/deploy/builds/${data.likelyCause.id}`">{{ t('View deploy') }}</AcmeBtn>
+                    </div>
+                </AcmeCard>
+
+                <AcmeCard :title="t('What happened')">
+                    <div class="grid gap-2 text-sm">
+                        <p class="text-ink">{{ incident.observation }}</p>
+                        <p v-for="(line, index) in incident.details" :key="index" class="text-xs text-muted">{{ line }}</p>
+                        <p class="text-muted">{{ t('Opened :opened · last failure :breached', { opened: dateTime(incident.openedAt), breached: dateTime(incident.lastBreachedAt) }) }}</p>
+                        <p v-if="incident.acknowledgedAt" class="text-muted">{{ t('Acknowledged by :name at :time.', { name: incident.acknowledgedBy ?? t('a former member'), time: dateTime(incident.acknowledgedAt) }) }}</p>
+                        <p v-if="incident.monitorId"><NuxtLink :to="`/projects/${project.id}/monitoring/monitors/${incident.monitorId}`" class="font-medium text-ink underline">{{ t('View the monitor and its checks') }}</NuxtLink></p>
+                    </div>
+                </AcmeCard>
+
+                <AcmeCard :title="t('Timeline')">
+                    <AcmeTimeline :items="timeline" />
+                    <ApiForm v-if="data.canRespond" :action="base" method="PATCH" class="mt-5 flex items-end gap-2">
+                        <input type="hidden" name="action" value="note">
+                        <input type="hidden" name="version" :value="incident.version">
+                        <InputField id="incident-note" name="note" :label="t('Add a note')" :placeholder="t('Add a note for the team…')" maxlength="1000" class="flex-1" />
+                        <SubmitButton variant="secondary">{{ t('Add note') }}</SubmitButton>
+                    </ApiForm>
+                </AcmeCard>
+
+                <AcmeCard :title="t('Post-mortem')" :description="t('Blameless and specific: what happened and what changes because of it.')">
+                    <template v-if="data.canRespond" #action>
+                        <div class="flex flex-wrap gap-2">
                             <FormDialog
                                 id="postmortem"
                                 :title="t('Post-mortem')"
@@ -85,9 +138,8 @@ onBeforeUnmount(() => window.clearInterval(timer));
                                 :action="`${base}/postmortem`"
                                 method="PUT"
                                 :submit="t('Save post-mortem')"
-                                size="large"
                             >
-                                <template #trigger="{ open }"><UiButton size="sm" @click="open">{{ incident.postmortem ? t('Edit post-mortem') : t('Write a post-mortem') }}</UiButton></template>
+                                <template #trigger="{ open }"><AcmeBtn size="sm" :icon="incident.postmortem ? 'edit' : 'sparkle'" @click="open">{{ incident.postmortem ? t('Edit post-mortem') : t('Write a post-mortem') }}</AcmeBtn></template>
                                 <TextareaField
                                     v-for="(heading, key) in data.sections"
                                     :id="`postmortem-${key}`"
@@ -108,64 +160,53 @@ onBeforeUnmount(() => window.clearInterval(timer));
                                 :action="`${base}/postmortem/publish`"
                                 :submit="t('Publish')"
                             >
-                                <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ data.report ? t('Update status page report') : t('Publish to status page') }}</UiButton></template>
-                                <div class="grid items-start gap-5 sm:grid-cols-2">
+                                <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ data.report ? t('Update status page report') : t('Publish to status page') }}</AcmeBtn></template>
+                                <div class="grid items-start gap-4">
                                     <SelectField id="publish-page" name="status_page_id" :label="t('Status page')" :options="data.statusPages" :model-value="data.report ? String(data.report.statusPageId) : undefined" />
                                     <SelectField id="publish-severity" name="severity" :label="t('Severity')" :options="data.severities" :model-value="data.report?.severity ?? 'minor'" />
-                                    <div class="sm:col-span-2"><InputField id="publish-title" name="title" :label="t('Public title')" :model-value="data.report?.title ?? incident.title" maxlength="200" required /></div>
+                                    <InputField id="publish-title" name="title" :label="t('Public title')" :model-value="data.report?.title ?? incident.title" maxlength="200" required />
                                 </div>
                             </FormDialog>
                         </div>
-                    </div>
+                    </template>
                     <dl v-if="incident.postmortem" class="grid gap-3 text-sm">
                         <template v-for="(heading, key) in data.sections" :key="key">
-                            <div v-if="incident.postmortem[key]"><dt class="font-bold text-ink">{{ heading }}</dt><dd class="mt-1 whitespace-pre-wrap break-words text-muted">{{ incident.postmortem[key] }}</dd></div>
+                            <div v-if="incident.postmortem[key]"><dt class="font-medium text-ink">{{ heading }}</dt><dd class="mt-1 whitespace-pre-wrap break-words text-muted">{{ incident.postmortem[key] }}</dd></div>
                         </template>
                     </dl>
                     <p v-else class="text-sm text-muted">{{ t('Once it’s resolved, write up what happened, the impact, the root cause, how it was fixed and what happens next.') }}</p>
-                    <p v-if="data.report" class="text-xs text-muted">
+                    <p v-if="data.report" class="mt-3 text-xs text-muted">
                         {{ t('Published to :page.', { page: data.report.page }) }}
-                        <a v-if="data.report.url" :href="data.report.url" class="font-bold text-primary underline" target="_blank" rel="noopener">{{ t('View') }}</a>
+                        <a v-if="data.report.url" :href="data.report.url" class="font-medium text-ink underline" target="_blank" rel="noopener">{{ t('View') }}</a>
                     </p>
-                </section>
-
-                <section class="grid gap-3" aria-labelledby="timeline-heading">
-                    <h2 id="timeline-heading" class="text-sm font-bold text-ink">{{ t('Timeline') }}</h2>
-                    <ol class="grid gap-3">
-                        <li v-for="activity in data.activities" :key="activity.id" class="rounded-panel border border-line bg-surface p-4">
-                            <div class="flex flex-wrap justify-between gap-2">
-                                <p class="text-sm font-semibold text-ink">{{ activity.label }}</p>
-                                <time v-if="activity.at" class="text-xs text-muted" :datetime="activity.at">{{ dateTime(activity.at) }}</time>
-                            </div>
-                            <p class="mt-1 text-xs text-muted">{{ activity.actor ?? t('Automatic') }}</p>
-                            <p v-if="activity.note" class="mt-2 whitespace-pre-wrap break-words text-sm">{{ activity.note }}</p>
-                        </li>
-                    </ol>
-                </section>
+                </AcmeCard>
             </div>
 
-            <aside v-if="data.canRespond" class="order-first grid gap-5 xl:order-none">
-                <ApiForm v-if="incident.status === 'open'" :action="base" method="PATCH">
-                    <input type="hidden" name="action" value="acknowledge">
-                    <input type="hidden" name="version" :value="incident.version">
-                    <SubmitButton class="w-full">{{ t('Acknowledge') }}</SubmitButton>
-                </ApiForm>
-                <section class="ui-card">
-                    <ApiForm :action="base" method="PATCH" class="grid gap-3 p-4">
+            <aside class="space-y-6 xl:sticky xl:top-4">
+                <AcmeCard :title="t('Details')">
+                    <dl class="space-y-3 text-sm">
+                        <div class="flex justify-between gap-3"><dt class="text-muted">{{ t('Status') }}</dt><dd><AcmeBadge :tone="statusTone" dot>{{ incident.statusLabel }}</AcmeBadge></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-muted">{{ t('Opened') }}</dt><dd class="text-ink"><RelativeTime :at="incident.openedAt" /></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-muted">{{ incident.resolvedAt ? t('Lasted') : t('Open for') }}</dt><dd class="text-ink">{{ lasted }}</dd></div>
+                        <div v-if="!data.canRespond" class="flex justify-between gap-3"><dt class="text-muted">{{ t('Assigned to') }}</dt><dd class="text-ink">{{ incident.assignee ?? t('no one') }}</dd></div>
+                    </dl>
+                    <ApiForm v-if="data.canRespond" :action="base" method="PATCH" class="mt-4 flex items-end gap-2">
                         <input type="hidden" name="action" value="assign">
                         <input type="hidden" name="version" :value="incident.version">
-                        <SelectField v-model="assignee" name="assignee_id" :label="t('Assigned to')" :placeholder="t('No one')" :options="data.assignees" />
+                        <SelectField id="incident-assignee" v-model="assignee" name="assignee_id" :label="t('Assigned to')" :placeholder="t('No one')" :options="data.assignees" class="flex-1" />
                         <SubmitButton variant="secondary" size="sm">{{ t('Save') }}</SubmitButton>
                     </ApiForm>
-                </section>
-                <section class="ui-card">
-                    <ApiForm :action="base" method="PATCH" class="grid gap-3 p-4">
-                        <input type="hidden" name="action" value="note">
-                        <input type="hidden" name="version" :value="incident.version">
-                        <TextareaField name="note" :label="t('Add a note')" rows="3" maxlength="1000" />
-                        <SubmitButton variant="secondary" size="sm">{{ t('Add note') }}</SubmitButton>
-                    </ApiForm>
-                </section>
+                </AcmeCard>
+                <AcmeCard :title="t('Who was told')">
+                    <ul v-if="data.told.length > 0" class="space-y-2 text-sm">
+                        <li v-for="(destination, index) in data.told" :key="index" class="flex items-center gap-2">
+                            <AcmeIcon :name="channelIcon(destination.type)" :size="14" class="text-muted" />
+                            <span class="min-w-0 flex-1 truncate text-ink">{{ destination.name }} <span class="text-muted">· {{ destination.type }}</span></span>
+                            <AcmeBadge :tone="destination.status === 'accepted' ? 'green' : destination.status === 'failed' ? 'red' : 'gray'">{{ destination.status === 'accepted' ? t('Sent') : destination.status === 'failed' ? t('Failed') : t('Sending') }}</AcmeBadge>
+                        </li>
+                    </ul>
+                    <p v-else class="text-sm text-muted">{{ t('No alert destinations were told. Incidents still show up here.') }}</p>
+                </AcmeCard>
             </aside>
         </div>
     </div>

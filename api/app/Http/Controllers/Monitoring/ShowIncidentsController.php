@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Monitoring;
 
 use App\Models\Incident;
+use App\Models\MaintenanceWindow;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Monitoring\ProjectIncidentsQuery;
@@ -38,8 +39,13 @@ final class ShowIncidentsController
                 'statusLabel' => __($incident->statusLabel()),
                 'openedAt' => $incident->opened_at->toIso8601String(),
                 'assignee' => $incident->assignee?->name,
+                'source' => $incident->monitor->name ?? $incident->alertRule?->name,
+                'environment' => $incident->monitor->environment->name ?? $incident->alertRule?->environment->name,
+                'resolvedAt' => $incident->resolved_at?->toIso8601String(),
             ], $incidents->handle($project, $status)),
             'status' => $status,
+            'stats' => $incidents->stats($project),
+            'maintenance' => MaintenanceWindow::query()->where('account_id', $project->account_id)->where('ends_at', '>', now())->count(),
         ]);
     }
 }

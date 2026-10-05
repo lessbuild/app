@@ -31,14 +31,14 @@ const environments = computed(() => data.value.overview.environments.map((item) 
         <form class="ui-card flex flex-wrap items-end gap-3 p-4" @submit.prevent="navigateTo({ query: { range: range ?? undefined, environment: environment || undefined } })">
             <SelectField v-model="range" name="range" :label="t('Time')" :options="ranges" />
             <SelectField v-model="environment" name="environment" :label="t('Environment')" :placeholder="t('All')" :options="environments" />
-            <UiButton type="submit">{{ t('Show') }}</UiButton>
+            <AcmeBtn type="submit">{{ t('Show') }}</AcmeBtn>
         </form>
         <ReleaseMetricCards :metrics="data.metrics" />
         <DataTable :caption="t('Issues in this release')">
             <template #head><tr><th scope="col">{{ t('Issue') }}</th><th scope="col">{{ t('Status') }}</th></tr></template>
             <tr v-for="issue in data.issues" :key="issue.id">
                 <td><NuxtLink :to="`/projects/${project.id}/monitoring/issues/${issue.id}`" class="text-primary hover:underline">{{ issue.title }}</NuxtLink></td>
-                <td><Badge :tone="issue.statusTone">{{ issue.statusLabel }}</Badge></td>
+                <td><AcmeBadge :tone="acmeTone(issue.statusTone)">{{ issue.statusLabel }}</AcmeBadge></td>
             </tr>
             <tr v-if="data.issues.length === 0"><td colspan="2" class="py-8 text-center text-muted">{{ t('No exceptions from this release in this range.') }}</td></tr>
         </DataTable>

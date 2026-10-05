@@ -33,7 +33,7 @@ const burn = (rate: number | null) => (rate === null ? '—' : `${new Intl.Numbe
             <template #actions>
                 <a v-if="data.canExport" :href="`${base}/export`" class="ui-btn ui-btn-secondary ui-btn-sm" download><Icon name="arrow-down" class="h-4 w-4" />{{ t('Download CSV') }}</a>
                 <template v-if="data.canManage">
-                    <UiButton :to="`/projects/${project.id}/monitoring/objectives/${objective.id}/edit`" size="sm">{{ t('Edit') }}</UiButton>
+                    <AcmeBtn :to="`/projects/${project.id}/monitoring/objectives/${objective.id}/edit`" size="sm">{{ t('Edit') }}</AcmeBtn>
                     <DeleteDialog
                         id="archive-objective"
                         :title="t('Archive :objective?', { objective: objective.name })"
@@ -41,7 +41,7 @@ const burn = (rate: number | null) => (rate === null ? '—' : `${new Intl.Numbe
                         :action="base"
                         :submit-label="t('Archive objective')"
                     >
-                        <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Archive') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Archive') }}</AcmeBtn></template>
                     </DeleteDialog>
                 </template>
             </template>
@@ -61,7 +61,7 @@ const burn = (rate: number | null) => (rate === null ? '—' : `${new Intl.Numbe
         <section class="ui-card grid gap-2 p-5 text-sm" aria-labelledby="burn-rate">
             <h2 id="burn-rate" class="flex items-center gap-2 font-bold text-ink">
                 {{ t('Burn-rate analysis') }}
-                <Badge v-if="data.burnRate" :tone="burnTone">{{ data.burnRate.label }}</Badge>
+                <AcmeBadge v-if="data.burnRate" :tone="burnTone">{{ data.burnRate.label }}</AcmeBadge>
             </h2>
             <template v-if="data.burnRate">
                 <p class="text-muted">{{ data.burnRate.message }}</p>

@@ -12,6 +12,6 @@ const environments = computed(() => data.value.overview.environments.map((enviro
 <template>
     <div class="space-y-6">
         <ProjectHeader :overview="data.overview" :title="t('Add an objective')" :description="t('Measured from request events in one environment.')" />
-        <section class="ui-card p-4 sm:p-6"><ObjectiveForm :objective="null" :project-id="data.overview.project.id" :environments="environments" /></section>
+        <section class="ui-card px-5 pb-5 sm:px-6 sm:pb-6"><ObjectiveForm :objective="null" :project-id="data.overview.project.id" :environments="environments" /></section>
     </div>
 </template>

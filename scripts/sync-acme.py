@@ -66,12 +66,16 @@ PATCHES = [
     ('Breadcrumbs', 'aria-label="Breadcrumb"', ":aria-label=\"t('Breadcrumb')\""),
 
     ('UptimeBar', "const dayLabel = (i: number) => {\n  // Sub-day strips end at the demo's \"now\" (14:30 UTC) rather than midnight.\n  const end = TODAY.getTime() + (daily.value ? 0 : 14.5 * 36e5)\n  const d = new Date(end - (props.days.length - 1 - i) * props.step * 6e4)\n  return daily.value ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })\n}",
-     "const { t, locale } = useT()\n// The last bar is now (or today); the others step back from it.\nconst dayLabel = (i: number) => {\n  const d = new Date(Date.now() - (props.days.length - 1 - i) * props.step * 6e4)\n  return daily.value ? d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' }) : d.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })\n}\nconst states = computed(() => ({ up: t('No incidents'), degraded: t('Degraded'), down: t('Outage') }))"),
+     "const { t, locale } = useT()\n// The last bar is now (or today); the others step back from it.\nconst dayLabel = (i: number) => {\n  const d = new Date(Date.now() - (props.days.length - 1 - i) * props.step * 6e4)\n  return daily.value ? d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' }) : d.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })\n}\nconst states = computed(() => ({ up: t('No incidents'), degraded: t('Degraded'), down: t('Outage'), none: t('No data') }))"),
     ('UptimeBar', "  return mins >= 2880 ? `${Math.round(mins / 1440)} days` : `${Math.round(mins / 60)} hours`", "  return mins >= 2880 ? t(':count days', { count: Math.round(mins / 1440) }) : t(':count hours', { count: Math.round(mins / 60) })"),
     ('UptimeBar', ":aria-label=\"`${label}: ${pct}% uptime over ${span}`\"", ":aria-label=\"t(':label: :pct% uptime over :span', { label, pct, span })\""),
     ('UptimeBar', "{{ { up: 'No incidents', degraded: 'Degraded', down: 'Outage' }[days[hover]!] }}", '{{ states[days[hover]!] }}'),
     ('UptimeBar', "<span>{{ span }} ago</span><span>{{ pct }}% uptime</span><span>{{ daily ? 'Today' : 'Now' }}</span>", "<span>{{ t(':span ago', { span }) }}</span><span>{{ t(':pct% uptime', { pct }) }}</span><span>{{ daily ? t('Today') : t('Now') }}</span>"),
 
+    # Bars without readings (a new monitor, a gap in checks) show as "no data" and don't count towards uptime.
+    ('UptimeBar', "days: ('up' | 'degraded' | 'down')[]", "days: ('up' | 'degraded' | 'down' | 'none')[]"),
+    ('UptimeBar', "const colors = { up: 'bg-emerald-500', degraded: 'bg-amber-400', down: 'bg-rose-500' }", "const colors = { up: 'bg-emerald-500', degraded: 'bg-amber-400', down: 'bg-rose-500', none: 'bg-black/10 dark:bg-white/10' }"),
+    ('UptimeBar', "const pct = computed(() => ((props.days.filter(d => d === 'up').length + props.days.filter(d => d === 'degraded').length * 0.5) / props.days.length * 100).toFixed(2))", "const measured = computed(() => props.days.filter(d => d !== 'none').length)\nconst pct = computed(() => (measured.value === 0 ? '—' : ((props.days.filter(d => d === 'up').length + props.days.filter(d => d === 'degraded').length * 0.5) / measured.value * 100).toFixed(2)))"),
     ('Drawer', '+t', ''),
     ('Drawer', 'label="Close panel"', ":label=\"t('Close panel')\""),
     ('DonutChart', '+t', ''),

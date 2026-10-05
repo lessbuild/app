@@ -35,7 +35,7 @@ const when = (iso: string, zone: string) => new Intl.DateTimeFormat(locale.value
             :description="t('Rotations that decide who gets paged. Choose a schedule as an email destination’s recipient and alerts go to whoever is on call when they fire.')"
         >
             <template v-if="data.canManage" #actions>
-                <UiButton variant="primary" :to="{ query: { dialog: 'new-schedule' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Add a schedule') }}</UiButton>
+                <AcmeBtn variant="primary" :to="{ query: { dialog: 'new-schedule' } }" icon="plus">{{ t('Add a schedule') }}</AcmeBtn>
             </template>
         </ProjectHeader>
         <SectionNav section="alerts" :project-id="project.id" />
@@ -44,7 +44,7 @@ const when = (iso: string, zone: string) => new Intl.DateTimeFormat(locale.value
         <section v-for="schedule in data.schedules" :key="schedule.id" class="ui-card grid gap-4 p-5" :aria-labelledby="`schedule-${schedule.id}`">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h2 :id="`schedule-${schedule.id}`" class="text-lg font-extrabold text-ink">{{ schedule.name }}</h2>
+                    <h2 :id="`schedule-${schedule.id}`" class="text-lg font-semibold text-ink">{{ schedule.name }}</h2>
                     <p class="text-sm text-muted">
                         {{ schedule.rotation === 'weekly' ? t('Weekly, handing over :day at :time', { day: weekday(schedule.handoffDay), time: schedule.handoffTime }) : t('Daily, handing over at :time', { time: schedule.handoffTime }) }}
                         ({{ schedule.timezone }})
@@ -52,7 +52,7 @@ const when = (iso: string, zone: string) => new Intl.DateTimeFormat(locale.value
                 </div>
                 <div class="text-right">
                     <p class="text-xs font-bold uppercase tracking-wide text-muted">{{ t('On call now') }}</p>
-                    <p class="text-lg font-extrabold text-ink">{{ schedule.now ?? t('No one') }}</p>
+                    <p class="text-lg font-semibold text-ink">{{ schedule.now ?? t('No one') }}</p>
                 </div>
             </div>
             <div class="grid gap-2">
@@ -79,7 +79,7 @@ const when = (iso: string, zone: string) => new Intl.DateTimeFormat(locale.value
                     :action="`${base}/${schedule.id}/overrides`"
                     :submit="t('Add cover')"
                 >
-                    <template #trigger="{ open }"><UiButton size="sm" @click="open">{{ t('Add cover') }}</UiButton></template>
+                    <template #trigger="{ open }"><AcmeBtn size="sm" @click="open">{{ t('Add cover') }}</AcmeBtn></template>
                     <div class="grid items-start gap-5 sm:grid-cols-2">
                         <div class="sm:col-span-2"><SelectField :id="`cover-${schedule.id}-user`" name="user_id" :label="t('Who covers')" :options="data.members" /></div>
                         <InputField :id="`cover-${schedule.id}-starts`" name="starts_at" type="datetime-local" :label="t('From')" required />
@@ -87,11 +87,11 @@ const when = (iso: string, zone: string) => new Intl.DateTimeFormat(locale.value
                     </div>
                 </FormDialog>
                 <FormDialog :id="`edit-schedule-${schedule.id}`" :title="t('Edit schedule')" :action="`${base}/${schedule.id}`" method="PUT" :submit="t('Save')" size="wide">
-                    <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Edit') }}</UiButton></template>
+                    <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Edit') }}</AcmeBtn></template>
                     <OnCallFields :schedule="schedule" :members="data.members" :prefix="`edit-${schedule.id}`" />
                 </FormDialog>
                 <DeleteDialog :id="`delete-schedule-${schedule.id}`" :title="t('Delete :name?', { name: schedule.name })" :action="`${base}/${schedule.id}`">
-                    <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Delete') }}</UiButton></template>
+                    <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Delete') }}</AcmeBtn></template>
                 </DeleteDialog>
             </div>
         </section>

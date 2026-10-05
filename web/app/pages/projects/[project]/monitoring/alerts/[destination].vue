@@ -52,22 +52,22 @@ const events = computed<Record<string, string>>(() => ({ opened: t('Opened'), re
         </ProjectHeader>
         <SectionNav section="alerts" :project-id="project.id" />
 
-        <Alert v-if="destination.archived" tone="info">{{ t('This destination is archived. It no longer receives alerts; its delivery history stays here.') }}</Alert>
-        <Alert v-if="secrets?.signing_secret" tone="success" role="status">
+        <AcmeAlert v-if="destination.archived" tone="info">{{ t('This destination is archived. It no longer receives alerts; its delivery history stays here.') }}</AcmeAlert>
+        <AcmeAlert v-if="secrets?.signing_secret" tone="success" role="status">
             <p class="font-bold">{{ t('Copy the signing key now. It won’t be shown again.') }}</p>
             <CodeBlock :code="secrets.signing_secret" class="mt-2 whitespace-pre-wrap break-all" />
-        </Alert>
+        </AcmeAlert>
         <section v-if="destination.isWebhook" class="ui-card grid gap-2 p-5 text-sm text-muted">
             <p>{{ t('Deliveries can arrive more than once: use the X-Beacon-Delivery header (or the JSON id) to skip duplicates.') }}</p>
             <p>{{ t('Check X-Beacon-Signature, which is v1= followed by HMAC-SHA256(key, timestamp + "." + raw body), and reject old X-Beacon-Timestamp values. Reply with any 2xx status; redirects aren’t followed.') }}</p>
         </section>
 
-        <SettingsSection v-if="data.canManage && data.options && !destination.archived" :title="t('Settings')" :description="t('Changing the address or recipient cancels deliveries still waiting to be sent.')">
-            <ApiForm :action="base" method="PUT" class="grid gap-5 p-4 sm:p-6">
+        <AcmeCard v-if="data.canManage && data.options && !destination.archived" :padded="false" :title="t('Settings')" :description="t('Changing the address or recipient cancels deliveries still waiting to be sent.')">
+            <ApiForm :action="base" method="PUT" class="grid gap-5 px-5 pb-5 sm:px-6 sm:pb-6">
                 <DestinationFields :options="data.options" :destination="destination" />
                 <div class="flex justify-end"><SubmitButton>{{ t('Save') }}</SubmitButton></div>
             </ApiForm>
-        </SettingsSection>
+        </AcmeCard>
 
         <DataTable :caption="t('Deliveries')">
             <template #head>
@@ -92,13 +92,13 @@ const events = computed<Record<string, string>>(() => ({ opened: t('Opened'), re
             <tr v-if="data.deliveries.length === 0"><td colspan="5" class="py-8 text-center text-muted">{{ t('No deliveries yet. Send a test, or choose this destination on a monitor.') }}</td></tr>
         </DataTable>
 
-        <SettingsSection v-if="data.canManage && !destination.archived" :title="t('Archive this destination')" :description="t('It stops receiving alerts and deliveries still waiting are cancelled. Its history is kept.')">
+        <AcmeCard v-if="data.canManage && !destination.archived" :padded="false" :title="t('Archive this destination')" :description="t('It stops receiving alerts and deliveries still waiting are cancelled. Its history is kept.')">
             <div class="p-4 sm:p-6">
                 <DeleteDialog id="archive-destination" :title="t('Archive :destination?', { destination: destination.name })" :description="t('Monitors stop sending alerts here.')" :action="base" :submit-label="t('Archive')">
-                    <template #trigger="{ open }"><UiButton variant="danger" @click="open">{{ t('Archive :destination', { destination: destination.name }) }}</UiButton></template>
+                    <template #trigger="{ open }"><AcmeBtn variant="danger" @click="open">{{ t('Archive :destination', { destination: destination.name }) }}</AcmeBtn></template>
                     <input type="hidden" name="version" :value="destination.version">
                 </DeleteDialog>
             </div>
-        </SettingsSection>
+        </AcmeCard>
     </div>
 </template>
