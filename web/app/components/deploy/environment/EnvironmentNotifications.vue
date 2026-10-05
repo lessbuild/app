@@ -4,6 +4,7 @@ import type { EnvironmentPage } from '~/types/deploy';
 /** Which alert destinations hear about deploys to an environment: going live, failing, waiting for approval. */
 defineProps<{ page: EnvironmentPage; base: string }>();
 const { t } = useT();
+const dialogLink = useDialogLink();
 </script>
 
 <template>
@@ -15,7 +16,7 @@ const { t } = useT();
         <div class="grid gap-4 p-4 sm:p-6">
             <p v-if="page.destinations.length === 0" class="text-sm text-muted">
                 {{ t('No alert destinations yet.') }}
-                <NuxtLink :to="`/projects/${page.overview.project.id}/monitoring/destinations`" class="font-bold text-primary underline">{{ t('Add one under Alerts') }}</NuxtLink>
+                <NuxtLink :to="dialogLink('add-destination')" class="font-bold text-primary underline">{{ t('Add a destination') }}</NuxtLink>
             </p>
             <ApiForm v-else :action="`${base}/notifications`" method="PUT" class="grid gap-4">
                 <fieldset

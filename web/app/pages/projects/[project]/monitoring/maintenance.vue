@@ -37,6 +37,7 @@ const inTwoHours = () => {
                 <AcmeBtn variant="primary" :to="{ query: { dialog: 'schedule-maintenance' } }" icon="plus">{{ t('Schedule maintenance') }}</AcmeBtn>
             </template>
         </ProjectHeader>
+        <AlertsTabs :project-id="project.id" current="maintenance" />
         <SectionNav section="alerts" :project-id="project.id" />
 
         <EmptyState v-if="data.windows.length === 0" icon="clock" :title="t('No maintenance scheduled')" :description="t('Schedule a window before planned work so expected failures don’t page anyone.')" />

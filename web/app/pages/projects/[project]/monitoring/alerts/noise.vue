@@ -14,6 +14,7 @@ const project = computed(() => data.value.overview.project);
 <template>
     <div class="space-y-6">
         <ProjectHeader :overview="data.overview" :title="t('Alert noise')" :description="t('The alerts that fired most in the last 30 days, how often they flapped, and how often anyone acted on them.')" />
+        <AlertsTabs :project-id="project.id" current="noise" />
         <SectionNav section="alerts" :project-id="project.id" />
         <EmptyState v-if="data.rows.length === 0" icon="clock" :title="t('No alerts in the last 30 days')" :description="t('Quiet is good. Rules and monitors that open incidents will be ranked here.')" />
         <DataTable v-else :caption="t('Alert noise in the last 30 days')">

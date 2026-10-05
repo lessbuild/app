@@ -38,6 +38,7 @@ const when = (iso: string, zone: string) => new Intl.DateTimeFormat(locale.value
                 <AcmeBtn variant="primary" :to="{ query: { dialog: 'new-schedule' } }" icon="plus">{{ t('Add a schedule') }}</AcmeBtn>
             </template>
         </ProjectHeader>
+        <AlertsTabs :project-id="project.id" current="on-call" />
         <SectionNav section="alerts" :project-id="project.id" />
 
         <EmptyState v-if="data.schedules.length === 0" icon="users" :title="t('No on-call schedules yet')" :description="t('Add a rotation, then choose it as the recipient of an email destination so alerts reach whoever is on call.')" />

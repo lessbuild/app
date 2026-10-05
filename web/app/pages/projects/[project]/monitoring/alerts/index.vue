@@ -24,6 +24,7 @@ const kindIcon = (type: string) => (/mail/i.test(type) ? 'mail' : /slack|teams|d
                 <AcmeBtn variant="primary" :to="{ query: { dialog: 'add-destination' } }" icon="plus">{{ t('Add destination') }}</AcmeBtn>
             </template>
         </ProjectHeader>
+        <AlertsTabs :project-id="project.id" current="destinations" class="mb-6" />
         <div class="space-y-6">
             <SectionNav section="alerts" :project-id="project.id" />
             <EmptyState v-if="data.destinations.length === 0" icon="share" :title="t('No alert destinations yet')" :description="t('Send alerts to a member’s email, a signed webhook, Slack, Microsoft Teams, Discord or PagerDuty.')" />
