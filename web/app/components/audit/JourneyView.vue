@@ -14,14 +14,14 @@ const verbs = computed<Record<string, string>>(() => ({
 <template>
     <article class="grid gap-6">
         <div class="flex flex-wrap items-center gap-2 text-sm text-muted">
-            <Badge :tone="tone[journey.outcome]">{{ journey.outcomeLabel }}</Badge>
+            <AcmeBadge :tone="acmeTone(tone[journey.outcome])">{{ journey.outcomeLabel }}</AcmeBadge>
             <span>{{ journey.siteName }}</span><span aria-hidden="true">·</span>
             <span>{{ tc(':count step|:count steps', journey.stepsCount, { count: journey.stepsCount }) }}</span><span aria-hidden="true">·</span>
             <span>{{ t(':seconds s', { seconds: journey.seconds }) }}</span>
         </div>
         <blockquote v-if="journey.summary" class="border-l-4 border-line pl-4 text-sm italic leading-6 text-ink">{{ journey.summary }}</blockquote>
         <section v-if="journey.friction.length > 0" class="grid gap-2">
-            <h3 class="text-sm font-extrabold text-ink">{{ t('What slowed the visitor down') }}</h3>
+            <h3 class="text-sm font-semibold text-ink">{{ t('What slowed the visitor down') }}</h3>
             <ul class="grid list-disc gap-1 pl-5 text-sm text-muted"><li v-for="item in journey.friction" :key="item">{{ item }}</li></ul>
         </section>
         <ol class="grid gap-5">

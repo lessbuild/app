@@ -40,38 +40,38 @@ useHead({ title: () => t('Audit report') });
             :breadcrumbs="[{ label: t('Audits'), to: base }, { label: report.audit.name, to: `${base}/${report.audit.id}` }]"
         >
             <template v-if="!running" #actions>
-                <UiButton variant="primary" :disabled="starting" @click="rerun"><Icon name="refresh" class="h-4 w-4" />{{ starting ? t('Starting…') : t('Run audit') }}</UiButton>
+                <AcmeBtn variant="primary" :disabled="starting" icon="refresh" @click="rerun">{{ starting ? t('Starting…') : t('Run audit') }}</AcmeBtn>
             </template>
         </PageHeader>
 
         <RunProgress v-if="running" :project-id="projectId" :report="report" />
-        <Alert v-if="report.run.status === 'failed'" tone="danger" role="alert"><strong>{{ t('The audit didn’t finish.') }}</strong> {{ report.run.error }}</Alert>
+        <AcmeAlert v-if="report.run.status === 'failed'" tone="danger" role="alert"><strong>{{ t('The audit didn’t finish.') }}</strong> {{ report.run.error }}</AcmeAlert>
 
         <template v-if="report.run.status === 'done'">
             <ScoreTiles :sites="report.sites" />
             <section v-if="report.summary" class="ui-card grid gap-2 p-5 sm:p-6" aria-labelledby="summary-heading">
-                <h2 id="summary-heading" class="text-lg font-extrabold text-ink">{{ t('Summary') }}</h2>
+                <h2 id="summary-heading" class="text-lg font-semibold text-ink">{{ t('Summary') }}</h2>
                 <p class="max-w-3xl text-sm leading-7 text-muted">{{ report.summary }}</p>
             </section>
             <section class="ui-card p-5 sm:p-6" :aria-label="t('Scores by category')"><ScoreComparison :sites="report.sites" /></section>
             <section class="grid gap-3" aria-labelledby="findings-heading">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <h2 id="findings-heading" class="text-lg font-extrabold text-ink">{{ t('What to improve') }}</h2>
+                    <h2 id="findings-heading" class="text-lg font-semibold text-ink">{{ t('What to improve') }}</h2>
                     <p class="text-xs text-muted">{{ tc(':count finding, most important first|:count findings, most important first', report.findings.length, { count: report.findings.length }) }}</p>
                 </div>
                 <ol class="grid gap-3 md:grid-cols-2">
                     <li v-for="finding in report.findings" :key="finding.id">
                         <UiDialog :id="`finding-${finding.id}`" :title="finding.title" size="large">
                             <template #trigger="{ open }">
-                                <button type="button" class="ui-card ui-card--interactive flex h-full w-full gap-4 p-4 text-left" @click="open">
+                                <button type="button" class="rounded-2xl border border-line bg-surface shadow-card transition hover:-translate-y-0.5 hover:shadow-lift flex h-full w-full gap-4 p-4 text-left" @click="open">
                                     <img v-if="finding.screenshotUrl" :src="finding.screenshotUrl" alt="" width="128" height="80" loading="lazy" class="hidden h-20 w-32 shrink-0 rounded-control border border-line object-cover object-top sm:block">
                                     <span class="grid min-w-0 content-start gap-2">
                                         <span class="flex flex-wrap gap-1.5">
-                                            <Badge :tone="labels.severityTone[finding.severity]">{{ labels.severity[finding.severity] }}</Badge>
-                                            <Badge>{{ finding.categoryLabel }}</Badge>
-                                            <Badge v-if="finding.mockupUrl" tone="info">{{ t('Mock-up') }}</Badge>
+                                            <AcmeBadge :tone="acmeTone(labels.severityTone[finding.severity])">{{ labels.severity[finding.severity] }}</AcmeBadge>
+                                            <AcmeBadge>{{ finding.categoryLabel }}</AcmeBadge>
+                                            <AcmeBadge v-if="finding.mockupUrl" tone="blue">{{ t('Mock-up') }}</AcmeBadge>
                                         </span>
-                                        <span class="text-sm font-extrabold text-ink">{{ finding.title }}</span>
+                                        <span class="text-sm font-semibold text-ink">{{ finding.title }}</span>
                                         <span class="line-clamp-2 text-xs leading-5 text-muted">{{ finding.recommendation }}</span>
                                     </span>
                                 </button>
@@ -84,7 +84,7 @@ useHead({ title: () => t('Audit report') });
         </template>
 
         <section v-if="report.journeys.length > 0" class="grid gap-3" aria-labelledby="journeys-heading">
-            <h2 id="journeys-heading" class="text-lg font-extrabold text-ink">{{ t('Journeys') }}</h2>
+            <h2 id="journeys-heading" class="text-lg font-semibold text-ink">{{ t('Journeys') }}</h2>
             <DataTable :caption="t('Journeys')">
                 <template #head>
                     <tr><th scope="col">{{ t('Task') }}</th><th v-for="key in sites" :key="key" scope="col">{{ report.journeys.find((journey) => journey.siteKey === key)?.siteName }}</th></tr>

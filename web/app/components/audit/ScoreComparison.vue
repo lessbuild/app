@@ -22,7 +22,7 @@ const show = (category: string, entry: SiteScore) => (hover.value = { category, 
 <template>
     <figure v-if="site" class="grid gap-4">
         <figcaption class="flex flex-wrap items-center justify-between gap-3">
-            <span class="text-sm font-extrabold text-ink">{{ t('Scores by category') }}</span>
+            <span class="text-sm font-semibold text-ink">{{ t('Scores by category') }}</span>
             <span v-if="competitors.length > 0" class="flex flex-wrap items-center gap-4 text-xs font-semibold text-muted" aria-hidden="true">
                 <span class="flex items-center gap-1.5"><span class="h-2.5 w-4 rounded-sm bg-[var(--audit-chart-site)]" />{{ site.name }}</span>
                 <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-[var(--audit-chart-other)]" />{{ t('Competitors') }}</span>
@@ -66,11 +66,11 @@ const show = (category: string, entry: SiteScore) => (hover.value = { category, 
                         :style="{ left: `${Math.max(8, Math.min(active(category.key)!.value, 92))}%` }"
                     >
                         <span :class="active(category.key)!.entry.key === site.key ? 'h-0.5 w-3 bg-[var(--audit-chart-site)]' : 'size-2 rounded-full bg-[var(--audit-chart-other)]'" aria-hidden="true" />
-                        <strong class="font-extrabold tabular-nums text-ink">{{ active(category.key)!.value }}</strong>
+                        <strong class="font-semibold tabular-nums text-ink">{{ active(category.key)!.value }}</strong>
                         <span class="text-muted">{{ active(category.key)!.entry.name }}</span>
                     </span>
                 </div>
-                <span class="text-right text-sm font-extrabold tabular-nums text-ink" aria-hidden="true">{{ category.score }}</span>
+                <span class="text-right text-sm font-semibold tabular-nums text-ink" aria-hidden="true">{{ category.score }}</span>
             </div>
             <div class="grid grid-cols-[7.5rem_1fr_2.25rem] gap-3 sm:grid-cols-[9rem_1fr_2.25rem]" aria-hidden="true">
                 <span />
@@ -91,8 +91,8 @@ const show = (category: string, entry: SiteScore) => (hover.value = { category, 
                     <td v-for="entry in sites" :key="entry.key" class="text-right tabular-nums">{{ score(entry, category.key) ?? '—' }}</td>
                 </tr>
                 <tr>
-                    <th scope="row" class="font-extrabold">{{ t('Overall') }}</th>
-                    <td v-for="entry in sites" :key="entry.key" class="text-right font-extrabold tabular-nums">{{ entry.score }}</td>
+                    <th scope="row" class="font-semibold">{{ t('Overall') }}</th>
+                    <td v-for="entry in sites" :key="entry.key" class="text-right font-semibold tabular-nums">{{ entry.score }}</td>
                 </tr>
             </DataTable>
         </Disclosure>

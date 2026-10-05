@@ -10,20 +10,20 @@ watch(() => data.value.account.name, (value) => (name.value = value));
 <template>
     <SettingsFrame :title="t('Account settings')" :description="t('The name everyone in :account sees, and deleting it.', { account: data.account.name })" >
 
-        <SettingsSection :title="t('Account name')" :description="t('Shown in the account switcher, invitations and emails.')">
+        <AcmeCard :padded="false" :title="t('Account name')" :description="t('Shown in the account switcher, invitations and emails.')">
             <ApiForm action="/api/app/account/settings" method="PUT" class="p-4 sm:p-6">
                 <InputField v-model="name" name="name" :label="t('Account name')" maxlength="100" required />
                 <div class="flex justify-end"><SubmitButton>{{ t('Save name') }}</SubmitButton></div>
             </ApiForm>
-        </SettingsSection>
+        </AcmeCard>
 
-        <SettingsSection v-if="data.canDelete" :title="t('Delete this account')" :description="t('Deletes its members’ access, invitations, API tokens and audit log straight away. This can’t be undone.')">
-            <div class="flex justify-end p-4 sm:p-6">
+        <AcmeCard v-if="data.canDelete" :padded="false" :title="t('Delete this account')" :description="t('Deletes its members’ access, invitations, API tokens and audit log straight away. This can’t be undone.')">
+            <div class="flex justify-end px-5 pb-5 sm:px-6 sm:pb-6">
                 <DeleteDialog id="delete-account" :title="t('Delete :name', { name: data.account.name })" action="/api/app/account/settings" :warning="t('Deletes its members’ access, invitations, API tokens and audit log straight away. This can’t be undone.')">
-                    <template #trigger="{ open }"><UiButton variant="danger" @click="open">{{ t('Delete this account') }}</UiButton></template>
+                    <template #trigger="{ open }"><AcmeBtn variant="danger" @click="open">{{ t('Delete this account') }}</AcmeBtn></template>
                     <InputField name="confirm_name" :label="t('Type :name to confirm', { name: data.account.name })" autocomplete="off" required />
                 </DeleteDialog>
             </div>
-        </SettingsSection>
+        </AcmeCard>
     </SettingsFrame>
 </template>

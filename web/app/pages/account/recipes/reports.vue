@@ -13,14 +13,14 @@ const { data } = await useApi<{ reports: Report[] }>('/account/recipes/reports')
         <EmptyState v-if="data.reports.length === 0" icon="check" :title="t('No reports')" :description="t('Nobody has reported this account’s recipes.')" />
         <section v-for="report in data.reports" :key="report.id" class="ui-card grid gap-3 p-5 text-sm" :aria-label="`${report.recipe} · ${report.reason}`">
             <div>
-                <h2 class="font-extrabold text-ink">{{ report.recipe }} · {{ report.reason }}</h2>
+                <h2 class="font-semibold text-ink">{{ report.recipe }} · {{ report.reason }}</h2>
                 <p class="text-xs text-muted">
                     <Rich :text="t('From :name, :when', { name: report.reporter })"><template #when><RelativeTime v-if="report.updatedAt" :at="report.updatedAt" /></template></Rich>
                 </p>
             </div>
             <p v-if="report.details" class="whitespace-pre-line">{{ report.details }}</p>
             <template v-if="report.status === 'resolved'">
-                <p class="text-muted"><Badge tone="success">{{ t('Resolved') }}</Badge> {{ t('by :name', { name: report.resolver ?? t('someone') }) }}<template v-if="report.note"> · {{ report.note }}</template></p>
+                <p class="text-muted"><AcmeBadge tone="green">{{ t('Resolved') }}</AcmeBadge> {{ t('by :name', { name: report.resolver ?? t('someone') }) }}<template v-if="report.note"> · {{ report.note }}</template></p>
                 <ApiForm :action="`/api/app/account/recipes/reports/${report.id}`" method="PUT">
                     <input type="hidden" name="resolved" value="0">
                     <SubmitButton variant="quiet" size="sm">{{ t('Reopen') }}</SubmitButton>

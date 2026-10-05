@@ -13,25 +13,25 @@ const { data } = await useApi<{ account: { id: string; name: string }; recipes: 
         <PageHeader :title="t('Recipes')" :description="t('Scripts that run on new servers at the end of provisioning. Choose them when you create a server, or install one from the gallery.')">
             <template #actions>
                 <a href="/api/app/account/inventory/recipes.csv" class="ui-btn ui-btn-quiet ui-btn-sm" download>{{ t('Export CSV') }}</a>
-                <UiButton v-if="data.canCreate" variant="primary" :to="{ query: { dialog: 'new-recipe' } }"><Icon name="plus" class="h-4 w-4" />{{ t('New recipe') }}</UiButton>
+                <AcmeBtn v-if="data.canCreate" variant="primary" :to="{ query: { dialog: 'new-recipe' } }" icon="plus">{{ t('New recipe') }}</AcmeBtn>
             </template>
         </PageHeader>
         <RecipeNav :reports="data.canSeeReports" />
 
         <EmptyState v-if="data.recipes.length === 0" icon="code" :title="t('No recipes yet')" :description="t('Write one, or install one from the gallery.')">
-            <template #action><UiButton to="/recipes/gallery">{{ t('Gallery') }}</UiButton></template>
+            <template #action><AcmeBtn to="/recipes/gallery">{{ t('Gallery') }}</AcmeBtn></template>
         </EmptyState>
         <section v-else class="ui-card overflow-hidden">
             <ul class="divide-y divide-line" :aria-label="t('Recipes')">
                 <li v-for="recipe in data.recipes" :key="recipe.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                     <div class="min-w-0">
-                        <NuxtLink :to="`/account/recipes/${recipe.id}`" class="font-extrabold text-ink hover:underline">{{ recipe.name }}</NuxtLink>
+                        <NuxtLink :to="`/account/recipes/${recipe.id}`" class="font-semibold text-ink hover:underline">{{ recipe.name }}</NuxtLink>
                         <p class="mt-0.5 text-xs text-muted">{{ recipe.category }}<template v-if="recipe.description"> · {{ recipe.description.slice(0, 100) }}</template></p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <Badge v-if="recipe.published" tone="info">{{ tc('In the gallery · :count install|In the gallery · :count installs', recipe.installs, { count: recipe.installs }) }}</Badge>
-                        <Badge v-if="recipe.fromGallery">{{ t('From the gallery') }}</Badge>
-                        <Badge v-if="recipe.updateAvailable" tone="warning">{{ t('Update available') }}</Badge>
+                        <AcmeBadge v-if="recipe.published" tone="blue">{{ tc('In the gallery · :count install|In the gallery · :count installs', recipe.installs, { count: recipe.installs }) }}</AcmeBadge>
+                        <AcmeBadge v-if="recipe.fromGallery">{{ t('From the gallery') }}</AcmeBadge>
+                        <AcmeBadge v-if="recipe.updateAvailable" tone="amber">{{ t('Update available') }}</AcmeBadge>
                     </div>
                 </li>
             </ul>

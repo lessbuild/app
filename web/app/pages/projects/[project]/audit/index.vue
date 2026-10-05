@@ -15,7 +15,7 @@ useHead({ title: () => t('Audits') });
     <div class="space-y-6">
         <PageHeader icon="search" eyebrow="Audit" :title="t('Audits')" :description="t('Watch a visitor use your site and your competitors’, and see what to improve.')">
             <template v-if="canAdd" #actions>
-                <UiButton variant="primary" :to="{ query: { dialog: 'new-audit' } }"><Icon name="plus" class="h-4 w-4" />{{ t('New audit') }}</UiButton>
+                <AcmeBtn variant="primary" :to="{ query: { dialog: 'new-audit' } }" icon="plus">{{ t('New audit') }}</AcmeBtn>
             </template>
         </PageHeader>
         <p class="text-xs font-semibold text-muted">
@@ -24,14 +24,14 @@ useHead({ title: () => t('Audits') });
         </p>
 
         <EmptyState v-if="data.audits.length === 0" icon="search" :title="t('No audits yet')" :description="t('Add your site and a few competitors. A visitor tries real tasks on each, and the report shows what to improve first.')">
-            <template #action><UiButton v-if="data.plan.canManage" variant="primary" :to="{ query: { dialog: 'new-audit' } }">{{ t('Set up your first audit') }}</UiButton></template>
+            <template #action><AcmeBtn v-if="data.plan.canManage" variant="primary" :to="{ query: { dialog: 'new-audit' } }">{{ t('Set up your first audit') }}</AcmeBtn></template>
         </EmptyState>
         <ul v-else class="grid gap-3 md:grid-cols-2">
             <li v-for="audit in data.audits" :key="audit.id">
-                <NuxtLink :to="`/projects/${projectId}/audit/${audit.id}`" class="ui-card ui-card--interactive flex h-full flex-col gap-4 p-5">
+                <NuxtLink :to="`/projects/${projectId}/audit/${audit.id}`" class="rounded-2xl border border-line bg-surface shadow-card transition hover:-translate-y-0.5 hover:shadow-lift flex h-full flex-col gap-4 p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                            <h2 class="truncate text-base font-extrabold text-ink">{{ audit.name }}</h2>
+                            <h2 class="truncate text-base font-semibold text-ink">{{ audit.name }}</h2>
                             <p class="truncate text-sm text-muted">{{ audit.url }}</p>
                         </div>
                         <RunBadge v-if="audit.latestRun" :run="audit.latestRun" />

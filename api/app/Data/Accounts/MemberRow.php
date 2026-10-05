@@ -25,6 +25,7 @@ final readonly class MemberRow
      * @param  bool  $canLimitServices  Owners and admins always have every service, so only other roles can be limited.
      * @param  list<string>|null  $projectAccess  the projects they can see; null means every project
      * @param  bool  $deployProtected  whether they may deploy to protected environments
+     * @param  bool  $secondFactor  whether they sign in with an authenticator app or a passkey as well as a password
      */
     public function __construct(
         public string $membershipId,
@@ -38,5 +39,6 @@ final readonly class MemberRow
         public bool $canLimitServices = false,
         public ?array $projectAccess = null,
         public bool $deployProtected = false,
+        public bool $secondFactor = false,
     ) {}
 }

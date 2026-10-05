@@ -40,17 +40,17 @@ async function copyLink() {
 <template>
     <SettingsFrame :title="t('Billing')" :description="t('Pick a plan for each service. Only the service you change is affected, and changes are prorated.')" >
 
-        <Alert v-if="route.query.checkout === 'done'" tone="success" role="status">{{ t('Thanks! Your plan starts as soon as the payment is confirmed; this page updates in a moment.') }}</Alert>
-        <Alert v-else-if="route.query.checkout === 'cancelled'" tone="info" role="status">{{ t('Checkout was cancelled. Nothing changed.') }}</Alert>
-        <Alert v-if="portalError" tone="danger" role="alert">{{ portalError }}</Alert>
-        <Alert v-if="!data.paymentsAvailable" tone="warning" role="status">{{ t('Payments aren’t connected in this environment, so only free plans can be chosen.') }}</Alert>
-        <Alert v-if="data.trialDays > 0 && data.paymentsAvailable" tone="info" role="status">{{ t('Your first paid plan starts with a :days-day free trial. You won’t be charged until it ends, and you can cancel before then.', { days: data.trialDays }) }}</Alert>
-        <Alert v-if="data.status === 'past_due' || data.status === 'unpaid'" tone="danger" role="alert">{{ t('Your last payment didn’t go through. Update your payment method to keep your plans.') }}</Alert>
+        <AcmeAlert v-if="route.query.checkout === 'done'" tone="success" role="status">{{ t('Thanks! Your plan starts as soon as the payment is confirmed; this page updates in a moment.') }}</AcmeAlert>
+        <AcmeAlert v-else-if="route.query.checkout === 'cancelled'" tone="info" role="status">{{ t('Checkout was cancelled. Nothing changed.') }}</AcmeAlert>
+        <AcmeAlert v-if="portalError" tone="danger" role="alert">{{ portalError }}</AcmeAlert>
+        <AcmeAlert v-if="!data.paymentsAvailable" tone="warning" role="status">{{ t('Payments aren’t connected in this environment, so only free plans can be chosen.') }}</AcmeAlert>
+        <AcmeAlert v-if="data.trialDays > 0 && data.paymentsAvailable" tone="info" role="status">{{ t('Your first paid plan starts with a :days-day free trial. You won’t be charged until it ends, and you can cancel before then.', { days: data.trialDays }) }}</AcmeAlert>
+        <AcmeAlert v-if="data.status === 'past_due' || data.status === 'unpaid'" tone="danger" role="alert">{{ t('Your last payment didn’t go through. Update your payment method to keep your plans.') }}</AcmeAlert>
 
         <PageTabs :tabs="tabs" :current="tab" :label="t('Billing sections')" />
 
         <template v-if="tab === 'overview'">
-            <SettingsSection :title="t('Plan')" :description="data.periodEnd ? t('Renews :date', { date: dateTime(data.periodEnd) }) : t('Prices exclude tax.')">
+            <AcmeCard :padded="false" :title="t('Plan')" :description="data.periodEnd ? t('Renews :date', { date: dateTime(data.periodEnd) }) : t('Prices exclude tax.')">
                 <div class="p-5">
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <p class="font-semibold text-ink">{{ data.interval === 'year' ? t('You pay yearly') : t('You pay monthly') }}</p>
@@ -63,11 +63,11 @@ async function copyLink() {
                             <input type="hidden" name="interval" :value="data.interval === 'year' ? 'month' : 'year'">
                             <SubmitButton variant="secondary">{{ data.interval === 'year' ? t('Pay monthly instead') : t('Pay yearly, 2 months free') }}</SubmitButton>
                         </ApiForm>
-                        <UiButton v-if="data.canManage && data.hasCustomer" @click="portal">{{ t('Payment method and billing details') }}</UiButton>
+                        <AcmeBtn v-if="data.canManage && data.hasCustomer" @click="portal">{{ t('Payment method and billing details') }}</AcmeBtn>
                     </div>
                 </div>
-            </SettingsSection>
-            <SettingsSection v-if="data.limits.length > 0" :title="t('Plan limits')" :description="t('What you’re using of each limit your plans set. Monthly limits reset on the 1st.')">
+            </AcmeCard>
+            <AcmeCard v-if="data.limits.length > 0" :padded="false" :title="t('Plan limits')" :description="t('What you’re using of each limit your plans set. Monthly limits reset on the 1st.')">
                 <ul class="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
                     <li v-for="limit in data.limits" :key="limit.key" class="grid gap-2">
                         <div class="flex items-baseline justify-between gap-3 text-sm">
@@ -81,7 +81,7 @@ async function copyLink() {
                         </NuxtLink>
                     </li>
                 </ul>
-            </SettingsSection>
+            </AcmeCard>
         </template>
 
         <template v-for="service in data.services" :key="service.key">
@@ -92,21 +92,21 @@ async function copyLink() {
             <div class="grid gap-4 sm:grid-cols-3">
                 <div class="ui-card grid gap-1 p-5">
                     <p class="ui-eyebrow">{{ t(':app a month', { app: 'BuildPusher' }) }}</p>
-                    <p class="text-2xl font-extrabold text-ink">{{ money.amount(data.costs.platformTotal, data.costs.currency) }}</p>
+                    <p class="text-2xl font-semibold text-ink">{{ money.amount(data.costs.platformTotal, data.costs.currency) }}</p>
                     <p class="text-xs text-muted">{{ t('Plans, add-ons and usage past allowances this month') }}</p>
                 </div>
                 <div class="ui-card grid gap-1 p-5">
                     <p class="ui-eyebrow">{{ t('Servers a month') }}</p>
-                    <p class="text-2xl font-extrabold text-ink">{{ money.amounts(data.costs.cloudTotal) }}</p>
+                    <p class="text-2xl font-semibold text-ink">{{ money.amounts(data.costs.cloudTotal) }}</p>
                     <p class="text-xs text-muted">{{ data.costs.unpriced > 0 ? tc(':count server has no known price|:count servers have no known price', data.costs.unpriced) : t('From your providers’ list prices') }}</p>
                 </div>
                 <div class="ui-card grid gap-1 p-5">
                     <p class="ui-eyebrow">{{ t('Cloud invoices last month') }}</p>
-                    <p class="text-2xl font-extrabold text-ink">{{ money.amounts(data.costs.billed) }}</p>
+                    <p class="text-2xl font-semibold text-ink">{{ money.amounts(data.costs.billed) }}</p>
                     <p class="text-xs text-muted">{{ t('What DigitalOcean, Vultr, Linode and AWS billed') }}</p>
                 </div>
             </div>
-            <SettingsSection id="by-project" :title="t('Costs by project')" :description="t('Each service’s charge is split evenly across the projects that use it, and add-ons across all projects. A server’s cost goes to the projects with websites on it, split evenly when several share it. Servers run in your own cloud accounts, so their cost is billed by your provider, not by us.')">
+            <AcmeCard id="by-project" :padded="false" :title="t('Costs by project')" :description="t('Each service’s charge is split evenly across the projects that use it, and add-ons across all projects. A server’s cost goes to the projects with websites on it, split evenly when several share it. Servers run in your own cloud accounts, so their cost is billed by your provider, not by us.')">
                 <p v-if="data.costs.projects.length === 0" class="p-4 text-sm text-muted sm:p-6">{{ t('No projects yet.') }}</p>
                 <DataTable v-else :caption="t('Costs by project')" :framed="false">
                     <template #head><tr><th scope="col">{{ t('Project') }}</th><th scope="col" class="text-right">BuildPusher</th><th scope="col" class="text-right">{{ t('Servers') }}</th></tr></template>
@@ -121,12 +121,12 @@ async function copyLink() {
                         <td class="text-right tabular-nums">{{ money.amounts(data.costs.unassigned) }}</td>
                     </tr>
                 </DataTable>
-            </SettingsSection>
+            </AcmeCard>
         </template>
 
         <template v-if="tab === 'invoices'">
-            <SettingsSection id="refer" :title="t('Refer a friend')" :description="t('Share your link. When an account that signs up through it starts paying, you both get :amount of credit off your next invoices.', { amount: money.cents(data.referrals.credit_cents) })">
-                <div class="grid gap-4 p-4 sm:p-6">
+            <AcmeCard id="refer" :padded="false" :title="t('Refer a friend')" :description="t('Share your link. When an account that signs up through it starts paying, you both get :amount of credit off your next invoices.', { amount: money.cents(data.referrals.credit_cents) })">
+                <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
                     <UiField id="referral-link" :label="t('Your link')">
                         <div class="flex min-w-0">
                             <input id="referral-link" class="ui-input min-w-0 flex-1 rounded-r-none" :value="data.referrals.link" readonly>
@@ -134,17 +134,17 @@ async function copyLink() {
                         </div>
                     </UiField>
                     <dl class="grid gap-3 text-sm sm:grid-cols-3">
-                        <div><dt class="text-muted">{{ t('Signed up') }}</dt><dd class="text-lg font-extrabold text-ink">{{ number(data.referrals.signed_up) }}</dd></div>
-                        <div><dt class="text-muted">{{ t('Started paying') }}</dt><dd class="text-lg font-extrabold text-ink">{{ number(data.referrals.qualified) }}</dd></div>
+                        <div><dt class="text-muted">{{ t('Signed up') }}</dt><dd class="text-lg font-semibold text-ink">{{ number(data.referrals.signed_up) }}</dd></div>
+                        <div><dt class="text-muted">{{ t('Started paying') }}</dt><dd class="text-lg font-semibold text-ink">{{ number(data.referrals.qualified) }}</dd></div>
                         <div>
                             <dt class="text-muted">{{ t('Credit earned') }}</dt>
-                            <dd class="text-lg font-extrabold text-ink">{{ money.cents(data.referrals.earned_cents) }}</dd>
+                            <dd class="text-lg font-semibold text-ink">{{ money.cents(data.referrals.earned_cents) }}</dd>
                             <dd v-if="data.referrals.pending_cents > 0" class="text-xs text-muted">{{ t(':amount more once you have a subscription', { amount: money.cents(data.referrals.pending_cents) }) }}</dd>
                         </div>
                     </dl>
                 </div>
-            </SettingsSection>
-            <SettingsSection :title="t('Invoices')" :description="t('Receipts for past payments.')">
+            </AcmeCard>
+            <AcmeCard :padded="false" :title="t('Invoices')" :description="t('Receipts for past payments.')">
                 <p v-if="data.invoices === null" class="p-4 text-sm text-muted sm:p-6">{{ t('Invoices can’t be loaded right now. Try again in a moment.') }}</p>
                 <p v-else-if="data.invoices.length === 0" class="p-4 text-sm text-muted sm:p-6">{{ t('No invoices yet.') }}</p>
                 <DataTable v-else :caption="t('Invoices')" :framed="false">
@@ -153,10 +153,10 @@ async function copyLink() {
                         <td>{{ dateTime(invoice.date) }}</td>
                         <td><a v-if="invoice.url" class="ui-link" :href="invoice.url" rel="noopener" target="_blank">{{ invoice.number }}</a><template v-else>{{ invoice.number }}</template></td>
                         <td>{{ money.amount(invoice.totalCents / 100, invoice.currency.toUpperCase()) }}</td>
-                        <td><Badge :tone="invoice.status === 'paid' ? 'success' : 'neutral'">{{ invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1) }}</Badge></td>
+                        <td><AcmeBadge :tone="acmeTone(invoice.status === 'paid' ? 'success' : 'neutral')">{{ invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1) }}</AcmeBadge></td>
                     </tr>
                 </DataTable>
-            </SettingsSection>
+            </AcmeCard>
         </template>
     </SettingsFrame>
 </template>

@@ -50,6 +50,7 @@ final class MembersOverviewQuery
                 canLimitServices: $manageable && ! in_array($membership->role, [AccountRole::Owner, AccountRole::Admin], true),
                 projectAccess: $membership->project_ids,
                 deployProtected: $membership->deploy_protected,
+                secondFactor: $membership->user->hasSecondFactor(),
             ));
 
         $invitations = $canManage

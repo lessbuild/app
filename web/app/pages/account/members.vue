@@ -29,7 +29,7 @@ function access(member: MemberRow): string {
 <template>
     <SettingsFrame :title="t('Members')" :description="t('People who can work in :account, and what they can do.', { account: data.account.name })">
             <template v-if="overview.canManage" #actions>
-                <UiButton variant="primary" :to="{ query: { dialog: 'invite-member' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Invite someone') }}</UiButton>
+                <AcmeBtn variant="primary" :to="{ query: { dialog: 'invite-member' } }" icon="plus">{{ t('Invite someone') }}</AcmeBtn>
             </template>
 
         <section aria-labelledby="people-heading" class="grid gap-4 border-b border-line pb-7">
@@ -44,7 +44,7 @@ function access(member: MemberRow): string {
                     <div class="min-w-0 flex-1">
                         <p class="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
                             {{ member.name }}
-                            <Badge v-if="member.isYou">{{ t('you') }}</Badge>
+                            <AcmeBadge v-if="member.isYou">{{ t('you') }}</AcmeBadge>
                         </p>
                         <p class="truncate text-xs text-muted">{{ member.email }}</p>
                         <p v-if="access(member)" class="mt-1 text-xs text-muted">{{ access(member) }}</p>
@@ -52,7 +52,7 @@ function access(member: MemberRow): string {
                     <AcmeBadge :tone="({ owner: 'blue', admin: 'violet' } as Record<string, AcmeTone>)[member.role] ?? 'gray'">{{ roleLabel(member.role) }}</AcmeBadge>
                     <div v-if="member.manageable" class="flex flex-wrap gap-1">
                         <FormDialog :id="`role-${member.membershipId}`" :title="t('Role for :name', { name: member.name })" :description="t('Roles apply to the whole account.')" :action="`/api/app/account/members/${member.membershipId}`" method="PUT" :submit="t('Save')">
-                            <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Role') }}</UiButton></template>
+                            <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Role') }}</AcmeBtn></template>
                             <fieldset class="grid gap-2">
                                 <legend class="sr-only">{{ t('Role') }}</legend>
                                 <ChoiceField
@@ -70,7 +70,7 @@ function access(member: MemberRow): string {
                             </fieldset>
                         </FormDialog>
                         <FormDialog :id="`projects-${member.membershipId}`" :title="t('Project access')" :description="t('Which projects :name can see', { name: member.name })" :action="`/api/app/account/members/${member.membershipId}/projects`" method="PUT" :submit="t('Save project access')">
-                            <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Access') }}</UiButton></template>
+                            <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Access') }}</AcmeBtn></template>
                             <ChoiceField :id="`projects-${member.membershipId}-all`" name="project_access" type="radio" value="all" :label="t('Every project, including new ones')" :checked="member.projectAccess === null" />
                             <ChoiceField :id="`projects-${member.membershipId}-some`" name="project_access" type="radio" value="some" :label="t('Only these projects:')" :checked="member.projectAccess !== null">
                                 <span class="mt-2 grid gap-1">
@@ -85,7 +85,7 @@ function access(member: MemberRow): string {
                                 <hr class="border-line">
                                 <p class="text-sm font-bold text-ink">{{ t('Service access') }}</p>
                                 <p class="text-sm text-muted">{{ t('Which services :name can use', { name: member.name }) }}</p>
-                                <UiButton size="sm" :to="{ query: { dialog: `services-${member.membershipId}` } }">{{ t('Service access') }}</UiButton>
+                                <AcmeBtn size="sm" :to="{ query: { dialog: `services-${member.membershipId}` } }">{{ t('Service access') }}</AcmeBtn>
                             </template>
                         </FormDialog>
                         <FormDialog v-if="member.canLimitServices" :id="`services-${member.membershipId}`" :title="t('Service access')" :description="t('Which services :name can use', { name: member.name })" :action="`/api/app/account/members/${member.membershipId}/services`" method="PUT" :submit="t('Save service access')">
@@ -100,11 +100,11 @@ function access(member: MemberRow): string {
                             </ChoiceField>
                         </FormDialog>
                         <DeleteDialog :id="`remove-${member.membershipId}`" :title="t('Remove :name?', { name: member.name })" :action="`/api/app/account/members/${member.membershipId}`" :warning="t('They lose access to :account straight away.', { account: data.account.name })" :submit-label="t('Remove')">
-                            <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Remove') }}</UiButton></template>
+                            <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Remove') }}</AcmeBtn></template>
                         </DeleteDialog>
                     </div>
                     <DeleteDialog v-else-if="member.isYou" :id="`leave-${member.membershipId}`" :title="t('Leave :account?', { account: data.account.name })" :action="`/api/app/account/members/${member.membershipId}`" :warning="member.role === 'owner' ? t('An account always keeps an owner, so the last owner can’t leave.') : t('You lose access until someone invites you again.')" :submit-label="t('Leave')">
-                        <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Leave') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Leave') }}</AcmeBtn></template>
                     </DeleteDialog>
                 </li>
             </ul>
@@ -128,7 +128,7 @@ function access(member: MemberRow): string {
                         </div>
                     </div>
                     <DeleteDialog :id="`revoke-${invitation.id}`" :title="t('Revoke the invitation for :email', { email: invitation.email })" :action="`/api/app/account/invitations/${invitation.id}`" :warning="t('You can invite them again later.')" :submit-label="t('Revoke')">
-                        <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Revoke') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Revoke') }}</AcmeBtn></template>
                     </DeleteDialog>
                 </li>
             </ul>

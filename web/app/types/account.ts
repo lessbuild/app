@@ -12,6 +12,7 @@ export type MemberRow = {
     canLimitServices: boolean;
     projectAccess: string[] | null;
     deployProtected: boolean;
+    secondFactor: boolean;
 };
 
 export type InvitationRow = { id: string; email: string; role: string; invitedBy: string | null; expiresAt: string };

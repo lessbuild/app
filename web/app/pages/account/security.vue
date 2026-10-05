@@ -32,17 +32,17 @@ function scim(result: Record<string, unknown>): null {
     <SettingsFrame :title="t('Security')" :description="t('Rules everyone in :account must follow, and single sign-on through your identity provider.', { account: data.account.name })" >
 
         <ApiForm action="/api/app/account/security" method="PUT" class="!gap-10">
-            <SettingsSection :title="t('Sign-in rules')" :description="t('Checked on every request. You can’t save a rule that would lock you out.')">
-                <div class="grid gap-5 p-4 sm:p-6">
+            <AcmeCard :padded="false" :title="t('Sign-in rules')" :description="t('Checked on every request. You can’t save a rule that would lock you out.')">
+                <div class="grid gap-5 px-5 pb-5 sm:px-6 sm:pb-6">
                     <CheckboxField name="require_two_factor" unchecked-value="0" :checked="data.rules.requireTwoFactor" :label="t('Require two-factor authentication')" :description="t('Members without two-factor authentication or a passkey are sent to set one up before they can do anything else.')" />
                     <InputField name="session_idle_minutes" type="number" min="5" max="10080" :label="t('Sign people out after (minutes without activity)')" :model-value="data.rules.sessionIdleMinutes === null ? '' : String(data.rules.sessionIdleMinutes)" :description="t('Leave empty to keep people signed in.')" />
                     <TextareaField name="allowed_email_domains" rows="3" :label="t('Allowed email domains')" :model-value="data.rules.allowedEmailDomains.join('\n')" :description="t('One per line, e.g. acme.com. Only these addresses can be invited or sign in with single sign-on. Leave empty to allow any.')" />
                     <TextareaField name="allowed_ip_ranges" rows="3" :label="t('Allowed IP addresses and ranges')" :model-value="data.rules.allowedIpRanges.join('\n')" :description="t('One per line, e.g. 203.0.113.0/24 or 2001:db8::/32. Leave empty to allow any. You’re connecting from :ip.', { ip: data.ip })" />
                 </div>
-            </SettingsSection>
+            </AcmeCard>
 
-            <SettingsSection :title="t('Single sign-on')" :description="t('Let members sign in through your identity provider (Okta, Microsoft Entra ID, Google Workspace, Auth0 or any OpenID Connect provider).')">
-                <div class="grid gap-5 p-4 sm:p-6">
+            <AcmeCard :padded="false" :title="t('Single sign-on')" :description="t('Let members sign in through your identity provider (Okta, Microsoft Entra ID, Google Workspace, Auth0 or any OpenID Connect provider).')">
+                <div class="grid gap-5 px-5 pb-5 sm:px-6 sm:pb-6">
                     <div class="rounded-control border border-line bg-surface-muted p-3 text-sm">
                         <p class="font-semibold text-ink">{{ t('Redirect URI for your provider') }}</p>
                         <p class="mt-1 break-all font-mono text-xs text-muted">{{ data.oidc.redirectUri }}</p>
@@ -54,7 +54,7 @@ function scim(result: Record<string, unknown>): null {
                     </div>
                     <CheckboxField name="sso_enforced" unchecked-value="0" :checked="data.oidc.enforced" :label="t('Require single sign-on')" :description="t('Members must sign in through your provider once per session. Test it first.')" />
                 </div>
-            </SettingsSection>
+            </AcmeCard>
 
             <div class="flex flex-wrap items-center gap-3">
                 <SubmitButton>{{ t('Save security settings') }}</SubmitButton>
@@ -65,8 +65,8 @@ function scim(result: Record<string, unknown>): null {
             </div>
         </ApiForm>
 
-        <SettingsSection id="saml" :title="t('SAML single sign-on')" :description="t('Use SAML 2.0 instead of OpenID Connect (for ADFS, Okta SAML, OneLogin, JumpCloud and others). Saving a provider switches single sign-on to SAML; clearing the fields switches back.')">
-            <div class="grid gap-5 p-4 sm:p-6">
+        <AcmeCard id="saml" :padded="false" :title="t('SAML single sign-on')" :description="t('Use SAML 2.0 instead of OpenID Connect (for ADFS, Okta SAML, OneLogin, JumpCloud and others). Saving a provider switches single sign-on to SAML; clearing the fields switches back.')">
+            <div class="grid gap-5 px-5 pb-5 sm:px-6 sm:pb-6">
                 <div class="grid gap-2 rounded-control border border-line bg-surface-muted p-3 text-sm">
                     <p><span class="font-semibold text-ink">{{ t('Entity ID / metadata URL') }}</span><span class="mt-1 block break-all font-mono text-xs text-muted">{{ data.saml.metadataUrl }}</span></p>
                     <p><span class="font-semibold text-ink">{{ t('Assertion consumer service (ACS) URL') }}</span><span class="mt-1 block break-all font-mono text-xs text-muted">{{ data.saml.acsUrl }}</span></p>
@@ -80,16 +80,16 @@ function scim(result: Record<string, unknown>): null {
                     <TextareaField name="saml_idp_certificate" :label="t('Identity provider signing certificate')" :model-value="data.saml.certificate ?? ''" rows="5" :description="t('The X.509 certificate (PEM) it signs assertions with.')" />
                     <div class="flex flex-wrap items-center gap-3">
                         <SubmitButton variant="secondary">{{ t('Save SAML') }}</SubmitButton>
-                        <Badge v-if="data.saml.inUse" tone="success">{{ t('In use') }}</Badge>
+                        <AcmeBadge v-if="data.saml.inUse" tone="green">{{ t('In use') }}</AcmeBadge>
                     </div>
                 </ApiForm>
             </div>
-        </SettingsSection>
+        </AcmeCard>
 
-        <SettingsSection id="scim" :title="t('SCIM provisioning')" :description="t('Let Okta or Microsoft Entra ID add people when they’re assigned the app and remove them when they’re unassigned or leave. Use it with single sign-on so new people can sign in.')">
-            <div class="grid gap-5 p-4 sm:p-6">
+        <AcmeCard id="scim" :padded="false" :title="t('SCIM provisioning')" :description="t('Let Okta or Microsoft Entra ID add people when they’re assigned the app and remove them when they’re unassigned or leave. Use it with single sign-on so new people can sign in.')">
+            <div class="grid gap-5 px-5 pb-5 sm:px-6 sm:pb-6">
                 <template v-if="scimToken">
-                    <Alert tone="warning">{{ t('Copy this token now; it isn’t shown again.') }}</Alert>
+                    <AcmeAlert tone="warning">{{ t('Copy this token now; it isn’t shown again.') }}</AcmeAlert>
                     <CodeBlock :code="scimToken" class="whitespace-pre-wrap break-all" />
                 </template>
                 <div class="grid gap-2 rounded-control border border-line p-4 text-sm">
@@ -97,7 +97,7 @@ function scim(result: Record<string, unknown>): null {
                     <p class="text-xs text-muted">{{ t('Authentication: HTTP header (bearer token). Unique identifier: userName, the person’s email address. Supported: creating, updating, deactivating and deleting users. Roles are set here, not in groups.') }}</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
-                    <Badge :tone="data.scim.on ? 'success' : 'neutral'">{{ data.scim.on ? t('On') : t('Off') }}</Badge>
+                    <AcmeBadge :tone="acmeTone(data.scim.on ? 'success' : 'neutral')">{{ data.scim.on ? t('On') : t('Off') }}</AcmeBadge>
                     <ApiForm action="/api/app/account/security/scim" method="PUT" :after="scim">
                         <input type="hidden" name="change" value="token">
                         <SubmitButton variant="secondary" size="sm">{{ data.scim.on ? t('Replace the token') : t('Turn on and create a token') }}</SubmitButton>
@@ -113,6 +113,6 @@ function scim(result: Record<string, unknown>): null {
                     <SubmitButton variant="secondary">{{ t('Save') }}</SubmitButton>
                 </ApiForm>
             </div>
-        </SettingsSection>
+        </AcmeCard>
     </SettingsFrame>
 </template>

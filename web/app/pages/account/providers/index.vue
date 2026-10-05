@@ -15,17 +15,17 @@ const back = computed(() => (typeof route.query.return === 'string' ? route.quer
         <PageHeader :eyebrow="data.account.name" :title="t('Providers')" :description="t('Credentials for the clouds that host your servers, Cloudflare for DNS, and the Git hosts Deploy builds from.')">
             <template v-if="data.providers.length > 0" #actions>
                 <a href="/api/app/account/inventory/providers.csv" class="ui-btn ui-btn-quiet" download>{{ t('Export CSV') }}</a>
-                <UiButton variant="primary" :to="{ query: { dialog: 'add-provider' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Connect a provider') }}</UiButton>
+                <AcmeBtn variant="primary" :to="{ query: { dialog: 'add-provider' } }" icon="plus">{{ t('Connect a provider') }}</AcmeBtn>
             </template>
         </PageHeader>
 
         <EmptyState v-if="data.providers.length === 0" icon="server" :title="t('No providers yet')" :description="t('Connect DigitalOcean, Hetzner Cloud or Vultr to create servers.')">
-            <template #action><UiButton variant="primary" :to="{ query: { dialog: 'add-provider' } }">{{ t('Connect a provider') }}</UiButton></template>
+            <template #action><AcmeBtn variant="primary" :to="{ query: { dialog: 'add-provider' } }">{{ t('Connect a provider') }}</AcmeBtn></template>
         </EmptyState>
         <ul v-else class="ui-card divide-y divide-line overflow-hidden" :aria-label="t('Providers')">
             <li v-for="provider in data.providers" :key="provider.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                 <div class="min-w-0">
-                    <NuxtLink :to="`/account/providers/${provider.id}`" class="font-extrabold text-ink hover:underline">{{ provider.name }}</NuxtLink>
+                    <NuxtLink :to="`/account/providers/${provider.id}`" class="font-semibold text-ink hover:underline">{{ provider.name }}</NuxtLink>
                     <p class="mt-0.5 text-xs text-muted">
                         {{ provider.typeLabel }} · {{ provider.purpose }}<template v-if="provider.hostsServers"> · {{ tc(':count server|:count servers', provider.serverCount) }}</template>
                     </p>

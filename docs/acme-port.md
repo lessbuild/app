@@ -19,8 +19,8 @@ deploy with scripts/deploy-preview.sh <run-id> after each phase.
 - [x] 4 Monitoring (uptime strips, pause, incident stats/likely cause/manual resolve, issue trends + stack traces, service map, sparklines, SLO gauges + budget history, release verdicts, status previews, trace hot span, setup checklist)
 - [x] 5 Analytics (report in tabbed cards with comparison line, site cards with 30-day visitors, pause collecting, tabbed site page, goal conversions, funnel step bars)
 - [x] 6 Security (score ring with 7-day trend, check icons, scan everything, expandable finding rows, status tabs with counts, blocks per day)
-- [ ] 7 Audit
-- [ ] 8 Account pages, Ask, notifications
+- [x] 7 Audit (Acme cards; service stays off)
+- [x] 8 Account pages (two-factor and protected-deploy badges), Ask chat with suggestions, notifications
 - [ ] 9 Public: Stratus home/service/pricing/compare updates, help centre
 
 ## Page map (Acme → v3)

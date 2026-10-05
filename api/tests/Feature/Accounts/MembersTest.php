@@ -37,7 +37,7 @@ final class MembersTest extends TestCase
         Notification::fake();
 
         $this->actingAs($this->owner)->getJson('/api/app/account/members')->assertOk()
-            ->assertJsonPath('overview.canManage', true)->assertJsonPath('overview.members.0.name', 'Olive Owner')->assertJsonPath('roles.0.value', 'owner');
+            ->assertJsonPath('overview.canManage', true)->assertJsonPath('overview.members.0.name', 'Olive Owner')->assertJsonPath('roles.0.value', 'owner')->assertJsonPath('overview.members.0.secondFactor', false);
 
         $this->actingAs($this->owner)->postJson('/api/app/account/invitations', ['email' => 'Grace@Example.com', 'role' => 'admin'])
             ->assertOk()->assertJsonPath('redirect', '/account/members')->assertJsonPath('message', __('Invitation sent to :email.', ['email' => 'grace@example.com']));

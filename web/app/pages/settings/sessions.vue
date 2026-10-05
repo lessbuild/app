@@ -10,12 +10,12 @@ const { data } = await useApi<{ sessions: Browser[] | null; signIns: SignIn[]; r
 <template>
     <SettingsFrame :title="t('Sessions')" :description="t('Where you are signed in, and recent sign-ins to your account.')" >
 
-        <SettingsSection :title="t('Signed-in browsers')" :description="t('Sign out any browser you don’t recognise. This also forgets “Remember me” on your other browsers, so they’ll ask you to sign in next time.')">
+        <AcmeCard :padded="false" :title="t('Signed-in browsers')" :description="t('Sign out any browser you don’t recognise. This also forgets “Remember me” on your other browsers, so they’ll ask you to sign in next time.')">
             <p v-if="data.sessions === null" class="p-4 text-sm text-muted sm:p-6">{{ t('Browser sessions can’t be listed on this server.') }}</p>
             <ul v-else class="divide-y divide-line">
                 <li v-for="browser in data.sessions" :key="browser.id" class="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
                     <div class="min-w-0">
-                        <p class="flex flex-wrap items-center gap-2 font-bold text-ink">{{ browser.device }}<Badge v-if="browser.current" tone="success">{{ t('This browser') }}</Badge></p>
+                        <p class="flex flex-wrap items-center gap-2 font-bold text-ink">{{ browser.device }}<AcmeBadge v-if="browser.current" tone="green">{{ t('This browser') }}</AcmeBadge></p>
                         <p class="mt-1 text-xs text-muted">
                             {{ browser.ipAddress ?? t('Unknown IP address') }} ·
                             <template v-if="browser.current">{{ t('Active now') }}</template>
@@ -23,20 +23,20 @@ const { data } = await useApi<{ sessions: Browser[] | null; signIns: SignIn[]; r
                         </p>
                     </div>
                     <DeleteDialog v-if="!browser.current" :id="`sign-out-${browser.id}`" :title="t('Sign out :device', { device: browser.device })" :action="`/api/app/settings/sessions/${browser.id}`" :submit-label="t('Sign out')">
-                        <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Sign out') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Sign out') }}</AcmeBtn></template>
                     </DeleteDialog>
                 </li>
             </ul>
             <template v-if="data.sessions !== null && data.sessions.length > 1" #footer>
                 <div class="flex justify-end px-4 py-3 sm:px-6">
                     <DeleteDialog id="sign-out-others" :title="t('Sign out all other browsers')" action="/api/app/settings/sessions" :submit-label="t('Sign out')">
-                        <template #trigger="{ open }"><UiButton size="sm" @click="open">{{ t('Sign out all other browsers') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn size="sm" @click="open">{{ t('Sign out all other browsers') }}</AcmeBtn></template>
                     </DeleteDialog>
                 </div>
             </template>
-        </SettingsSection>
+        </AcmeCard>
 
-        <SettingsSection :title="t('Sign-in history')" :description="t('Successful and failed sign-ins from the last :days days. If you don’t recognise one, change your password and sign out other browsers.', { days: data.retentionDays })">
+        <AcmeCard :padded="false" :title="t('Sign-in history')" :description="t('Successful and failed sign-ins from the last :days days. If you don’t recognise one, change your password and sign out other browsers.', { days: data.retentionDays })">
             <p v-if="data.signIns.length === 0" class="p-4 text-sm text-muted sm:p-6">{{ t('No sign-ins recorded yet.') }}</p>
             <DataTable v-else :caption="t('Recent sign-ins')" :framed="false">
                 <template #head>
@@ -44,7 +44,7 @@ const { data } = await useApi<{ sessions: Browser[] | null; signIns: SignIn[]; r
                 </template>
                 <tr v-for="(signIn, index) in data.signIns" :key="index">
                     <td class="whitespace-nowrap"><RelativeTime :at="signIn.at" /></td>
-                    <td><Badge :tone="signIn.succeeded ? 'success' : 'danger'">{{ signIn.succeeded ? t('Signed in') : t('Failed') }}</Badge></td>
+                    <td><AcmeBadge :tone="acmeTone(signIn.succeeded ? 'success' : 'danger')">{{ signIn.succeeded ? t('Signed in') : t('Failed') }}</AcmeBadge></td>
                     <td>{{ signIn.method ?? t('Unknown') }}<template v-if="signIn.twoFactor"> {{ t('+ authenticator') }}</template></td>
                     <td>
                         <span class="block">{{ signIn.device }}</span>
@@ -52,6 +52,6 @@ const { data } = await useApi<{ sessions: Browser[] | null; signIns: SignIn[]; r
                     </td>
                 </tr>
             </DataTable>
-        </SettingsSection>
+        </AcmeCard>
     </SettingsFrame>
 </template>

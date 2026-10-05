@@ -46,15 +46,15 @@ async function copy() {
 <template>
     <SettingsFrame :title="t('API tokens')" :description="t('Tokens let scripts and CI call the :app API as you, inside :account.', { app: 'BuildPusher', account: data.account.name })">
             <template #actions>
-                <UiButton variant="primary" :to="{ query: { dialog: 'create-token' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Create a token') }}</UiButton>
+                <AcmeBtn variant="primary" :to="{ query: { dialog: 'create-token' } }" icon="plus">{{ t('Create a token') }}</AcmeBtn>
             </template>
 
-        <SettingsSection :title="t('Tokens in this account')" :description="t('Everyone’s tokens for :account. Revoke any you don’t recognise.', { account: data.account.name })">
+        <AcmeCard :padded="false" :title="t('Tokens in this account')" :description="t('Everyone’s tokens for :account. Revoke any you don’t recognise.', { account: data.account.name })">
             <p v-if="data.tokens.length === 0" class="p-4 text-sm text-muted sm:p-6">{{ t('No tokens yet.') }}</p>
             <ul v-else class="divide-y divide-line">
                 <li v-for="token in data.tokens" :key="token.id" class="flex flex-wrap items-start justify-between gap-3 px-4 py-4 sm:px-6">
                     <div class="min-w-0">
-                        <p class="flex flex-wrap items-center gap-2 font-bold text-ink">{{ token.name }}<Badge v-if="token.ownedByViewer">{{ t('Yours') }}</Badge></p>
+                        <p class="flex flex-wrap items-center gap-2 font-bold text-ink">{{ token.name }}<AcmeBadge v-if="token.ownedByViewer">{{ t('Yours') }}</AcmeBadge></p>
                         <p class="mt-1 text-xs text-muted">
                             {{ token.owner }}
                             · <template v-if="token.lastUsedAt">{{ t('Last used :time', { time: dateTime(token.lastUsedAt) }) }}</template><template v-else>{{ t('never') }}</template>
@@ -63,22 +63,22 @@ async function copy() {
                             <template v-else>{{ t('Expires :time', { time: dateTime(token.expiresAt) }) }}</template>
                         </p>
                         <ul class="mt-2 flex flex-wrap gap-1" :aria-label="t('Scopes')">
-                            <li v-for="scope in token.scopes" :key="scope"><Badge>{{ scopeLabel(scope) }}</Badge></li>
+                            <li v-for="scope in token.scopes" :key="scope"><AcmeBadge>{{ scopeLabel(scope) }}</AcmeBadge></li>
                         </ul>
                     </div>
                     <DeleteDialog :id="`revoke-${token.id}`" :title="t('Revoke “:name”?', { name: token.name })" :action="`/api/app/account/api-tokens/${token.id}`" :warning="t('Anything using this token stops working straight away.')" :submit-label="t('Revoke')">
-                        <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Revoke') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Revoke') }}</AcmeBtn></template>
                     </DeleteDialog>
                 </li>
             </ul>
-        </SettingsSection>
+        </AcmeCard>
 
-        <SettingsSection :title="t('Command-line tool')" :description="t('Deploy, follow logs and roll back from your terminal or CI with a token that has the Deploy scopes.')">
-            <div class="grid gap-3 p-4 sm:p-6">
+        <AcmeCard :padded="false" :title="t('Command-line tool')" :description="t('Deploy, follow logs and roll back from your terminal or CI with a token that has the Deploy scopes.')">
+            <div class="grid gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
                 <CodeBlock :code="`curl -fsSL ${data.cliInstallUrl} | sh`" :aria-label="t('Install command')" />
                 <p class="text-sm text-muted">{{ t('Then run buildpusher login and paste a token.') }}</p>
             </div>
-        </SettingsSection>
+        </AcmeCard>
 
         <UiDialog id="create-token" :title="t('Create a token')" :description="t('Give each script its own token with only the scopes it needs. A token stops working if you leave the account or lose the right to manage tokens.')" size="large">
             <ApiForm action="/api/app/account/api-tokens" :after="keep">
@@ -104,10 +104,10 @@ async function copy() {
 
         <UiDialog v-if="created" id="new-token" :title="t('Your new token “:name”', { name: created.name })" :description="t('This is the only time it is shown. Send it as a bearer token: Authorization: Bearer <token>.')">
             <div class="grid gap-3">
-                <Alert tone="warning">{{ t('Copy it now') }}</Alert>
+                <AcmeAlert tone="warning">{{ t('Copy it now') }}</AcmeAlert>
                 <CodeBlock :code="created.value" />
                 <div class="flex justify-end">
-                    <UiButton variant="primary" @click="copy"><Icon :name="copied ? 'check' : 'clipboard'" class="h-4 w-4" />{{ copied ? t('Copied') : t('Copy') }}</UiButton>
+                    <AcmeBtn variant="primary" @click="copy"><Icon :name="copied ? 'check' : 'clipboard'" class="h-4 w-4" />{{ copied ? t('Copied') : t('Copy') }}</AcmeBtn>
                 </div>
             </div>
         </UiDialog>

@@ -148,15 +148,15 @@ async function finish() {
                             <p class="truncate text-sm font-bold text-ink">{{ competitor.name }}</p>
                             <p class="truncate text-xs text-muted">{{ competitor.url }}</p>
                         </div>
-                        <UiButton size="sm" variant="quiet" :aria-label="t('Remove :name', { name: competitor.name })" @click="competitors = competitors.filter((existing) => existing.url !== competitor.url)">{{ t('Remove') }}</UiButton>
+                        <AcmeBtn size="sm" variant="ghost" :aria-label="t('Remove :name', { name: competitor.name })" @click="competitors = competitors.filter((existing) => existing.url !== competitor.url)">{{ t('Remove') }}</AcmeBtn>
                     </li>
                 </ul>
                 <div class="flex flex-wrap items-end gap-2">
                     <UiField id="audit-competitor" :label="t('Competitor’s address')" class="min-w-56 flex-1" :error="fieldError('competitors')">
                         <input id="audit-competitor" v-model="newCompetitor" class="ui-input" :disabled="atLimit" placeholder="competitor.com" inputmode="url" @keydown.enter.prevent="addTyped">
                     </UiField>
-                    <UiButton :disabled="atLimit || !newCompetitor.trim()" @click="addTyped">{{ t('Add') }}</UiButton>
-                    <UiButton variant="soft" :disabled="suggesting || url.trim() === ''" :aria-busy="suggesting || undefined" @click="suggest">{{ suggesting ? t('Looking…') : t('Suggest competitors') }}</UiButton>
+                    <AcmeBtn :disabled="atLimit || !newCompetitor.trim()" @click="addTyped">{{ t('Add') }}</AcmeBtn>
+                    <AcmeBtn variant="secondary" :disabled="suggesting || url.trim() === ''" :aria-busy="suggesting || undefined" @click="suggest">{{ suggesting ? t('Looking…') : t('Suggest competitors') }}</AcmeBtn>
                 </div>
                 <p v-if="suggestError" class="ui-error" role="alert">{{ suggestError }}</p>
                 <div v-if="suggestions" class="grid gap-2" aria-live="polite">
@@ -167,9 +167,9 @@ async function finish() {
                             <p class="text-sm font-bold text-ink">{{ suggestion.name }} <span class="font-normal text-muted">{{ suggestion.url }}</span></p>
                             <p class="mt-0.5 text-xs text-muted">{{ suggestion.reason }}</p>
                         </div>
-                        <UiButton size="sm" :disabled="competitors.some((competitor) => competitor.url === suggestion.url) || atLimit" @click="addCompetitor({ url: suggestion.url, name: suggestion.name, source: 'suggested', reason: suggestion.reason })">
+                        <AcmeBtn size="sm" :disabled="competitors.some((competitor) => competitor.url === suggestion.url) || atLimit" @click="addCompetitor({ url: suggestion.url, name: suggestion.name, source: 'suggested', reason: suggestion.reason })">
                             {{ competitors.some((competitor) => competitor.url === suggestion.url) ? t('Added') : t('Add') }}
-                        </UiButton>
+                        </AcmeBtn>
                     </div>
                 </div>
                 <p v-if="competitors.length === 0" class="text-xs text-muted">{{ t('You can skip this: the report then scores your site on its own.') }}</p>

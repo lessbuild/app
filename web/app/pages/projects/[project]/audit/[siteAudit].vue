@@ -32,19 +32,19 @@ useHead({ title: () => audit.value.name });
     <div class="space-y-6">
         <PageHeader icon="search" :title="audit.name" :description="audit.url" :breadcrumbs="[{ label: t('Audits'), to: base }]">
             <template v-if="audit.plan.canManage" #actions>
-                <UiButton :to="{ query: { dialog: 'edit-audit' } }">{{ t('Edit') }}</UiButton>
-                <UiButton variant="primary" :disabled="starting" :aria-busy="starting || undefined" @click="run"><Icon name="refresh" class="h-4 w-4" />{{ starting ? t('Starting…') : t('Run audit') }}</UiButton>
+                <AcmeBtn :to="{ query: { dialog: 'edit-audit' } }">{{ t('Edit') }}</AcmeBtn>
+                <AcmeBtn variant="primary" :disabled="starting" :aria-busy="starting || undefined" icon="refresh" @click="run">{{ starting ? t('Starting…') : t('Run audit') }}</AcmeBtn>
             </template>
         </PageHeader>
-        <Alert v-if="runError" tone="danger" role="alert">{{ runError }}</Alert>
+        <AcmeAlert v-if="runError" tone="danger" role="alert">{{ runError }}</AcmeAlert>
 
         <div class="grid gap-6 lg:grid-cols-[1fr_20rem]">
             <section aria-labelledby="runs-heading" class="grid content-start gap-3">
-                <h2 id="runs-heading" class="text-lg font-extrabold text-ink">{{ t('Reports') }}</h2>
+                <h2 id="runs-heading" class="text-lg font-semibold text-ink">{{ t('Reports') }}</h2>
                 <EmptyState v-if="audit.runs.length === 0" icon="clock" :title="t('Not run yet')" :description="t('Run the audit to get its first report.')" />
                 <ul v-else class="grid gap-2">
                     <li v-for="item in audit.runs" :key="item.id">
-                        <NuxtLink :to="`${base}/runs/${item.id}`" class="ui-card ui-card--interactive flex flex-wrap items-center justify-between gap-3 p-4">
+                        <NuxtLink :to="`${base}/runs/${item.id}`" class="rounded-2xl border border-line bg-surface shadow-card transition hover:-translate-y-0.5 hover:shadow-lift flex flex-wrap items-center justify-between gap-3 p-4">
                             <span class="grid">
                                 <span class="text-sm font-bold text-ink">{{ dateTime(item.createdAt) }}</span>
                                 <span class="text-xs text-muted">{{ item.trigger === 'scheduled' ? t('Scheduled') : t('Run by hand') }}<template v-if="item.error"> · {{ item.error }}</template></span>
@@ -56,11 +56,11 @@ useHead({ title: () => audit.value.name });
             </section>
             <aside class="grid content-start gap-4">
                 <section class="ui-card grid gap-3 p-5">
-                    <h2 class="text-sm font-extrabold text-ink">{{ t('Tasks') }}</h2>
+                    <h2 class="text-sm font-semibold text-ink">{{ t('Tasks') }}</h2>
                     <ul class="grid gap-1.5 text-sm text-muted"><li v-for="journey in audit.journeys" :key="journey.key + journey.goal">{{ journey.label }}</li></ul>
                 </section>
                 <section class="ui-card grid gap-3 p-5">
-                    <h2 class="text-sm font-extrabold text-ink">{{ t('Competitors') }}</h2>
+                    <h2 class="text-sm font-semibold text-ink">{{ t('Competitors') }}</h2>
                     <p v-if="audit.competitors.length === 0" class="text-sm text-muted">{{ t('None yet.') }}</p>
                     <ul v-else class="grid gap-2 text-sm">
                         <li v-for="competitor in audit.competitors" :key="competitor.url" class="min-w-0">
@@ -70,12 +70,12 @@ useHead({ title: () => audit.value.name });
                     </ul>
                 </section>
                 <section class="ui-card grid gap-2 p-5 text-sm">
-                    <h2 class="text-sm font-extrabold text-ink">{{ t('Schedule') }}</h2>
+                    <h2 class="text-sm font-semibold text-ink">{{ t('Schedule') }}</h2>
                     <p class="text-muted">{{ schedules[audit.schedule] ?? audit.schedule }}</p>
                     <p v-if="audit.nextRunAt" class="text-xs text-muted">{{ t('Next run :date', { date: dateTime(audit.nextRunAt) }) }}</p>
                 </section>
                 <DeleteDialog v-if="audit.plan.canManage" id="delete-audit" :title="t('Delete :name and all its reports?', { name: audit.name })" :action="`/api/app${base}/${audit.id}`" :submit-label="t('Delete audit')">
-                    <template #trigger="{ open }"><div><UiButton variant="danger" size="sm" @click="open">{{ t('Delete audit') }}</UiButton></div></template>
+                    <template #trigger="{ open }"><div><AcmeBtn variant="danger" size="sm" @click="open">{{ t('Delete audit') }}</AcmeBtn></div></template>
                 </DeleteDialog>
             </aside>
         </div>

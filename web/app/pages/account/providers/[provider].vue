@@ -34,11 +34,11 @@ async function check() {
                 <ProviderHealth :status="provider.status" />
                 <span class="text-sm text-muted">{{ provider.checkedAt ? t('Checked :time', { time: dateTime(provider.checkedAt) }) : t('Never checked') }}</span>
             </div>
-            <UiButton :disabled="checking" :aria-busy="checking || undefined" @click="check">{{ checking ? t('Working…') : t('Check connection') }}</UiButton>
+            <AcmeBtn :disabled="checking" :aria-busy="checking || undefined" @click="check">{{ checking ? t('Working…') : t('Check connection') }}</AcmeBtn>
         </div>
-        <Alert v-if="result" :tone="result.successful ? 'success' : 'danger'" :role="result.successful ? 'status' : 'alert'">{{ result.message }}</Alert>
+        <AcmeAlert v-if="result" :tone="result.successful ? 'success' : 'danger'" :role="result.successful ? 'status' : 'alert'">{{ result.message }}</AcmeAlert>
 
-        <SettingsSection :title="t('Settings')" :description="t('A new token, or a new type, resets the connection status until the next check.')">
+        <AcmeCard :padded="false" :title="t('Settings')" :description="t('A new token, or a new type, resets the connection status until the next check.')">
             <ApiForm :action="`/api/app/account/providers/${provider.id}`" method="PUT" class="p-4 sm:p-6">
                 <div class="grid items-start gap-5 sm:grid-cols-2">
                     <ProviderFields :types="data.types" :provider="provider" />
@@ -48,7 +48,7 @@ async function check() {
                 </div>
                 <div class="flex justify-end"><SubmitButton>{{ t('Save provider') }}</SubmitButton></div>
             </ApiForm>
-        </SettingsSection>
+        </AcmeCard>
 
         <DataTable :caption="t('Recent checks')">
             <template #head>
@@ -63,12 +63,12 @@ async function check() {
             <tr v-if="data.checks.length === 0"><td colspan="4" class="py-8 text-center text-muted">{{ t('No checks yet.') }}</td></tr>
         </DataTable>
 
-        <SettingsSection :title="t('Remove this provider')" :description="data.servers.length === 0 ? t('The token stops being used at once.') : t('Delete its servers first: :servers.', { servers: data.servers.join(', ') })">
+        <AcmeCard :padded="false" :title="t('Remove this provider')" :description="data.servers.length === 0 ? t('The token stops being used at once.') : t('Delete its servers first: :servers.', { servers: data.servers.join(', ') })">
             <div class="p-4 sm:p-6">
                 <DeleteDialog id="delete-provider" :title="t('Remove :provider?', { provider: provider.name })" :action="`/api/app/account/providers/${provider.id}`" :warning="t('The token stops being used at once.')" :submit-label="t('Remove provider')">
-                    <template #trigger="{ open }"><UiButton variant="danger" :disabled="data.servers.length > 0" @click="open">{{ t('Remove provider') }}</UiButton></template>
+                    <template #trigger="{ open }"><AcmeBtn variant="danger" :disabled="data.servers.length > 0" @click="open">{{ t('Remove provider') }}</AcmeBtn></template>
                 </DeleteDialog>
             </div>
-        </SettingsSection>
+        </AcmeCard>
     </div>
 </template>

@@ -64,7 +64,7 @@ function added(result: Record<string, unknown>): null {
             <SelectField v-model="filters.category" name="category" :label="t('Kind of change')" :placeholder="t('Everything')" :options="categoryOptions" />
             <InputField v-model="filters.from" name="from" type="date" :label="t('From')" />
             <InputField v-model="filters.to" name="to" type="date" :label="t('To')" />
-            <UiButton type="submit">{{ t('Show') }}</UiButton>
+            <AcmeBtn type="submit">{{ t('Show') }}</AcmeBtn>
         </form>
 
         <SavedViews page="audit-log" :keys="['project', 'person', 'category', 'from', 'to']" />
@@ -96,30 +96,30 @@ function added(result: Record<string, unknown>): null {
                 </DataTable>
             </div>
             <nav v-if="data.nextCursor || data.previousCursor" class="flex justify-between gap-3" :aria-label="t('Audit log pages')">
-                <UiButton :to="page(data.previousCursor)" :class="!data.previousCursor && 'pointer-events-none opacity-50'" :aria-disabled="!data.previousCursor || undefined">{{ t('Newer') }}</UiButton>
-                <UiButton :to="page(data.nextCursor)" :class="!data.nextCursor && 'pointer-events-none opacity-50'" :aria-disabled="!data.nextCursor || undefined">{{ t('Older') }}</UiButton>
+                <AcmeBtn :to="page(data.previousCursor)" :class="!data.previousCursor && 'pointer-events-none opacity-50'" :aria-disabled="!data.previousCursor || undefined">{{ t('Newer') }}</AcmeBtn>
+                <AcmeBtn :to="page(data.nextCursor)" :class="!data.nextCursor && 'pointer-events-none opacity-50'" :aria-disabled="!data.nextCursor || undefined">{{ t('Older') }}</AcmeBtn>
             </nav>
         </template>
 
-        <SettingsSection id="streams" :title="t('Streams')" :description="t('Send every new entry, as it happens, to a Slack channel, a signed webhook (for a SIEM) or S3-compatible storage for long-term keeping. A stream that fails 20 times in a row is paused.')">
-            <div class="grid gap-3 p-4 sm:p-6">
-                <Alert v-if="secret" tone="info">{{ t('Signing secret (shown once): :secret — requests carry X-BuildPusher-Signature: v1=HMAC-SHA256 of the timestamp, a dot and the body.', { secret }) }}</Alert>
+        <AcmeCard id="streams" :padded="false" :title="t('Streams')" :description="t('Send every new entry, as it happens, to a Slack channel, a signed webhook (for a SIEM) or S3-compatible storage for long-term keeping. A stream that fails 20 times in a row is paused.')">
+            <div class="grid gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
+                <AcmeAlert v-if="secret" tone="info">{{ t('Signing secret (shown once): :secret — requests carry X-BuildPusher-Signature: v1=HMAC-SHA256 of the timestamp, a dot and the body.', { secret }) }}</AcmeAlert>
                 <p v-if="data.streams.length === 0" class="text-sm text-muted">{{ t('No streams. Entries stay here for :days days.', { days: data.retentionDays }) }}</p>
                 <div v-for="stream in data.streams" :key="stream.id" class="flex flex-wrap items-center justify-between gap-3 text-sm">
                     <span>
                         <span class="font-bold">{{ stream.name }}</span>
                         <span class="text-muted"> · {{ stream.type }}<template v-if="stream.destination"> ({{ stream.destination }})</template></span>
-                        <Badge v-if="!stream.enabled" tone="danger" class="ml-2">{{ t('Paused') }}</Badge>
+                        <AcmeBadge v-if="!stream.enabled" tone="red" class="ml-2">{{ t('Paused') }}</AcmeBadge>
                         <span v-if="stream.lastError" class="block text-xs text-danger">{{ stream.lastError }}</span>
                         <span v-else-if="stream.lastDeliveredAt" class="block text-xs text-muted">{{ t('Last sent :time', { time: dateTime(stream.lastDeliveredAt) }) }}</span>
                     </span>
                     <DeleteDialog v-if="data.canManageStreams" :id="`remove-stream-${stream.id}`" :title="t('Remove :name?', { name: stream.name })" :action="`/api/app/account/audit-log/streams/${stream.id}`" :submit-label="t('Remove')">
-                        <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Remove') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Remove') }}</AcmeBtn></template>
                     </DeleteDialog>
                 </div>
-                <div v-if="data.canManageStreams"><UiButton :to="{ query: { dialog: 'add-stream' } }">{{ t('Add a stream') }}</UiButton></div>
+                <div v-if="data.canManageStreams"><AcmeBtn :to="{ query: { dialog: 'add-stream' } }">{{ t('Add a stream') }}</AcmeBtn></div>
             </div>
-        </SettingsSection>
+        </AcmeCard>
 
         <UiDialog v-if="data.canManageStreams" id="add-stream" :title="t('Add an audit stream')" size="large">
             <ApiForm action="/api/app/account/audit-log/streams" :after="added">
