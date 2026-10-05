@@ -19,6 +19,9 @@ export default defineNuxtConfig({
         public: {
             // The app's own host (NUXT_PUBLIC_APP_HOST), so requests to it skip the status page domain lookup.
             appHost: '',
+            // Whether search engines may index the public pages (NUXT_PUBLIC_INDEXABLE=true in production); previews
+            // stay out of search results. Pages that should never be indexed still say so themselves.
+            indexable: false,
         },
     },
     app: {
@@ -26,7 +29,6 @@ export default defineNuxtConfig({
             meta: [
                 { name: 'viewport', content: 'width=device-width, initial-scale=1' },
                 { name: 'theme-color', content: '#f4f7fb' },
-                { name: 'robots', content: 'noindex, nofollow' },
             ],
             link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
         },

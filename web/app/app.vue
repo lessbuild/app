@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import themeBoot from '~/assets/js/theme-boot.js?raw';
 
-/** The document around every page, with the Signal theme settings, applied before the first paint. */
+/**
+ * The document around every page, with the Signal theme settings, applied before the first paint, and whether search
+ * engines may index it (production only; a page can still ask not to be).
+ */
 const { locale } = useT();
+const config = useRuntimeConfig();
 
 useHead({
     titleTemplate: (title) => (title ? `${title} · BuildPusher` : 'BuildPusher'),
@@ -20,6 +24,7 @@ useHead({
         'data-default-contrast': 'default',
     },
     bodyAttrs: { class: 'antialiased transition-colors' },
+    meta: [{ name: 'robots', content: config.public.indexable ? 'index, follow' : 'noindex, nofollow' }],
     script: [{ innerHTML: themeBoot, tagPosition: 'head' }],
 });
 </script>
