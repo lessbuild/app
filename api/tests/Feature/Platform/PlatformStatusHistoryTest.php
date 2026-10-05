@@ -48,7 +48,7 @@ final class PlatformStatusHistoryTest extends TestCase
 
         Cache::forget('platform:status');
         $page = $this->getJson('/api/app/platform-status')->assertOk()->assertJsonPath('historyDays', 90);
-        $background = collect($page->json('components'))->firstWhere('key', 'background');
+        $background = collect((array) $page->json('components'))->firstWhere('key', 'background');
         $this->assertCount(90, $background['days']);
         $this->assertSame('down', $background['days'][89]);
         $this->assertEqualsWithDelta(50.0, $background['uptime'], 0.01);

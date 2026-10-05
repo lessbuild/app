@@ -33,17 +33,17 @@ final class PricingTest extends TestCase
     public function test_the_pricing_page_has_key_features_usage_and_typical_setups(): void
     {
         $response = $this->getJson('/api/app/site/pricing')->assertOk();
-        $services = collect($response->json('services'))->keyBy('key');
+        $services = collect((array) $response->json('services'))->keyBy('key');
 
-        $deploy = collect($services['deploy']['matrix'])->flatMap(fn (array $group): array => $group['rows'])->keyBy('label');
+        $deploy = collect((array) $services['deploy']['matrix'])->flatMap(fn (array $group): array => $group['rows'])->keyBy('label');
         $this->assertSame(['1', '2', '5', '20', '50', 'Unlimited'], $deploy['Servers']['values']);
         $this->assertSame([false, false, false, false, true, true], $deploy['Load balancers']['values']);
         $this->assertSame([500_000, 10_000_000, 50_000_000, 180_000_000], $services['monitoring']['meters'][0]['allowances']);
-        $this->assertTrue(collect($services['deploy']['tiers'])->firstWhere('key', 'pro')['recommended']);
+        $this->assertTrue(collect((array) $services['deploy']['tiers'])->firstWhere('key', 'pro')['recommended']);
 
         foreach ($response->json('presets') as $preset) {
             foreach ($preset['picks'] as $service => $tier) {
-                $this->assertContains($tier, collect($services[$service]['tiers'])->pluck('key')->all(), $preset['key'].' picks a real '.$service.' tier');
+                $this->assertContains($tier, collect((array) $services[$service]['tiers'])->pluck('key')->all(), $preset['key'].' picks a real '.$service.' tier');
             }
         }
     }
@@ -59,7 +59,7 @@ final class PricingTest extends TestCase
             ->assertJsonFragment(['slug' => 'laravel-forge', 'what' => 'Server management']);
 
         $page = $this->getJson('/api/app/site/compare/ploi')->assertOk()->assertJsonCount(4, 'faqs')->assertJsonPath('overlaps.0.key', 'deploy');
-        $this->assertContains('FAQPage', collect($page->json('meta.structuredData.@graph'))->pluck('@type')->all());
+        $this->assertContains('FAQPage', collect((array) $page->json('meta.structuredData.@graph'))->pluck('@type')->all());
         $this->assertStringContainsString('Deploy from $9 a month', (string) $page->json('startingPrices'));
     }
 }
