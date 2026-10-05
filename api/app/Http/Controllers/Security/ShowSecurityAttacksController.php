@@ -10,6 +10,7 @@ use App\Models\SecuritySetting;
 use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Services\Billing\Entitlements;
+use Carbon\CarbonImmutable;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
@@ -34,10 +35,27 @@ final class ShowSecurityAttacksController
             'overview' => $overview->handle($project, $user),
             'active' => (clone $blocks)->whereNull('lifted_at')->where('expires_at', '>', now())->get()->map($this->block(...))->values(),
             'history' => (clone $blocks)->where(fn ($query) => $query->whereNotNull('lifted_at')->orWhere('expires_at', '<=', now()))->limit(50)->get()->map($this->block(...))->values(),
+            // How many addresses were blocked on each of the last 14 days, oldest first.
+            'daily' => $this->daily($project),
             'settings' => ['autoblock' => $settings->autoblock, 'blockHours' => $settings->block_hours, 'allowlist' => $settings->allowlist ?? []],
             'included' => $entitlements->for($project->account)->has('security.autoblock'),
             'canManage' => $user->can('manageService', [$project, 'security']),
         ]);
+    }
+
+    /**
+     * Count the project's blocks on each of the last 14 days, oldest first.
+     *
+     * @param  Project  $project
+     * @return list<array{date: string, count: int}>
+     */
+    private function daily(Project $project): array
+    {
+        $since = CarbonImmutable::today()->subDays(13);
+        $counts = SecurityBlock::query()->where('project_id', $project->id)->where('created_at', '>=', $since)->pluck('created_at')
+            ->countBy(fn ($at): string => CarbonImmutable::parse($at)->toDateString());
+
+        return array_map(fn (int $day): array => ['date' => $since->addDays($day)->toDateString(), 'count' => (int) ($counts[$since->addDays($day)->toDateString()] ?? 0)], range(0, 13));
     }
 
     /**

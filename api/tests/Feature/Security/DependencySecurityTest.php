@@ -11,6 +11,7 @@ use App\Models\Build;
 use App\Models\Project;
 use App\Models\Repository;
 use App\Models\SecurityFinding;
+use App\Models\SecurityScan;
 use App\Models\Website;
 use App\Services\Deploy\SecurityGate;
 use App\Services\Infrastructure\ProvisioningCallbackUrl;
@@ -109,6 +110,13 @@ final class DependencySecurityTest extends TestCase
         $this->assertSame(['critical', 'Shop', 'Update guzzlehttp/guzzle to 7.4.5 or later.', "website:{$website->id}"], [$guzzle->severity, $guzzle->subject, $guzzle->fix, $guzzle->scope]);
         $this->assertSame('medium', SecurityFinding::query()->where('title', 'like', 'phpunit/phpunit%')->value('severity'), 'Development packages count one level lower.');
 
+        $trend = (array) $this->actingAs($owner)->getJson($page)->assertOk()->json('trend');
+        $this->assertCount(7, $trend);
+        $this->assertSame(100, $trend[0], 'Before the scan, nothing was open.');
+        $this->assertLessThan(100, $trend[6]);
+        $this->actingAs($owner)->getJson("{$page}/findings")->assertOk()->assertJsonPath('counts.open', SecurityFinding::query()->where('status', 'open')->count());
+        $this->actingAs($owner)->postJson("{$page}/scans", ['kind' => 'all'])->assertSuccessful();
+        $this->assertGreaterThan(1, SecurityScan::query()->where('project_id', $project->id)->distinct()->count('kind'), 'Scanning everything runs each check on the plan.');
         $this->actingAs($owner)->getJson($page)->assertOk()->assertJsonPath('gateIncluded', true)->assertJsonFragment(['id' => $environment->id, 'name' => $environment->name, 'gate' => null]);
         $this->actingAs($owner)->putJson("{$page}/gate/{$environment->id}", ['security_gate' => 'critical'])->assertJsonRedirect($page);
         $this->assertSame('critical', $environment->refresh()->security_gate);

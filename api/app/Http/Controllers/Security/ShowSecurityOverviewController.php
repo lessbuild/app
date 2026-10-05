@@ -37,6 +37,7 @@ final class ShowSecurityOverviewController
             'overview' => $overview->handle($project, $user),
             'score' => $summary['score'],
             'grade' => $summary['grade'],
+            'trend' => $summary['trend'],
             'intervalHours' => $summary['intervalHours'],
             'bySeverity' => array_map(fn (string $severity): array => [
                 'severity' => $severity,

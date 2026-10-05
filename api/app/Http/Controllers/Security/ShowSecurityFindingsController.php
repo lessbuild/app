@@ -41,6 +41,12 @@ final class ShowSecurityFindingsController
             'overview' => $overview->handle($project, $user),
             'filters' => ['status' => $status, 'source' => $source, 'severity' => $severity],
             'findings' => collect($findings->items())->map(FindingRow::from(...))->values(),
+            // How many findings each status has, with the same check and severity filters, for the tabs.
+            'counts' => SecurityFinding::query()->where('project_id', $project->id)
+                ->when($source, fn ($query, string $source) => $query->where('source', $source))
+                ->when($severity, fn ($query, string $severity) => $query->where('severity', $severity))
+                ->toBase()->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status')
+                ->map(fn (mixed $total): int => (int) $total),
             'page' => $findings->currentPage(),
             'lastPage' => $findings->lastPage(),
             'sources' => collect(SecurityFinding::SOURCES)->map(fn (string $label, string $value): array => ['value' => $value, 'label' => __($label)])->values(),

@@ -51,19 +51,19 @@ const grantLabels = computed(() => ({ installing: t('Installing'), removing: t('
 
 <template>
     <div class="space-y-6">
-        <ProjectHeader :overview="data.overview" :title="t('Servers')" :description="t('The servers this project runs on: how well they’re hardened, and when they install security updates.')" />
+        <ProjectHeader :overview="data.overview" :title="t('Security')" :description="t('The servers this project runs on: how well they’re hardened, and when they install security updates.')" />
         <PlanNotice v-if="!data.included" :message="t('Server hardening and update windows come with the Pro Security plan and above.')" />
 
         <EmptyState v-if="data.servers.length === 0" icon="server" :title="t('No servers yet')" :description="t('Servers show up here once websites in this project run on them.')" />
         <section v-for="server in data.servers" :key="server.id" class="ui-card grid gap-4 p-5 sm:p-6" :aria-labelledby="`server-${server.id}`">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 :id="`server-${server.id}`" class="text-lg font-extrabold text-ink">{{ server.name }}</h2>
+                    <h2 :id="`server-${server.id}`" class="text-lg font-semibold text-ink">{{ server.name }}</h2>
                     <p class="text-sm text-muted">{{ [server.ip, server.region].filter(Boolean).join(' · ') }}</p>
                 </div>
-                <Badge v-if="server.openFindings === 0" tone="success">{{ t('No open findings') }}</Badge>
+                <AcmeBadge v-if="server.openFindings === 0" tone="green">{{ t('No open findings') }}</AcmeBadge>
                 <NuxtLink v-else :to="`/projects/${project.id}/security/findings?source=servers`">
-                    <Badge :tone="server.serious ? 'danger' : 'warning'">{{ tc(':count open finding|:count open findings', server.openFindings, { count: server.openFindings }) }}</Badge>
+                    <AcmeBadge :tone="acmeTone(server.serious ? 'danger' : 'warning')">{{ tc(':count open finding|:count open findings', server.openFindings, { count: server.openFindings }) }}</AcmeBadge>
                 </NuxtLink>
             </div>
 
@@ -74,7 +74,7 @@ const grantLabels = computed(() => ({ installing: t('Installing'), removing: t('
                 </p>
                 <div v-if="data.canManage && data.included" class="flex flex-wrap gap-1">
                     <FormDialog :id="`patch-${server.id}`" :title="t('Update window for :server', { server: server.name })" :description="t('Security updates install once a week at this time. Times are in UTC.')" :action="`${base}/${server.id}/patch`" method="PUT" :submit="t('Save')">
-                        <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Change window') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Change window') }}</AcmeBtn></template>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <SelectField :id="`patch-${server.id}-day`" name="patch_day" :label="t('Update window')" :options="dayOptions" :model-value="server.patchDay === null ? '' : String(server.patchDay)" />
                             <SelectField :id="`patch-${server.id}-hour`" name="patch_hour" :label="t('At (UTC)')" :options="hourOptions" :model-value="String(server.patchHour ?? 3)" />
@@ -82,7 +82,7 @@ const grantLabels = computed(() => ({ installing: t('Installing'), removing: t('
                         <CheckboxField :id="`patch-${server.id}-reboot`" name="patch_reboot" :label="t('Reboot if needed')" :checked="server.patchReboot" />
                     </FormDialog>
                     <FormDialog :id="`patch-now-${server.id}`" :title="t('Install updates now?')" :description="t('Installs the waiting updates on :server now. Services may restart briefly.', { server: server.name })" :action="`${base}/${server.id}/patch`" method="PUT" :submit="t('Install updates')">
-                        <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Install updates now') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Install updates now') }}</AcmeBtn></template>
                         <input type="hidden" name="now" value="1">
                         <input v-if="server.patchDay !== null" type="hidden" name="patch_day" :value="server.patchDay">
                         <input type="hidden" name="patch_hour" :value="server.patchHour ?? 3">
@@ -90,11 +90,11 @@ const grantLabels = computed(() => ({ installing: t('Installing'), removing: t('
                     </FormDialog>
                 </div>
             </div>
-            <Alert v-if="server.lastPatchError" tone="danger">{{ t('The last update failed: :error', { error: server.lastPatchError }) }}</Alert>
+            <AcmeAlert v-if="server.lastPatchError" tone="danger">{{ t('The last update failed: :error', { error: server.lastPatchError }) }}</AcmeAlert>
 
             <div class="grid gap-2 border-t border-line pt-4">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h3 class="text-sm font-extrabold text-ink">{{ t('SSH access') }} <span class="font-normal text-muted">· {{ t('as :user, with each person’s own keys', { user: server.user }) }}</span></h3>
+                    <h3 class="text-sm font-semibold text-ink">{{ t('SSH access') }} <span class="font-normal text-muted">· {{ t('as :user, with each person’s own keys', { user: server.user }) }}</span></h3>
                     <FormDialog
                         v-if="data.canManage && data.included && candidates(server).length > 0"
                         :id="`ssh-${server.id}`"
@@ -103,7 +103,7 @@ const grantLabels = computed(() => ({ installing: t('Installing'), removing: t('
                         :action="`${base}/${server.id}/ssh`"
                         :submit="t('Give access')"
                     >
-                        <template #trigger="{ open }"><UiButton variant="secondary" size="sm" @click="open"><Icon name="plus" class="h-4 w-4" />{{ t('Give access') }}</UiButton></template>
+                        <template #trigger="{ open }"><AcmeBtn variant="secondary" size="sm" icon="plus" @click="open">{{ t('Give access') }}</AcmeBtn></template>
                         <SelectField :id="`ssh-${server.id}-user`" name="user_id" :label="t('Person')" :options="candidates(server)" />
                     </FormDialog>
                 </div>
@@ -112,7 +112,7 @@ const grantLabels = computed(() => ({ installing: t('Installing'), removing: t('
                     <li v-for="grant in server.grants" :key="grant.id" class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
                         <span class="flex flex-wrap items-center gap-2">
                             <span class="font-bold text-ink">{{ grant.name }}</span>
-                            <Badge v-if="grant.status !== 'active'" :tone="grant.status === 'failed' ? 'danger' : 'info'">{{ grantLabels[grant.status] }}</Badge>
+                            <AcmeBadge v-if="grant.status !== 'active'" :tone="acmeTone(grant.status === 'failed' ? 'danger' : 'info')">{{ grantLabels[grant.status] }}</AcmeBadge>
                             <span v-if="grant.status === 'failed' && grant.error" class="text-xs text-danger">{{ grant.error }}</span>
                             <span v-if="!grant.hasKeys" class="text-xs text-muted">· {{ t('no SSH keys on their profile yet') }}</span>
                         </span>
@@ -124,7 +124,7 @@ const grantLabels = computed(() => ({ installing: t('Installing'), removing: t('
                             :action="`${base}/${server.id}/ssh/${grant.id}`"
                             :submit-label="t('Remove access')"
                         >
-                            <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Remove access') }}</UiButton></template>
+                            <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Remove access') }}</AcmeBtn></template>
                         </DeleteDialog>
                     </li>
                 </ul>

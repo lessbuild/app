@@ -18,7 +18,7 @@ deploy with scripts/deploy-preview.sh <run-id> after each phase.
 - [x] 3 Infrastructure (servers usage/cost, priced size cards, generated-key import, websites cards, LB traffic bars, costs savings, moves checklist)
 - [x] 4 Monitoring (uptime strips, pause, incident stats/likely cause/manual resolve, issue trends + stack traces, service map, sparklines, SLO gauges + budget history, release verdicts, status previews, trace hot span, setup checklist)
 - [x] 5 Analytics (report in tabbed cards with comparison line, site cards with 30-day visitors, pause collecting, tabbed site page, goal conversions, funnel step bars)
-- [ ] 6 Security
+- [x] 6 Security (score ring with 7-day trend, check icons, scan everything, expandable finding rows, status tabs with counts, blocks per day)
 - [ ] 7 Audit
 - [ ] 8 Account pages, Ask, notifications
 - [ ] 9 Public: Stratus home/service/pricing/compare updates, help centre

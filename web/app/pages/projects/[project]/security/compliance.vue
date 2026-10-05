@@ -13,7 +13,7 @@ const months = computed(() => [{ value: '3', label: t('The last 3 months') }, { 
 
 <template>
     <div class="space-y-6">
-        <ProjectHeader :overview="data.overview" :title="t('Compliance')" :description="t('Evidence for SOC 2, ISO 27001 and security questionnaires, from what BuildPusher already records.')" />
+        <ProjectHeader :overview="data.overview" :title="t('Security')" :description="t('Evidence for SOC 2, ISO 27001 and security questionnaires, from what BuildPusher already records.')" />
         <PlanNotice v-if="!data.included" :message="t('Compliance reports come with the Team Security plan.')" />
 
         <div class="grid gap-4 sm:grid-cols-3">
@@ -22,7 +22,7 @@ const months = computed(() => [{ value: '3', label: t('The last 3 months') }, { 
             <StatCard :label="t('Findings resolved this year')" :value="number(data.resolved)" />
         </div>
 
-        <SettingsSection :title="t('Evidence pack')" :description="t('A ZIP of spreadsheets (CSV) with a README that maps each to the SOC 2 and ISO 27001 controls it supports: members and two-factor, API tokens, access reviews, every deploy and who approved it, vulnerabilities and how each was handled, scans, patching, blocked attacks, backups and restore tests, incidents, and the audit log.')">
+        <AcmeCard :padded="false" :title="t('Evidence pack')" :description="t('A ZIP of spreadsheets (CSV) with a README that maps each to the SOC 2 and ISO 27001 controls it supports: members and two-factor, API tokens, access reviews, every deploy and who approved it, vulnerabilities and how each was handled, scans, patching, blocked attacks, backups and restore tests, incidents, and the audit log.')">
             <section class="ui-card p-5 sm:p-6">
                 <h2 class="sr-only">{{ t('Evidence pack') }}</h2>
                 <ApiForm v-if="data.canManage && data.included" :action="`/api/app/projects/${project.id}/security/compliance/evidence`" class="flex flex-wrap items-end gap-3">
@@ -31,6 +31,6 @@ const months = computed(() => [{ value: '3', label: t('The last 3 months') }, { 
                 </ApiForm>
                 <p v-else class="text-sm text-muted">{{ data.included ? t('Only people who manage Security can download the evidence pack.') : t('Upgrade to download the evidence pack.') }}</p>
             </section>
-        </SettingsSection>
+        </AcmeCard>
     </div>
 </template>

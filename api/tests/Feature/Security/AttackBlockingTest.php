@@ -57,7 +57,7 @@ final class AttackBlockingTest extends TestCase
         $this->shell->reply($summary);
         $this->assertSame(0, $watch->run(), 'Already blocked.');
 
-        $this->actingAs($owner)->getJson("/api/app/projects/{$project->id}/security/attacks")->assertOk()->assertJsonFragment(['ip' => '203.0.113.7', 'reason' => __('Repeated failed sign-ins')]);
+        $this->actingAs($owner)->getJson("/api/app/projects/{$project->id}/security/attacks")->assertOk()->assertJsonFragment(['ip' => '203.0.113.7', 'reason' => __('Repeated failed sign-ins')])->assertJsonCount(14, 'daily')->assertJsonPath('daily.13.count', SecurityBlock::query()->where('project_id', $project->id)->count());
         $this->actingAs($owner)->deleteJson("/api/app/projects/{$project->id}/security/attacks/{$bruteForce->id}")->assertSuccessful();
         $this->assertNotNull($bruteForce->refresh()->lifted_at);
         $this->assertSame($owner->id, $bruteForce->lifted_by);
