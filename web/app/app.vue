@@ -9,7 +9,8 @@ const { locale } = useT();
 const config = useRuntimeConfig();
 
 useHead({
-    titleTemplate: (title) => (title ? `${title} · BuildPusher` : 'BuildPusher'),
+    // The site's name after the page's, unless the title already has it ("BuildPusher vs Ploi").
+    titleTemplate: (title) => (!title ? 'BuildPusher' : title.includes('BuildPusher') ? title : `${title} · BuildPusher`),
     htmlAttrs: {
         lang: locale,
         class: 'min-h-full',
