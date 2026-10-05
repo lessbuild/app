@@ -3,7 +3,7 @@ import type { DashboardForm } from '~/types/monitoring';
 import type { ProjectOverview } from '~/types/projects';
 
 /** The account's dashboards: saved views of telemetry, incidents, monitors and SLOs across every project. */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/metrics' });
 type DashboardsPage = {
     overview: ProjectOverview;
     accountName: string;

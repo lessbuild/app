@@ -4,7 +4,7 @@ import type { ProjectOverview } from '~/types/projects';
 import type { Option } from '~/types/ui';
 
 /** One deployment: what went live, and the service's traffic and errors before and after it, side by side. */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/releases' });
 type DeploymentPage = {
     overview: ProjectOverview;
     deployment: {

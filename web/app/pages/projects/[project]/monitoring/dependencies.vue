@@ -2,7 +2,7 @@
 import type { ProjectOverview } from '~/types/projects';
 
 /** Which services call which, built from trace spans over a time range. */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/events' });
 type ServiceRow = { name: string; span_count: number; error_count: number; error_rate: number; average_duration: number | null };
 type EdgeRow = { source: string; target: string; calls: number; trace_count: number; error_count: number; error_rate: number; average_duration: number | null; max_duration: number | null };
 type DependenciesPage = {

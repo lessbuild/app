@@ -32,7 +32,7 @@ const back = computed(() => (typeof route.query._return === 'string' ? route.que
             <WebsiteFields v-else :options="data.options" />
             <div class="flex flex-wrap gap-2">
                 <SubmitButton>{{ importing ? t('Import website') : t('Create website') }}</SubmitButton>
-                <AcmeBtn :to="back ?? `/projects/${project.id}/infrastructure/websites`">{{ t('Cancel') }}</AcmeBtn>
+                <CancelButton :to="back ?? `/projects/${project.id}/infrastructure/websites`" />
             </div>
         </ApiForm>
     </div>

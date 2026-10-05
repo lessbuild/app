@@ -2,7 +2,7 @@
 import type { ProjectOverview } from '~/types/projects';
 
 /** The alerts that fired most in the last 30 days, how often they flapped, and how often anyone acted on them. */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/rules' });
 type NoiseRow = { kind: string; id: number; name: string; fired: number; flapped: number; unacknowledged: number; unacknowledged_share: number; notifications: number; median_minutes: number | null; suggestion: string | null };
 const { t, number } = useT();
 const labels = useDeployLabels();

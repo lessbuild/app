@@ -3,9 +3,12 @@ import type { MenuItem } from '~/components/acme/Menu.vue';
 
 /**
  * The top of an app page (the Acme theme's Platform page header): the title and a line about it, a project switcher
- * on project pages, the page's actions (the `actions` slot), and the area's sections as a row of tabs.
+ * on project pages, the page's actions (the `actions` slot), and the area's sections as a row of tabs. In the drawer a
+ * create or edit page opens in, the title and line become the drawer's heading instead.
  */
-defineProps<{ title: string; subtitle?: string | null }>();
+const props = defineProps<{ title: string; subtitle?: string | null }>();
+const panel = usePagePanel();
+watchEffect(() => panel?.setHeading(props.title, props.subtitle));
 const { t } = useT();
 const route = useRoute();
 const shell = useShell();
@@ -29,7 +32,7 @@ const switcher = computed<MenuItem[]>(() => {
 </script>
 
 <template>
-    <div>
+    <div v-if="!panel">
         <header class="flex flex-wrap items-end justify-between gap-4 pb-6">
             <div class="min-w-0">
                 <h1 class="text-2xl font-semibold tracking-tight text-ink sm:text-[1.75rem]">{{ title }}</h1>

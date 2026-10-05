@@ -3,7 +3,7 @@ import type { AlertDestinationOptions } from '~/types/monitoring';
 import type { ProjectOverview } from '~/types/projects';
 
 /** One alert destination: testing it, its signing key, its settings and its deliveries. */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/rules' });
 type DestinationPage = {
     overview: ProjectOverview;
     destination: {

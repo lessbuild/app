@@ -3,7 +3,7 @@ import type { ProjectOverview } from '~/types/projects';
 import type { Option } from '~/types/ui';
 
 /** On-call rotations: who's on call now and next, cover arranged ahead, and adding or editing a rotation. */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/rules' });
 type Schedule = {
     id: number;
     name: string;

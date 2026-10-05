@@ -9,9 +9,9 @@ const { data, failed } = useDialogData<{ timezones: string[] }>('add-site', () =
 </script>
 
 <template>
-    <FormDialog v-if="data" id="add-site" :title="t('Add a site')" :description="t('A hostname must be a verified domain of this project (or a subdomain of one) before the site collects.')" :action="`/api/app/projects/${projectId}/analytics/sites`" :submit="t('Add site')" size="wide">
+    <FormDialog v-if="data" id="add-site" follow :title="t('Add a site')" :description="t('A hostname must be a verified domain of this project (or a subdomain of one) before the site collects.')" :action="`/api/app/projects/${projectId}/analytics/sites`" :submit="t('Add site')" size="wide">
         <input v-if="back" type="hidden" name="_return" :value="back">
         <SiteFields id="new-site" :timezones="data.timezones" />
     </FormDialog>
-    <UiDialog v-else id="add-site" :title="t('Add a site')"><DialogLoading :failed="failed" /></UiDialog>
+    <UiDialog v-else id="add-site" follow :title="t('Add a site')"><DialogLoading :failed="failed" /></UiDialog>
 </template>

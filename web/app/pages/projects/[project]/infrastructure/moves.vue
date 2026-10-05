@@ -7,7 +7,7 @@ import type { Option } from '~/types/ui';
  * then recreate each site on a server here with its environment file, cron jobs and daemons, and tick off the steps
  * that follow. Nothing changes in the other tool.
  */
-definePageMeta({ layout: 'app', service: 'infrastructure' });
+definePageMeta({ layout: 'app', service: 'infrastructure', tab: 'infrastructure/servers' });
 type Site = { key: string; domain: string; repository: string | null; branch: string | null; php: string | null; crons: number; daemons: number; hasEnv: boolean; deployScript: string; movedWebsiteId: number | null };
 type Move = { id: number; source: string; fetchedAt: string | null; servers: Array<{ name: string; ip: string | null; sites: Site[] }> };
 type MovesPage = { overview: ProjectOverview; sources: Record<string, string>; moves: Move[]; servers: Option[] };

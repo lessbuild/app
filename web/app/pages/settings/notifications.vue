@@ -48,7 +48,7 @@ async function test() {
 <template>
     <SettingsFrame :title="t('Notifications')" :description="data.account ? t('Emails you get from :account. Switch accounts to change another’s.', { account: data.account.name }) : t('Emails you get from your accounts.')" >
 
-        <AcmeCard :padded="false" v-if="data.account" :title="t('Daily issue digest')" :description="t('Each morning at 08:00 UTC: new and resolved issues across the account’s projects, and how many are still open. Owners get it unless they turn it off.')">
+        <AcmeCard v-if="data.account" :padded="false" :title="t('Daily issue digest')" :description="t('Each morning at 08:00 UTC: new and resolved issues across the account’s projects, and how many are still open. Owners get it unless they turn it off.')">
             <ApiForm v-if="data.digestAvailable" action="/api/app/settings/notifications" method="PUT" class="p-4 sm:p-6">
                 <CheckboxField name="issue_digest" unchecked-value="0" :checked="data.digestEnabled" :label="t('Email me the daily issue digest')" />
                 <div><SubmitButton variant="secondary">{{ t('Save') }}</SubmitButton></div>
@@ -74,7 +74,7 @@ async function test() {
             <p class="p-4 text-sm text-muted sm:p-6">{{ t('Security emails, invitations and, for owners, Monitoring usage alerts at 80% and 100% of the monthly allowance.') }}</p>
         </AcmeCard>
 
-        <AcmeCard :padded="false" v-if="data.pushKey" id="push" :title="t('Push notifications')" :description="t('Get alerts and incidents on your phone or computer, even when BuildPusher isn’t open. On iPhone and iPad, first add BuildPusher to your Home Screen (Share → Add to Home Screen) and turn this on from there. Alert destinations of the Push type then reach these devices.')">
+        <AcmeCard v-if="data.pushKey" id="push" :padded="false" :title="t('Push notifications')" :description="t('Get alerts and incidents on your phone or computer, even when BuildPusher isn’t open. On iPhone and iPad, first add BuildPusher to your Home Screen (Share → Add to Home Screen) and turn this on from there. Alert destinations of the Push type then reach these devices.')">
             <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
                 <p v-if="data.pushDevices.length === 0" class="text-sm text-muted">{{ t('No devices yet.') }}</p>
                 <div v-for="device in data.pushDevices" :key="device.id" class="flex flex-wrap items-center justify-between gap-3 text-sm">

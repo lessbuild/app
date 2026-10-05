@@ -2,7 +2,7 @@
 import type { ProjectOverview } from '~/types/projects';
 
 /** Maintenance windows: while one is on, no monitor in the account opens an incident or sends alerts. */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/rules' });
 type Window = { id: number; name: string; reason: string | null; startsAt: string; endsAt: string; state: 'past' | 'active' | 'upcoming' };
 const { t, dateTime } = useT();
 const route = useRoute();

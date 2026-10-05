@@ -12,7 +12,8 @@ export function useShell() {
 export function shellQuery(route: { params: Record<string, unknown>; meta: Record<string, unknown> }) {
     return {
         project: typeof route.params.project === 'string' ? route.params.project : undefined,
-        service: typeof route.meta.service === 'string' ? route.meta.service : undefined,
+        // A service's page says which it is; the page for a service that's still off has it in the address.
+        service: typeof route.meta.service === 'string' ? route.meta.service : typeof route.params.service === 'string' ? route.params.service : undefined,
         area: typeof route.meta.area === 'string' ? route.meta.area : undefined,
     };
 }

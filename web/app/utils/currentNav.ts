@@ -9,11 +9,19 @@ import type { NavLink } from '~/types/shell';
  * @param route The page.
  */
 export function currentNavUrl(items: NavLink[], route: Pick<RouteLocationNormalizedLoaded, 'path' | 'meta'>): string | null {
+    // A page that isn't a tab of its own names the tab it belongs under, such as importing a server under Servers.
+    const tab = route.meta.tab;
+    if (typeof tab === 'string') {
+        const parent = items.find((item) => (item.url.split('?')[0] ?? item.url).endsWith(`/${tab}`));
+        if (parent) {
+            return parent.url;
+        }
+    }
     const service = route.meta.service;
     if (typeof service === 'string') {
-        const tab = items.find((item) => item.service === service);
-        if (tab) {
-            return tab.url;
+        const match = items.find((item) => item.service === service);
+        if (match) {
+            return match.url;
         }
     }
     let best: { url: string; path: string } | null = null;

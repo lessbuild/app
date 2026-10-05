@@ -3,7 +3,7 @@ import type { AlertDestinationOptions } from '~/types/monitoring';
 import type { ProjectOverview } from '~/types/projects';
 
 /** Where the account's alerts go: email, push, texts and calls, webhooks, Slack, Teams, Discord or PagerDuty. */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/rules' });
 type Destination = { id: number; name: string; type: string; target: string; monitors: number; enabled: boolean };
 const { t, tc } = useT();
 const route = useRoute();

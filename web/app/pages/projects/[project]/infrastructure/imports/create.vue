@@ -6,7 +6,7 @@ import type { Option } from '~/types/ui';
  * Import a server you already run (the Acme theme's import page, step one): how to reach it, then we look around over
  * SSH and show what we found before anything changes.
  */
-definePageMeta({ layout: 'app', service: 'infrastructure' });
+definePageMeta({ layout: 'app', service: 'infrastructure', tab: 'infrastructure/servers', panel: 'follow' });
 const { t } = useT();
 const route = useRoute();
 const { data } = await useApi<{ overview: ProjectOverview; types: Option[]; ubuntuVersions: string[]; publicKey: string }>(() => `/projects/${route.params.project}/infrastructure/imports/create`);
@@ -21,7 +21,7 @@ const { data } = await useApi<{ overview: ProjectOverview; types: Option[]; ubun
                 <ServerImportFields :types="data.types" :public-key="data.publicKey" :ubuntu-versions="data.ubuntuVersions" />
                 <div class="flex flex-wrap gap-2">
                     <SubmitButton>{{ t('Inspect server') }}</SubmitButton>
-                    <AcmeBtn :to="`/projects/${data.overview.project.id}/infrastructure/servers`">{{ t('Cancel') }}</AcmeBtn>
+                    <CancelButton :to="`/projects/${data.overview.project.id}/infrastructure/servers`" />
                 </div>
             </ApiForm>
         </AcmeCard>

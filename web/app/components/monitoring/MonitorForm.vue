@@ -41,7 +41,7 @@ const nowLabel = computed(() => (monitor.value ? t('Now: :target. Leave blank to
         <input v-if="monitor" type="hidden" name="version" :value="monitor.version">
         <input type="hidden" name="check_type" :value="chosen">
         <AcmeCard :title="t('What to check')">
-            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" role="radiogroup" :aria-label="t('Monitor type')">
+            <div class="grid gap-3 sm:grid-cols-2 @5xl:grid-cols-4" role="radiogroup" :aria-label="t('Monitor type')">
                 <label
                     v-for="kind in kinds"
                     :key="kind.value"
@@ -185,7 +185,7 @@ const nowLabel = computed(() => (monitor.value ? t('Now: :target. Leave blank to
         </div>
         </AcmeCard>
 
-        <div class="grid gap-6 xl:grid-cols-2">
+        <div class="grid gap-6 @5xl:grid-cols-2">
             <AcmeCard :title="t('When to open an incident')">
                 <div v-if="!['heartbeat', 'queue'].includes(chosen)" class="mb-4 grid gap-4 sm:grid-cols-2">
                     <SelectField v-model="interval" name="interval_minutes" :label="t('Check every')" :options="form.intervals" />
@@ -229,7 +229,7 @@ const nowLabel = computed(() => (monitor.value ? t('Now: :target. Leave blank to
 
         <div class="flex gap-2">
             <SubmitButton>{{ monitor ? t('Save monitor') : t('Add monitor') }}</SubmitButton>
-            <AcmeBtn :to="monitor ? `/projects/${projectId}/monitoring/monitors/${monitor.id}` : `/projects/${projectId}/monitoring`">{{ t('Cancel') }}</AcmeBtn>
+            <CancelButton :to="monitor ? `/projects/${projectId}/monitoring/monitors/${monitor.id}` : `/projects/${projectId}/monitoring`" />
         </div>
     </ApiForm>
 </template>

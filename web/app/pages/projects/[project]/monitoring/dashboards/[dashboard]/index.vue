@@ -3,7 +3,7 @@ import type { DashboardForm, DashboardWidgetData } from '~/types/monitoring';
 import type { ProjectOverview } from '~/types/projects';
 
 /** One dashboard: its widgets, refreshed every minute. */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/metrics' });
 type DashboardPage = {
     overview: ProjectOverview;
     dashboard: { id: number; name: string; description: string | null; range: string };

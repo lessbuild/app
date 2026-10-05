@@ -2,7 +2,9 @@
 /**
  * A form that posts to the API (`/api/app/…`) as form data: field names as Laravel expects them, method spoofing for
  * PUT and DELETE, files included. Laravel's validation errors appear on their fields. On success the page's data
- * loads again, or the app goes where the API's `{ redirect }` says; a download is saved.
+ * loads again, or the app goes where the API's `{ redirect }` says; a download is saved. In a dialog (`stay`) or the
+ * drawer a create or edit page opens in, saving keeps the person on the page they were on, unless the answer has
+ * passwords to show once: those are shown on the page the API names, so the app goes there.
  */
 const props = withDefaults(defineProps<{
     action: string;
@@ -20,7 +22,8 @@ const props = withDefaults(defineProps<{
 }>(), { method: 'POST', confirm: undefined, after: undefined, stay: false });
 const emit = defineEmits<{ success: [redirect: string | null] }>();
 const { t } = useT();
-const route = useRoute();
+const router = useRouter();
+const panel = usePagePanel();
 const secrets = useSecrets();
 const form = ref<HTMLFormElement | null>(null);
 const state = reactive<FormState>({ errors: {}, busy: false });
@@ -116,13 +119,23 @@ async function submit(event: SubmitEvent) {
             return;
         }
     }
-    const target = payload.redirect && !props.stay ? local(payload.redirect) : null;
+    const showsSecrets = Boolean(payload.secrets && typeof payload.secrets === 'object');
+    const staying = (props.stay || (panel !== null && !panel.follows)) && !showsSecrets;
+    const target = payload.redirect && !staying ? local(payload.redirect) : null;
     emit('success', target);
-    if (target !== null && target !== route.fullPath) {
+    if (panel !== null && target === null) {
+        panel.close();
+        await refreshPage();
+        state.busy = false;
+        return;
+    }
+    // The address the person is on (in the drawer, the page underneath it).
+    const here = router.currentRoute.value;
+    if (target !== null && target !== here.fullPath) {
         await navigateTo(target);
     }
     // Staying on the same page (perhaps without a dialog's query): its data is keyed by path, so load it again.
-    if (target === null || target.split('?')[0] === route.path) {
+    if (target === null || target.split('?')[0] === here.path) {
         await refreshPage();
     }
     state.busy = false;

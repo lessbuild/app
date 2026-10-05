@@ -3,7 +3,7 @@ import type { ProjectOverview } from '~/types/projects';
 import type { Option, Tone } from '~/types/ui';
 
 /** Every batch of events an environment sent and whether it was processed; failed ones can be retried. */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/setup' });
 type DeliveriesPage = {
     overview: ProjectOverview;
     environment: { id: string; name: string };

@@ -3,7 +3,7 @@ import type { DashboardForm } from '~/types/monitoring';
 import type { ProjectOverview } from '~/types/projects';
 
 /** Add a dashboard (the full-page version of the dialog on the dashboards list). */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/metrics' });
 const { t } = useT();
 const route = useRoute();
 const { data } = await useApi<{ overview: ProjectOverview; form: DashboardForm }>(() => `/projects/${route.params.project}/monitoring/dashboards/create`);

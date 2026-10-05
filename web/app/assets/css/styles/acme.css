@@ -296,3 +296,6 @@ html:root.dark[data-frame="site"] {
   animation: acme-pop 0.16s ease-out;
 }
 :root dialog.ui-dialog.ui-dialog-large.ui-dialog-center:modal { width: min(42rem, calc(100% - 2rem)); }
+
+/* The drawer a create or edit page opens in (PagePanel) is wider than a dialog, to fit the page's form and summary. */
+:root dialog.ui-dialog.ui-dialog-large.ui-dialog-panel:modal { width: min(60rem, 100%); }

@@ -62,7 +62,7 @@ onMounted(load);
 <template>
     <div>
         <ProjectHeader :overview="data.overview" :title="t('Connect a repository')" :description="t('It’s cloned over HTTPS with the provider’s token and deployed to the website you choose.')" />
-        <ApiForm :action="`/api/app/projects/${project.id}/deploy/repositories`" class="!grid gap-6 lg:grid-cols-[1fr_22rem]">
+        <ApiForm :action="`/api/app/projects/${project.id}/deploy/repositories`" class="!grid gap-6 @3xl:grid-cols-[1fr_22rem]">
             <div class="space-y-6">
                 <AcmeCard :title="t('1. Choose a repository')" :description="t('Repositories your Git provider lets us reach.')">
                     <div class="grid gap-3 sm:grid-cols-[14rem_1fr] sm:items-end">
@@ -111,7 +111,7 @@ onMounted(load);
                     </div>
                 </AcmeCard>
             </div>
-            <aside class="space-y-4 lg:sticky lg:top-4 lg:self-start">
+            <aside class="space-y-4 @3xl:sticky @3xl:top-4 @3xl:self-start">
                 <AcmeCard :title="t('Summary')">
                     <dl class="space-y-2 text-sm">
                         <div class="flex justify-between gap-3"><dt class="text-muted">{{ t('Repository') }}</dt><dd class="truncate font-mono text-ink">{{ form.url || '—' }}</dd></div>
@@ -120,7 +120,7 @@ onMounted(load);
                         <div class="flex justify-between gap-3"><dt class="text-muted">{{ t('Environment') }}</dt><dd class="text-ink">{{ form.environment ? label(data.options.environments, form.environment) : t('None') }}</dd></div>
                     </dl>
                     <SubmitButton class="mt-5 w-full justify-center">{{ t('Connect repository') }}</SubmitButton>
-                    <AcmeBtn :to="`/projects/${project.id}/deploy`" class="mt-2 w-full">{{ t('Cancel') }}</AcmeBtn>
+                    <CancelButton :to="`/projects/${project.id}/deploy`" class="mt-2 w-full" />
                 </AcmeCard>
             </aside>
         </ApiForm>

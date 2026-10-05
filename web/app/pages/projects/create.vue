@@ -26,7 +26,7 @@ function toggle(key: string) {
 <template>
     <div>
         <PlatformHeader :title="t('New project')" :subtitle="t('One project per app or site. It starts with a Production environment; you can add staging and others later.')" />
-        <ApiForm action="/api/app/projects" class="!grid gap-6 lg:grid-cols-[1fr_20rem]">
+        <ApiForm action="/api/app/projects" class="!grid gap-6 @3xl:grid-cols-[1fr_20rem]">
             <AcmeCard>
                 <div class="grid gap-4">
                     <InputField id="project-name" name="name" :label="t('Project name')" maxlength="100" autocomplete="off" required autofocus />
@@ -50,7 +50,7 @@ function toggle(key: string) {
                         <li v-for="(line, index) in next" :key="line" class="flex gap-3"><span class="grid size-6 shrink-0 place-items-center rounded-full bg-black/[.05] text-xs font-semibold dark:bg-white/10">{{ index + 1 }}</span>{{ line }}</li>
                     </ol>
                 </AcmeCard>
-                <div class="flex gap-2"><SubmitButton class="flex-1 justify-center">{{ t('Create project') }}</SubmitButton><AcmeBtn to="/dashboard">{{ t('Cancel') }}</AcmeBtn></div>
+                <div class="flex gap-2"><SubmitButton class="flex-1 justify-center">{{ t('Create project') }}</SubmitButton><CancelButton to="/dashboard" /></div>
                 <p class="text-center text-sm text-muted">{{ t('Prefer a head start?') }} <NuxtLink to="/projects/templates" class="font-medium text-ink underline underline-offset-2">{{ t('Use a template') }}</NuxtLink></p>
             </aside>
         </ApiForm>

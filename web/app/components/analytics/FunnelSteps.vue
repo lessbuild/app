@@ -21,5 +21,5 @@ const matches = computed(() => [{ value: 'exact', label: t('Exactly') }, { value
             <AcmeBtn v-if="steps.length > 2" variant="ghost" size="sm" :aria-label="t('Remove step :number', { number: index + 1 })" @click="steps.splice(index, 1)"><Icon name="x" class="h-4 w-4" /></AcmeBtn>
         </li>
     </ol>
-    <div v-if="steps.length < 6"><AcmeBtn variant="secondary" size="sm" @click="steps.push({ kind: 'pageview', match: 'exact', value: '' })" icon="plus">{{ t('Add a step') }}</AcmeBtn></div>
+    <div v-if="steps.length < 6"><AcmeBtn variant="secondary" size="sm" icon="plus" @click="steps.push({ kind: 'pageview', match: 'exact', value: '' })">{{ t('Add a step') }}</AcmeBtn></div>
 </template>

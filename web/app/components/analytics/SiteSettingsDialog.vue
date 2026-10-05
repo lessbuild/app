@@ -11,7 +11,7 @@ const { data, failed } = useDialogData<{ site: SiteSettings; timezones: string[]
 </script>
 
 <template>
-    <FormDialog v-if="data" id="site-settings" :title="t('Site settings')" :description="t('Changing hostnames takes effect for the next visit.')" :action="`/api/app/projects/${projectId}/analytics/sites/${siteId}`" method="PUT" :submit="t('Save')" size="wide" stay>
+    <FormDialog v-if="data" id="site-settings" :title="t('Site settings')" :description="t('Changing hostnames takes effect for the next visit.')" :action="`/api/app/projects/${projectId}/analytics/sites/${siteId}`" method="PUT" :submit="t('Save')" size="wide">
         <SiteFields id="site" :timezones="data.timezones" :site="data.site" />
     </FormDialog>
     <UiDialog v-else id="site-settings" :title="t('Site settings')"><DialogLoading :failed="failed" /></UiDialog>

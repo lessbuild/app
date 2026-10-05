@@ -181,7 +181,7 @@ async function connect(provider: Provider) {
             </ul>
         </AcmeCard>
 
-        <AcmeCard :padded="false" id="ssh-keys" :title="t('SSH keys')" :description="t('Your public keys. When someone gives you SSH access to a server (Security → Servers), these are the keys installed there; changes here reach those servers within a minute.')">
+        <AcmeCard id="ssh-keys" :padded="false" :title="t('SSH keys')" :description="t('Your public keys. When someone gives you SSH access to a server (Security → Servers), these are the keys installed there; changes here reach those servers within a minute.')">
             <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
                 <p v-if="data.sshKeys.length === 0" class="text-sm text-muted">{{ t('No SSH keys yet.') }}</p>
                 <div v-for="key in data.sshKeys" :key="key.id" class="flex flex-wrap items-center justify-between gap-3 text-sm">

@@ -2,7 +2,7 @@
 import type { ProjectOverview } from '~/types/projects';
 
 /** What inspecting a server found (the Acme theme's import page, step two); importing it provisions it over SSH. */
-definePageMeta({ layout: 'app', service: 'infrastructure' });
+definePageMeta({ layout: 'app', service: 'infrastructure', tab: 'infrastructure/servers' });
 const { t, number } = useT();
 const route = useRoute();
 type ImportReview = {

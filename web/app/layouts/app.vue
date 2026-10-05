@@ -57,7 +57,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', escape));
                     </div>
                 </header>
                 <main id="main-content" tabindex="-1" class="flex flex-1 flex-col overflow-y-auto outline-none" data-scroll-frame>
-                    <div class="mx-auto w-full max-w-content flex-1 space-y-6 px-4 pb-10 pt-6 sm:px-6 sm:pt-8 lg:px-10">
+                    <div class="@container mx-auto w-full max-w-content flex-1 space-y-6 px-4 pb-10 pt-6 sm:px-6 sm:pt-8 lg:px-10">
                         <Alert v-if="shell.limitWarning" :tone="shell.limitWarning.tone" role="status">
                             {{ shell.limitWarning.message }} <NuxtLink :to="shell.limitWarning.url" class="font-semibold underline">{{ shell.limitWarning.linkLabel }}</NuxtLink>
                         </Alert>
@@ -67,6 +67,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', escape));
                 </main>
             </div>
         </div>
+        <PagePanel />
         <ConfirmIdentityDialog />
         <Toaster />
     </div>

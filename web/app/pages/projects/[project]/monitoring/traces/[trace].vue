@@ -6,7 +6,7 @@ import type { ProjectOverview } from '~/types/projects';
  * One trace (the Acme theme's trace page): where most of its time went, a waterfall of its spans and events, and the
  * deploy that served it.
  */
-definePageMeta({ layout: 'app', service: 'monitoring' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/events' });
 type TracePage = {
     overview: ProjectOverview;
     traceId: string;
