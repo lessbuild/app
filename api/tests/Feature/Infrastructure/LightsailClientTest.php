@@ -88,7 +88,7 @@ final class LightsailClientTest extends TestCase
         $catalog = app(ServerCatalog::class)->for((new Provider)->forceFill(['type' => ProviderType::Lightsail]), $lightsail);
 
         $this->assertSame([['id' => 'eu-west-2a', 'label' => 'London (eu-west-2a)']], $catalog['regions']);
-        $this->assertSame([['id' => 'small_3_0', 'label' => 'Small · 2 GB RAM · 2 vCPU · $10/month']], $catalog['sizes']);
+        $this->assertSame([['id' => 'small_3_0', 'label' => 'Small · 2 GB RAM · 2 vCPU · $10/month', 'price' => 10.0, 'currency' => 'USD']], $catalog['sizes']);
         $this->assertSame([['id' => 'ubuntu_24_04', 'label' => 'Ubuntu 24.04 LTS']], $catalog['images']);
         $this->assertSame(10.0, app(ServerPricing::class)->price(ProviderType::Lightsail, $lightsail->sizes(), 'small_3_0', 'eu-west-2a'));
     }

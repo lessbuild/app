@@ -11,7 +11,9 @@ use App\Models\AuditEntry;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Server;
+use App\Models\ServerMetric;
 use App\Models\User;
+use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -245,6 +247,44 @@ final class ServerLifecycleTest extends TestCase
         $theirs = Server::factory()->create()->id;
         $this->actingAs($this->owner)->getJson("{$this->base}/{$theirs}")->assertNotFound();
         $this->actingAs($this->owner)->getJson("{$this->base}/{$theirs}/status")->assertNotFound();
+    }
+
+    /**
+     * The servers list shows each server's latest CPU, memory and disk use, its monthly cost, whether it was imported
+     * and how far set-up has got.
+     */
+    public function test_the_servers_list_shows_usage_cost_and_set_up_progress(): void
+    {
+        $server = Server::factory()->create(['account_id' => $this->project->account_id, 'provider_id' => $this->provider->id, 'monthly_cost' => 12.5, 'monthly_cost_currency' => 'EUR']);
+        (new ServerMetric)->forceFill(['server_id' => $server->id, 'load_1m' => 1, 'load_5m' => 1, 'load_15m' => 1, 'cpu_percent' => 10, 'memory_percent' => 20, 'disk_percent' => 30, 'uptime_seconds' => 100, 'recorded_at' => now()->subMinutes(5)])->save();
+        (new ServerMetric)->forceFill(['server_id' => $server->id, 'load_1m' => 1, 'load_5m' => 1, 'load_15m' => 1, 'cpu_percent' => 42, 'memory_percent' => 55, 'disk_percent' => 61, 'uptime_seconds' => 400, 'recorded_at' => now()->subMinute()])->save();
+        Server::factory()->create(['account_id' => $this->project->account_id, 'provider_id' => null, 'created_at' => now()->addSecond()]);
+
+        $page = $this->actingAs($this->owner)->getJson($this->base)->assertOk();
+        $listed = collect((array) $page->json('servers'))->keyBy('id');
+        $this->assertSame(['cpu' => 42, 'memory' => 55, 'disk' => 61], $listed[$server->id]['usage']);
+        $this->assertFalse($listed[$server->id]['imported']);
+        $this->assertSame('EUR', $listed[$server->id]['currency']);
+        $this->assertEquals(12.5, $listed[$server->id]['monthlyCost']);
+        $this->assertIsInt($listed[$server->id]['finalStage']);
+        $imported = $listed->firstWhere('id', '!=', $server->id);
+        $this->assertTrue($imported['imported']);
+        $this->assertNull($imported['usage']);
+    }
+
+    /**
+     * A server's page lists the websites on it, the projects they belong to and what the server costs a month.
+     */
+    public function test_a_servers_page_shows_its_websites_projects_and_cost(): void
+    {
+        $server = Server::factory()->create(['account_id' => $this->project->account_id, 'provider_id' => $this->provider->id, 'monthly_cost' => 7.59, 'monthly_cost_currency' => 'EUR']);
+        $production = $this->project->environments()->where('slug', 'production')->firstOrFail();
+        Website::factory()->create(['account_id' => $this->project->account_id, 'server_id' => $server->id, 'environment_id' => $production->id, 'url' => 'shop.example.com']);
+
+        $this->actingAs($this->owner)->getJson("{$this->base}/{$server->id}")->assertOk()
+            ->assertJsonPath('websites.0.url', 'shop.example.com')
+            ->assertJsonPath('usedBy.0', $this->project->name)
+            ->assertJsonPath('currency', 'EUR');
     }
 
     /**

@@ -19,31 +19,32 @@ onBeforeUnmount(() => window.clearInterval(timer));
 </script>
 
 <template>
-    <div class="space-y-10">
-        <SettingsSection id="diagnostics" :title="t('Diagnostics')" :description="t('A read-only check of SSH, root access, PHP, storage, disk, memory and processes.')">
-            <div class="grid gap-3 p-4 sm:p-6">
+    <div class="space-y-6">
+        <AcmeCard id="diagnostics" :padded="false" :title="t('Diagnostics')" :description="t('A read-only check of SSH, root access, PHP, storage, disk, memory and processes.')">
+            <div class="grid gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
                 <p v-if="diagnostics?.finishedAt" class="text-xs text-muted"><Rich :text="t('Last run :time')"><template #time><RelativeTime :at="diagnostics.finishedAt" /></template></Rich></p>
                 <p v-if="diagnostics?.running" class="text-sm text-muted" role="status">{{ t('Running… refresh in a few seconds.') }}</p>
                 <ul v-else-if="diagnostics && diagnostics.checks.length > 0" class="grid gap-2">
                     <li v-for="check in diagnostics.checks" :key="check.name" class="flex flex-wrap items-center justify-between gap-2 text-sm">
                         <span class="font-bold text-ink">{{ check.name }}</span>
-                        <span class="flex items-center gap-2 text-muted">{{ check.detail }} <Badge :tone="check.passed ? 'success' : 'danger'">{{ check.passed ? t('OK') : t('Problem') }}</Badge></span>
+                        <span class="flex items-center gap-2 text-muted">{{ check.detail }} <AcmeBadge :tone="acmeTone(check.passed ? 'success' : 'danger')">{{ check.passed ? t('OK') : t('Problem') }}</AcmeBadge></span>
                     </li>
                 </ul>
                 <ApiForm :action="`${base}/diagnostics`"><SubmitButton variant="secondary" size="sm">{{ t('Run diagnostics') }}</SubmitButton></ApiForm>
             </div>
-        </SettingsSection>
-        <SettingsSection
-            id="disk"
+        </AcmeCard>
+        <AcmeCard
+id="disk"
+            :padded="false"
             :title="t('Disk clean-up')"
             :description="t('What’s taking space that can be cleared safely: releases beyond the ones each website keeps (never the live one), logs older than two weeks, package caches, unused Docker images and old temporary files.')"
         >
-            <div class="grid gap-3 p-4 sm:p-6">
+            <div class="grid gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
                 <p v-if="disk && disk.free !== null && disk.size !== null" class="text-sm text-muted">
                     {{ t(':free free of :size', { free: bytes(disk.free), size: bytes(disk.size) }) }}
                     <template v-if="disk.scannedAt"> · <Rich :text="t('measured :time')"><template #time><RelativeTime :at="disk.scannedAt" /></template></Rich></template>
                 </p>
-                <Alert v-if="disk?.error" tone="danger">{{ disk.error }}</Alert>
+                <AcmeAlert v-if="disk?.error" tone="danger">{{ disk.error }}</AcmeAlert>
                 <p v-if="disk && ['queued', 'running'].includes(disk.status)" class="text-sm text-muted" role="status">{{ t('Working… refresh in a moment.') }}</p>
                 <ul v-if="disk && disk.categories.length > 0" class="grid gap-2 text-sm">
                     <li v-for="category in disk.categories" :key="category.key" class="flex flex-wrap items-center justify-between gap-3">
@@ -56,6 +57,6 @@ onBeforeUnmount(() => window.clearInterval(timer));
                 </ul>
                 <ApiForm v-if="page.canRunCommands" :action="`${base}/disk`"><SubmitButton variant="quiet" size="sm">{{ disk ? t('Measure again') : t('Measure the disk') }}</SubmitButton></ApiForm>
             </div>
-        </SettingsSection>
+        </AcmeCard>
     </div>
 </template>

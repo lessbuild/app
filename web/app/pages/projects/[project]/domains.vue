@@ -29,15 +29,6 @@ async function verify(domain: DomainRow) {
     checking.value = null;
 }
 
-/**
- * Copy part of a DNS record.
- *
- * @param text What to copy.
- */
-async function copy(text: string) {
-    const done = await navigator.clipboard.writeText(text).then(() => true, () => false);
-    flash(done ? t('Copied') : t('Copy it by hand; your browser didn’t allow copying.'), done ? 'success' : 'warning');
-}
 const verified = computed(() => data.value.domains.filter((domain) => domain.verifiedAt).length);
 </script>
 
@@ -79,7 +70,7 @@ const verified = computed(() => data.value.domains.filter((domain) => domain.ver
                                 <div v-for="[label, value] in [[t('Name'), domain.recordName], [t('Value'), domain.recordValue]]" :key="label" class="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
                                     <dt class="w-12 shrink-0 text-xs text-muted">{{ label }}</dt>
                                     <dd class="min-w-0 flex-1 truncate font-mono text-xs text-ink">{{ value }}</dd>
-                                    <AcmeBtn size="sm" variant="ghost" icon="copy" :label="t('Copy :what', { what: label })" @click="copy(value!)" />
+                                    <AcmeBtn size="sm" variant="ghost" icon="copy" :label="t('Copy :what', { what: label })" @click="copyText(value!)" />
                                 </div>
                             </dl>
                         </div>

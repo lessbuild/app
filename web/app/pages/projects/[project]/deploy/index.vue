@@ -54,8 +54,7 @@ function change(now: number | null, before: number | null, unit = ''): string | 
             <section v-if="data.waiting.length > 0" class="flex flex-wrap items-center gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/[.06] p-4" :aria-label="t('Waiting for approval')">
                 <span class="grid size-9 place-items-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300" aria-hidden="true"><AcmeIcon name="alert" :size="18" /></span>
                 <p class="min-w-0 flex-1 text-sm text-ink">
-                    <span class="font-semibold">{{ tc('Deploy #:id is waiting for approval.|:count deploys are waiting for approval.', data.waiting.length, { id: data.waiting[0]!.id }) }}</span>
-                    <span v-if="data.waiting[0]!.commitMessage" class="text-muted"> {{ data.waiting[0]!.repository }}: {{ data.waiting[0]!.commitMessage }}</span>
+                    <span class="font-semibold">{{ tc('Deploy #:id is waiting for approval.|:count deploys are waiting for approval.', data.waiting.length, { id: data.waiting[0]!.id }) }}</span>{{ ' ' }}<span v-if="data.waiting[0]!.commitMessage" class="text-muted">{{ data.waiting[0]!.repository }}: {{ data.waiting[0]!.commitMessage }}</span>
                 </p>
                 <AcmeBtn size="sm" variant="primary" :to="`/projects/${project.id}/deploy/builds/${data.waiting[0]!.id}`">{{ t('Review deploy') }}</AcmeBtn>
             </section>

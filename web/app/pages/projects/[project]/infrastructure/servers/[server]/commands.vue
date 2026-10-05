@@ -42,28 +42,28 @@ onBeforeUnmount(() => window.clearInterval(timer));
             :description="t('Commands run as root, one at a time, and time out after :seconds seconds. Output is stored encrypted and kept :days days.', { seconds: data.timeoutSeconds, days: data.retentionDays })"
         >
             <template #actions>
-                <UiButton :to="`/projects/${project.id}/infrastructure/servers/${data.server.id}`" variant="quiet">{{ t('Back to :server', { server: data.server.label }) }}</UiButton>
+                <AcmeBtn :to="`/projects/${project.id}/infrastructure/servers/${data.server.id}`" variant="ghost">{{ t('Back to :server', { server: data.server.label }) }}</AcmeBtn>
                 <a v-if="data.canManage" :href="`${base}/export`" class="ui-btn ui-btn-secondary" download>{{ t('Export CSV') }}</a>
             </template>
         </ProjectHeader>
 
-        <section v-if="data.canManage" class="ui-card">
-            <ApiForm :action="base" class="grid gap-4 p-4 sm:p-6">
+        <AcmeCard v-if="data.canManage" :title="t('Run a command')">
+            <ApiForm :action="base" class="grid gap-4">
                 <TextareaField name="command" :label="t('Command')" rows="3" maxlength="4096" class="font-mono" placeholder="systemctl status caddy --no-pager" required />
                 <div><SubmitButton :disabled="!data.server.active">{{ t('Run as root') }}</SubmitButton></div>
             </ApiForm>
-        </section>
+        </AcmeCard>
 
-        <SettingsSection
+        <AcmeCard :padded="false"
             v-if="data.selected"
             :title="t('Command #:id', { id: data.selected.id })"
             :description="['queued', 'running'].includes(data.selected.status) ? t('It’s still running; this updates by itself.') : t('Exit code :code', { code: data.selected.exitCode ?? '—' })"
         >
-            <div class="grid gap-3 p-4 sm:p-6">
+            <div class="grid gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
                 <CodeBlock class="whitespace-pre-wrap" :code="`# ${data.selected.command}`" />
                 <CodeBlock v-if="data.selected.output !== null" class="max-h-96 overflow-auto whitespace-pre-wrap" :code="data.selected.output" />
             </div>
-        </SettingsSection>
+        </AcmeCard>
 
         <div class="max-w-xs"><SelectField v-model="filter" name="status" :label="t('Status')" :placeholder="t('All')" :options="filters" /></div>
 
@@ -77,7 +77,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                     <NuxtLink :to="{ query: { ...$route.query, output: String(execution.id) } }" class="break-all font-mono text-xs text-primary hover:underline">{{ execution.command.slice(0, 120) }}</NuxtLink>
                 </td>
                 <td>
-                    <Badge :tone="statuses[execution.status]?.tone ?? 'neutral'">{{ statuses[execution.status]?.label ?? execution.status }}</Badge>
+                    <AcmeBadge :tone="acmeTone(statuses[execution.status]?.tone ?? 'neutral')">{{ statuses[execution.status]?.label ?? execution.status }}</AcmeBadge>
                     <span v-if="execution.exitCode !== null" class="ml-1 text-xs text-muted">{{ t('exit :code', { code: execution.exitCode }) }}</span>
                 </td>
                 <td class="whitespace-nowrap text-xs text-muted">{{ execution.createdAt ? dateTime(execution.createdAt) : '—' }}<template v-if="execution.user"> · {{ execution.user }}</template></td>
@@ -94,8 +94,8 @@ onBeforeUnmount(() => window.clearInterval(timer));
             <tr v-if="data.executions.length === 0"><td colspan="5" class="py-8 text-center text-muted">{{ t('No commands yet.') }}</td></tr>
         </DataTable>
         <nav v-if="data.previousCursor || data.nextCursor" class="flex justify-between" :aria-label="t('Pages')">
-            <UiButton :to="page(data.previousCursor)" :class="!data.previousCursor && 'pointer-events-none opacity-50'" :aria-disabled="!data.previousCursor || undefined">{{ t('Newer') }}</UiButton>
-            <UiButton :to="page(data.nextCursor)" :class="!data.nextCursor && 'pointer-events-none opacity-50'" :aria-disabled="!data.nextCursor || undefined">{{ t('Older') }}</UiButton>
+            <AcmeBtn :to="page(data.previousCursor)" :class="!data.previousCursor && 'pointer-events-none opacity-50'" :aria-disabled="!data.previousCursor || undefined">{{ t('Newer') }}</AcmeBtn>
+            <AcmeBtn :to="page(data.nextCursor)" :class="!data.nextCursor && 'pointer-events-none opacity-50'" :aria-disabled="!data.nextCursor || undefined">{{ t('Older') }}</AcmeBtn>
         </nav>
     </div>
 </template>

@@ -22,7 +22,7 @@ const badge = computed<{ tone: Tone; label: string }>(() => {
 
 <template>
     <span class="inline-grid gap-1">
-        <Badge :tone="badge.tone" :title="error ?? undefined">{{ badge.label }}</Badge>
+        <AcmeBadge :tone="acmeTone(badge.tone)" :title="error ?? undefined">{{ badge.label }}</AcmeBadge>
         <span v-if="status === 'failed' && error" class="text-xs text-danger">{{ error }}</span>
     </span>
 </template>

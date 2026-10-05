@@ -11,14 +11,15 @@ const destination = ref<string | null>(recovery.value?.plan ? String(recovery.va
 
 <template>
     <div v-if="recovery" class="space-y-10">
-        <SettingsSection
-            id="continuous-backup"
+        <AcmeCard
+id="continuous-backup"
+            :padded="false"
             :title="t('Continuous backup')"
             :description="t('A daily base backup plus the :log, kept in a backup destination, so :engine can be restored to any moment in the window. Uses WAL-G.', { log: postgres ? t('write-ahead log (sent as it’s written)') : t('binary log (sent every five minutes)'), engine: postgres ? 'PostgreSQL' : 'MySQL' })"
         >
-            <div class="grid gap-4 p-4 sm:p-6">
+            <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
                 <p v-if="recovery.plan" class="flex flex-wrap items-center gap-2 text-sm">
-                    <Badge tone="success">{{ t('On') }}</Badge>
+                    <AcmeBadge tone="green">{{ t('On') }}</AcmeBadge>
                     {{ t('Backing up to :destination, keeping :days days. Restorable from :from.', { destination: recovery.plan.destination, days: recovery.plan.retentionDays, from: dateTime(recovery.plan.earliest) }) }}
                     <span v-if="recovery.plan.setupStatus" class="text-muted">· {{ t('Setup: :status', { status: recovery.plan.setupStatus }) }}</span>
                 </p>
@@ -31,10 +32,11 @@ const destination = ref<string | null>(recovery.value?.plan ? String(recovery.va
                     </ApiForm>
                 </template>
             </div>
-        </SettingsSection>
-        <SettingsSection
-            v-if="recovery.plan && page.canRunCommands"
+        </AcmeCard>
+        <AcmeCard
+v-if="recovery.plan && page.canRunCommands"
             id="restore"
+            :padded="false"
             :title="t('Restore to a point in time')"
             :description="t('Stops the database, moves its current data aside (kept on the server), restores the last base backup before the moment and replays the log up to it. Applications see the database as it was then.')"
         >
@@ -43,6 +45,6 @@ const destination = ref<string | null>(recovery.value?.plan ? String(recovery.va
                 <InputField name="confirmation" :label="t('Type :name to confirm', { name: page.server.name })" autocomplete="off" required />
                 <SubmitButton variant="danger">{{ t('Restore') }}</SubmitButton>
             </ApiForm>
-        </SettingsSection>
+        </AcmeCard>
     </div>
 </template>

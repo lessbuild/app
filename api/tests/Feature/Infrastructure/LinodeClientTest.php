@@ -74,7 +74,7 @@ final class LinodeClientTest extends TestCase
         $catalog = app(ServerCatalog::class)->for($provider, $linode);
 
         $this->assertSame([['id' => 'eu-west', 'label' => 'London (GB)']], $catalog['regions']);
-        $this->assertSame([['id' => 'g6-standard-1', 'label' => 'Linode 2GB · 2 GB RAM · 1 vCPU · $12/month']], $catalog['sizes']);
+        $this->assertSame([['id' => 'g6-standard-1', 'label' => 'Linode 2GB · 2 GB RAM · 1 vCPU · $12/month', 'price' => 12.0, 'currency' => 'USD']], $catalog['sizes']);
         $this->assertSame([['id' => 'linode/ubuntu24.04', 'label' => 'Ubuntu 24.04 LTS']], $catalog['images']);
         $this->assertSame(12.0, app(ServerPricing::class)->price(ProviderType::Linode, $linode->sizes(), 'g6-standard-1', 'eu-west'));
     }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ProjectOverview } from '~/types/projects';
 
-/** Create a server, as a page of its own (the Servers page has it in a dialog). */
+/** Create a server (the Acme theme's create server page). The form loads the provider's regions and sizes itself. */
 definePageMeta({ layout: 'app', service: 'infrastructure' });
 const { t } = useT();
 const route = useRoute();
@@ -9,8 +9,8 @@ const { data } = await useApi<{ overview: ProjectOverview }>(() => `/projects/${
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div>
         <ProjectHeader :overview="data.overview" :title="t('Create a server')" :description="t('The server provisions itself with the software its type needs. It takes about ten minutes.')" />
-        <section class="ui-card p-5 sm:p-6"><ServerCreateForm :project-id="data.overview.project.id" /></section>
+        <ServerCreateForm :project-id="data.overview.project.id" />
     </div>
 </template>

@@ -99,15 +99,15 @@ onBeforeUnmount(() => dispose?.());
             :title="t('Terminal')"
             :description="t('A root shell on :server. It closes after :idle idle minutes, or :limit minutes at most. Opening and closing it are recorded in the audit log.', { server: data.server.label, idle: data.idleMinutes, limit: data.sessionMinutes })"
         />
-        <Alert v-if="!data.ownBrowser" tone="warning">{{ t('This terminal was opened in another browser or tab session. Open a new one from the server page.') }}</Alert>
-        <Alert v-else-if="!data.terminal.active" tone="info">{{ t('This terminal has closed (:reason).', { reason: data.terminal.closeReason ?? data.terminal.status }) }}</Alert>
+        <AcmeAlert v-if="!data.ownBrowser" tone="warning">{{ t('This terminal was opened in another browser or tab session. Open a new one from the server page.') }}</AcmeAlert>
+        <AcmeAlert v-else-if="!data.terminal.active" tone="info">{{ t('This terminal has closed (:reason).', { reason: data.terminal.closeReason ?? data.terminal.status }) }}</AcmeAlert>
         <section v-else class="ui-card grid gap-2 overflow-hidden p-3">
             <p class="text-xs text-muted" role="status" aria-live="polite">{{ state }}</p>
             <div class="overflow-x-auto rounded-control bg-[#0b1020] p-2"><div ref="screen" /></div>
         </section>
         <div class="flex flex-wrap gap-3">
             <ApiForm v-if="data.terminal.active" :action="base" method="DELETE"><SubmitButton variant="secondary">{{ t('Close terminal') }}</SubmitButton></ApiForm>
-            <UiButton :to="`/projects/${project.id}/infrastructure/servers/${data.server.id}`" variant="quiet">{{ t('Back to the server') }}</UiButton>
+            <AcmeBtn :to="`/projects/${project.id}/infrastructure/servers/${data.server.id}`" variant="ghost">{{ t('Back to the server') }}</AcmeBtn>
         </div>
     </div>
 </template>

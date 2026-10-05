@@ -36,6 +36,8 @@ final class ReachableRepositoriesTest extends TestCase
             'api.bitbucket.org/*' => Http::response(['message' => 'Unauthorized'], 401),
         ]);
         $url = "/api/app/projects/{$project->id}/deploy/repositories/reachable";
+        $this->actingAs($owner)->getJson("/api/app/projects/{$project->id}/deploy/repositories/create")->assertOk()
+            ->assertJsonPath('overview.project.id', $project->id)->assertJsonStructure(['options' => ['providers', 'websites', 'environments']]);
 
         $this->actingAs($owner)->getJson("{$url}?provider={$github->id}")->assertOk()
             ->assertJsonPath('repositories.0.name', 'acme/shop')->assertJsonPath('repositories.0.url', 'github.com/acme/shop')

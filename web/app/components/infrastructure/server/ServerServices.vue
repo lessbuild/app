@@ -11,11 +11,12 @@ const listens = computed(() => [
 </script>
 
 <template>
-    <SettingsSection
+    <AcmeCard
+:padded="false"
         :title="t('Services')"
         :description="t('Install a search engine or a cache on this server. Each gets a generated key or password and listens on the server itself; share it over the private network to use it from your other servers.')"
     >
-        <div class="grid gap-4 p-4 sm:p-6">
+        <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
             <div v-for="service in page.services" :key="service.kind" class="grid gap-3 border-b border-line pb-4 last:border-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
                 <div class="min-w-0">
                     <p class="font-bold text-ink">{{ service.name }}</p>
@@ -48,5 +49,5 @@ const listens = computed(() => [
                 </div>
             </div>
         </div>
-    </SettingsSection>
+    </AcmeCard>
 </template>

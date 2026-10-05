@@ -12,33 +12,50 @@ use Illuminate\Support\Collection;
 class ServerCatalog
 {
     /**
-     * Get the provider's regions, sizes and images for the server form.
+     * Create a new ServerCatalog instance.
+     *
+     * Reads a provider's regions, sizes and images for the server form.
+     *
+     * @param  ServerPricing  $pricing  Reads a size's monthly price from the provider's catalog.
+     */
+    public function __construct(private readonly ServerPricing $pricing) {}
+
+    /**
+     * Get the provider's regions, sizes and images for the server form. Each size carries its monthly price (null when
+     * the provider doesn't list one) and the currency the provider bills in.
      *
      * @param  Provider  $provider
      * @param  ServerProvider  $client
-     * @return array{regions: array<int, array{id: string, label: string}>, sizes: array<int, array{id: string, label: string}>, images: array<int, array{id: string, label: string}>}
+     * @return array{regions: array<int, array{id: string, label: string}>, sizes: array<int, array{id: string, label: string, price: float|null, currency: string}>, images: array<int, array{id: string, label: string}>}
      */
     public function for(Provider $provider, ServerProvider $client): array
     {
-        return match ($provider->type) {
-            ProviderType::Hetzner => $this->hetzner($client),
-            ProviderType::Vultr => $this->vultr($client),
-            ProviderType::Linode => $this->linode($client),
-            ProviderType::Lightsail => $this->lightsail($client),
+        $sizes = $client->sizes();
+        $catalog = match ($provider->type) {
+            ProviderType::Hetzner => $this->hetzner($client, $sizes),
+            ProviderType::Vultr => $this->vultr($client, $sizes),
+            ProviderType::Linode => $this->linode($client, $sizes),
+            ProviderType::Lightsail => $this->lightsail($client, $sizes),
             // Their adapters return DigitalOcean-shaped catalogues, priced in euros.
-            ProviderType::Scaleway, ProviderType::UpCloud, ProviderType::Ovh => $this->digitalOcean($client, '€'),
-            default => $this->digitalOcean($client),
+            ProviderType::Scaleway, ProviderType::UpCloud, ProviderType::Ovh => $this->digitalOcean($client, $sizes, '€'),
+            default => $this->digitalOcean($client, $sizes),
         };
+        $currency = ServerPricing::currency($provider->type);
+        $catalog['sizes'] = array_map(fn (array $size): array => [...$size, 'price' => $this->pricing->price($provider->type, $sizes, $size['id'], null), 'currency' => $currency], $catalog['sizes']);
+
+        return $catalog;
     }
 
     /**
      * Normalize DigitalOcean regions, sizes and Ubuntu images for server-selection controls.
      *
      * @param  ServerProvider  $client  The DigitalOcean adapter supplying catalog responses.
+     * @param  list<array<string, mixed>>  $sizes  The provider's size catalog, read once.
+     * @param  list<array<string, mixed>>  $sizes  The provider\'s size catalog, read once.
      * @param  string  $symbol  The currency symbol prices are shown with.
      * @return array{regions: list<array{id: string, label: string}>, sizes: list<array{id: string, label: string}>, images: list<array{id: string, label: string}>} Sorted identifier/label choices, with provider-specific capacity and price details.
      */
-    private function digitalOcean(ServerProvider $client, string $symbol = '$'): array
+    private function digitalOcean(ServerProvider $client, array $sizes, string $symbol = '$'): array
     {
         return [
             'regions' => $this->sort(collect($client->regions())
@@ -47,7 +64,7 @@ class ServerCatalog
                     'id' => (string) ($region['slug'] ?? ''),
                     'label' => (string) ($region['name'] ?? $region['slug'] ?? ''),
                 ])),
-            'sizes' => $this->sort(collect($client->sizes())->map(fn (array $size): array => [
+            'sizes' => $this->sort(collect($sizes)->map(fn (array $size): array => [
                 'id' => (string) ($size['slug'] ?? ''),
                 'label' => sprintf(
                     '%s · %s GB RAM · %s vCPU%s',
@@ -71,16 +88,18 @@ class ServerCatalog
      * Normalize Hetzner regions, sizes and Ubuntu images for server-selection controls.
      *
      * @param  ServerProvider  $client  The Hetzner adapter supplying catalog responses.
+     * @param  list<array<string, mixed>>  $sizes  The provider's size catalog, read once.
+     * @param  list<array<string, mixed>>  $sizes  The provider\'s size catalog, read once.
      * @return array{regions: list<array{id: string, label: string}>, sizes: list<array{id: string, label: string}>, images: list<array{id: string, label: string}>} Sorted identifier/label choices, with provider-specific capacity and price details.
      */
-    private function hetzner(ServerProvider $client): array
+    private function hetzner(ServerProvider $client, array $sizes): array
     {
         return [
             'regions' => $this->sort(collect($client->regions())->map(fn (array $region): array => [
                 'id' => (string) ($region['name'] ?? ''),
                 'label' => trim((string) ($region['city'] ?? $region['name'] ?? '').', '.(string) ($region['country'] ?? '')),
             ])),
-            'sizes' => $this->sort(collect($client->sizes())->map(fn (array $size): array => [
+            'sizes' => $this->sort(collect($sizes)->map(fn (array $size): array => [
                 'id' => (string) ($size['name'] ?? ''),
                 'label' => sprintf(
                     '%s · %s GB RAM · %s vCPU · %s GB disk',
@@ -103,16 +122,18 @@ class ServerCatalog
      * Normalize Vultr regions, sizes and Ubuntu images for server-selection controls.
      *
      * @param  ServerProvider  $client  The Vultr adapter supplying catalog responses.
+     * @param  list<array<string, mixed>>  $sizes  The provider's size catalog, read once.
+     * @param  list<array<string, mixed>>  $sizes  The provider\'s size catalog, read once.
      * @return array{regions: list<array{id: string, label: string}>, sizes: list<array{id: string, label: string}>, images: list<array{id: string, label: string}>} Sorted identifier/label choices, with provider-specific capacity and price details.
      */
-    private function vultr(ServerProvider $client): array
+    private function vultr(ServerProvider $client, array $sizes): array
     {
         return [
             'regions' => $this->sort(collect($client->regions())->map(fn (array $region): array => [
                 'id' => (string) ($region['id'] ?? ''),
                 'label' => trim((string) ($region['city'] ?? $region['id'] ?? '').', '.(string) ($region['country'] ?? '')),
             ])),
-            'sizes' => $this->sort(collect($client->sizes())->map(fn (array $size): array => [
+            'sizes' => $this->sort(collect($sizes)->map(fn (array $size): array => [
                 'id' => (string) ($size['id'] ?? ''),
                 'label' => sprintf(
                     '%s · %s GB RAM · %s vCPU · $%s/month',
@@ -135,16 +156,18 @@ class ServerCatalog
      * Normalize Linode regions, instance types and Ubuntu images for server-selection controls.
      *
      * @param  ServerProvider  $client  The Linode adapter supplying catalog responses.
+     * @param  list<array<string, mixed>>  $sizes  The provider's size catalog, read once.
+     * @param  list<array<string, mixed>>  $sizes  The provider\'s size catalog, read once.
      * @return array{regions: list<array{id: string, label: string}>, sizes: list<array{id: string, label: string}>, images: list<array{id: string, label: string}>}
      */
-    private function linode(ServerProvider $client): array
+    private function linode(ServerProvider $client, array $sizes): array
     {
         return [
             'regions' => $this->sort(collect($client->regions())->map(fn (array $region): array => [
                 'id' => (string) ($region['id'] ?? ''),
                 'label' => trim((string) ($region['label'] ?? $region['id'] ?? '').' ('.strtoupper((string) ($region['country'] ?? '')).')'),
             ])),
-            'sizes' => $this->sort(collect($client->sizes())->map(fn (array $size): array => [
+            'sizes' => $this->sort(collect($sizes)->map(fn (array $size): array => [
                 'id' => (string) ($size['id'] ?? ''),
                 'label' => sprintf(
                     '%s · %s GB RAM · %s vCPU · $%s/month',
@@ -164,13 +187,15 @@ class ServerCatalog
      * Normalize Lightsail availability zones, Linux bundles and Ubuntu blueprints for server-selection controls.
      *
      * @param  ServerProvider  $client  The Lightsail adapter supplying catalog responses.
+     * @param  list<array<string, mixed>>  $sizes  The provider's size catalog, read once.
+     * @param  list<array<string, mixed>>  $sizes  The provider\'s size catalog, read once.
      * @return array{regions: list<array{id: string, label: string}>, sizes: list<array{id: string, label: string}>, images: list<array{id: string, label: string}>}
      */
-    private function lightsail(ServerProvider $client): array
+    private function lightsail(ServerProvider $client, array $sizes): array
     {
         return [
             'regions' => $this->sort(collect($client->regions())->map(fn (array $zone): array => ['id' => (string) ($zone['id'] ?? ''), 'label' => (string) ($zone['label'] ?? '')])),
-            'sizes' => $this->sort(collect($client->sizes())->map(fn (array $bundle): array => [
+            'sizes' => $this->sort(collect($sizes)->map(fn (array $bundle): array => [
                 'id' => (string) ($bundle['bundleId'] ?? ''),
                 'label' => sprintf('%s · %s GB RAM · %s vCPU · $%s/month', (string) ($bundle['name'] ?? $bundle['bundleId'] ?? ''), $this->number((float) ($bundle['ramSizeInGb'] ?? 0)), (string) ($bundle['cpuCount'] ?? '?'), $this->number((float) ($bundle['price'] ?? 0))),
             ])),

@@ -21,11 +21,11 @@ onBeforeUnmount(() => window.clearInterval(timer));
 </script>
 
 <template>
-    <div class="space-y-10">
-        <SettingsSection :title="t('Logs')" :description="t('The last 200 lines of each log.')">
-            <div class="grid gap-3 p-4 sm:p-6">
+    <div class="space-y-6">
+        <AcmeCard :padded="false" :title="t('Logs')" :description="t('The last 200 lines of each log.')">
+            <div class="grid gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
                 <nav :aria-label="t('Logs')" class="flex flex-wrap gap-2">
-                    <UiButton
+                    <AcmeBtn
                         v-for="type in log.types"
                         :key="type"
                         :to="{ query: { tab: 'logs', log: type } }"
@@ -34,28 +34,29 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         :aria-current="log.type === type ? 'page' : undefined"
                     >
                         {{ label(type) }}
-                    </UiButton>
+                    </AcmeBtn>
                 </nav>
                 <p v-if="log.refreshedAt" class="text-xs text-muted"><Rich :text="t('Fetched :time')"><template #time><RelativeTime :at="log.refreshedAt" /></template></Rich></p>
-                <Alert v-if="log.error" tone="danger">{{ log.error }}</Alert>
+                <AcmeAlert v-if="log.error" tone="danger">{{ log.error }}</AcmeAlert>
                 <CodeBlock v-if="log.text" class="max-h-96 overflow-auto whitespace-pre-wrap" :code="log.text" />
                 <p v-else-if="log.fetching" class="text-sm text-muted" role="status">{{ t('Fetching… refresh in a few seconds.') }}</p>
                 <ApiForm v-if="page.server.status === 'active'" :action="`${base}/logs/${log.type}`"><SubmitButton variant="secondary" size="sm">{{ t('Fetch the latest') }}</SubmitButton></ApiForm>
             </div>
-        </SettingsSection>
-        <SettingsSection
-            id="log-shipping"
+        </AcmeCard>
+        <AcmeCard
+id="log-shipping"
+            :padded="false"
             :title="t('Send logs to Monitoring')"
             :description="t('A small agent on the server sends system warnings and errors, and its websites’ Laravel warnings and errors with their stack traces, to Monitoring, where you can search them beside traces and alert on them. Up to 600 lines a minute.')"
         >
-            <div class="grid gap-3 p-4 sm:p-6">
+            <div class="grid gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
                 <template v-if="shipping">
                     <p class="flex flex-wrap items-center gap-2 text-sm">
-                        <Badge :tone="shipping.status === 'active' ? 'success' : shipping.status === 'failed' ? 'danger' : 'neutral'">{{ shippingStatuses[shipping.status] ?? shipping.status }}</Badge>
+                        <AcmeBadge :tone="acmeTone(shipping.status === 'active' ? 'success' : shipping.status === 'failed' ? 'danger' : 'neutral')">{{ shippingStatuses[shipping.status] ?? shipping.status }}</AcmeBadge>
                         <span class="text-muted">{{ t('To :project · :environment', { project: shipping.project, environment: shipping.environment }) }}</span>
                         <NuxtLink v-if="shipping.status === 'active'" :to="`/projects/${shipping.projectId}/monitoring/events?environment=${shipping.environmentId}&type=log`" class="font-bold text-primary hover:underline">{{ t('See the logs') }}</NuxtLink>
                     </p>
-                    <Alert v-if="shipping.error" tone="danger">{{ shipping.error }}</Alert>
+                    <AcmeAlert v-if="shipping.error" tone="danger">{{ shipping.error }}</AcmeAlert>
                 </template>
                 <template v-if="page.canManage && page.server.status === 'active'">
                     <p v-if="page.logEnvironments.length === 0" class="text-sm text-muted">{{ t('Turn on Monitoring for a project first.') }}</p>
@@ -70,6 +71,6 @@ onBeforeUnmount(() => window.clearInterval(timer));
                     </template>
                 </template>
             </div>
-        </SettingsSection>
+        </AcmeCard>
     </div>
 </template>

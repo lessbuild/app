@@ -10,27 +10,10 @@ const scopes = computed(() => [{ value: 'server', label: t('This server') }, { v
 </script>
 
 <template>
-    <SettingsSection id="alerts" :title="t('Alerts')" :description="t('Owners and admins get an email and an inbox message when a reading stays past a threshold, and when it recovers.')">
-        <div class="grid gap-4 p-4 sm:p-6">
-            <p v-if="page.alertRules.length === 0" class="text-sm text-muted">{{ t('No alerts yet.') }}</p>
-            <ul v-else class="divide-y divide-line">
-                <li v-for="rule in page.alertRules" :key="rule.id" class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                    <span>
-                        <span class="font-bold text-ink">{{ rule.name }}</span>
-                        <span class="text-muted">
-                            {{ rule.metric }} {{ rule.operator === 'lte' ? '≤' : '≥' }} {{ number(rule.threshold) }} ·
-                            {{ tc(':count reading|:count readings in a row', rule.readings, { count: rule.readings }) }} ·
-                            {{ rule.everyServer ? t('all servers') : t('this server') }}
-                        </span>
-                    </span>
-                    <span class="flex items-center gap-2">
-                        <Badge v-if="rule.alerting" tone="danger">{{ t('Alerting') }}</Badge>
-                        <ApiForm v-if="page.canManage" :action="`${base}/alerts/${rule.id}`" method="DELETE"><SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton></ApiForm>
-                    </span>
-                </li>
-            </ul>
+    <AcmeCard id="alerts" :padded="false" :title="t('Alerts')" :description="t('Owners and admins get an email and an inbox message when a reading stays past a threshold, and when it recovers.')">
+        <template #action>
             <FormDialog v-if="page.canManage" id="add-server-alert" :title="t('Add an alert')" :description="t('Get told when CPU, memory, disk or load stays above a threshold.')" :action="`${base}/alerts`" :submit="t('Add alert')" size="wide">
-                <template #trigger="{ open }"><div><UiButton size="sm" @click="open"><Icon name="plus" class="h-4 w-4" />{{ t('Add an alert') }}</UiButton></div></template>
+                <template #trigger="{ open }"><AcmeBtn size="sm" icon="plus" @click="open">{{ t('Add an alert') }}</AcmeBtn></template>
                 <div class="grid items-end gap-3 sm:grid-cols-3">
                     <InputField name="name" :label="t('Name')" placeholder="Disk almost full" maxlength="120" required autofocus />
                     <SelectField name="metric" :label="t('Metric')" :options="metrics" />
@@ -43,6 +26,25 @@ const scopes = computed(() => [{ value: 'server', label: t('This server') }, { v
                     <SelectField name="scope" :label="t('Applies to')" :options="scopes" />
                 </div>
             </FormDialog>
+        </template>
+        <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
+            <p v-if="page.alertRules.length === 0" class="text-sm text-muted">{{ t('No alerts yet.') }}</p>
+            <ul v-else class="divide-y divide-line">
+                <li v-for="rule in page.alertRules" :key="rule.id" class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                    <span>
+                        <span class="font-bold text-ink">{{ rule.name }}</span>
+                        <span class="text-muted">
+                            {{ rule.metric }} {{ rule.operator === 'lte' ? '≤' : '≥' }} {{ number(rule.threshold) }} ·
+                            {{ tc(':count reading|:count readings in a row', rule.readings, { count: rule.readings }) }} ·
+                            {{ rule.everyServer ? t('all servers') : t('this server') }}
+                        </span>
+                    </span>
+                    <span class="flex items-center gap-2">
+                        <AcmeBadge v-if="rule.alerting" tone="red" dot>{{ t('Alerting') }}</AcmeBadge>
+                        <ApiForm v-if="page.canManage" :action="`${base}/alerts/${rule.id}`" method="DELETE"><SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton></ApiForm>
+                    </span>
+                </li>
+            </ul>
         </div>
-    </SettingsSection>
+    </AcmeCard>
 </template>

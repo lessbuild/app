@@ -26,3 +26,15 @@ export function takeFlash(): { message: string; tone: 'success' | 'info' | 'warn
         return null;
     }
 }
+
+/**
+ * Copy text to the clipboard and say whether it worked, asking people to copy it by hand when the browser refuses.
+ *
+ * @param text What to copy.
+ * @param message What to say once it's copied; "Copied" when not given.
+ */
+export async function copyText(text: string, message?: string): Promise<void> {
+    const { t } = useT();
+    const done = await navigator.clipboard.writeText(text).then(() => true, () => false);
+    flash(done ? (message ?? t('Copied')) : t('Copy it by hand; your browser didn’t allow copying.'), done ? 'success' : 'warning');
+}

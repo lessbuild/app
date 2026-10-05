@@ -57,10 +57,15 @@ final readonly class ServerSummary
     /**
      * The kinds of server there are, with what each installs, for the forms that create or import one.
      *
-     * @return list<array{value: string, label: string}>
+     * @return list<array{value: string, label: string, name: string, installs: string}>
      */
     public static function types(): array
     {
-        return array_map(fn (ServerType $type): array => ['value' => $type->value, 'label' => $type->label().' · '.implode(', ', $type->installs())], ServerType::cases());
+        return array_map(fn (ServerType $type): array => [
+            'value' => $type->value,
+            'label' => $type->label().' · '.implode(', ', $type->installs()),
+            'name' => $type->label(),
+            'installs' => implode(', ', $type->installs()),
+        ], ServerType::cases());
     }
 }

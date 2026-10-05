@@ -21,6 +21,7 @@ use App\Models\ServerProcess;
 use App\Models\ServerService;
 use App\Models\ServerSnapshot;
 use App\Models\User;
+use App\Models\Website;
 use App\Services\Infrastructure\DiskCleanup;
 use App\Services\Infrastructure\ServerLogs;
 use App\Services\Infrastructure\ServerProvisioningPlan;
@@ -59,6 +60,7 @@ final readonly class ServerPageQuery
         $diskScan = ServerDiskScan::query()->where('server_id', $server->id)->first();
         $recoveryPlan = DatabaseBackupPlan::query()->with(['destination', 'setupExecution'])->where('server_id', $server->id)->first();
         $logShipping = ServerLogShipping::query()->with('environment.project')->where('server_id', $server->id)->first();
+        $websites = $server->websites()->with('environment.project')->orderBy('url')->get();
         $task = fn (Model $task): array => ['status' => (string) $task->getAttribute('status'), 'error' => $task->getAttribute('error')];
 
         return [
@@ -170,6 +172,12 @@ final readonly class ServerPageQuery
                 'id' => $snapshot->id, 'status' => $snapshot->status, 'reason' => $snapshot->reason, 'error' => $snapshot->error, 'createdAt' => $snapshot->created_at?->toIso8601String(),
             ])->values(),
             'nodeVersions' => ChangeRuntimeVersion::NODE_VERSIONS,
+            'websites' => $websites->map(fn (Website $website): array => [
+                'id' => $website->id, 'name' => $website->name, 'url' => $website->url, 'php' => $website->phpVersion(), 'status' => $website->provisioning_status,
+            ])->values(),
+            'usedBy' => $websites->map(fn (Website $website): ?string => $website->environment?->project->name)->filter()->unique()->sort()->values(),
+            'monthlyCost' => $server->monthly_cost,
+            'currency' => $server->monthly_cost_currency,
             'canManage' => $viewer->can('update', $server),
             'canRunCommands' => $canRunCommands,
             'canOpenTerminal' => $viewer->can('openTerminal', $server),

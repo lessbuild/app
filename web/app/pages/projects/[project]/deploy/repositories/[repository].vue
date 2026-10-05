@@ -38,15 +38,6 @@ function webhookTurnedOn(result: Record<string, unknown>): null {
     return null;
 }
 
-/**
- * Copy the webhook's address.
- *
- * @param text What to copy.
- */
-async function copy(text: string) {
-    const done = await navigator.clipboard.writeText(text).then(() => true, () => false);
-    flash(done ? t('Copied') : t('Copy it by hand; your browser didn’t allow copying.'), done ? 'success' : 'warning');
-}
 </script>
 
 <template>
@@ -129,7 +120,7 @@ async function copy(text: string) {
                         <div class="flex items-center gap-2 rounded-lg border border-line px-3 py-2">
                             <dt class="w-20 shrink-0 text-xs text-muted">{{ t('URL') }}</dt>
                             <dd class="min-w-0 flex-1 truncate font-mono text-xs text-ink">{{ repository.webhookUrl }}</dd>
-                            <AcmeBtn size="sm" variant="ghost" icon="copy" :label="t('Copy webhook URL')" @click="copy(repository.webhookUrl)" />
+                            <AcmeBtn size="sm" variant="ghost" icon="copy" :label="t('Copy webhook URL')" @click="copyText(repository.webhookUrl)" />
                         </div>
                         <div class="flex items-center gap-2 rounded-lg border border-line px-3 py-2">
                             <dt class="w-20 shrink-0 text-xs text-muted">{{ t('Secret') }}</dt>

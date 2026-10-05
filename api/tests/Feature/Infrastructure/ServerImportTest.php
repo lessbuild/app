@@ -74,6 +74,26 @@ final class ServerImportTest extends TestCase
     }
 
     /**
+     * Instead of pasting a private key, people can add a key made for the import to root's authorized_keys; its
+     * private half is used once, from their session.
+     */
+    public function test_a_server_can_be_imported_with_a_key_made_for_it(): void
+    {
+        $publicKey = (string) $this->actingAs($this->owner)->getJson("{$this->base}/imports/create")->assertOk()->json('publicKey');
+        $this->assertStringStartsWith('ssh-ed25519 ', $publicKey);
+        $this->assertSame($publicKey, $this->getJson("{$this->base}/imports/create")->json('publicKey'));
+
+        $data = $this->import();
+        unset($data['ssh_private_key']);
+        $this->postJson("{$this->base}/imports", [...$data, 'key_source' => 'ours'])->assertSuccessful();
+        $assessment = ServerImportAssessment::query()->sole();
+        $this->postJson("{$this->base}/imports/{$assessment->id}/confirm")->assertSuccessful();
+        $this->assertSame(explode(' ', $publicKey)[1], explode(' ', (string) Server::query()->sole()->ssh_public_key)[1]);
+
+        $this->postJson("{$this->base}/imports", [...$data, 'key_source' => 'ours'])->assertJsonValidationErrors('key_source');
+    }
+
+    /**
      * Bad keys failed inspections and expired reviews are refused.
      */
     public function test_bad_keys_failed_inspections_and_expired_reviews_are_refused(): void

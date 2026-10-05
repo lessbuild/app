@@ -19,5 +19,5 @@ const badge = computed<{ tone: Tone; label: string }>(() => {
 </script>
 
 <template>
-    <Badge :tone="badge.tone">{{ badge.label }}</Badge>
+    <AcmeBadge :tone="acmeTone(badge.tone)" dot>{{ badge.label }}</AcmeBadge>
 </template>

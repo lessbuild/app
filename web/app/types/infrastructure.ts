@@ -6,10 +6,23 @@ import type { Option } from '~/types/ui';
 /** A server as lists show it. */
 export type ServerSummary = { id: number; name: string; type: string; typeLabel: string; ip: string | null; provider: string | null; region: string | null; status: string };
 
-export type ServersPage = { overview: ProjectOverview; accountName: string; servers: ServerSummary[]; limit: number | null; types: Option[]; canManage: boolean };
+/** A server as the servers list shows it: its latest use, monthly cost and how far set-up has got. */
+export type ServerRow = ServerSummary & {
+    imported: boolean;
+    usage: { cpu: number; memory: number; disk: number } | null;
+    monthlyCost: number | null;
+    currency: string | null;
+    stage: number | null;
+    finalStage: number;
+};
+
+export type ServersPage = { overview: ProjectOverview; accountName: string; servers: ServerRow[]; limit: number | null; types: Option[]; canManage: boolean };
 
 /** A cloud provider's regions, sizes and images for the new server form. */
-export type ServerCatalog = { regions: Array<{ id: string; label: string }>; sizes: Array<{ id: string; label: string }>; images: Array<{ id: string; label: string }> };
+export type ServerCatalog = { regions: Array<{ id: string; label: string }>; sizes: Array<{ id: string; label: string; price: number | null; currency: string }>; images: Array<{ id: string; label: string }> };
+
+/** A kind of server: its name and what it installs. */
+export type ServerTypeOption = Option & { name: string; installs: string };
 
 export type ServerCreateForm = {
     overview: ProjectOverview;
@@ -17,7 +30,7 @@ export type ServerCreateForm = {
     providerId: string | null;
     catalog: ServerCatalog | null;
     catalogError: string | null;
-    types: Option[];
+    types: ServerTypeOption[];
     recipes: Array<{ id: number; name: string; description: string | null }>;
 };
 
@@ -86,6 +99,10 @@ export type ServerPage = {
     logEnvironments: Option[];
     snapshots: Array<{ id: number; status: string; reason: string; error: string | null; createdAt: string | null }>;
     nodeVersions: string[];
+    websites: Array<{ id: number; name: string; url: string; php: string; status: string }>;
+    usedBy: string[];
+    monthlyCost: number | null;
+    currency: string | null;
     canManage: boolean;
     canRunCommands: boolean;
     canOpenTerminal: boolean;

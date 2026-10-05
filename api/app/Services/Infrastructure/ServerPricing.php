@@ -47,13 +47,24 @@ class ServerPricing
             foreach ($group as $server) {
                 $price = $this->price($provider->type, $sizes, (string) $server->size, $server->region);
                 if ($price !== null) {
-                    $server->forceFill(['monthly_cost' => $price, 'monthly_cost_currency' => in_array($provider->type, [ProviderType::Hetzner, ProviderType::Scaleway, ProviderType::UpCloud, ProviderType::Ovh], true) ? 'EUR' : 'USD', 'monthly_cost_source' => 'provider', 'monthly_cost_checked_at' => now()])->save();
+                    $server->forceFill(['monthly_cost' => $price, 'monthly_cost_currency' => self::currency($provider->type), 'monthly_cost_source' => 'provider', 'monthly_cost_checked_at' => now()])->save();
                     $priced++;
                 }
             }
         }
 
         return $priced;
+    }
+
+    /**
+     * The currency a provider bills in: euros for Hetzner, Scaleway, UpCloud and OVHcloud, dollars for the rest.
+     *
+     * @param  ProviderType  $type
+     * @return string
+     */
+    public static function currency(ProviderType $type): string
+    {
+        return in_array($type, [ProviderType::Hetzner, ProviderType::Scaleway, ProviderType::UpCloud, ProviderType::Ovh], true) ? 'EUR' : 'USD';
     }
 
     /**
