@@ -1,11 +1,13 @@
 <script setup lang="ts">
 /**
  * An on/off switch (the Acme theme's toggle) that posts like a checkbox: `value` when on, `uncheckedValue` when off.
- * With `submit` it sends its form as soon as it's flipped, for settings that save on their own.
+ * With `submit` it sends its form as soon as it's flipped, for settings that save on their own. It says when it's
+ * flipped (`toggle`), for forms that show more once it's on.
  */
 const props = withDefaults(defineProps<{ name: string; label: string; description?: string; id?: string; checked?: boolean; value?: string; uncheckedValue?: string; showLabel?: boolean; submit?: boolean }>(), {
     description: undefined, id: undefined, checked: false, value: '1', uncheckedValue: '0', showLabel: true, submit: false,
 });
+const emit = defineEmits<{ toggle: [on: boolean] }>();
 const on = ref(props.checked);
 const button = ref<HTMLButtonElement | null>(null);
 const controlId = computed(() => props.id ?? props.name);
@@ -14,6 +16,7 @@ watch(() => props.checked, (value) => (on.value = value));
 /** Flip the switch, and send its form when it saves on its own. */
 function flip() {
     on.value = !on.value;
+    emit('toggle', on.value);
     if (props.submit) {
         nextTick(() => button.value?.form?.requestSubmit());
     }

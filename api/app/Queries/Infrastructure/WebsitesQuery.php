@@ -14,14 +14,15 @@ use Illuminate\Database\Eloquent\Collection;
 final class WebsitesQuery
 {
     /**
-     * Get the account's websites by name, with their server.
+     * Get the account's websites by name, with their server and environment, and whether any of their domains goes
+     * through the CDN (as `cdn`).
      *
      * @param  string  $accountId
      * @return Collection<int, Website>
      */
     public function handle(string $accountId): Collection
     {
-        return Website::query()->where('account_id', $accountId)->with('server')->orderBy('name')->orderBy('id')->get();
+        return Website::query()->where('account_id', $accountId)->with(['server', 'environment.project'])->withExists(['domains as cdn' => fn ($query) => $query->where('cdn_proxied', true)])->orderBy('name')->orderBy('id')->get();
     }
 
     /**

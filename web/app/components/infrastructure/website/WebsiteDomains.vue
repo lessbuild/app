@@ -11,8 +11,8 @@ const dnsProvider = ref<string | null>('');
 </script>
 
 <template>
-    <SettingsSection :title="t('Domains')" :description="t('Aliases serve the website too; redirects send visitors elsewhere. The primary domain changes with the website’s domain setting.')">
-        <div class="grid gap-4 p-4 sm:p-6">
+    <AcmeCard :padded="false" :title="t('Domains')" :description="t('Aliases serve the website too; redirects send visitors elsewhere. The primary domain changes with the website’s domain setting.')">
+        <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
             <ul class="divide-y divide-line">
                 <li v-for="domain in page.domains" :key="domain.id" class="flex flex-wrap items-center justify-between gap-3 py-3">
                     <div class="min-w-0">
@@ -39,7 +39,7 @@ const dnsProvider = ref<string | null>('');
                             method="PUT"
                             :submit="t('Save')"
                         >
-                            <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ domain.edge.proxied ? t('CDN and firewall · on') : t('CDN and firewall') }}</UiButton></template>
+                            <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ domain.edge.proxied ? t('CDN and firewall · on') : t('CDN and firewall') }}</AcmeBtn></template>
                             <div class="grid gap-5">
                                 <CheckboxField
                                     :id="`edge-${domain.id}-cdn`"
@@ -78,7 +78,7 @@ const dnsProvider = ref<string | null>('');
                     :submit="t('Add domain')"
                     size="wide"
                 >
-                    <template #trigger="{ open }"><UiButton @click="open"><Icon name="plus" class="h-4 w-4" />{{ t('Add a domain') }}</UiButton></template>
+                    <template #trigger="{ open }"><AcmeBtn icon="plus" @click="open">{{ t('Add a domain') }}</AcmeBtn></template>
                     <div class="grid items-start gap-4 sm:grid-cols-2">
                         <InputField name="hostname" :label="t('Hostname')" placeholder="www.example.com" maxlength="255" required autofocus />
                         <SelectField name="type" :label="t('Type')" :options="types" />
@@ -92,5 +92,5 @@ const dnsProvider = ref<string | null>('');
                 </ApiForm>
             </div>
         </div>
-    </SettingsSection>
+    </AcmeCard>
 </template>

@@ -81,7 +81,7 @@ v-if="page.canRunCommands"
                 :title="t('Add a read replica')"
                 :description="t('Choose another :engine server in this account. Its current data is moved aside on the server and replaced by a copy of this one; large databases take a while to copy.', { engine: server.databaseEngine === 'postgres' ? 'PostgreSQL' : 'MySQL' })"
             >
-                <div class="p-4 sm:p-6">
+                <div class="px-5 pb-5 sm:px-6 sm:pb-6">
                     <p v-if="replication.candidates.length === 0" class="text-sm text-muted">{{ t('Create another database server with the same engine first, ideally in the same region.') }}</p>
                     <ApiForm v-else :action="`${base}/replicas`" class="flex flex-wrap items-end gap-3">
                         <SelectField name="replica_server_id" :label="t('Replica')" :options="replication.candidates" />

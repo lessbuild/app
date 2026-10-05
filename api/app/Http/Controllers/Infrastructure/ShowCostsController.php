@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Queries\Infrastructure\CloudBillsQuery;
 use App\Queries\Infrastructure\InfrastructureCostsQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
+use App\Services\Infrastructure\ServerPricing;
 use App\Services\Infrastructure\ServerRightsizing;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
@@ -67,7 +68,12 @@ final class ShowCostsController
                 'difference' => $row['difference'],
                 'current' => $money($row['current']),
             ], $bills->handle($project->account_id)),
-            'rightsizing' => array_map(fn (array $row): array => [...$row, 'server' => ['id' => $row['server']->id, 'name' => $row['server']->name]], $rightsizing->suggestions(
+            'rightsizing' => array_map(fn (array $row): array => [
+                ...$row,
+                'server' => ['id' => $row['server']->id, 'name' => $row['server']->name],
+                // Prices are in the currency the server's provider bills in.
+                'currency' => $row['server']->provider !== null ? ServerPricing::currency($row['server']->provider->type) : 'USD',
+            ], $rightsizing->suggestions(
                 Server::query()->where('account_id', $project->account_id)->where('provisioning_status', Server::STATUS_ACTIVE)->with('provider')->get(),
             )),
             'rightsizingDays' => ServerRightsizing::DAYS,

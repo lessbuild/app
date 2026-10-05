@@ -73,6 +73,28 @@ final class WebsitesTest extends TestCase
     }
 
     /**
+     * The websites list shows each website's directory, PHP version, environment, whether its health is checked and
+     * whether it goes through the CDN.
+     */
+    public function test_the_websites_list_describes_each_website(): void
+    {
+        $production = $this->project->environments()->where('slug', 'production')->firstOrFail();
+        $website = Website::factory()->create(['account_id' => $this->project->account_id, 'server_id' => $this->server->id, 'environment_id' => $production->id, 'health_check_enabled' => true]);
+        $website->domains()->update(['cdn_proxied' => true]);
+        $website->domains()->firstOr(fn () => $website->domains()->create(['hostname' => 'cdn.example.com', 'type' => 'alias', 'dns_status' => 'active', 'cdn_proxied' => true]));
+
+        $this->actingAs($this->owner)->getJson($this->base)->assertOk()
+            ->assertJsonPath('websites.0.directory', $website->deployment_slug)
+            ->assertJsonPath('websites.0.php', $website->phpVersion())
+            ->assertJsonPath('websites.0.healthChecked', true)
+            ->assertJsonPath('websites.0.environment', $this->project->name.' · '.$production->name)
+            ->assertJsonPath('websites.0.cdn', true);
+        $this->getJson("{$this->base}/{$website->id}")->assertOk()
+            ->assertJsonPath('environment', $this->project->name.' · '.$production->name)
+            ->assertJsonPath('repository', null);
+    }
+
+    /**
      * Moving a website sets it up again and removes the old copy once live.
      */
     public function test_moving_a_website_sets_it_up_again_and_removes_the_old_copy_once_live(): void

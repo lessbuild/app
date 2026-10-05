@@ -13,6 +13,7 @@ use App\Models\DatabaseClone;
 use App\Models\DatabaseUser;
 use App\Models\Project;
 use App\Models\Provider;
+use App\Models\Repository;
 use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteBackup;
@@ -79,6 +80,9 @@ final readonly class WebsitePageQuery
                 'caddyDirectives' => $website->caddy_directives,
                 'caddyError' => $website->caddy_error,
             ],
+            'environment' => $environment !== null ? $environment->project->name.' · '.$environment->name : null,
+            // The repository that deploys here, for its Deploy page, when the viewer's project uses Deploy.
+            'repository' => Repository::query()->where('website_id', $website->id)->where('project_id', $project->id)->whereDoesntHave('preview')->value('id'),
             'log' => $website->logs()->where('type', 'provisioning')->value('log'),
             'health' => [
                 'monitor' => $health !== null && $environment !== null ? ['id' => $health->id, 'projectId' => $environment->project_id, 'label' => __($health->healthLabel()), 'state' => $health->healthLabel()] : null,

@@ -150,7 +150,7 @@ export type WebsiteFormOptions = { hosts: Option[]; environments: Option[]; heal
 
 export type WebsitesPage = {
     overview: ProjectOverview;
-    websites: Array<{ id: number; name: string; url: string; server: string | null; status: string }>;
+    websites: Array<{ id: number; name: string; url: string; server: string | null; status: string; directory: string; php: string; healthChecked: boolean; environment: string | null; cdn: boolean }>;
     limit: number | null;
     options: WebsiteFormOptions | null;
     canManage: boolean;
@@ -205,6 +205,8 @@ export type WebsiteDetail = {
 export type WebsitePage = {
     overview: ProjectOverview;
     website: WebsiteDetail;
+    environment: string | null;
+    repository: number | null;
     log: string | null;
     health: { monitor: { id: number; projectId: string; label: string; state: string } | null; environment: { project: string } | null };
     domains: Array<{

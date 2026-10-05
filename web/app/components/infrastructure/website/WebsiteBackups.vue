@@ -25,9 +25,9 @@ onBeforeUnmount(() => window.clearInterval(timer));
 </script>
 
 <template>
-    <SettingsSection id="backups" :title="t('Backups')" :description="t('The database, .env file and shared storage, sent with restic to a backup destination. Times are UTC.')">
-        <div class="grid gap-4 p-4 sm:p-6">
-            <Alert v-if="page.canManage && !page.canBackUp" tone="info">{{ t('Managed backups come with the Pro Deploy plan and above. Backups already taken can still be restored.') }}</Alert>
+    <AcmeCard id="backups" :padded="false" :title="t('Backups')" :description="t('The database, .env file and shared storage, sent with restic to a backup destination. Times are UTC.')">
+        <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
+            <AcmeAlert v-if="page.canManage && !page.canBackUp" tone="info">{{ t('Managed backups come with the Pro Deploy plan and above. Backups already taken can still be restored.') }}</AcmeAlert>
             <p v-else-if="page.canBackUp && page.backupDestinations.length === 0" class="text-sm text-muted">
                 {{ t('Add a backup destination first.') }} <NuxtLink :to="`/projects/${project}/infrastructure/backups`" class="font-bold text-primary hover:underline">{{ t('Backup destinations') }}</NuxtLink>
             </p>
@@ -56,7 +56,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                     :submit="t('Save schedule')"
                     size="wide"
                 >
-                    <template #trigger="{ open }"><UiButton variant="quiet" @click="open">{{ t('Schedule backups') }}</UiButton></template>
+                    <template #trigger="{ open }"><AcmeBtn variant="ghost" @click="open">{{ t('Schedule backups') }}</AcmeBtn></template>
                     <div class="grid items-start gap-4 sm:grid-cols-2">
                         <SelectField id="schedule-destination" name="backup_destination_id" :label="t('Schedule backups to')" :options="page.backupDestinations" />
                         <SelectField id="schedule-frequency" name="frequency" :label="t('How often')" :options="frequencies" />
@@ -117,11 +117,11 @@ onBeforeUnmount(() => window.clearInterval(timer));
                             :submit="t('Restore')"
                             submit-variant="danger"
                         >
-                            <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Restore') }}</UiButton></template>
+                            <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Restore') }}</AcmeBtn></template>
                         </FormDialog>
                     </div>
                 </li>
             </ul>
         </div>
-    </SettingsSection>
+    </AcmeCard>
 </template>

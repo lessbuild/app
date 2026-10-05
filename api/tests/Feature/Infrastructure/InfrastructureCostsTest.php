@@ -133,7 +133,7 @@ final class InfrastructureCostsTest extends TestCase
         $this->assertSame(['down', 's-2vcpu-4gb', 24.0], [$suggestions['oversized']['direction'], $suggestions['oversized']['suggested']['id'], $suggestions['oversized']['saving']]);
         $this->assertSame(['up', 's-2vcpu-4gb', -18.0], [$suggestions['stretched']['direction'], $suggestions['stretched']['suggested']['id'], $suggestions['stretched']['saving']]);
 
-        $this->actingAs($this->owner)->getJson($this->base)->assertOk()->assertJsonPath('rightsizing', fn (array $rows): bool => collect($rows)->contains(fn (array $row): bool => round((float) $row['saving'], 2) === 24.0) && collect($rows)->contains(fn (array $row): bool => round((float) $row['saving'], 2) === -18.0));
+        $this->actingAs($this->owner)->getJson($this->base)->assertOk()->assertJsonPath('rightsizing', fn (array $rows): bool => collect($rows)->contains(fn (array $row): bool => round((float) $row['saving'], 2) === 24.0 && $row['currency'] === 'USD') && collect($rows)->contains(fn (array $row): bool => round((float) $row['saving'], 2) === -18.0));
     }
 
     /**

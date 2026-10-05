@@ -76,7 +76,7 @@ function sizeParts(text: string): { name: string; spec: string } {
             <div class="min-w-0 space-y-6">
                 <AcmeCard :title="t('Provider and type')">
                     <AcmeSegmented v-if="form.providers.length <= 3" v-model="providerChoice" :label="t('Provider')" :options="form.providers" />
-                    <SelectField v-else id="server-provider" v-model="provider" :label="t('Provider')" :options="form.providers" :disabled="loading" />
+                    <SelectField v-else id="server-provider" v-model="provider" name="provider" :label="t('Provider')" :options="form.providers" :disabled="loading" />
                     <div class="mt-5 grid gap-3 @lg:grid-cols-2" role="radiogroup" :aria-label="t('Server type')">
                         <label v-for="option in form.types" :key="option.value" :class="['flex cursor-pointer gap-3 rounded-xl border p-4 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent', chosen.type === option.value ? 'border-accent bg-accent/[.04] ring-1 ring-accent' : 'border-line hover:bg-black/[.02] dark:hover:bg-white/[.03]']">
                             <input v-model="chosen.type" type="radio" name="type" :value="option.value" class="sr-only">

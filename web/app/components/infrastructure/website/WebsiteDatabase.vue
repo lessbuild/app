@@ -28,13 +28,14 @@ onBeforeUnmount(() => window.clearInterval(timer));
 </script>
 
 <template>
-    <SettingsSection
-        id="database"
+    <AcmeCard
+id="database"
+        :padded="false"
         :title="t('Database')"
         :description="t('The MySQL database :database on the website’s server: its size and tables, extra logins, and copying it into another website.', { database: page.website.database })"
     >
-        <div class="grid gap-5 p-4 sm:p-6">
-            <Alert v-if="page.canManage && !page.canManageDatabase" tone="info">{{ t('Database tools come with the Pro Deploy plan and above.') }}</Alert>
+        <div class="grid gap-5 px-5 pb-5 sm:px-6 sm:pb-6">
+            <AcmeAlert v-if="page.canManage && !page.canManageDatabase" tone="info">{{ t('Database tools come with the Pro Deploy plan and above.') }}</AcmeAlert>
 
             <div class="grid gap-3">
                 <div class="flex flex-wrap items-center justify-between gap-3">
@@ -99,7 +100,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                             <p v-if="user.status === 'failed'" class="text-xs text-danger">{{ user.error }}</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <Badge :tone="userStatuses[user.status]?.tone ?? 'neutral'">{{ userStatuses[user.status]?.label ?? user.status }}</Badge>
+                            <AcmeBadge :tone="acmeTone(userStatuses[user.status]?.tone ?? 'neutral')">{{ userStatuses[user.status]?.label ?? user.status }}</AcmeBadge>
                             <ApiForm v-if="page.canManage && user.status !== 'removing'" :action="`${base}/database/users/${user.id}`" method="DELETE"><SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton></ApiForm>
                         </div>
                     </li>
@@ -113,7 +114,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                     :submit="t('Add user')"
                     size="wide"
                 >
-                    <template #trigger="{ open }"><div><UiButton size="sm" @click="open"><Icon name="plus" class="h-4 w-4" />{{ t('Add a database user') }}</UiButton></div></template>
+                    <template #trigger="{ open }"><div><AcmeBtn size="sm" icon="plus" @click="open">{{ t('Add a database user') }}</AcmeBtn></div></template>
                     <div class="grid items-start gap-4 sm:grid-cols-3">
                         <InputField id="database-username" name="username" :label="t('Username')" placeholder="reporting" maxlength="32" required autofocus />
                         <SelectField id="database-privilege" name="privilege" :label="t('Access')" :options="privileges" />
@@ -148,5 +149,5 @@ onBeforeUnmount(() => window.clearInterval(timer));
                 </template>
             </div>
         </div>
-    </SettingsSection>
+    </AcmeCard>
 </template>

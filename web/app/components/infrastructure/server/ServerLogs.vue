@@ -29,7 +29,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         v-for="type in log.types"
                         :key="type"
                         :to="{ query: { tab: 'logs', log: type } }"
-                        :variant="log.type === type ? 'soft' : 'quiet'"
+                        :variant="log.type === type ? 'primary' : 'ghost'"
                         size="sm"
                         :aria-current="log.type === type ? 'page' : undefined"
                     >

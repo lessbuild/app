@@ -54,8 +54,9 @@ onBeforeUnmount(() => window.clearInterval(timer));
             </ApiForm>
         </AcmeCard>
 
-        <AcmeCard :padded="false"
-            v-if="data.selected"
+        <AcmeCard
+v-if="data.selected"
+            :padded="false"
             :title="t('Command #:id', { id: data.selected.id })"
             :description="['queued', 'running'].includes(data.selected.status) ? t('It’s still running; this updates by itself.') : t('Exit code :code', { code: data.selected.exitCode ?? '—' })"
         >

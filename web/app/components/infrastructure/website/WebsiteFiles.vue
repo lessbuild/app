@@ -36,24 +36,24 @@ onMounted(() => open({ path: '' }));
 </script>
 
 <template>
-    <SettingsSection :title="t('Files')" :description="t('Browse the website’s folder on its server, read the end of any text file, and search its Laravel logs. Read-only.')">
-        <div class="grid gap-4 p-4 sm:p-6" :aria-busy="loading || undefined">
+    <AcmeCard :padded="false" :title="t('Files')" :description="t('Browse the website’s folder on its server, read the end of any text file, and search its Laravel logs. Read-only.')">
+        <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6" :aria-busy="loading || undefined">
             <form class="flex flex-wrap items-end gap-2" @submit.prevent="phrase.trim() && open({ q: phrase.trim() })">
                 <InputField v-model="phrase" name="q" :label="t('Search the Laravel logs')" placeholder="SQLSTATE" maxlength="200" class="min-w-60" />
-                <UiButton type="submit" size="sm">{{ t('Search') }}</UiButton>
+                <AcmeBtn type="submit" size="sm">{{ t('Search') }}</AcmeBtn>
             </form>
             <nav v-if="files" class="flex flex-wrap items-center gap-1 text-sm" :aria-label="t('Folders')">
                 <button type="button" class="font-mono text-primary hover:underline" @click="open({ path: '' })">/</button>
                 <template v-for="crumb in crumbs" :key="crumb.path">
-                    <Icon name="chevron-right" class="h-3 w-3 text-muted" />
+                    <AcmeIcon name="chevronRight" :size="12" class="text-muted" />
                     <button type="button" class="font-mono text-primary hover:underline" @click="open({ path: crumb.path })">{{ crumb.name }}</button>
                 </template>
             </nav>
             <p v-if="loading && !files" class="text-sm text-muted" role="status">{{ t('Reading the folder…') }}</p>
-            <Alert v-else-if="failed" tone="danger">{{ t('Couldn’t reach the server.') }}</Alert>
+            <AcmeAlert v-else-if="failed" tone="danger">{{ t('Couldn’t reach the server.') }}</AcmeAlert>
             <template v-else-if="files">
                 <template v-if="files.folder">
-                    <Alert v-if="files.folder.error" tone="danger">{{ files.folder.error }}</Alert>
+                    <AcmeAlert v-if="files.folder.error" tone="danger">{{ files.folder.error }}</AcmeAlert>
                     <ul v-else class="divide-y divide-line rounded-panel border border-line text-sm">
                         <li v-if="files.path" class="px-3 py-2"><button type="button" class="font-mono text-primary hover:underline" @click="open({ path: parent(files.path) })">..</button></li>
                         <li v-for="entry in files.folder.entries" :key="entry.name" class="flex flex-wrap items-center justify-between gap-3 px-3 py-2">
@@ -67,11 +67,11 @@ onMounted(() => open({ path: '' }));
                     </ul>
                 </template>
                 <template v-else-if="files.tail">
-                    <Alert v-if="files.tail.error" tone="danger">{{ files.tail.error }}</Alert>
+                    <AcmeAlert v-if="files.tail.error" tone="danger">{{ files.tail.error }}</AcmeAlert>
                     <CodeBlock v-else :code="files.tail.content" class="max-h-[32rem] overflow-auto whitespace-pre-wrap text-xs" />
                 </template>
                 <template v-else-if="files.search">
-                    <Alert v-if="files.search.error" tone="danger">{{ files.search.error }}</Alert>
+                    <AcmeAlert v-if="files.search.error" tone="danger">{{ files.search.error }}</AcmeAlert>
                     <template v-else>
                         <p class="text-sm text-muted">{{ tc(':count match|:count matches', files.search.matches.length, { count: files.search.matches.length }) }}</p>
                         <ul class="grid gap-2 text-xs">
@@ -84,5 +84,5 @@ onMounted(() => open({ path: '' }));
                 </template>
             </template>
         </div>
-    </SettingsSection>
+    </AcmeCard>
 </template>

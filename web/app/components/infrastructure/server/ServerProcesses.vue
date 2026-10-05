@@ -22,7 +22,7 @@ const presetFields = computed(() => {
             <FormDialog id="add-process" :title="t('Add a process')" :action="`${base}/processes`" :submit="t('Add process')" size="wide">
                 <template #trigger="{ open }"><AcmeBtn size="sm" icon="plus" @click="open">{{ t('Add a process') }}</AcmeBtn></template>
                 <nav class="mb-4 flex flex-wrap gap-2" :aria-label="t('Start from')">
-                    <AcmeBtn v-for="(item, key) in page.processPresets" :key="key" size="sm" :variant="preset === key ? 'soft' : 'secondary'" @click="preset = String(key)">{{ item.name }}</AcmeBtn>
+                    <AcmeBtn v-for="(item, key) in page.processPresets" :key="key" size="sm" :variant="preset === key ? 'primary' : 'secondary'" @click="preset = String(key)">{{ item.name }}</AcmeBtn>
                 </nav>
                 <ProcessFields :key="preset ?? 'blank'" :process="presetFields" :users="users" prefix="add-process" :server-name="page.server.name" />
             </FormDialog>
