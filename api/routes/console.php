@@ -768,6 +768,10 @@ Artisan::command('platform:self-monitor {email? : The admin who owns it and gets
 
     return 0;
 })->purpose('Monitor the platform with its own Monitoring: uptime, the scheduler and its exceptions');
+// BuildPusher's own status history: each part's daily tally for the public status page, and incidents from it.
+Schedule::call(function (): void {
+    app(App\Services\Admin\PlatformStatusHistory::class)->record();
+})->everyFiveMinutes()->name('platform:status-history')->withoutOverlapping(10);
 // A closure that returns false counts as a failed task, so the heartbeat's "not set up" answer is dropped.
 Schedule::call(function (): void {
     app(SelfMonitoring::class)->beat(app(App\Actions\Monitoring\RecordHeartbeat::class));

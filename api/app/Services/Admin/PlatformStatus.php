@@ -28,20 +28,30 @@ final class PlatformStatus
     public function __construct(private readonly SystemHealth $health, private readonly ServiceRegistry $services) {}
 
     /**
+     * Check every part now, without the 30-second cache, for the status history.
+     *
+     * @return array{status: string, operational: bool, checked_at: string, components: list<array{key: string, name: string, description: string, status: string, operational: bool}>}
+     */
+    public function fresh(): array
+    {
+        return $this->build();
+    }
+
+    /**
      * Get the status: overall, when it was checked, and each component.
      *
-     * @return array{status: string, operational: bool, checked_at: string, components: list<array{name: string, description: string, status: string, operational: bool}>}
+     * @return array{status: string, operational: bool, checked_at: string, components: list<array{key: string, name: string, description: string, status: string, operational: bool}>}
      */
     public function snapshot(): array
     {
-        /** @var array{status: string, operational: bool, checked_at: string, components: list<array{name: string, description: string, status: string, operational: bool}>} */
+        /** @var array{status: string, operational: bool, checked_at: string, components: list<array{key: string, name: string, description: string, status: string, operational: bool}>} */
         return Cache::remember('platform:status', 30, fn (): array => $this->build());
     }
 
     /**
      * Check each component now.
      *
-     * @return array{status: string, operational: bool, checked_at: string, components: list<array{name: string, description: string, status: string, operational: bool}>}
+     * @return array{status: string, operational: bool, checked_at: string, components: list<array{key: string, name: string, description: string, status: string, operational: bool}>}
      */
     private function build(): array
     {
@@ -56,13 +66,13 @@ final class PlatformStatus
         $scheduler = is_int($heartbeat) && now()->getTimestamp() - $heartbeat <= 180;
         $background = $database && $scheduler && $queues->every(fn (QueueState $queue): bool => $queue->healthy);
         $components = [
-            $this->component(__('Dashboard and API'), __('Signing in, the dashboard and the API.'), $database),
-            $this->component(__('Background processing'), __('Scheduled work, emails and queued jobs.'), $background),
+            $this->component('app', __('Dashboard and API'), __('Signing in, the dashboard and the API.'), $database),
+            $this->component('background', __('Background processing'), __('Scheduled work, emails and queued jobs.'), $background),
         ];
         foreach ($this->services->all() as $service) {
             $own = (array) config('platform.service_queues.'.$service->key(), ['default']);
             $healthy = $database && $scheduler && collect($own)->every(fn (mixed $name): bool => $queues->get((string) $name)->healthy ?? true);
-            $components[] = $this->component($service->name(), $service->tagline(), $healthy);
+            $components[] = $this->component($service->key(), $service->name(), $service->tagline(), $healthy);
         }
         $operational = collect($components)->every(fn (array $component): bool => $component['operational']);
 
@@ -72,13 +82,14 @@ final class PlatformStatus
     /**
      * Describe one component.
      *
+     * @param  string  $key  A stable key for the part, such as "app" or a service's key.
      * @param  string  $name
      * @param  string  $description
      * @param  bool  $operational
-     * @return array{name: string, description: string, status: string, operational: bool}
+     * @return array{key: string, name: string, description: string, status: string, operational: bool}
      */
-    private function component(string $name, string $description, bool $operational): array
+    private function component(string $key, string $name, string $description, bool $operational): array
     {
-        return ['name' => $name, 'description' => $description, 'status' => $operational ? __('Operational') : __('Degraded'), 'operational' => $operational];
+        return ['key' => $key, 'name' => $name, 'description' => $description, 'status' => $operational ? __('Operational') : __('Degraded'), 'operational' => $operational];
     }
 }

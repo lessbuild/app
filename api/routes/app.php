@@ -529,6 +529,9 @@ Route::get('/status/webhooks/{subscription}/unsubscribe/{token}', ShowStatusWebh
 Route::post('/status/webhooks/{subscription}/unsubscribe/{token}', UnsubscribeStatusWebhookController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.webhooks.unsubscribe.store');
 Route::get('/status-domains/{host}', ResolveStatusPageDomainController::class)->where('host', '[a-z0-9.-]{1,253}')->middleware('throttle:600,1')->name('status.domains.resolve');
 Route::get('/platform-status', ShowPlatformStatusController::class)->middleware('throttle:120,1')->name('platform.status');
+Route::post('/platform-status/subscribe', App\Http\Controllers\Platform\SubscribeToPlatformStatusController::class)->middleware('throttle:5,1')->name('platform.status.subscribe');
+Route::post('/platform-status/subscribers/{subscriber}/confirm/{token}', App\Http\Controllers\Platform\ConfirmPlatformStatusSubscriptionController::class)->whereNumber('subscriber')->middleware('throttle:20,1')->name('platform.status.confirm');
+Route::post('/platform-status/subscribers/{subscriber}/unsubscribe/{token}', App\Http\Controllers\Platform\UnsubscribeFromPlatformStatusController::class)->whereNumber('subscriber')->middleware('throttle:20,1')->name('platform.status.unsubscribe');
 
 // Analytics reports shared by link, and the view-only reports of people invited to a site: no account needed.
 Route::get('/share/analytics/{token}', ShowSharedReportController::class)->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:120,1')->name('analytics.shared');

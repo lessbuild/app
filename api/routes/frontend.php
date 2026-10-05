@@ -161,6 +161,8 @@ Route::get('/share/analytics/{token}/embed', FrontendPageController::class)->nam
 Route::get('/sso/verify', FrontendPageController::class)->name('sso.verify');
 Route::get('/status', FrontendPageController::class)->name('platform.status');
 Route::get('/status/subscriptions/{subscription}/confirm/{token}', FrontendPageController::class)->name('status.subscriptions.confirm');
+Route::get('/status/updates/{subscriber}/confirm/{token}', FrontendPageController::class)->name('confirm.platform-status');
+Route::get('/status/updates/{subscriber}/unsubscribe/{token}', FrontendPageController::class)->name('unsubscribe.platform-status');
 Route::get('/status/subscriptions/{subscription}/unsubscribe/{token}', FrontendPageController::class)->name('status.subscriptions.unsubscribe');
 Route::get('/status/webhooks/{subscription}/unsubscribe/{token}', FrontendPageController::class)->name('status.webhooks.unsubscribe');
 Route::get('/two-factor-challenge', FrontendPageController::class)->name('two-factor.login');

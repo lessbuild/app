@@ -11,6 +11,9 @@ return [
         'Add an alert destination from a monitor’s or alert rule’s settings when there’s nowhere for alerts to go yet.',
         'Tab rows scroll sideways on phones instead of wrapping.',
         'Install the GitHub App from Account → Providers.',
+        'Pricing: start from a typical setup, estimate metered usage, and compare every tier’s key features.',
+        'Comparison pages say what each tool includes, who should choose which and how to move, with a page listing them all.',
+        'The status page shows 90 days of uptime for each part of the platform and its recent incidents, and you can subscribe by email.',
         'New help guides: domains, your data, commands and the terminal, recipes, load balancers, configuration as code, on-call, SLOs, dashboards and funnels; the rest are updated for the current pages.',
     ]],
     // Shown once Audit is switched on (config/site_audits.php).
