@@ -17,8 +17,8 @@ async function copy() {
 <template>
   <div class="overflow-hidden rounded-xl border" :class="dark ? 'border-zinc-800 bg-zinc-950 text-zinc-100' : 'border-line bg-surface'">
     <div class="flex items-center gap-1 border-b px-2" :class="dark ? 'border-zinc-800' : 'border-line'">
-      <div class="flex flex-1 overflow-x-auto" role="tablist" :aria-label="t('Language')">
-        <button v-for="(tab, i) in items" :key="tab.label" type="button" role="tab" :aria-selected="active === i" class="-mb-px whitespace-nowrap border-b-2 px-3 py-2.5 text-xs font-medium" :class="active === i ? (dark ? 'border-white text-white' : 'border-accent text-ink') : 'border-transparent opacity-60 hover:opacity-100'" @click="active = i">{{ tab.label }}</button>
+      <div class="flex flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none]" role="tablist" :aria-label="t('Language')">
+        <button v-for="(tab, i) in items" :key="tab.label" type="button" role="tab" :aria-selected="active === i" class="shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-xs font-medium" :class="active === i ? (dark ? 'border-white text-white' : 'border-accent text-ink') : 'border-transparent opacity-60 hover:opacity-100'" @click="active = i">{{ tab.label }}</button>
       </div>
       <button type="button" class="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs opacity-70 hover:opacity-100" :aria-label="copied ? t('Copied') : t('Copy code')" @click="copy"><AcmeIcon :name="copied ? 'check' : 'copy'" :size="14" />{{ copied ? t('Copied') : t('Copy') }}</button>
     </div>

@@ -71,6 +71,23 @@ function period(value: boolean) {
 }
 
 /**
+ * Show a service's tiers, and slide its tab fully into view when the row scrolls sideways (on phones).
+ *
+ * @param key The service's key.
+ * @param event The click, whose button is the tab; otherwise the tab is looked up by its id.
+ */
+function choose(key: string, event?: Event) {
+    tab.value = key;
+    const button = (event?.currentTarget as HTMLElement | null) ?? document.getElementById(`tab-${key}`);
+    const row = button?.closest('.overflow-x-auto');
+    if (button && row) {
+        const start = button.offsetLeft - 16;
+        const end = button.offsetLeft + button.offsetWidth + 16 - row.clientWidth;
+        row.scrollTo({ left: Math.min(Math.max(row.scrollLeft, end), start), behavior: 'smooth' });
+    }
+}
+
+/**
  * Move between the service tabs with the arrow keys, as a tab list does.
  *
  * @param event The key press.
@@ -84,7 +101,7 @@ function keys(event: KeyboardEvent) {
     event.preventDefault();
     const target = data.value.services[(next + data.value.services.length) % data.value.services.length];
     if (target) {
-        tab.value = target.key;
+        choose(target.key);
         nextTick(() => document.getElementById(`tab-${target.key}`)?.focus());
     }
 }
@@ -111,8 +128,8 @@ function keys(event: KeyboardEvent) {
         <div class="border-b border-line bg-surface-muted">
             <div class="mx-auto grid max-w-6xl border-x border-line lg:grid-cols-[1fr_20rem]">
                 <div class="min-w-0">
-                    <div class="sticky top-16 z-20 overflow-x-auto border-b border-line bg-surface/90 backdrop-blur [scrollbar-width:none]">
-                        <div class="flex min-w-max" role="tablist" :aria-label="t('Services')" @keydown="keys">
+                    <div class="sticky top-16 z-20 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line bg-surface/90 backdrop-blur [scrollbar-width:none]">
+                        <div class="flex w-max min-w-full" role="tablist" :aria-label="t('Services')" @keydown="keys">
                             <button
                                 v-for="item in data.services"
                                 :id="`tab-${item.key}`"
@@ -122,8 +139,8 @@ function keys(event: KeyboardEvent) {
                                 :aria-selected="tab === item.key"
                                 :aria-controls="`panel-${item.key}`"
                                 :tabindex="tab === item.key ? 0 : -1"
-                                :class="['relative flex flex-1 items-center justify-center gap-2 px-5 py-4 text-sm font-medium transition', tab === item.key ? 'text-ink' : 'text-muted hover:text-ink']"
-                                @click="tab = item.key"
+                                :class="['relative flex shrink-0 grow basis-auto items-center justify-center gap-2 whitespace-nowrap px-4 py-4 text-sm font-medium transition sm:px-5', tab === item.key ? 'text-ink' : 'text-muted hover:text-ink']"
+                                @click="choose(item.key, $event)"
                             >
                                 {{ item.name }}
                                 <span :class="['size-1.5 rounded-full', picks[item.key] ? 'bg-primary' : 'bg-line']" aria-hidden="true" />
