@@ -440,6 +440,7 @@ use App\Http\Controllers\Settings\UpdateWeeklyReportEmailsController;
 use App\Http\Controllers\Shell\ShowShellController;
 use App\Http\Controllers\Site\ShowChangelogController;
 use App\Http\Controllers\Site\ShowComparisonController;
+use App\Http\Controllers\Site\ShowComparisonsController;
 use App\Http\Controllers\Site\ShowFeaturesController;
 use App\Http\Controllers\Site\ShowHomeController;
 use App\Http\Controllers\Site\ShowLegalPageController;
@@ -507,6 +508,7 @@ Route::get('/site/features/{service}', ShowFeaturesController::class)->where('se
 Route::get('/site/pricing', ShowPricingController::class)->middleware('throttle:240,1')->name('pricing');
 Route::get('/site/changelog', ShowChangelogController::class)->middleware('throttle:240,1')->name('changelog');
 Route::get('/site/roadmap', ShowRoadmapController::class)->middleware('throttle:240,1')->name('roadmap');
+Route::get('/site/compare', ShowComparisonsController::class)->middleware('throttle:240,1')->name('compare.index');
 Route::get('/site/compare/{competitor}', ShowComparisonController::class)->where('competitor', '[a-z-]+')->middleware('throttle:240,1')->name('compare');
 Route::get('/site/legal/{page}', ShowLegalPageController::class)->whereIn('page', ['privacy', 'terms'])->middleware('throttle:240,1')->name('legal');
 Route::get('/help', ShowHelpController::class)->middleware('throttle:240,1')->name('help');

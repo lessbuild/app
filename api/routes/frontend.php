@@ -27,6 +27,7 @@ Route::get('/account/webhooks', FrontendPageController::class)->name('account.we
 Route::get('/analytics/view/{token}', FrontendPageController::class)->name('analytics.viewer');
 Route::get('/assistant', FrontendPageController::class)->name('assistant');
 Route::get('/changelog', FrontendPageController::class)->name('changelog');
+Route::get('/compare', FrontendPageController::class)->name('compare.index');
 Route::get('/compare/{competitor}', FrontendPageController::class)->name('compare');
 Route::get('/dashboard', FrontendPageController::class)->name('dashboard');
 Route::get('/docs/api', FrontendPageController::class)->name('docs.api');

@@ -13,6 +13,7 @@ const resources = computed(() => [
     { label: t('Help centre'), to: '/help' },
     { label: t('Changelog'), to: '/changelog' },
     { label: t('Roadmap'), to: '/roadmap' },
+    { label: t('Compare'), to: '/compare' },
     { label: t('API reference'), to: '/docs/api' },
     { label: t('Status'), to: '/status' },
 ]);

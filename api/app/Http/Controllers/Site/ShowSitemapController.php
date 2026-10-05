@@ -31,6 +31,7 @@ final class ShowSitemapController
         foreach (array_keys((array) config('help.guides')) as $guide) {
             $urls[route('help.guide', $guide)] = null;
         }
+        $urls[route('compare.index')] = null;
         foreach (array_keys((array) config('compare.competitors')) as $competitor) {
             $urls[route('compare', $competitor)] = null;
         }

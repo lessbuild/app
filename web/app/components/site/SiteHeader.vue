@@ -43,6 +43,7 @@ const menus = computed<Menu[]>(() => [
             { title: t('Updates'), items: [
                 { icon: 'sparkles', title: t('Changelog'), text: t('What shipped lately'), to: '/changelog' },
                 { icon: 'list', title: t('Roadmap'), text: t('What’s coming next'), to: '/roadmap' },
+                { icon: 'layers', title: t('Compare'), text: t('Coming from another tool?'), to: '/compare' },
                 { icon: 'pulse', title: t('Status'), text: t('Live platform health'), to: '/status' },
             ] },
         ],
