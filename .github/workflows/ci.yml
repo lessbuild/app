@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [platform-v3]
+    branches: [developer]
   pull_request:
-    branches: [platform-v3]
+    branches: [developer]
 
 # The Laravel application (the API) lives in api/.
 defaults:

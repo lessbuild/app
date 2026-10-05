@@ -7,7 +7,7 @@
 set -euo pipefail
 
 repo=lessbuild/app
-branch=platform-v3
+branch=developer
 target=/var/www/buildpusher-v3/web
 root="$(cd "$(dirname "$0")/.." && pwd)"
 

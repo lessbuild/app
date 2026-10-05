@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publishes a green CI run of platform-v3 to https://buildpusher.com: scripts/deploy-production.sh <run-id>.
+# Publishes a green CI run of the developer branch to https://buildpusher.com: scripts/deploy-production.sh <run-id>.
 # Each deploy is a release in /var/www/buildpusher/releases/<commit> (the API from git, its PHP dependencies, and the
 # web server and admin theme GitHub built), sharing the settings, storage and database on the volume. Once it's
 # migrated and cached, /var/www/buildpusher/current switches to it and the services pick it up; the previous releases
@@ -8,7 +8,7 @@
 set -euo pipefail
 
 repo=lessbuild/app
-branch=platform-v3
+branch=developer
 base=/var/www/buildpusher
 shared=/mnt/volume_nyc1_1789401255960/buildpusher-v3/shared
 root="$(cd "$(dirname "$0")/.." && pwd)"

@@ -1,6 +1,6 @@
 # BuildPusher platform v3
 
-One platform that brings Deploy, Infrastructure, Monitoring, Security, Analytics (and Audit, switched off for now) together as services of a single account, dashboard and bill. v3 is a fresh start on the `platform-v3` branch: a Laravel JSON API (`api/`) and a Nuxt app (`web/`), reusing v2's code wherever it fits. The plan and order of work are in [docs/plan.md](docs/plan.md).
+One platform that brings Deploy, Infrastructure, Monitoring, Security, Analytics (and Audit, switched off for now) together as services of a single account, dashboard and bill. v3 started fresh on the orphan branch `platform-v3` and now lives on `developer`, the default branch: a Laravel JSON API (`api/`) and a Nuxt app (`web/`), reusing v2's code wherever it fits. The plan and order of work are in [docs/plan.md](docs/plan.md).
 
 ## Repository layout
 

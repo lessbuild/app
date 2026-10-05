@@ -6,7 +6,7 @@ Started 2026-10-03. platform-v2 keeps serving production until v3 replaces it.
 
 | Topic | Decision |
 |---|---|
-| Start | **Fresh**, on the orphan branch `platform-v3`, reusing v2's code wherever it fits |
+| Start | **Fresh**, on the orphan branch `platform-v3`, reusing v2's code wherever it fits. Since 2026-10-05 it lives on `developer`, the only branch; the older branches are kept as `archive/*` tags (see below) |
 | Frontend | **Nuxt 4** (Vue 3, TypeScript, server-rendered) with **Tailwind CSS 4**, keeping the Signal design. Started in Next.js; switched to Nuxt on the owner's request on 2026-10-03, before any page went live |
 | Backend | **Laravel**, following v2's code rules (below), as a JSON API |
 | Data | **Empty database**: no carry-over, so the schema may be tidied |
@@ -143,3 +143,24 @@ Each slice moves the area's backend (JSON controllers, requests, tests rewritten
   (edit in the wizard, run now, delete) and a run's report (progress while it runs, scores against competitors, the
   findings and journeys in dialogs) are Nuxt pages on the API v2 already had.
 - **13. Cut-over**: next.
+
+## Older branches (2026-10-05)
+
+Everything v3 lacked from the older branches was brought over, then the branches were removed. Each is kept as a tag,
+so its history is still there (`git checkout archive/<name>`):
+
+| Tag | What it was |
+|---|---|
+| `archive/main` | The original apps (Deployer, Monitor, Analytics) before they were unified |
+| `archive/feature/unified-platform` | The unified Blade platform that ran before v2; every earlier branch had been merged into it |
+| `archive/fix/pricing-interval` | One pricing-page fix on top of the unified platform (Blade only) |
+| `archive/platform-v2` | v2, the rewrite v3 was ported from (all its routes are in v3) |
+| `archive/platform-v3` | This branch, before it became `developer` |
+| `archive/feat/api-access-all-plans-20260914`, `archive/fix/baseline-test-failures-20260914`, `archive/product-expansion/phase8-local-verification`, `archive/refactor/controller-modernization-20260912`, `archive/refactor/solid-laravel-20260912` | Earlier work, all merged into main |
+
+What came over from the unified platform: notification bulk actions, project pins and archiving, deploy notes and log
+downloads, CSV exports of deploys and push deliveries, the change-impact preview, server log downloads, sign-in history
+export and clearing, and the recipe version diff. Left behind on purpose, because v3 does them another way: website
+health-check history (Monitoring), runtime logs (the website's Files tab), automation tokens (scoped API tokens),
+project handover files (templates and configuration as code), saved investigations (incident timelines and likely
+causes) and the separate log viewer (the admin panel).
