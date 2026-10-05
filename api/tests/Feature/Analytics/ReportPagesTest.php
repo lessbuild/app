@@ -101,7 +101,7 @@ final class ReportPagesTest extends TestCase
         AnalyticsEvent::create(['site_id' => $this->site->id, 'event_id' => (string) Str::uuid(), 'type' => 'pageview', 'occurred_at' => now(), 'received_at' => now(), 'path' => '/thank-you', 'visitor_hash' => 'visitor-2']);
         app(RebuildSiteReports::class)->handle($this->site);
         $this->assertSame(1, $goal->conversions()->count());
-        $this->actingAs($this->owner)->getJson("/api/app/projects/{$this->project->id}/analytics/goals")->assertOk()->assertJsonHasText('Bought')->assertJsonHasText('/thank-you');
+        $this->actingAs($this->owner)->getJson("/api/app/projects/{$this->project->id}/analytics/goals")->assertOk()->assertJsonHasText('Bought')->assertJsonHasText('/thank-you')->assertJsonPath('goals.0.conversions', 1);
 
         $this->travel(1)->minutes();
         $this->actingAs($this->owner)->putJson("{$base}/{$goal->id}", ['name' => 'Priced', 'kind' => 'path', 'match_type' => 'exact', 'match_value' => '/pricing', 'active' => '1'])->assertSuccessful();

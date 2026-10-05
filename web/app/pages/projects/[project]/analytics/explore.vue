@@ -74,7 +74,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
     <div class="space-y-6">
         <ProjectHeader :overview="data.overview" :title="t('Explore')" :description="t('What changed, how people move through the site, what they buy and whether they come back.')">
             <template v-if="data.canManage && site && data.tab === 'experiments'" #actions>
-                <UiButton variant="primary" :to="{ query: { ...route.query, dialog: 'new-experiment' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Start an A/B test') }}</UiButton>
+                <AcmeBtn variant="primary" :to="{ query: { ...route.query, dialog: 'new-experiment' } }" icon="plus">{{ t('Start an A/B test') }}</AcmeBtn>
             </template>
         </ProjectHeader>
         <EmptyState v-if="!site" icon="view-grid" :title="t('Add a site first')" :description="t('Explore reports belong to a site.')" />
@@ -90,17 +90,17 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
                     <SelectField v-model="form.event" name="event" :label="t('Event')" :options="eventOptions" />
                     <SelectField v-model="form.property" name="property" :label="t('Property')" :options="propertyOptions" />
                 </template>
-                <div class="flex gap-2 sm:col-span-2 lg:col-span-5"><UiButton type="submit" variant="primary">{{ t('Show') }}</UiButton></div>
+                <div class="flex gap-2 sm:col-span-2 lg:col-span-5"><AcmeBtn type="submit" variant="primary">{{ t('Show') }}</AcmeBtn></div>
             </form>
 
             <section v-if="data.tab === 'insights'" class="ui-card grid gap-4 p-5 sm:p-6" aria-labelledby="insights-heading">
                 <div>
-                    <h2 id="insights-heading" class="text-lg font-extrabold text-ink">{{ t('What changed') }}</h2>
+                    <h2 id="insights-heading" class="text-lg font-semibold text-ink">{{ t('What changed') }}</h2>
                     <p class="text-sm text-muted">{{ t('The biggest moves against :comparison: at least half again, or half as much, on ten or more visits or pageviews.', { comparison: data.period?.compare === 'year' ? t('the same period last year') : t('the period before') }) }}</p>
                 </div>
                 <div v-for="(insight, index) in result" :key="index" class="flex flex-wrap items-center justify-between gap-3 rounded-control border border-line p-3 text-sm">
                     <span class="flex min-w-0 items-center gap-2">
-                        <Badge :tone="insight.tone">{{ insight.change === 'New' ? t('New') : insight.change }}</Badge>
+                        <AcmeBadge :tone="acmeTone(insight.tone)">{{ insight.change === 'New' ? t('New') : insight.change }}</AcmeBadge>
                         <span class="text-muted">{{ insight.dimension }}</span>
                         <span class="truncate font-bold text-ink">{{ insight.label }}</span>
                     </span>
@@ -110,7 +110,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
             </section>
 
             <section v-else-if="data.tab === 'paths'" class="ui-card grid gap-4 p-5 sm:p-6" aria-labelledby="paths-heading">
-                <h2 id="paths-heading" class="text-lg font-extrabold text-ink">{{ data.path ? t('Around :path', { path: data.path }) : t('Choose a page to explore') }}</h2>
+                <h2 id="paths-heading" class="text-lg font-semibold text-ink">{{ data.path ? t('Around :path', { path: data.path }) : t('Choose a page to explore') }}</h2>
                 <ul v-if="!data.path" class="grid gap-2 text-sm">
                     <li v-for="row in (result.starts as Row[])" :key="row.label" class="flex justify-between gap-4"><NuxtLink :to="here(row.label)" class="truncate text-primary hover:underline">{{ row.label }}</NuxtLink><strong class="tabular-nums text-ink">{{ number(row.value) }}</strong></li>
                 </ul>
@@ -118,7 +118,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
                     <p class="text-sm text-muted">{{ tc(':count view in this period. Click a page to follow the path from there.|:count views in this period. Click a page to follow the path from there.', result.views, { count: number(result.views) }) }}</p>
                     <div class="grid gap-6 md:grid-cols-2">
                         <div v-for="column in [{ key: 'previous', title: t('Came from') }, { key: 'next', title: t('Went to') }]" :key="column.key">
-                            <h3 class="text-sm font-extrabold text-ink">{{ column.title }}</h3>
+                            <h3 class="text-sm font-semibold text-ink">{{ column.title }}</h3>
                             <ul class="mt-2 grid gap-2 text-sm">
                                 <li v-for="row in (result[column.key] as Row[])" :key="row.label" class="flex justify-between gap-4">
                                     <span v-if="row.label.startsWith('(')" class="text-muted">{{ row.label === '(exit)' ? t('Left the site') : t('Arrived here') }}</span>
@@ -133,7 +133,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
             </section>
 
             <section v-else-if="data.tab === 'properties'" class="ui-card grid gap-4 p-5 sm:p-6" aria-labelledby="properties-heading">
-                <h2 id="properties-heading" class="text-lg font-extrabold text-ink">{{ t('Custom property breakdown') }}</h2>
+                <h2 id="properties-heading" class="text-lg font-semibold text-ink">{{ t('Custom property breakdown') }}</h2>
                 <p v-if="data.customProperties.length === 0" class="text-sm text-muted">
                     {{ t('List the property names to keep in the site’s settings, then send them with custom events, such as buildpusher.track(\'signup\', { plan: \'pro\' }).') }}
                     <NuxtLink :to="{ query: { ...route.query, dialog: 'site-settings' } }" class="ui-link">{{ t('Site settings') }}</NuxtLink>
@@ -150,7 +150,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
 
             <section v-else-if="data.tab === 'items'" class="ui-card grid gap-4 p-5 sm:p-6" aria-labelledby="items-heading">
                 <div>
-                    <h2 id="items-heading" class="text-lg font-extrabold text-ink">{{ t('Items sold') }}</h2>
+                    <h2 id="items-heading" class="text-lg font-semibold text-ink">{{ t('Items sold') }}</h2>
                     <p class="text-sm text-muted">{{ t('From events that list their items, such as buildpusher.track(\'purchase\', { revenue: 30, currency: \'USD\', items: [{ id: \'sku-1\', name: \'Pro plan\', price: 30, quantity: 1 }] }).') }}</p>
                 </div>
                 <p v-if="result.length === 0" class="text-sm text-muted">{{ t('No items in this period.') }}</p>
@@ -165,7 +165,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
 
             <section v-else-if="data.tab === 'attribution'" class="ui-card grid gap-4 p-5 sm:p-6" aria-labelledby="attribution-heading">
                 <div>
-                    <h2 id="attribution-heading" class="text-lg font-extrabold text-ink">{{ t('Who gets the credit') }}</h2>
+                    <h2 id="attribution-heading" class="text-lg font-semibold text-ink">{{ t('Who gets the credit') }}</h2>
                     <p class="text-sm text-muted">{{ t('Last touch credits where the converting visit came from; first touch credits where the visitor first came from. First touch needs data-retention on the snippet to look past a single visit.') }}</p>
                 </div>
                 <p v-if="result.length === 0" class="text-sm text-muted">{{ t('No goal completions in this period.') }}</p>
@@ -182,7 +182,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
 
             <section v-else-if="data.tab === 'clicks'" class="ui-card grid gap-4 p-5 sm:p-6" aria-labelledby="clicks-heading">
                 <div>
-                    <h2 id="clicks-heading" class="text-lg font-extrabold text-ink">{{ data.path ? t('Clicks on :path', { path: data.path }) : t('Pages with the most clicks') }}</h2>
+                    <h2 id="clicks-heading" class="text-lg font-semibold text-ink">{{ data.path ? t('Clicks on :path', { path: data.path }) : t('Pages with the most clicks') }}</h2>
                     <p class="text-sm text-muted">{{ t('Add data-clicks to the snippet to record where people click. Only a short description of the element and its position are kept.') }}</p>
                 </div>
                 <ul v-if="!data.path" class="grid gap-2 text-sm">
@@ -197,7 +197,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
                         <figcaption class="text-xs text-muted">{{ tc(':count click, placed by its position on the page (top to bottom).|:count clicks, placed by their position on the page (top to bottom).', result.points.length, { count: number(result.points.length) }) }}</figcaption>
                     </figure>
                     <div>
-                        <h3 class="text-sm font-extrabold text-ink">{{ t('Most clicked') }}</h3>
+                        <h3 class="text-sm font-semibold text-ink">{{ t('Most clicked') }}</h3>
                         <ul class="mt-2 grid gap-2 text-sm">
                             <li v-for="row in (result.targets as Row[])" :key="row.label" class="flex justify-between gap-4"><span class="truncate font-mono text-xs text-muted">{{ row.label }}</span><strong class="tabular-nums text-ink">{{ number(row.value) }}</strong></li>
                             <li v-if="result.targets.length === 0" class="text-muted">{{ t('No clicks on this page in the period.') }}</li>
@@ -208,7 +208,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
 
             <section v-else-if="data.tab === 'forms'" class="ui-card grid gap-4 p-5 sm:p-6" aria-labelledby="forms-heading">
                 <div>
-                    <h2 id="forms-heading" class="text-lg font-extrabold text-ink">{{ t('Forms') }}</h2>
+                    <h2 id="forms-heading" class="text-lg font-semibold text-ink">{{ t('Forms') }}</h2>
                     <p class="text-sm text-muted">{{ t('Add data-forms to the snippet to see who starts each form, who sends it, and which field people leave on. What people type is never recorded.') }}</p>
                 </div>
                 <div v-for="item in result" :key="item.form" class="grid gap-2 border-t border-line pt-4">
@@ -232,7 +232,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
                 <section v-for="experiment in (result as Experiment[])" :key="experiment.id" class="ui-card grid gap-3 p-5 sm:p-6" :aria-labelledby="`experiment-${experiment.id}`">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                            <h2 :id="`experiment-${experiment.id}`" class="text-lg font-extrabold text-ink">{{ experiment.name }} <span class="font-mono text-sm font-normal text-muted">{{ experiment.key }}</span></h2>
+                            <h2 :id="`experiment-${experiment.id}`" class="text-lg font-semibold text-ink">{{ experiment.name }} <span class="font-mono text-sm font-normal text-muted">{{ experiment.key }}</span></h2>
                             <p class="text-sm text-muted">
                                 {{ t('Goal: :goal', { goal: experiment.goal ?? t('none') }) }} ·
                                 {{ experiment.status === 'running' ? t('running since :date', { date: date(experiment.startedAt) }) : t('stopped :date', { date: experiment.stoppedAt ? date(experiment.stoppedAt) : '' }) }}
@@ -241,7 +241,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
                         <div v-if="data.canManage" class="flex gap-1">
                             <ApiForm v-if="experiment.status === 'running'" :action="`${base}/experiments/${experiment.id}`" method="PUT"><SubmitButton variant="secondary" size="sm">{{ t('Stop') }}</SubmitButton></ApiForm>
                             <DeleteDialog :id="`delete-experiment-${experiment.id}`" :title="t('Delete :experiment?', { experiment: experiment.name })" :action="`${base}/experiments/${experiment.id}`">
-                                <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Delete') }}</UiButton></template>
+                                <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Delete') }}</AcmeBtn></template>
                             </DeleteDialog>
                         </div>
                     </div>
@@ -257,7 +257,7 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
                             <td class="text-right tabular-nums">{{ variant.lift === null ? '—' : lift(variant.lift) }}</td>
                             <td class="text-right">
                                 <template v-if="variant.pValue === null">—</template>
-                                <Badge v-else-if="variant.significant" tone="success">{{ t('Significant') }}</Badge>
+                                <AcmeBadge v-else-if="variant.significant" tone="green">{{ t('Significant') }}</AcmeBadge>
                                 <span v-else class="text-xs text-muted">{{ t('Not yet (p = :p)', { p: variant.pValue }) }}</span>
                             </td>
                         </tr>
@@ -275,10 +275,10 @@ const lift = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
 
             <section v-else class="ui-card grid gap-4 p-5 sm:p-6" aria-labelledby="retention-heading">
                 <div>
-                    <h2 id="retention-heading" class="text-lg font-extrabold text-ink">{{ t('Weekly retention') }}</h2>
+                    <h2 id="retention-heading" class="text-lg font-semibold text-ink">{{ t('Weekly retention') }}</h2>
                     <p class="text-sm text-muted">{{ t('Visitors grouped by the week they first came, and the share who came back each week after.') }}</p>
                 </div>
-                <Alert v-if="!result.tracked" tone="info">{{ t('Add data-retention to the snippet to recognise returning browsers. It keeps a random ID in the visitor’s browser, so ask for consent where the law requires it.') }}</Alert>
+                <AcmeAlert v-if="!result.tracked" tone="info">{{ t('Add data-retention to the snippet to recognise returning browsers. It keeps a random ID in the visitor’s browser, so ask for consent where the law requires it.') }}</AcmeAlert>
                 <DataTable v-else :caption="t('Weekly retention')" :framed="false">
                     <template #head>
                         <tr><th scope="col">{{ t('First week') }}</th><th scope="col" class="text-right">{{ t('Visitors') }}</th><th v-for="after in 7" :key="after" scope="col" class="text-right">{{ t('Week :n', { n: after }) }}</th></tr>

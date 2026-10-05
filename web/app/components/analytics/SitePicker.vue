@@ -15,7 +15,7 @@ function choose() {
 </script>
 
 <template>
-    <div v-if="sites.length > 1" class="max-w-xs">
-        <SelectField v-model="chosen" name="site" :label="t('Site')" :options="options" @change="choose" />
+    <div v-if="sites.length > 1">
+        <SelectField v-model="chosen" name="site" :label="t('Site')" :options="options" hide-label @change="choose" />
     </div>
 </template>

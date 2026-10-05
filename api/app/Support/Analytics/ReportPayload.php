@@ -86,6 +86,7 @@ final class ReportPayload
                 'change' => $metric['change'],
             ], $summary['metrics']),
             'series' => $summary['series'] ?? [],
+            'previousSeries' => $summary['previousSeries'] ?? null,
             'lists' => $lists,
             'engagement' => array_values(array_filter($summary['engagement'] ?? [], fn (array $row): bool => $row['seconds'] !== null || $row['scroll'] !== null)),
             'vitals' => $summary['vitals'] ?? ['samples' => 0, 'metrics' => [], 'slowPages' => []],

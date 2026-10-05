@@ -72,6 +72,7 @@ final class ShowSiteController
                 'verified' => $site->isVerified(),
                 'verifiedAt' => $site->verified_at?->toIso8601String(),
                 'collecting' => $site->isCollectionAvailable(),
+                'collectionEnabled' => $site->collection_enabled,
             ],
             'trackerUrl' => url('/tracker/v1.js'),
             'origin' => rtrim(url('/'), '/'),

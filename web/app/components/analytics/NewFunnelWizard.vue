@@ -45,7 +45,7 @@ async function add() {
             <div class="grid gap-3"><FunnelSteps id="new-funnel" v-model="steps" /></div>
         </template>
         <template #review>
-            <p class="font-extrabold text-ink">{{ name }}</p>
+            <p class="font-semibold text-ink">{{ name }}</p>
             <ol class="mt-2 grid list-decimal gap-1 ps-5 text-sm text-muted">
                 <li v-for="(item, index) in filled" :key="index">{{ describe(item) }}</li>
             </ol>

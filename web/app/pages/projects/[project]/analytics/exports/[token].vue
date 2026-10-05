@@ -28,7 +28,7 @@ onBeforeUnmount(() => clearInterval(timer));
                 <p class="text-sm text-muted">{{ t('Ready. The download link works until :time.', { time: dateTime(data.expiresAt) }) }}</p>
                 <div><a :href="data.downloadUrl" class="ui-btn ui-btn-primary" download><Icon name="arrow-down" class="h-4 w-4" />{{ t('Download CSV') }}</a></div>
             </template>
-            <Alert v-else-if="data.status === 'failed'" tone="danger" role="alert">{{ t('The export failed. Try again from the report.') }}</Alert>
+            <AcmeAlert v-else-if="data.status === 'failed'" tone="danger" role="alert">{{ t('The export failed. Try again from the report.') }}</AcmeAlert>
             <p v-else class="text-sm text-muted" role="status">{{ t('Your export is being prepared. This page updates when it’s ready.') }}</p>
         </section>
     </div>

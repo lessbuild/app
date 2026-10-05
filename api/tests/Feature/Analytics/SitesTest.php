@@ -6,6 +6,7 @@ namespace Tests\Feature\Analytics;
 
 use App\Enums\AccountRole;
 use App\Models\Account;
+use App\Models\AnalyticsDailyAggregate;
 use App\Models\AnalyticsIngestionBatch;
 use App\Models\AnalyticsSite;
 use App\Models\Domain;
@@ -80,8 +81,19 @@ final class SitesTest extends TestCase
         $this->project->account->memberships()->forceCreate(['user_id' => $viewer->id, 'role' => AccountRole::Viewer]);
         $base = "/api/app/projects/{$this->project->id}/analytics/sites";
 
+        foreach ([[2, 30], [40, 99]] as [$ago, $visitors]) {
+            AnalyticsDailyAggregate::query()->create(['site_id' => $site->id, 'local_date' => now()->subDays($ago)->toDateString(), 'dimension' => 'all', 'dimension_value' => '', 'pageviews' => 0, 'visits' => 0, 'visitors' => $visitors, 'conversions' => 0, 'converted_visits' => 0, 'bounce_eligible' => 0, 'bounces' => 0]);
+        }
+        $this->actingAs($viewer)->getJson($base)->assertOk()->assertJsonPath('sites.0.visitors', 30);
         $this->actingAs($viewer)->getJson("{$base}/{$site->id}")->assertOk()->assertJsonPath('canManage', false);
         $this->actingAs($viewer)->putJson("{$base}/{$site->id}", ['name' => 'x', 'domains' => 'example.com', 'timezone' => 'UTC'])->assertForbidden();
+
+        $this->actingAs($viewer)->putJson("{$base}/{$site->id}/collection", ['enabled' => false])->assertForbidden();
+        $this->actingAs($this->owner)->putJson("{$base}/{$site->id}/collection", ['enabled' => false])->assertOk();
+        $this->assertFalse($site->refresh()->collection_enabled);
+        $this->actingAs($this->owner)->getJson("{$base}/{$site->id}")->assertJsonPath('site.collectionEnabled', false)->assertJsonPath('site.collecting', false);
+        $this->assertDatabaseHas('audit_entries', ['action' => 'analytics_collection.paused']);
+        $this->actingAs($this->owner)->putJson("{$base}/{$site->id}/collection", ['enabled' => true])->assertOk();
 
         $elsewhere = AnalyticsSite::factory()->create();
         $this->actingAs($this->owner)->getJson("{$base}/{$elsewhere->id}")->assertNotFound();

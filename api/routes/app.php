@@ -92,6 +92,7 @@ use App\Http\Controllers\Analytics\UpdateExperimentController;
 use App\Http\Controllers\Analytics\UpdateFunnelController;
 use App\Http\Controllers\Analytics\UpdateGoalController;
 use App\Http\Controllers\Analytics\UpdateRawExportController;
+use App\Http\Controllers\Analytics\UpdateSiteCollectionController;
 use App\Http\Controllers\Analytics\UpdateSiteController;
 use App\Http\Controllers\Analytics\VerifySiteController;
 use App\Http\Controllers\Assistant\AskAssistantController;
@@ -1033,6 +1034,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::get('/sites/{site}', ShowSiteController::class)->whereNumber('site')->middleware('can:view,site')->name('sites.show');
         Route::put('/sites/{site}', UpdateSiteController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.update');
         Route::delete('/sites/{site}', DeleteSiteController::class)->whereNumber('site')->middleware(['can:delete,site', 'password.confirm', 'throttle:10,1'])->name('sites.destroy');
+        Route::put('/sites/{site}/collection', UpdateSiteCollectionController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.collection');
         Route::post('/sites/{site}/verify', VerifySiteController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:20,1'])->name('sites.verify');
         Route::post('/sites/{site}/search-console/connect', ConnectSearchConsoleController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:10,1'])->name('sites.search-console.connect');
         Route::put('/sites/{site}/search-console', ChooseSearchConsolePropertyController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.search-console.property');

@@ -30,7 +30,7 @@ function apply() {
     <main id="main-content" tabindex="-1" :class="['mx-auto grid max-w-7xl gap-6 px-4', data.embed ? 'py-4' : 'py-10 sm:px-8']">
         <template v-if="data.locked">
             <section class="mx-auto grid w-full max-w-md gap-4 ui-card p-6">
-                <h1 class="text-xl font-extrabold text-ink">{{ data.site }}</h1>
+                <h1 class="text-xl font-semibold text-ink">{{ data.site }}</h1>
                 <p v-if="data.embed" class="text-sm text-muted">{{ t('This report is password-protected, so it can’t be embedded. Share it without a password to embed it.') }}</p>
                 <template v-else>
                     <p class="text-sm text-muted">{{ t('This report is protected. Enter the password you were given.') }}</p>
@@ -45,13 +45,13 @@ function apply() {
             <header v-if="!data.embed" class="flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ t('Shared report') }}</p>
-                    <h1 class="mt-1 text-3xl font-extrabold tracking-tight text-ink">{{ data.site }}</h1>
+                    <h1 class="mt-1 text-3xl font-semibold tracking-tight text-ink">{{ data.site }}</h1>
                 </div>
             </header>
             <form class="ui-card grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-end" @submit.prevent="apply">
                 <PeriodFields v-model="form.period" :today="data.today ?? null" />
-                <div><UiButton type="submit" variant="primary">{{ t('Apply') }}</UiButton></div>
-                <div v-if="Object.keys(filters).length > 0" class="sm:col-span-2 lg:col-span-5"><UiButton variant="quiet" size="sm" :to="{ query: periodOnly }">{{ t('Clear filters') }}</UiButton></div>
+                <div><AcmeBtn type="submit" variant="primary">{{ t('Apply') }}</AcmeBtn></div>
+                <div v-if="Object.keys(filters).length > 0" class="sm:col-span-2 lg:col-span-5"><AcmeBtn variant="ghost" size="sm" :to="{ query: periodOnly }">{{ t('Clear filters') }}</AcmeBtn></div>
             </form>
             <AnalyticsReport :report="data.report" :filters="data.filters ?? {}" :link="link" :live-url="liveUrl" />
             <p v-if="!data.embed" class="text-xs text-muted">{{ t('Cookieless analytics by :app.', { app: 'BuildPusher' }) }}</p>

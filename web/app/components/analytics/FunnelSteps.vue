@@ -18,8 +18,8 @@ const matches = computed(() => [{ value: 'exact', label: t('Exactly') }, { value
             <SelectField :id="`${id}-kind-${index}`" v-model="step.kind" :name="`steps[${index}][kind]`" :label="t('Step :number', { number: index + 1 })" :options="kinds" />
             <SelectField :id="`${id}-match-${index}`" v-model="step.match" :name="`steps[${index}][match]`" :label="t('Match')" :options="matches" />
             <InputField :id="`${id}-value-${index}`" v-model="step.value" :name="`steps[${index}][value]`" :label="step.kind === 'event' ? t('Event name') : t('Path')" :placeholder="index === 0 ? '/pricing' : ''" maxlength="255" />
-            <UiButton v-if="steps.length > 2" variant="quiet" size="sm" :aria-label="t('Remove step :number', { number: index + 1 })" @click="steps.splice(index, 1)"><Icon name="x" class="h-4 w-4" /></UiButton>
+            <AcmeBtn v-if="steps.length > 2" variant="quiet" size="sm" :aria-label="t('Remove step :number', { number: index + 1 })" @click="steps.splice(index, 1)"><Icon name="x" class="h-4 w-4" /></AcmeBtn>
         </li>
     </ol>
-    <div v-if="steps.length < 6"><UiButton variant="secondary" size="sm" @click="steps.push({ kind: 'pageview', match: 'exact', value: '' })"><Icon name="plus" class="h-4 w-4" />{{ t('Add a step') }}</UiButton></div>
+    <div v-if="steps.length < 6"><AcmeBtn variant="secondary" size="sm" @click="steps.push({ kind: 'pageview', match: 'exact', value: '' })" icon="plus">{{ t('Add a step') }}</AcmeBtn></div>
 </template>

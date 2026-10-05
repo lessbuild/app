@@ -81,6 +81,8 @@ final class ReportQueryTest extends TestCase
         $this->assertSame([['name' => 'Signed up', 'value' => 1, 'kind' => 'path', 'revenue' => null]], $report['goals'], 'Only completions after the goal was made count.');
         $this->assertSame(5, array_sum(array_column($report['series'], 'value')));
         $this->assertCount(7, $report['series']);
+        $this->assertCount(7, (array) $report['previousSeries']);
+        $this->assertSame(1, array_sum(array_column((array) $report['previousSeries'], 'value')), 'The week before had one pageview.');
 
         $mobile = app(AnalyticsReportQuery::class)->handle($site, 7, ['device' => 'Mobile']);
         $this->assertSame(['1', '1'], [$mobile['metrics'][0]['value'], $mobile['metrics'][2]['value']]);

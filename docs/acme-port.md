@@ -15,9 +15,9 @@ deploy with scripts/deploy-preview.sh <run-id> after each phase.
 - [x] 0 Foundation: re-sync components (incl. Platform*, Audit*, charts), dialogs as right-side drawers, PlatformPage
 - [x] 1 Projects: dashboard, new, templates, project overview, setup, domains, settings
 - [x] 2 Deploy
-- [ ] 3 Infrastructure
-- [ ] 4 Monitoring
-- [ ] 5 Analytics
+- [x] 3 Infrastructure (servers usage/cost, priced size cards, generated-key import, websites cards, LB traffic bars, costs savings, moves checklist)
+- [x] 4 Monitoring (uptime strips, pause, incident stats/likely cause/manual resolve, issue trends + stack traces, service map, sparklines, SLO gauges + budget history, release verdicts, status previews, trace hot span, setup checklist)
+- [x] 5 Analytics (report in tabbed cards with comparison line, site cards with 30-day visitors, pause collecting, tabbed site page, goal conversions, funnel step bars)
 - [ ] 6 Security
 - [ ] 7 Audit
 - [ ] 8 Account pages, Ask, notifications

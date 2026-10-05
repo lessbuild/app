@@ -31,7 +31,7 @@ final class AnalyticsReportQuery
 
     /**
      * Build an analytics site's report for a period (a number of days ending today, or a ReportPeriod with custom dates
-     * and a comparison): headline metrics against the comparison period, a pageview series (per hour for a single day),
+     * and a comparison): headline metrics against the comparison period, a pageview series (per hour for a single day) with the comparison period's beside it,
      * top pages, entry and exit pages, sources, devices, browsers, systems, campaigns, recent activity and goal
      * counts. Unfiltered reports longer than 90 days, or reaching back into history imported from Google Analytics,
      * read the daily aggregates (raw events may be past retention by then); the rest is counted in the database from
@@ -108,6 +108,9 @@ final class AnalyticsReportQuery
             ],
             'granularity' => $period->hourly() ? 'hour' : 'day',
             'series' => $period->hourly() ? $this->hourSeries($site, $period->start, $filters) : $this->series($site, $period->start, $period->end, $filters),
+            // The comparison period's pageviews, point for point, so the chart can draw both.
+            'previousSeries' => $period->previousStart === null || $period->previousEnd === null ? null
+                : ($period->hourly() ? $this->hourSeries($site, $period->previousStart, $filters) : $this->series($site, $period->previousStart, $period->previousEnd, $filters)),
             'pages' => $this->rank($currentEvents()->where('type', 'pageview'), $this->labelOf('path')),
             'entryPages' => $this->rank($currentVisits(), $this->labelOf('landing_path')),
             'exitPages' => $this->rank($currentVisits(), $this->labelOf('exit_path')),

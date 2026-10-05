@@ -99,6 +99,8 @@ enum AuditAction: string
     case StatusUpdateChanged = 'status_update.changed';
     case AnalyticsReportShared = 'analytics_share.enabled';
     case AnalyticsReportUnshared = 'analytics_share.disabled';
+    case AnalyticsCollectionPaused = 'analytics_collection.paused';
+    case AnalyticsCollectionResumed = 'analytics_collection.resumed';
 
     /**
      * The groups the audit log can be filtered by, with their labels.
@@ -247,6 +249,8 @@ enum AuditAction: string
             self::StatusUpdateChanged => __('Updated “:title” on the status page “:page” (:status)', ['title' => $value('title'), 'page' => $value('page'), 'status' => $value('status')]),
             self::AnalyticsReportShared => $value('protected') === '1' ? __('Shared the Analytics report for “:site” behind a password', ['site' => $value('site')]) : __('Shared the Analytics report for “:site” by link', ['site' => $value('site')]),
             self::AnalyticsReportUnshared => __('Stopped sharing the Analytics report for “:site”', ['site' => $value('site')]),
+            self::AnalyticsCollectionPaused => __('Paused collecting visits for “:site”', ['site' => $value('site')]),
+            self::AnalyticsCollectionResumed => __('Resumed collecting visits for “:site”', ['site' => $value('site')]),
             self::BrowsersSignedOut => trans_choice('Signed out :count other browser|Signed out :count other browsers', (int) $value('count'), ['count' => $value('count')]),
         };
     }

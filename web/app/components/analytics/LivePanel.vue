@@ -28,12 +28,12 @@ onBeforeUnmount(() => clearInterval(timer));
 </script>
 
 <template>
-    <section class="ui-card p-5" aria-labelledby="live-heading" aria-live="polite">
+    <section class="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6" aria-labelledby="live-heading" aria-live="polite">
         <div class="flex items-center justify-between gap-3">
-            <h2 id="live-heading" class="flex items-center gap-2 font-extrabold text-ink">
+            <h2 id="live-heading" class="flex items-center gap-2 font-semibold text-ink">
                 <span class="relative flex size-2.5" aria-hidden="true">
-                    <span v-if="live.visitorCount > 0" class="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60 motion-reduce:hidden" />
-                    <span :class="['relative inline-flex size-2.5 rounded-full', live.visitorCount > 0 ? 'bg-success' : 'bg-line']" />
+                    <span v-if="live.visitorCount > 0" class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:hidden" />
+                    <span :class="['relative inline-flex size-2.5 rounded-full', live.visitorCount > 0 ? 'bg-emerald-500' : 'bg-zinc-300']" />
                 </span>
                 {{ t('Right now') }}
             </h2>
@@ -41,7 +41,7 @@ onBeforeUnmount(() => clearInterval(timer));
         </div>
         <ul class="mt-3 divide-y divide-line text-sm">
             <li v-for="(event, index) in live.events" :key="index" class="flex items-center justify-between gap-4 py-2.5">
-                <span class="min-w-0"><span class="block truncate font-bold text-ink">{{ event.path ?? '/' }}</span><span class="text-xs text-muted">{{ event.type }} · {{ event.source }}</span></span>
+                <span class="min-w-0"><span class="block truncate font-mono text-xs font-medium text-ink">{{ event.path ?? '/' }}</span><span class="text-xs text-muted">{{ event.type }} · {{ event.source }}</span></span>
                 <RelativeTime :at="event.occurredAt" class="shrink-0 text-xs text-muted" />
             </li>
             <li v-if="live.events.length === 0" class="py-2.5 text-muted">{{ t('No traffic in the last five minutes.') }}</li>

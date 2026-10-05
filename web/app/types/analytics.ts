@@ -21,6 +21,7 @@ export type AnalyticsReport = {
     granularity: 'day' | 'hour';
     metrics: Array<{ label: string; value: string; change: string | null }>;
     series: Array<{ date: string; value: number }>;
+    previousSeries: Array<{ date: string; value: number }> | null;
     lists: ReportList[];
     engagement: Array<{ path: string; pageviews: number; seconds: number | null; scroll: number | null }>;
     vitals: { samples: number; metrics: Record<string, { value: number | null; rating: 'good' | 'needs_improvement' | 'poor' | null }>; slowPages: Array<{ path: string; lcp: number; samples: number }> };

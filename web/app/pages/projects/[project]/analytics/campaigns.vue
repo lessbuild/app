@@ -37,15 +37,15 @@ const away = (result: Record<string, unknown>) => (typeof result.redirect === 's
 </script>
 
 <template>
-    <div class="space-y-10">
+    <div class="space-y-6">
         <ProjectHeader :overview="data.overview" :title="t('Campaigns')" :description="t('Tag the links you share with UTM parameters, then see which campaigns bring visitors who convert.')" />
         <EmptyState v-if="!site" icon="view-grid" :title="t('Add a site first')" :description="t('Campaign results belong to a site.')" />
         <template v-else>
             <SitePicker :sites="data.sites" :site="site" />
-            <Alert v-if="notice" :tone="notice.tone" :role="notice.tone === 'danger' ? 'alert' : 'status'">{{ notice.text }}</Alert>
+            <AcmeAlert v-if="notice" :tone="notice.tone" :role="notice.tone === 'danger' ? 'alert' : 'status'">{{ notice.text }}</AcmeAlert>
 
-            <SettingsSection id="builder" :title="t('Campaign link builder')" :description="t('Source is required by most tools; campaign names what you’re promoting. Values show up exactly as typed, so keep them consistent (e.g. newsletter, not Newsletter).')">
-                <div class="ui-card grid gap-4 p-4 sm:p-6">
+            <AcmeCard id="builder" :padded="false" :title="t('Campaign link builder')" :description="t('Source is required by most tools; campaign names what you’re promoting. Values show up exactly as typed, so keep them consistent (e.g. newsletter, not Newsletter).')">
+                <div class="ui-card grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
                     <form class="grid items-start gap-4 sm:grid-cols-2" @submit.prevent="build">
                         <div class="sm:col-span-2"><InputField v-model="builder.url" name="url" type="url" :label="t('Page address')" maxlength="2048" required /></div>
                         <InputField
@@ -57,17 +57,17 @@ const away = (result: Record<string, unknown>) => (typeof result.redirect === 's
                             maxlength="200"
                             :placeholder="placeholders[parameter.key] ?? (parameter.key === 'utm_term' ? t('paid keyword') : t('which link or ad'))"
                         />
-                        <div class="sm:col-span-2"><UiButton type="submit" variant="primary">{{ t('Build link') }}</UiButton></div>
+                        <div class="sm:col-span-2"><AcmeBtn type="submit" variant="primary">{{ t('Build link') }}</AcmeBtn></div>
                     </form>
-                    <Alert v-if="data.builder.invalid" tone="danger">{{ t('Enter a full http:// or https:// address.') }}</Alert>
+                    <AcmeAlert v-if="data.builder.invalid" tone="danger">{{ t('Enter a full http:// or https:// address.') }}</AcmeAlert>
                     <div v-else-if="data.builder.link" class="grid gap-2">
                         <p class="text-xs font-bold text-muted">{{ t('Your link') }}</p>
                         <CodeBlock :code="data.builder.link" class="whitespace-pre-wrap break-all" />
                     </div>
                 </div>
-            </SettingsSection>
+            </AcmeCard>
 
-            <SettingsSection :title="t('Campaign results')" :description="t('Visits that arrived through a tagged link in the last 30 days.')">
+            <AcmeCard :padded="false" :title="t('Campaign results')" :description="t('Visits that arrived through a tagged link in the last 30 days.')">
                 <p v-if="data.results.length === 0" class="ui-card p-4 text-sm text-muted sm:p-6">{{ t('No tagged visits yet. Share a link from the builder above.') }}</p>
                 <DataTable v-else :caption="t('Campaign results')">
                     <template #head>
@@ -94,15 +94,15 @@ const away = (result: Record<string, unknown>) => (typeof result.redirect === 's
                         </template>
                     </tr>
                 </DataTable>
-            </SettingsSection>
+            </AcmeCard>
 
-            <SettingsSection id="ad-spend" :title="t('Ad spend')" :description="t('Import what your ads cost to see cost per conversion and return on ad spend beside each campaign. Export a daily campaign report from Google Ads, Meta, LinkedIn or any ad platform as CSV, with date, campaign and cost columns. Campaign and source must match the utm_campaign and utm_source on your ads’ links.')">
-                <div class="ui-card grid gap-4 p-4 sm:p-6">
+            <AcmeCard id="ad-spend" :padded="false" :title="t('Ad spend')" :description="t('Import what your ads cost to see cost per conversion and return on ad spend beside each campaign. Export a daily campaign report from Google Ads, Meta, LinkedIn or any ad platform as CSV, with date, campaign and cost columns. Campaign and source must match the utm_campaign and utm_source on your ads’ links.')">
+                <div class="ui-card grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
                     <ul v-if="data.spend.length > 0" class="divide-y divide-line">
                         <li v-for="row in data.spend" :key="row.source" class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
                             <span><span class="font-bold text-ink">{{ row.source }}</span> <span class="text-muted">· {{ tc(':count campaign day|:count campaign days', row.days, { count: number(row.days) }) }} · {{ row.from }} – {{ row.until }}</span></span>
                             <DeleteDialog v-if="data.canManage" :id="`spend-${row.source}`" :title="t('Remove :source’s spend?', { source: row.source })" :action="`${base}/ad-spend`" :submit-label="t('Remove')">
-                                <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Remove') }}</UiButton></template>
+                                <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Remove') }}</AcmeBtn></template>
                                 <input type="hidden" name="source" :value="row.source">
                             </DeleteDialog>
                         </li>
@@ -121,7 +121,7 @@ const away = (result: Record<string, unknown>) => (typeof result.redirect === 's
                             <span v-if="data.canManage" class="flex gap-1">
                                 <ApiForm :action="`${base}/ads/${account.id}/sync`"><SubmitButton variant="secondary" size="sm">{{ t('Read now') }}</SubmitButton></ApiForm>
                                 <DeleteDialog :id="`ad-account-${account.id}`" :title="t('Disconnect :account?', { account: account.name })" :description="t('Disconnected. Spend already read stays until you remove it.')" :action="`${base}/ads/${account.id}`" :submit-label="t('Disconnect')">
-                                    <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Disconnect') }}</UiButton></template>
+                                    <template #trigger="{ open }"><AcmeBtn variant="ghost" size="sm" @click="open">{{ t('Disconnect') }}</AcmeBtn></template>
                                 </DeleteDialog>
                             </span>
                         </li>
@@ -132,7 +132,7 @@ const away = (result: Record<string, unknown>) => (typeof result.redirect === 's
                     </ApiForm>
                     <div v-if="data.canManage" class="flex flex-wrap items-center gap-2 border-t border-line pt-3">
                         <FormDialog id="import-spend" :title="t('Import ad spend')" :description="t('A CSV with date, campaign and cost columns.')" :action="`${base}/ad-spend`" :submit="t('Import')">
-                            <template #trigger="{ open }"><UiButton variant="secondary" size="sm" @click="open"><Icon name="cloud-upload" class="h-4 w-4" />{{ t('Import a CSV') }}</UiButton></template>
+                            <template #trigger="{ open }"><AcmeBtn variant="secondary" size="sm" icon="cloud-upload" @click="open">{{ t('Import a CSV') }}</AcmeBtn></template>
                             <InputField id="spend-file" name="file" type="file" accept=".csv,.tsv,text/csv" :label="t('CSV file')" required />
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <InputField id="spend-source" name="source" :label="t('Source (when the file has none)')" maxlength="100" required model-value="google" />
@@ -147,7 +147,7 @@ const away = (result: Record<string, unknown>) => (typeof result.redirect === 's
                         </template>
                     </div>
                 </div>
-            </SettingsSection>
+            </AcmeCard>
         </template>
     </div>
 </template>
