@@ -86,7 +86,7 @@ const gateLabel = (gate: string | null) => (gate === 'critical' ? t('Blocks crit
                                 </span>
                             </span>
                             <AcmeBadge v-if="!check.included" tone="violet">{{ t('Pro plan') }}</AcmeBadge>
-                            <AcmeBadge v-else-if="check.status === 'completed'" :tone="check.findings > 0 ? 'amber' : 'green'" dot>{{ check.findings > 0 ? tc(':count open|:count open', check.findings, { count: number(check.findings) }) : t('Clear') }}</AcmeBadge>
+                            <AcmeBadge v-else-if="check.status === 'done'" :tone="check.findings > 0 ? 'amber' : 'green'" dot>{{ check.findings > 0 ? tc(':count open|:count open', check.findings, { count: number(check.findings) }) : t('Clear') }}</AcmeBadge>
                             <ApiForm v-if="data.canManage && check.included" :action="`${base}/scans`">
                                 <input type="hidden" name="kind" :value="check.kind">
                                 <SubmitButton variant="quiet" size="sm">{{ t('Scan now') }}</SubmitButton>

@@ -92,7 +92,7 @@ async function test() {
                 <p v-if="pushProblem" class="text-sm text-danger" role="alert">{{ pushProblem }}</p>
                 <div class="flex flex-wrap gap-2">
                     <AcmeBtn :disabled="enabling" :aria-busy="enabling || undefined" @click="turnOnPush">{{ enabling ? t('Working…') : t('Turn on for this device') }}</AcmeBtn>
-                    <AcmeBtn v-if="data.pushDevices.length > 0" variant="quiet" :disabled="testing" @click="test">{{ t('Send a test') }}</AcmeBtn>
+                    <AcmeBtn v-if="data.pushDevices.length > 0" variant="ghost" :disabled="testing" @click="test">{{ t('Send a test') }}</AcmeBtn>
                 </div>
             </div>
         </AcmeCard>
