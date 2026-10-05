@@ -13,7 +13,7 @@ deploy with scripts/deploy-preview.sh <run-id> after each phase.
 
 ## Phases
 - [x] 0 Foundation: re-sync components (incl. Platform*, Audit*, charts), dialogs as right-side drawers, PlatformPage
-- [ ] 1 Projects: dashboard, new, templates, project overview, setup, domains, settings
+- [x] 1 Projects: dashboard, new, templates, project overview, setup, domains, settings
 - [ ] 2 Deploy
 - [ ] 3 Infrastructure
 - [ ] 4 Monitoring
@@ -38,3 +38,7 @@ ask → assistant; notifications → notifications.
   PlatformHeader (components/platform) = the theme's PlatformPage header: title, project switcher, actions, section
   tabs from shell.sectionNav. ProjectHeader wraps it. Sidebar: services as AcmeAppTile tiles (utils/platform.ts
   serviceStyle), one Account tile, notifications; sections are tabs now.
+- Phase 1: dashboard (attention list + project health/visitors/last deploy from API), /projects/create replaces
+  the new-project wizard dialog (all links point there), templates (cards then form; API adds services + icon),
+  project overview (service cards with section links from API), setup guide, domains (inline add, copy record),
+  settings (inline add/clone environment, typed delete). SubmitButton has a `disabled` prop.

@@ -37,7 +37,7 @@ final class SendSetupReminders
                 $user->forceFill(['onboarding_nudged_at' => now()])->save();
                 $project = $user->current_account_id === null ? null : Project::query()->where('account_id', $user->current_account_id)->where('is_sample', false)->latest('created_at')->first();
                 if ($project === null) {
-                    $user->notify(new NextStep(null, __('Create a project'), route('dashboard', ['dialog' => 'new-project']), 0, 7));
+                    $user->notify(new NextStep(null, __('Create a project'), route('projects.create'), 0, 7));
                     $sent++;
 
                     return;

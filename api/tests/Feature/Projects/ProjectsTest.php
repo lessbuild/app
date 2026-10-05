@@ -46,6 +46,8 @@ final class ProjectsTest extends TestCase
         $overview->assertJsonPath('overview.project.name', 'Storefront')->assertJsonPath('overview.project.accountName', 'Acme')->assertJsonPath('overview.canManage', true);
         $this->assertNotNull($overview->json('setup.steps'));
         $this->assertSame('production', $overview->json('overview.environments.0.kind'));
+        $deploy = collect((array) $overview->json('overview.services'))->firstWhere('key', 'deploy');
+        $this->assertStringStartsWith('/projects/', (string) ($deploy['sections'][0]['url'] ?? ''));
 
         $this->actingAs($this->owner)->postJson("/api/app/projects/{$project->id}/services/monitoring")->assertOk()->assertJsonPath('redirect', "/projects/{$project->id}/services/monitoring");
         $this->actingAs($this->owner)->getJson("/api/app/projects/{$project->id}/services/monitoring")->assertOk()->assertJsonPath('redirect', "/projects/{$project->id}/monitoring");

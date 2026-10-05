@@ -187,7 +187,7 @@ html:root.dark[data-frame="site"] {
    rule with utilities, which outrank the components layer. */
 :root .ui-page-header { border-bottom-width: 0; padding-bottom: 0; }
 :root .ui-page-header__title { font-size: 1.75rem; line-height: 2.25rem; letter-spacing: -0.02em; }
-:root dialog.ui-dialog::backdrop { background: rgb(0 0 0 / 0.3); backdrop-filter: blur(2px); }
+:root dialog.ui-dialog::backdrop { background: rgb(0 0 0 / 0.3); backdrop-filter: none; }
 
 /* The public site's pieces (Acme's Stratus homepage): framed columns, mono kickers, large semibold headings, square-ish
    buttons and the dark "night" panel. */

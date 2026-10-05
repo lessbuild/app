@@ -46,7 +46,9 @@ final class ProjectTemplatesTest extends TestCase
         $server = Server::factory()->create(['provider_id' => Provider::factory()->create(['account_id' => $existing->account_id])->id, 'type' => ServerType::App, 'name' => 'web-1']);
         $github = Provider::factory()->type(ProviderType::GitHub)->create(['account_id' => $existing->account_id, 'name' => 'GitHub']);
 
-        $page = $this->actingAs($owner)->getJson('/api/app/projects/templates')->assertOk();
+        $page = $this->actingAs($owner)->getJson('/api/app/projects/templates')->assertOk()
+            ->assertJsonPath('templates.0.services', ['deploy', 'infrastructure', 'monitoring', 'analytics'])
+            ->assertJsonPath('templates.0.icon', 'code');
         $this->assertContains('laravel', array_column($page->json('templates'), 'key'));
         $this->assertSame(['web-1'], array_column($page->json('servers'), 'label'));
         $this->actingAs($owner)->postJson('/api/app/projects/templates', ['template' => 'rails', 'name' => 'Shop'])->assertJsonValidationErrors('template');

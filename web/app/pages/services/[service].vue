@@ -26,7 +26,7 @@ async function enable(row: Row) {
         <PageHeader :eyebrow="data.account.name" :title="data.service.name" :description="data.service.tagline" :icon="data.service.icon" />
         <EmptyState v-if="data.projects.length === 0" icon="layers" :title="t('No projects yet')" :description="t('Create a project, then turn on :service for it.', { service: data.service.name })">
             <template v-if="data.canCreateProject" #action>
-                <UiButton variant="primary" :to="`/dashboard?dialog=new-project&services=${data.service.key}`">{{ t('Create a project') }}</UiButton>
+                <UiButton variant="primary" :to="`/projects/create?services=${data.service.key}`">{{ t('Create a project') }}</UiButton>
             </template>
         </EmptyState>
         <section v-else aria-labelledby="service-projects" class="space-y-3">

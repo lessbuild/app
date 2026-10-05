@@ -17,6 +17,13 @@ use Illuminate\Http\JsonResponse;
 final class ShowProjectTemplatesController
 {
     /**
+     * The built-in templates' icons, from the Acme theme's set.
+     *
+     * @var array<string, string>
+     */
+    private const ICONS = ['laravel' => 'code', 'nextjs' => 'layers', 'wordpress' => 'globe', 'static' => 'fileText'];
+
+    /**
      * Return the project templates (built in, and the account's own), with the active app servers and Git providers a
      * template's website and repository can use.
      *
@@ -37,6 +44,8 @@ final class ShowProjectTemplatesController
                 'environments' => count((array) ($template['environments'] ?? [])),
                 'monitors' => count((array) ($template['monitors'] ?? [])),
                 'goals' => count((array) ($template['goals'] ?? [])),
+                'services' => array_values(array_filter((array) ($template['services'] ?? []), 'is_string')),
+                'icon' => $saved !== null ? 'star' : (self::ICONS[(string) $key] ?? 'layers'),
             ];
         }
 

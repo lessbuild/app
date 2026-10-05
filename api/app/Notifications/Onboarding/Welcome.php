@@ -37,7 +37,7 @@ final class Welcome extends Notification
             ->subject(__('Welcome to :app', ['app' => config('app.name')]))
             ->greeting($name ? __('Welcome, :name!', ['name' => $name]) : __('Welcome!'))
             ->line(__('You’re set up. The quickest way in is to create a project: its setup guide takes you from connecting a cloud provider to a deployed, monitored site, one step at a time.'))
-            ->action(__('Create your first project'), route('dashboard', ['dialog' => 'new-project']))
+            ->action(__('Create your first project'), route('projects.create'))
             ->line(__('Rather look around first? Open a sample project full of made-up data from your dashboard.'))
             ->line(__('Short guides for every part of :app are in the help centre: :url', ['app' => config('app.name'), 'url' => route('help')]))
             ->salutation(__('Happy shipping'))

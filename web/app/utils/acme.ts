@@ -69,3 +69,10 @@ export function smoothPath(points: readonly (readonly [number, number])[], tensi
     }
     return d;
 }
+
+/**
+ * The theme's badge colour for one of BuildPusher's tones (success, warning…), so the API's tones show in its badges.
+ *
+ * @param tone The tone, e.g. "success".
+ */
+export const acmeTone = (tone: string | null | undefined): AcmeTone => ({ success: 'green', danger: 'red', warning: 'amber', info: 'blue', accent: 'violet', neutral: 'gray' } as Record<string, AcmeTone>)[tone ?? ''] ?? (['gray', 'green', 'blue', 'amber', 'red', 'violet'].includes(tone ?? '') ? tone as AcmeTone : 'gray');

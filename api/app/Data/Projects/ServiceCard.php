@@ -19,6 +19,7 @@ final readonly class ServiceCard
      * @param  bool  $canUse  The viewer may open this service's pages.
      * @param  bool  $canManage  The viewer may turn it on or off.
      * @param  string  $url  The project's page for the service, which forwards to the service's own pages once it's enabled.
+     * @param  list<array{label: string, url: string}>  $sections  the service's pages in this project, for quick links
      */
     public function __construct(
         public string $key,
@@ -29,5 +30,6 @@ final readonly class ServiceCard
         public bool $canUse,
         public bool $canManage,
         public string $url,
+        public array $sections = [],
     ) {}
 }

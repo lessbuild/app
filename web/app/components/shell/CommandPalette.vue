@@ -19,7 +19,7 @@ type Entry = { group: string; title: string; subtitle?: string | null; url: stri
 /** What's offered before (and alongside) a search: the main pages and the projects, filtered by what's typed. */
 const quick = computed<Entry[]>(() => {
     const actions: Entry[] = [
-        ...(props.shell.canCreateProject ? [{ group: t('Actions'), title: t('New project'), url: '/dashboard?dialog=new-project' }] : []),
+        ...(props.shell.canCreateProject ? [{ group: t('Actions'), title: t('New project'), url: '/projects/create' }] : []),
         { group: t('Actions'), title: t('Projects'), url: '/dashboard' },
         { group: t('Actions'), title: t('Notifications'), url: '/notifications' },
         { group: t('Actions'), title: t('Your settings'), url: '/settings/profile' },

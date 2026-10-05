@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { DomainRow, ProjectOverview } from '~/types/projects';
 
-/** The hostnames a project serves, each verified with a TXT record so no other account can claim it. */
+/**
+ * The hostnames a project serves (the Acme theme's domains page), each verified with a TXT record so no other account
+ * can claim it.
+ */
 definePageMeta({ layout: 'app' });
-const { t, dateTime } = useT();
+const { t, tc, dateTime } = useT();
 const route = useRoute();
 const { data } = await useApi<{ overview: ProjectOverview; domains: DomainRow[] }>(() => `/projects/${route.params.project}/domains`);
 const project = computed(() => data.value.overview.project);
@@ -25,67 +28,64 @@ async function verify(domain: DomainRow) {
     }
     checking.value = null;
 }
+
+/**
+ * Copy part of a DNS record.
+ *
+ * @param text What to copy.
+ */
+async function copy(text: string) {
+    const done = await navigator.clipboard.writeText(text).then(() => true, () => false);
+    flash(done ? t('Copied') : t('Copy it by hand; your browser didn’t allow copying.'), done ? 'success' : 'warning');
+}
+const verified = computed(() => data.value.domains.filter((domain) => domain.verifiedAt).length);
 </script>
 
 <template>
-    <div class="space-y-6">
-        <ProjectHeader :overview="data.overview" :title="t('Domains')" :description="t('Hostnames this project serves. Verify each one so no other account can claim it.')">
-            <template v-if="data.overview.canManage && data.domains.length > 0" #actions>
-                <UiButton variant="primary" :to="{ query: { dialog: 'add-domain' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Add domain') }}</UiButton>
-            </template>
-        </ProjectHeader>
+    <div>
+        <ProjectHeader :overview="data.overview" :title="t('Domains')" :description="t('Hostnames this project serves. Verify each one so no other account can claim it.')" />
+        <div class="space-y-6">
+            <AcmeCard v-if="data.overview.canManage">
+                <ApiForm :action="base" class="!grid gap-3 sm:grid-cols-[1fr_14rem_auto] sm:items-start">
+                    <InputField id="domain-hostname" name="hostname" :label="t('Add a domain')" :placeholder="t('shop.example.com')" maxlength="300" autocomplete="off" required />
+                    <SelectField id="domain-environment" name="environment_id" :label="t('Environment')" :placeholder="t('Any environment')" :options="environments" />
+                    <SubmitButton class="sm:mt-7">{{ t('Add domain') }}</SubmitButton>
+                </ApiForm>
+            </AcmeCard>
 
-        <EmptyState v-if="data.domains.length === 0" icon="globe" :title="t('No domains yet')" :description="t('Add the hostnames this project serves, such as example.com and www.example.com.')">
-            <template v-if="data.overview.canManage" #action>
-                <UiButton variant="primary" :to="{ query: { dialog: 'add-domain' } }">{{ t('Add a domain') }}</UiButton>
-            </template>
-        </EmptyState>
-
-        <ul v-else class="grid gap-4">
-            <li v-for="domain in data.domains" :key="domain.id" class="ui-card grid gap-4 p-5">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <p class="flex flex-wrap items-center gap-2 text-base font-extrabold text-ink">
-                            <span class="break-all">{{ domain.name }}</span>
-                            <Badge :tone="domain.verifiedAt ? 'success' : 'warning'">{{ domain.verifiedAt ? t('Verified') : t('Not verified') }}</Badge>
-                        </p>
-                        <p class="mt-1 text-xs text-muted">
-                            {{ domain.environment ?? t('Any environment') }}
-                            <template v-if="domain.verifiedAt"> · {{ t('Verified :time', { time: dateTime(domain.verifiedAt) }) }}</template>
-                            <template v-else-if="domain.lastCheckedAt"> · {{ t('Last checked :time', { time: dateTime(domain.lastCheckedAt) }) }}</template>
-                        </p>
-                    </div>
-                    <div v-if="data.overview.canManage" class="flex flex-wrap gap-2">
-                        <UiButton v-if="!domain.verifiedAt" size="sm" :disabled="checking === domain.id" :aria-busy="checking === domain.id || undefined" @click="verify(domain)">
-                            {{ checking === domain.id ? t('Working…') : t('Check DNS') }}
-                        </UiButton>
-                        <DeleteDialog
-                            :id="`remove-domain-${domain.id}`"
-                            :title="t('Remove :domain?', { domain: domain.name })"
-                            :action="`${base}/${domain.id}`"
-                            :warning="t('The project stops claiming this hostname. Services stop serving it.')"
-                            :submit-label="t('Remove')"
-                        >
-                            <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Remove') }}</UiButton></template>
-                        </DeleteDialog>
-                    </div>
-                </div>
-                <Alert v-if="problems[domain.id]" tone="danger" role="alert">{{ problems[domain.id] }}</Alert>
-                <div v-if="!domain.verifiedAt" class="grid gap-3 rounded-card bg-surface-muted p-4">
-                    <p class="text-sm font-bold text-ink">{{ t('Add this TXT record at your DNS provider') }}</p>
-                    <dl class="grid gap-2 text-sm sm:grid-cols-[6rem_minmax(0,1fr)]">
-                        <dt class="font-semibold text-muted">{{ t('Name') }}</dt>
-                        <dd><code class="break-all">{{ domain.recordName }}</code></dd>
-                        <dt class="font-semibold text-muted">{{ t('Value') }}</dt>
-                        <dd><code class="break-all">{{ domain.recordValue }}</code></dd>
-                    </dl>
-                </div>
-            </li>
-        </ul>
-
-        <FormDialog v-if="data.overview.canManage" id="add-domain" :title="t('Add a domain')" :action="base" :submit="t('Add domain')">
-            <InputField name="hostname" :label="t('Hostname')" :placeholder="t('shop.example.com')" maxlength="300" autocomplete="off" required autofocus />
-            <SelectField name="environment_id" :label="t('Environment')" :placeholder="t('Any environment')" :options="environments" />
-        </FormDialog>
+            <AcmeEmptyCard v-if="data.domains.length === 0" icon="globe" :title="t('No domains yet')" :description="t('Add the hostnames this project serves, such as example.com and www.example.com.')" />
+            <section v-else aria-labelledby="domains-title">
+                <h2 id="domains-title" class="section-label mb-3">{{ tc(':count domain|:count domains', data.domains.length) }} · {{ t(':count verified', { count: verified }) }}</h2>
+                <ul class="space-y-3">
+                    <li v-for="domain in data.domains" :key="domain.id" class="rounded-2xl border border-line bg-surface p-5 shadow-card">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span :class="['grid size-9 place-items-center rounded-xl', domain.verifiedAt ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600']" aria-hidden="true"><AcmeIcon :name="domain.verifiedAt ? 'lock' : 'alert'" :size="17" /></span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate font-mono text-sm font-medium text-ink">{{ domain.name }}</span>
+                                <span class="text-xs text-muted">{{ domain.environment ?? t('Any environment') }} · {{ domain.verifiedAt ? t('Verified :time', { time: dateTime(domain.verifiedAt) }) : domain.lastCheckedAt ? t('Last checked :time', { time: dateTime(domain.lastCheckedAt) }) : t('Not checked yet') }}</span>
+                            </span>
+                            <AcmeBadge :tone="domain.verifiedAt ? 'green' : 'amber'">{{ domain.verifiedAt ? t('Verified') : t('Not verified') }}</AcmeBadge>
+                            <template v-if="data.overview.canManage">
+                                <AcmeBtn v-if="!domain.verifiedAt" size="sm" icon="refresh" :loading="checking === domain.id" @click="verify(domain)">{{ t('Check DNS') }}</AcmeBtn>
+                                <DeleteDialog :id="`remove-domain-${domain.id}`" :title="t('Remove :domain?', { domain: domain.name })" :action="`${base}/${domain.id}`" :warning="t('The project stops claiming this hostname. Services stop serving it.')" :submit-label="t('Remove')">
+                                    <template #trigger="{ open }"><AcmeBtn size="sm" variant="ghost" icon="trash" :label="t('Remove :domain', { domain: domain.name })" @click="open" /></template>
+                                </DeleteDialog>
+                            </template>
+                        </div>
+                        <AcmeAlert v-if="problems[domain.id]" tone="danger" class="mt-4">{{ problems[domain.id] }}</AcmeAlert>
+                        <div v-if="!domain.verifiedAt" class="mt-4 rounded-xl bg-black/[.03] p-4 dark:bg-white/[.04]">
+                            <p class="text-sm font-medium text-ink">{{ t('Add this TXT record at your DNS provider') }}</p>
+                            <dl class="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                                <div v-for="[label, value] in [[t('Name'), domain.recordName], [t('Value'), domain.recordValue]]" :key="label" class="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
+                                    <dt class="w-12 shrink-0 text-xs text-muted">{{ label }}</dt>
+                                    <dd class="min-w-0 flex-1 truncate font-mono text-xs text-ink">{{ value }}</dd>
+                                    <AcmeBtn size="sm" variant="ghost" icon="copy" :label="t('Copy :what', { what: label })" @click="copy(value!)" />
+                                </div>
+                            </dl>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+        </div>
     </div>
 </template>

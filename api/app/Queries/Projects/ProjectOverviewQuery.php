@@ -58,6 +58,7 @@ final class ProjectOverviewQuery
                 canUse: $gate->allows('useService', [$project, $service->key()]),
                 canManage: $gate->allows('manageService', [$project, $service->key()]),
                 url: route('projects.services.show', [$project->id, $service->key()], false),
+                sections: array_map(fn ($item): array => ['label' => $item->label, 'url' => (string) parse_url($item->url, PHP_URL_PATH)], $service->navItems($project->id)),
             ), $this->services->all()),
             canManage: $gate->allows('update', $project),
         );
