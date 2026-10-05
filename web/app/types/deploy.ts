@@ -108,6 +108,7 @@ export type BuildDetail = {
     setupStage: number;
     failureMessage: string | null;
     approvalNote: string | null;
+    note: string | null;
     rolledBackFrom: number | null;
     redeployedFrom: number | null;
     promotedFrom: { id: number; environment: string | null; note: string | null } | null;

@@ -24,6 +24,18 @@ final class BuildPolicy
     }
 
     /**
+     * Determine whether the user can write the team's note on a deploy: whoever may deploy its repository.
+     *
+     * @param  User  $user
+     * @param  Build  $build
+     * @return bool
+     */
+    public function note(User $user, Build $build): bool
+    {
+        return $user->can('deploy', $build->repository);
+    }
+
+    /**
      * Determine whether the user can approve or reject a deploy that waits for approval: someone who may deploy the
      * repository, and not the person who asked for the deploy.
      *

@@ -125,6 +125,7 @@ watch(log, async () => {
         <ProjectHeader :overview="data.overview" :title="t('Deploy #:id', { id: build.id })" :description="`${(build.commitMessage ?? '').split('\n')[0] || build.repository.name} · ${build.repository.name} → ${build.website}`">
             <template #actions>
                 <AcmeBtn :to="`/projects/${project.id}/deploy/builds/${build.id}/compare`" icon="layers">{{ t('Compare') }}</AcmeBtn>
+                <AcmeBtn v-if="build.log" :to="`/api/app/projects/${project.id}/deploy/builds/${build.id}/log`" external icon="download">{{ t('Download log') }}</AcmeBtn>
                 <AcmeMenu v-if="actions.length > 0" :items="actions" :label="t('More actions')" icon="dots" align="right" />
             </template>
         </ProjectHeader>
@@ -183,6 +184,16 @@ watch(log, async () => {
                 </template>
             </section>
             <p v-if="build.approvalNote" class="text-sm text-muted">{{ t('Note: :note', { note: build.approvalNote }) }}</p>
+            <div v-if="build.note || data.canDeploy" class="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-line bg-surface px-5 py-4 shadow-card">
+                <div class="min-w-0">
+                    <p class="text-xs font-medium text-muted">{{ t('Team note') }}</p>
+                    <p :class="['mt-1 whitespace-pre-line text-sm', build.note ? 'text-ink' : 'text-muted']">{{ build.note ?? t('Add a note for your team: why this deploy happened, or what to watch.') }}</p>
+                </div>
+                <FormDialog v-if="data.canDeploy" id="build-note" :title="t('Team note')" :action="`/api/app/projects/${project.id}/deploy/builds/${build.id}/note`" method="PUT" :submit="t('Save note')">
+                    <template #trigger="{ open: show }"><AcmeBtn size="sm" icon="edit" @click="show">{{ build.note ? t('Edit note') : t('Add note') }}</AcmeBtn></template>
+                    <TextareaField id="build-note-text" name="note" :label="t('Note')" rows="4" maxlength="500" :model-value="build.note ?? ''" :description="t('Seen by everyone who can see this deploy. Leave empty to remove it.')" />
+                </FormDialog>
+            </div>
 
             <div class="grid gap-6 xl:grid-cols-[22rem_1fr]">
                 <AcmeCard :title="t('Steps')">

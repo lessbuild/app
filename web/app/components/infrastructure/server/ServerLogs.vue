@@ -40,7 +40,10 @@ onBeforeUnmount(() => window.clearInterval(timer));
                 <AcmeAlert v-if="log.error" tone="danger">{{ log.error }}</AcmeAlert>
                 <CodeBlock v-if="log.text" class="max-h-96 overflow-auto whitespace-pre-wrap" :code="log.text" />
                 <p v-else-if="log.fetching" class="text-sm text-muted" role="status">{{ t('Fetching… refresh in a few seconds.') }}</p>
-                <ApiForm v-if="page.server.status === 'active'" :action="`${base}/logs/${log.type}`"><SubmitButton variant="secondary" size="sm">{{ t('Fetch the latest') }}</SubmitButton></ApiForm>
+                <div class="flex flex-wrap items-center gap-2">
+                    <ApiForm v-if="page.server.status === 'active'" :action="`${base}/logs/${log.type}`"><SubmitButton variant="secondary" size="sm">{{ t('Fetch the latest') }}</SubmitButton></ApiForm>
+                    <a v-if="log.text" :href="`${base}/logs/${log.type}`" class="ui-btn ui-btn-quiet ui-btn-sm" download>{{ t('Download') }}</a>
+                </div>
             </div>
         </AcmeCard>
         <AcmeCard

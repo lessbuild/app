@@ -10,6 +10,7 @@ use App\Models\AnalyticsDailyAggregate;
 use App\Models\Build;
 use App\Models\Incident;
 use App\Models\Project;
+use App\Models\ProjectPin;
 use App\Models\User;
 use App\Platform\ServiceRegistry;
 use Carbon\CarbonImmutable;
@@ -31,17 +32,21 @@ final class AccountProjectsQuery
      * last deploy and the last ten days' visitors.
      *
      * @param  Account  $account
-     * @param  User|null  $user  limits the list to the projects they can see
+     * @param  User|null  $user  limits the list to the projects they can see, and puts their pinned ones first
+     * @param  bool  $archived  list the archived projects instead of the ones in use
      * @return list<ProjectCard>
      */
-    public function handle(Account $account, ?User $user = null): array
+    public function handle(Account $account, ?User $user = null, bool $archived = false): array
     {
         $order = array_flip($this->services->keys());
         $projects = $this->visible->scope(Project::query()->where('account_id', $account->id), $account->id, $user)
             ->with('enabledServices')
             ->withCount('environments')
+            ->when($archived, fn ($query) => $query->whereNotNull('archived_at'), fn ($query) => $query->whereNull('archived_at'))
             ->orderBy('name')
             ->get();
+        $pins = $user === null ? [] : array_flip(ProjectPin::query()->where('user_id', $user->id)->whereIn('project_id', $projects->modelKeys())->pluck('project_id')->all());
+        $projects = $projects->sortBy(fn (Project $project): int => isset($pins[$project->id]) ? 0 : 1)->values();
         $ids = array_values(array_map(fn (Project $project): string => $project->id, $projects->all()));
         $incidents = Incident::query()->whereIn('project_id', $ids)->whereNull('resolved_at')
             ->selectRaw('project_id, count(*) as open')->groupBy('project_id')->pluck('open', 'project_id');
@@ -50,7 +55,7 @@ final class AccountProjectsQuery
             ->selectRaw('repositories.project_id, max(builds.finished_at) as finished')->groupBy('repositories.project_id')->pluck('finished', 'project_id');
         $visitors = $this->visitors($ids);
 
-        return array_values($projects->map(function (Project $project) use ($order, $incidents, $deploys, $visitors): ProjectCard {
+        return array_values($projects->map(function (Project $project) use ($order, $incidents, $deploys, $visitors, $pins): ProjectCard {
             $keys = array_values($project->enabledServices->pluck('service')
                 ->filter(fn (string $key): bool => isset($order[$key]))
                 ->sortBy(fn (string $key): int => $order[$key])
@@ -76,6 +81,8 @@ final class AccountProjectsQuery
                 openIncidents: $open,
                 lastDeployAt: is_string($deployed) ? CarbonImmutable::parse($deployed)->toIso8601String() : null,
                 visitors: $daily,
+                pinned: isset($pins[$project->id]),
+                archived: $project->archived_at !== null,
             );
         })->all());
     }

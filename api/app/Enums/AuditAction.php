@@ -30,6 +30,8 @@ enum AuditAction: string
     case ProjectCreated = 'project.created';
     case ProjectUpdated = 'project.updated';
     case ProjectDeleted = 'project.deleted';
+    case ProjectArchived = 'project.archived';
+    case ProjectRestored = 'project.restored';
     case EnvironmentCreated = 'environment.created';
     case EnvironmentDeleted = 'environment.deleted';
     case DomainAdded = 'domain.added';
@@ -174,6 +176,8 @@ enum AuditAction: string
             self::ProjectCreated => __('Created the project :project', ['project' => $value('project')]),
             self::ProjectUpdated => __('Updated the project :project', ['project' => $value('project')]),
             self::ProjectDeleted => __('Deleted the project :project', ['project' => $value('project')]),
+            self::ProjectArchived => __('Archived the project :project', ['project' => $value('project')]),
+            self::ProjectRestored => __('Restored the project :project', ['project' => $value('project')]),
             self::EnvironmentCreated => __('Added the :environment environment to :project', ['environment' => $value('environment'), 'project' => $value('project')]),
             self::EnvironmentDeleted => __('Removed the :environment environment from :project', ['environment' => $value('environment'), 'project' => $value('project')]),
             self::DomainAdded => __('Added :domain to :project', ['domain' => $value('domain'), 'project' => $value('project')]),

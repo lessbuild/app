@@ -27,7 +27,7 @@ final class ProjectSwitcherQuery
      */
     public function handle(Account $account, int $limit = 50, ?User $user = null): array
     {
-        return array_values($this->visible->scope(Project::query()->where('account_id', $account->id), $account->id, $user)->orderBy('name')->limit($limit)->get(['id', 'name'])
+        return array_values($this->visible->scope(Project::query()->where('account_id', $account->id)->whereNull('archived_at'), $account->id, $user)->orderBy('name')->limit($limit)->get(['id', 'name'])
             ->map(fn (Project $project): array => ['id' => $project->id, 'name' => $project->name])
             ->all());
     }

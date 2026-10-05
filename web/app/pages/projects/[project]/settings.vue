@@ -72,6 +72,13 @@ const confirmName = ref('');
                 </ApiForm>
             </AcmeCard>
 
+            <AcmeCard v-if="data.overview.canManage && !project.isSample" :title="project.archivedAt ? t('Restore this project') : t('Archive this project')" :description="project.archivedAt ? t('It’s archived: off the projects list, with everything in it kept. Restore it to put it back.') : t('Take it off the projects list without deleting anything. Its services, servers and data carry on as they are, and you can restore it whenever you like.')">
+                <ApiForm :action="`${base}/archive`" method="PUT">
+                    <input type="hidden" name="archived" :value="project.archivedAt ? '0' : '1'">
+                    <SubmitButton variant="secondary">{{ project.archivedAt ? t('Restore project') : t('Archive project') }}</SubmitButton>
+                </ApiForm>
+            </AcmeCard>
+
             <section v-if="data.overview.canManage" class="rounded-2xl border border-rose-500/30 bg-rose-500/[.03] p-5 sm:p-6" aria-labelledby="danger-title">
                 <h2 id="danger-title" class="font-semibold text-rose-700 dark:text-rose-300">{{ t('Delete this project') }}</h2>
                 <p class="mt-1 text-sm text-muted">{{ t('Deletes its environments and service settings. Services remove their data for this project. This can’t be undone.') }}</p>

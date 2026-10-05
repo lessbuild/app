@@ -20,6 +20,7 @@ final readonly class ProjectSummary
      * @param  bool  $isSample  Whether it's the sample project, with made-up data.
      * @param  bool  $checklistDismissed  Whether the setup checklist was hidden from the overview.
      * @param  string  $createdAt  ISO 8601.
+     * @param  string|null  $archivedAt  When it was archived (ISO 8601), or null while it's in use.
      */
     public function __construct(
         public string $id,
@@ -29,6 +30,7 @@ final readonly class ProjectSummary
         public bool $isSample,
         public bool $checklistDismissed,
         public string $createdAt,
+        public ?string $archivedAt = null,
     ) {}
 
     /**
@@ -41,7 +43,7 @@ final readonly class ProjectSummary
     {
         return new self(
             $project->id, $project->name, $project->description, $project->account->name, (bool) $project->is_sample,
-            $project->checklist_dismissed_at !== null, (string) $project->created_at?->toIso8601String(),
+            $project->checklist_dismissed_at !== null, (string) $project->created_at?->toIso8601String(), $project->archived_at?->toIso8601String(),
         );
     }
 }

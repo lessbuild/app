@@ -64,6 +64,32 @@ final class InboxTest extends TestCase
     }
 
     /**
+     * Notifications can be marked unread and read again, deleted, and cleared once read, several at once, and only
+     * the person's own are touched.
+     */
+    public function test_notifications_can_be_marked_deleted_and_cleared_in_bulk(): void
+    {
+        $member = User::factory()->create();
+        $membership = $this->account->memberships()->forceCreate(['user_id' => $member->id, 'role' => AccountRole::Member]);
+        foreach ([AccountRole::Admin, AccountRole::Viewer, AccountRole::Member] as $role) {
+            app(ChangeMemberRole::class)->handle($this->owner, $membership->refresh(), $role);
+        }
+        $ids = $member->notifications()->pluck('id')->all();
+        $this->assertCount(3, $ids);
+
+        $this->actingAs($member)->postJson('/api/app/notifications/bulk', ['action' => 'read', 'ids' => $ids])->assertOk()->assertJsonPath('message', '3 notifications marked as read.');
+        $this->actingAs($member)->postJson('/api/app/notifications/bulk', ['action' => 'unread', 'ids' => [$ids[0]]])->assertOk()->assertJsonPath('message', '1 notification marked as unread.');
+        $this->assertSame(1, $member->unreadNotifications()->count());
+        $this->actingAs($this->owner)->postJson('/api/app/notifications/bulk', ['action' => 'delete', 'ids' => $ids])->assertOk()->assertJsonPath('message', '0 notifications deleted.');
+        $this->actingAs($member)->postJson('/api/app/notifications/bulk', ['action' => 'archive', 'ids' => $ids])->assertUnprocessable();
+
+        $this->actingAs($member)->deleteJson('/api/app/notifications/read')->assertOk()->assertJsonPath('message', '2 read notifications deleted.');
+        $this->assertSame([$ids[0]], $member->notifications()->pluck('id')->all());
+        $this->actingAs($member)->postJson('/api/app/notifications/bulk', ['action' => 'delete', 'ids' => [$ids[0]]])->assertOk();
+        $this->assertSame(0, $member->notifications()->count());
+    }
+
+    /**
      * Removal is announced but leaving is not.
      */
     public function test_removal_is_announced_but_leaving_is_not(): void

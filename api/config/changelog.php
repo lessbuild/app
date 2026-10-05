@@ -14,6 +14,10 @@ return [
         'Pricing: start from a typical setup, estimate metered usage, and compare every tier’s key features.',
         'Comparison pages say what each tool includes, who should choose which and how to move, with a page listing them all.',
         'The status page shows 90 days of uptime for each part of the platform and its recent incidents, and you can subscribe by email.',
+        'Notifications can be ticked and marked read, unread or deleted together, and read ones cleared in one go.',
+        'Pin projects to the top of your list, and archive the ones you’ve finished with (everything in them is kept).',
+        'Deploys: a team note on each deploy, Download log, CSV exports of deploys and push deliveries, and Which would deploy? to check path filters.',
+        'Download server logs, export or clear your sign-in history, and see what changed in a newer gallery version of a recipe.',
         'New help guides: domains, your data, commands and the terminal, recipes, load balancers, configuration as code, on-call, SLOs, dashboards and funnels; the rest are updated for the current pages.',
     ]],
     // Shown once Audit is switched on (config/site_audits.php).

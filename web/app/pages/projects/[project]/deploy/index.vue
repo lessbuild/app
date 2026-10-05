@@ -40,6 +40,7 @@ function change(now: number | null, before: number | null, unit = ''): string | 
         <ProjectHeader :overview="data.overview" :title="t('Deploy')" :description="t('Git repositories that deploy to your websites. Each deploy is a new release; the previous ones stay on the server for rollbacks.')">
             <template #actions>
                 <AcmeBtn icon="download" to="/api/app/account/inventory/repositories.csv" external download>{{ t('Export CSV') }}</AcmeBtn>
+                <ImpactPreviewDialog :project-id="project.id"><template #trigger="{ open }"><AcmeBtn icon="branch" @click="open">{{ t('Which would deploy?') }}</AcmeBtn></template></ImpactPreviewDialog>
                 <AcmeBtn v-if="data.canCreate" variant="primary" icon="plus" :to="`/projects/${project.id}/deploy/repositories/create`">{{ t('Connect repository') }}</AcmeBtn>
             </template>
         </ProjectHeader>

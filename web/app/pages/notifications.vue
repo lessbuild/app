@@ -3,7 +3,8 @@ import type { Inbox, InboxItem } from '~/types/notifications';
 
 /**
  * The person's notifications across their accounts (the Acme theme's activity page): all or unread, grouped by day, by
- * kind or words, and exported as CSV.
+ * kind or words, and exported as CSV. Each can be marked read or unread or deleted, several at once when ticked, and
+ * everything read can be cleared.
  */
 definePageMeta({ layout: 'app' });
 const { t, tc } = useT();
@@ -20,6 +21,49 @@ function apply() {
     navigateTo({ query: { filter: route.query.filter, type: type.value || undefined, q: search.value || undefined } });
 }
 
+const selected = ref<string[]>([]);
+const everyId = computed(() => data.value.items.map((item) => item.id));
+const allSelected = computed(() => everyId.value.length > 0 && everyId.value.every((id) => selected.value.includes(id)));
+watch(everyId, (ids) => (selected.value = selected.value.filter((id) => ids.includes(id))));
+
+/**
+ * Mark notifications read or unread, or delete them, then load the list again.
+ *
+ * @param action What to do.
+ * @param ids Which notifications.
+ */
+async function change(action: 'read' | 'unread' | 'delete', ids: string[]) {
+    if (ids.length === 0) {
+        return;
+    }
+    const result = await send<{ message: string }>('POST', '/notifications/bulk', { action, ids }).catch(() => null);
+    if (result) {
+        flash(result.message);
+        selected.value = [];
+        await Promise.all([refreshPage(), refreshShell()]);
+    }
+}
+
+/**
+ * Tick or untick one notification.
+ *
+ * @param id The notification.
+ */
+function toggleOne(id: string) {
+    selected.value = selected.value.includes(id) ? selected.value.filter((other) => other !== id) : [...selected.value, id];
+}
+
+/**
+ * A notification's own actions: read or unread, and delete.
+ *
+ * @param item The notification.
+ */
+const actionsFor = (item: InboxItem) => [
+    item.read ? { label: t('Mark as unread'), icon: 'circle', onSelect: () => change('unread', [item.id]) } : { label: t('Mark as read'), icon: 'check', onSelect: () => change('read', [item.id]) },
+    { label: t('Delete'), icon: 'trash', danger: true, onSelect: () => change('delete', [item.id]) },
+];
+
+/** Mark every notification read. */
 async function markAllRead() {
     const result = await send<{ message: string }>('POST', '/notifications/read').catch(() => null);
     if (result) {
@@ -71,6 +115,9 @@ async function open(item: InboxItem) {
             </div>
             <div class="flex flex-wrap gap-2">
                 <AcmeBtn icon="check" :disabled="data.unreadCount === 0" @click="markAllRead">{{ t('Mark all as read') }}</AcmeBtn>
+                <DeleteDialog id="clear-read" :title="t('Delete read notifications?')" :description="t('Everything you’ve read is deleted. Unread notifications stay.')" action="/api/app/notifications/read" :submit-label="t('Delete read')">
+                    <template #trigger="{ open: show }"><AcmeBtn icon="trash" @click="show">{{ t('Clear read') }}</AcmeBtn></template>
+                </DeleteDialog>
                 <AcmeBtn icon="download" :to="exportUrl" external>{{ t('Export CSV') }}</AcmeBtn>
                 <AcmeBtn icon="config" to="/settings/notifications">{{ t('Preferences') }}</AcmeBtn>
             </div>
@@ -83,11 +130,20 @@ async function open(item: InboxItem) {
                 <AcmeBtn type="submit">{{ t('Show') }}</AcmeBtn>
             </form>
             <SavedViews page="notifications" :keys="['filter', 'type', 'q']" />
+            <div v-if="data.items.length > 0" class="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm" role="toolbar" :aria-label="t('Selected notifications')">
+                <label class="flex items-center gap-2 text-muted"><input type="checkbox" class="size-4 accent-[var(--ui-primary)]" :checked="allSelected" @change="selected = allSelected ? [] : [...everyId]">{{ selected.length > 0 ? tc(':count selected|:count selected', selected.length) : t('Select all') }}</label>
+                <template v-if="selected.length > 0">
+                    <AcmeBtn size="sm" icon="check" @click="change('read', selected)">{{ t('Mark as read') }}</AcmeBtn>
+                    <AcmeBtn size="sm" icon="circle" @click="change('unread', selected)">{{ t('Mark as unread') }}</AcmeBtn>
+                    <AcmeBtn size="sm" icon="trash" variant="danger" @click="change('delete', selected)">{{ t('Delete') }}</AcmeBtn>
+                </template>
+            </div>
             <section v-for="group in days" :key="group.label">
                 <AcmeSectionTitle :title="group.label" />
                 <AcmeListGroup bordered :label="group.label">
-                    <li v-for="item in group.items" :key="item.id">
-                        <button type="button" class="flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-black/[.02] dark:hover:bg-white/[.03]" @click="open(item)">
+                    <li v-for="item in group.items" :key="item.id" class="flex items-start gap-1 pl-4 pr-2">
+                        <input type="checkbox" class="mt-5 size-4 shrink-0 accent-[var(--ui-primary)]" :checked="selected.includes(item.id)" :aria-label="t('Select :title', { title: item.title })" @change="toggleOne(item.id)">
+                        <button type="button" class="flex min-w-0 flex-1 items-start gap-3 px-2 py-3.5 text-left transition-colors hover:bg-black/[.02] dark:hover:bg-white/[.03]" @click="open(item)">
                             <AcmeIconBubble icon="bell" />
                             <span class="min-w-0 flex-1 text-sm">
                                 <span :class="['font-medium', item.read ? 'text-muted' : 'text-ink']">{{ item.title }}</span>
@@ -96,6 +152,7 @@ async function open(item: InboxItem) {
                             </span>
                             <span v-if="!item.read" class="mt-2 size-2 shrink-0 rounded-full bg-blue-500"><span class="sr-only">{{ t('unread') }}</span></span>
                         </button>
+                        <AcmeMenu class="mt-2.5" :items="actionsFor(item)" :label="t('Actions for :title', { title: item.title })" icon="dots" variant="ghost" size="sm" align="right" />
                     </li>
                 </AcmeListGroup>
             </section>

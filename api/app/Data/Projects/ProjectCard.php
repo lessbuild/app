@@ -43,6 +43,8 @@ final readonly class ProjectCard
      * @param  int  $openIncidents  how many incidents are open
      * @param  string|null  $lastDeployAt  when the last successful deploy finished (ISO 8601)
      * @param  list<int>  $visitors  visitors on each of the last ten days, oldest first; empty without Analytics
+     * @param  bool  $pinned  Whether the person pinned it to the top of their list.
+     * @param  bool  $archived  Whether it's archived.
      */
     public function __construct(
         public string $id,
@@ -56,5 +58,7 @@ final readonly class ProjectCard
         public int $openIncidents = 0,
         public ?string $lastDeployAt = null,
         public array $visitors = [],
+        public bool $pinned = false,
+        public bool $archived = false,
     ) {}
 }

@@ -17,8 +17,9 @@ use Illuminate\Http\Request;
 final class ShowDashboardController
 {
     /**
-     * Return the current account's projects the person can see, what in them needs attention now, and the team's recent
-     * activity (deploys, incidents, changes), optionally only one kind.
+     * Return the current account's projects the person can see (pinned first; the archived ones with ?projects=archived),
+     * what in them needs attention now, and the team's recent activity (deploys, incidents, changes), optionally only one
+     * kind.
      *
      * @param  Request  $request
      * @param  User  $user
@@ -33,11 +34,14 @@ final class ShowDashboardController
         $kind = $request->query('activity');
         $kind = is_string($kind) && isset(AccountActivityQuery::KINDS[$kind]) ? $kind : null;
 
-        $cards = $account !== null ? $projects->handle($account, $user) : [];
+        $archived = $request->query('projects') === 'archived';
+        $cards = $account !== null ? $projects->handle($account, $user, $archived) : [];
 
         return response()->json([
             'account' => $account === null ? null : ['id' => $account->id, 'name' => $account->name],
             'projects' => $cards,
+            'showingArchived' => $archived,
+            'archivedCount' => $account === null ? 0 : Project::query()->where('account_id', $account->id)->whereNotNull('archived_at')->count(),
             'attention' => $attention->handle(array_map(fn ($card): string => $card->id, $cards)),
             'activity' => $account !== null ? $activity->handle($account, $kind, 15, $user) : [],
             'activityKind' => $kind,

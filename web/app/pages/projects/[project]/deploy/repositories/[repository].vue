@@ -89,6 +89,7 @@ function webhookTurnedOn(result: Record<string, unknown>): null {
             <PageTabs :tabs="tabs" :current="tab" :label="t('Repository sections')" :counts="{ deploys: data.builds.length }" />
 
             <AcmeCard v-if="tab === 'deploys'" :title="t('Deploys')" :description="t('Newest first. Open one for its log, or to redeploy or roll back.')" :padded="false">
+                <template #action><a :href="`/api/app/projects/${project.id}/deploy/repositories/${repository.id}/builds.csv`" class="ui-btn ui-btn-quiet" download>{{ t('Export CSV') }}</a></template>
                 <p v-if="data.builds.length === 0" class="px-5 pb-5 text-sm text-muted sm:px-6">{{ t('No deploys yet.') }}</p>
                 <ul v-else class="divide-y divide-line">
                     <li v-for="build in data.builds" :key="build.id">
@@ -132,6 +133,7 @@ function webhookTurnedOn(result: Record<string, unknown>): null {
                     </dl>
                 </AcmeCard>
                 <AcmeCard :title="t('Recent deliveries')" :padded="false">
+                    <template #action><a :href="`/api/app/projects/${project.id}/deploy/repositories/${repository.id}/webhook-deliveries.csv`" class="ui-btn ui-btn-quiet" download>{{ t('Export CSV') }}</a></template>
                     <p v-if="data.deliveries.length === 0" class="px-5 pb-5 text-sm text-muted sm:px-6">{{ t('No pushes have arrived yet.') }}</p>
                     <ul v-else class="divide-y divide-line text-sm">
                         <li v-for="delivery in data.deliveries" :key="delivery.id" class="flex items-center gap-3 px-5 py-3 sm:px-6">

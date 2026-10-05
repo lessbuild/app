@@ -28,6 +28,7 @@ final class ServiceProjectsQuery
 
         return array_values(Project::query()
             ->where('account_id', $account->id)
+            ->whereNull('archived_at')
             ->withExists(['enabledServices as service_enabled' => fn ($query) => $query->where('service', $service)])
             ->orderBy('name')
             ->get()

@@ -62,6 +62,7 @@ final class ShowBuildController
                 'setupStage' => $build->setup_stage,
                 'failureMessage' => $build->failure_message,
                 'approvalNote' => $build->approval_note,
+                'note' => $build->operator_note,
                 'rolledBackFrom' => $build->rolledBackFrom?->id,
                 'redeployedFrom' => $build->redeployedFrom?->id,
                 'promotedFrom' => $build->promotedFrom === null ? null : ['id' => $build->promotedFrom->id, 'environment' => $build->promotedFrom->environment?->name, 'note' => $build->promotion_note],

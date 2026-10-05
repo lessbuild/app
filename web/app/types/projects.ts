@@ -3,6 +3,7 @@
 export type ProjectCard = {
     id: string; name: string; description: string | null; serviceNames: string[]; environmentCount: number;
     serviceKeys: string[]; health: 'healthy' | 'degraded' | 'setting_up'; healthLabel: string; openIncidents: number; lastDeployAt: string | null; visitors: number[];
+    pinned: boolean; archived: boolean;
 };
 
 /** Something on the dashboard that needs someone now: an open incident or a failed deploy. */
@@ -18,11 +19,13 @@ export type Dashboard = {
     activityKind: string | null;
     activityKinds: Record<string, string>;
     canCreate: boolean;
+    showingArchived: boolean;
+    archivedCount: number;
 };
 
 export type ServiceOption = { key: string; name: string; tagline: string; icon: string };
 
-export type ProjectSummary = { id: string; name: string; description: string | null; accountName: string; isSample: boolean; checklistDismissed: boolean; createdAt: string };
+export type ProjectSummary = { id: string; name: string; description: string | null; accountName: string; isSample: boolean; checklistDismissed: boolean; createdAt: string; archivedAt: string | null };
 
 export type EnvironmentSummary = { id: string; name: string; kind: string; kindLabel: string };
 

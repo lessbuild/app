@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property string $slug
  * @property string|null $description
  * @property Carbon|null $checklist_dismissed_at
+ * @property Carbon|null $archived_at when it was archived: out of the projects list, with everything kept
  * @property string|null $workflow_document the last Deploy workflow (version 1 YAML) applied
  * @property Carbon|null $created_at
  * @property int|null $legacy_id Deployer's numeric ID, which the Deployer API v1 still accepts
@@ -47,7 +48,7 @@ class Project extends Model
      */
     protected function casts(): array
     {
-        return ['checklist_dismissed_at' => 'datetime', 'is_sample' => 'boolean'];
+        return ['checklist_dismissed_at' => 'datetime', 'archived_at' => 'datetime', 'is_sample' => 'boolean'];
     }
 
     /**

@@ -555,6 +555,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/settings/security/social/{provider}', ConnectProviderController::class)->middleware(['password.confirm', 'throttle:10,1'])->name('social.connect');
     Route::delete('/settings/security/social/{provider}', DisconnectProviderController::class)->middleware('password.confirm')->name('social.disconnect');
     Route::get('/settings/sessions', ShowSessionsController::class)->name('settings.sessions');
+    Route::get('/settings/sign-ins.csv', App\Http\Controllers\Settings\ExportSignInsController::class)->middleware('throttle:6,1')->name('settings.sign-ins.export');
+    Route::delete('/settings/sign-ins', App\Http\Controllers\Settings\ClearSignInsController::class)->middleware('password.confirm')->name('settings.sign-ins.destroy');
     Route::delete('/settings/sessions', SignOutOtherBrowsersController::class)->name('settings.sessions.destroy-others');
     Route::delete('/settings/sessions/{session}', SignOutBrowserController::class)->name('settings.sessions.destroy');
     Route::get('/settings/notifications', ShowNotificationSettingsController::class)->name('settings.notifications');
@@ -586,6 +588,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
         Route::delete('/', DeleteProjectController::class)->middleware('password.confirm')->name('destroy');
         Route::get('/setup', ShowProjectSetupController::class)->name('setup');
         Route::delete('/checklist', DismissChecklistController::class)->name('checklist.dismiss');
+        Route::put('/pin', App\Http\Controllers\Projects\PinProjectController::class)->middleware(['can:view,project', 'throttle:60,1'])->name('pin');
+        Route::put('/archive', App\Http\Controllers\Projects\ArchiveProjectController::class)->middleware(['can:update,project', 'throttle:20,1'])->name('archive');
         Route::post('/template', StoreProjectTemplateController::class)->middleware(['can:update,project', 'throttle:10,1'])->name('template.store');
         Route::get('/settings', ShowProjectSettingsController::class)->name('settings');
         Route::post('/environments', StoreEnvironmentController::class)->name('environments.store');
@@ -622,6 +626,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::get('/notifications', ShowNotificationsController::class)->name('notifications.index');
     Route::get('/notifications/export', ExportNotificationsController::class)->middleware('throttle:10,1')->name('notifications.export');
     Route::post('/notifications/read', MarkAllNotificationsReadController::class)->name('notifications.read');
+    Route::post('/notifications/bulk', App\Http\Controllers\Notifications\UpdateNotificationsController::class)->middleware('throttle:60,1')->name('notifications.bulk');
+    Route::delete('/notifications/read', App\Http\Controllers\Notifications\ClearReadNotificationsController::class)->middleware('throttle:10,1')->name('notifications.clear-read');
     Route::post('/notifications/{notification}/open', OpenNotificationController::class)->whereUuid('notification')->name('notifications.open');
 
     // The account: switching between accounts, members and invitations, and the account's own settings.
@@ -717,6 +723,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
 Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{project}')->middleware('project.context')->scopeBindings()->group(function (): void {
     Route::prefix('/deploy')->middleware('service:deploy')->name('deploy.')->group(function (): void {
         Route::get('/', ShowRepositoriesController::class)->name('repositories');
+        Route::post('/impact-preview', App\Http\Controllers\Deploy\PreviewChangeImpactController::class)->middleware(['can:view,project', 'throttle:30,1'])->name('impact-preview');
         Route::get('/pipelines', ShowPipelinesController::class)->name('pipelines');
         Route::post('/pipelines', StorePipelineController::class)->middleware('throttle:20,1')->name('pipelines.store');
         Route::post('/pipelines/{pipeline}/run', RunPipelineController::class)->whereNumber('pipeline')->middleware('throttle:20,1')->name('pipelines.run');
@@ -725,6 +732,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::get('/repositories/reachable', ListReachableRepositoriesController::class)->middleware(['can:create,App\\Models\\Repository,project', 'throttle:30,1'])->name('repositories.reachable');
         Route::post('/repositories', StoreRepositoryController::class)->middleware(['can:create,App\\Models\\Repository,project', 'throttle:20,1'])->name('repositories.store');
         Route::get('/repositories/{repository}', ShowRepositoryController::class)->whereNumber('repository')->middleware('can:view,repository')->name('repositories.show');
+        Route::get('/repositories/{repository}/builds.csv', App\Http\Controllers\Deploy\ExportRepositoryBuildsController::class)->whereNumber('repository')->middleware(['can:view,repository', 'throttle:10,1'])->name('repositories.builds.export');
+        Route::get('/repositories/{repository}/webhook-deliveries.csv', App\Http\Controllers\Deploy\ExportWebhookDeliveriesController::class)->whereNumber('repository')->middleware(['can:view,repository', 'throttle:10,1'])->name('repositories.webhook-deliveries.export');
         Route::put('/repositories/{repository}', UpdateRepositoryController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:20,1'])->name('repositories.update');
         Route::put('/repositories/{repository}/build-cache', UpdateBuildCacheController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:20,1'])->name('repositories.build-cache');
         Route::delete('/repositories/{repository}', DeleteRepositoryController::class)->whereNumber('repository')->middleware(['can:delete,repository', 'throttle:10,1'])->name('repositories.destroy');
@@ -782,6 +791,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::get('/builds/{build}', ShowBuildController::class)->whereNumber('build')->middleware('can:view,build')->name('builds.show');
         Route::get('/builds/{build}/status', ShowBuildStatusController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:120,1'])->name('builds.status');
         Route::get('/builds/{build}/compare', ShowBuildComparisonController::class)->whereNumber('build')->middleware('can:view,build')->name('builds.compare');
+        Route::get('/builds/{build}/log', App\Http\Controllers\Deploy\DownloadBuildLogController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:30,1'])->name('builds.log');
+        Route::put('/builds/{build}/note', App\Http\Controllers\Deploy\UpdateBuildNoteController::class)->whereNumber('build')->middleware(['can:note,build', 'throttle:30,1'])->name('builds.note');
         Route::post('/builds/{build}/redeploy', RedeployBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.redeploy');
         Route::post('/builds/{build}/rollback', RollbackBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.rollback');
         Route::post('/builds/{build}/promote', PromoteBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.promote');
@@ -832,6 +843,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::get('/servers/{server}/terminal/{terminal}/output', ReadServerTerminalOutputController::class)->whereNumber('server')->whereUlid('terminal')->middleware(['can:use,terminal', 'throttle:terminal'])->name('servers.terminal.output');
         Route::delete('/servers/{server}/terminal/{terminal}', CloseServerTerminalController::class)->whereNumber('server')->whereUlid('terminal')->middleware('can:use,terminal')->name('servers.terminal.destroy');
         Route::post('/servers/{server}/logs/{type}', RefreshServerLogController::class)->whereNumber('server')->middleware(['can:view,server', 'throttle:20,1'])->name('servers.logs.refresh');
+        Route::get('/servers/{server}/logs/{type}', App\Http\Controllers\Infrastructure\DownloadServerLogController::class)->whereNumber('server')->where('type', '[a-z0-9_-]+')->middleware(['can:view,server', 'throttle:30,1'])->name('servers.logs.download');
         Route::post('/servers/{server}/alerts', StoreServerAlertRuleController::class)->whereNumber('server')->middleware(['can:create,App\\Models\\ServerAlertRule,project', 'throttle:20,1'])->name('servers.alerts.store');
         Route::delete('/servers/{server}/alerts/{rule}', DeleteServerAlertRuleController::class)->whereNumber(['server', 'rule'])->middleware('can:update,server')->name('servers.alerts.destroy');
         Route::post('/servers/{server}/diagnostics', RunServerDiagnosticsController::class)->whereNumber('server')->middleware(['can:view,server', 'throttle:10,1'])->name('servers.diagnostics');

@@ -40,7 +40,9 @@ const changes = computed<Record<string, string>>(() => ({ created: t('Created'),
         <section v-if="recipe.updateAvailable" class="ui-panel space-y-3 border-warning p-6" aria-labelledby="update-heading">
             <h2 id="update-heading" class="text-lg font-semibold text-ink">{{ t('The gallery has a newer version') }}</h2>
             <p class="text-sm text-muted">{{ t('Updating replaces this recipe’s name, description and script. Your current version stays in the history.') }}</p>
-            <Disclosure :title="t('See the gallery version')"><CodeBlock :code="recipe.source?.script ?? ''" class="max-h-96 overflow-auto text-xs" /></Disclosure>
+            <h3 class="text-sm font-semibold text-ink">{{ t('What changed') }}</h3>
+            <ScriptDiff :before="recipe.script" :after="recipe.source?.script ?? ''" />
+            <Disclosure :title="t('See the whole gallery version')"><CodeBlock :code="recipe.source?.script ?? ''" class="max-h-96 overflow-auto text-xs" /></Disclosure>
             <ApiForm v-if="data.canUpdate" :action="`${base}/refresh`"><SubmitButton>{{ t('Update from the gallery') }}</SubmitButton></ApiForm>
         </section>
 

@@ -1,5 +1,8 @@
 <script setup lang="ts">
-/** Where the person is signed in (signing out any browser they don't recognise), and their recent sign-ins. */
+/**
+ * Where the person is signed in (signing out any browser they don't recognise), and their recent sign-ins, which can be
+ * downloaded or cleared.
+ */
 definePageMeta({ layout: 'app', area: 'settings' });
 const { t, dateTime } = useT();
 type Browser = { id: string; device: string; ipAddress: string | null; lastActiveAt: string; current: boolean };
@@ -37,6 +40,14 @@ const { data } = await useApi<{ sessions: Browser[] | null; signIns: SignIn[]; r
         </AcmeCard>
 
         <AcmeCard :padded="false" :title="t('Sign-in history')" :description="t('Successful and failed sign-ins from the last :days days. If you don’t recognise one, change your password and sign out other browsers.', { days: data.retentionDays })">
+            <template #action>
+                <div v-if="data.signIns.length > 0" class="flex flex-wrap gap-2">
+                    <a href="/api/app/settings/sign-ins.csv" class="ui-btn ui-btn-quiet ui-btn-sm" download>{{ t('Export CSV') }}</a>
+                    <DeleteDialog id="clear-sign-ins" :title="t('Clear your sign-in history?')" :description="t('The list of past sign-ins is forgotten. Browsers that are signed in stay signed in.')" action="/api/app/settings/sign-ins" :submit-label="t('Clear history')">
+                        <template #trigger="{ open }"><AcmeBtn size="sm" icon="trash" @click="open">{{ t('Clear history') }}</AcmeBtn></template>
+                    </DeleteDialog>
+                </div>
+            </template>
             <p v-if="data.signIns.length === 0" class="p-4 text-sm text-muted sm:p-6">{{ t('No sign-ins recorded yet.') }}</p>
             <DataTable v-else :caption="t('Recent sign-ins')" :framed="false">
                 <template #head>
