@@ -22,7 +22,7 @@ useHead({ htmlAttrs: { 'data-frame': 'site' } });
 </script>
 
 <template>
-    <div class="min-h-screen overflow-x-clip bg-page text-ink">
+    <div class="relative min-h-screen overflow-x-clip bg-page text-ink">
         <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-control focus:bg-surface focus:px-3 focus:py-2">{{ t('Skip to content') }}</a>
         <SiteHeader :frame="data" />
 
