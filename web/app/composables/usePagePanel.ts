@@ -21,7 +21,7 @@ export function usePagePanel(): PagePanel | null {
     return inject(pagePanelKey, null);
 }
 
-/** Whether a path is a create or edit page, which opens in a drawer over the current page. */
+/** Whether a path is a create or edit page (or creating a project from a template), which opens in a drawer. */
 export function isPanelPath(path: string): boolean {
-    return /\/(create|edit|new)$/.test(path.split('?')[0] ?? path);
+    return /\/(create|edit|new)$|^\/projects\/templates$/.test(path.split('?')[0] ?? path);
 }

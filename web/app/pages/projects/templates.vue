@@ -4,7 +4,7 @@ import type { ProjectTemplate } from '~/types/projects';
 /**
  * Set up a whole project from a template (the Acme theme's templates page): pick one, then fill in the few details it
  * needs (its name and domain, the server it runs on and the repository it deploys from). Saved templates (made from a
- * project's settings) can be removed here.
+ * project's settings) can be removed here. Opened from another page, it shows in a drawer over it.
  */
 definePageMeta({ layout: 'app' });
 const { t, tc } = useT();
@@ -16,6 +16,7 @@ const busy = ref(false);
 const error = ref<string | null>(null);
 const errors = ref<ValidationError | null>(null);
 const shell = useShell();
+const panel = usePagePanel();
 const requested = typeof route.query.template === 'string' ? route.query.template : '';
 const form = reactive({
     template: data.value.templates.some((template) => template.key === requested) ? requested : '',
@@ -47,6 +48,12 @@ async function create() {
     try {
         const result = await send<{ redirect: string; message: string }>('POST', '/projects/templates', { ...form, server_id: Number(form.server_id), provider_id: Number(form.provider_id) });
         flash(result.message);
+        // In the drawer, the new project shows up on the page underneath; on its own page, open the new project.
+        if (panel) {
+            panel.close();
+            await refreshPage();
+            return;
+        }
         await navigateTo(local(result.redirect));
     } catch (problem) {
         if (problem instanceof ValidationError) {
@@ -67,7 +74,7 @@ async function create() {
                 <p v-if="data.gitProviders.length === 0">{{ t('Connect GitHub, GitLab or Bitbucket first.') }} <NuxtLink to="/account/providers" class="font-medium underline">{{ t('Providers') }}</NuxtLink></p>
             </AcmeAlert>
 
-            <ul class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" role="radiogroup" :aria-label="t('Templates')">
+            <ul class="grid gap-4 sm:grid-cols-2 @5xl:grid-cols-3" role="radiogroup" :aria-label="t('Templates')">
                 <li v-for="template in data.templates" :key="template.key">
                     <button type="button" role="radio" :aria-checked="form.template === template.key" :class="['flex h-full w-full flex-col rounded-2xl border bg-surface p-5 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-lift', form.template === template.key ? 'border-accent ring-2 ring-accent' : 'border-line']" @click="choose(template.key)">
                         <span class="flex items-center gap-3"><AcmeIconBubble :icon="template.icon" size="md" /><span class="font-semibold text-ink">{{ template.name }}</span><AcmeBadge v-if="template.savedId" tone="violet" class="ml-auto">{{ t('Yours') }}</AcmeBadge></span>

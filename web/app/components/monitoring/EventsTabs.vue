@@ -5,12 +5,12 @@ const { t } = useT();
 </script>
 
 <template>
-    <nav class="flex gap-6 border-b border-line" :aria-label="t('Events view')">
+    <nav class="flex gap-6 overflow-x-auto border-b border-line [scrollbar-width:none]" :aria-label="t('Events view')">
         <NuxtLink
             v-for="tab in [{ key: 'stream', label: t('Stream'), to: `/projects/${projectId}/monitoring/events` }, { key: 'map', label: t('Service map'), to: `/projects/${projectId}/monitoring/dependencies` }]"
             :key="tab.key"
             :to="tab.to"
-            :class="['-mb-px border-b-2 pb-3 text-sm font-medium', tab.key === current ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']"
+            :class="['-mb-px shrink-0 whitespace-nowrap border-b-2 pb-3 text-sm font-medium', tab.key === current ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']"
             :aria-current="tab.key === current ? 'page' : undefined"
         >
             {{ tab.label }}
