@@ -2,6 +2,8 @@
 // KPI tile: tinted icon chip, big value, change pill and optional area sparkline.
 // `icon`/`tone` can be passed explicitly; otherwise they are inferred from the label.
 // `tinted` swaps the white card for a pastel wash in the tone's colour.
+import type { AcmeTone as Tone } from '~/utils/acme'
+
 const props = defineProps<{ label: string; value: string; delta?: string; down?: boolean; spark?: number[]; icon?: string; tone?: Tone | 'sky'; tinted?: boolean }>()
 const guesses: [RegExp, string, Tone | 'sky'][] = [
   [/overdue|low stock|expiring|bounce/i, 'alert', 'red'],

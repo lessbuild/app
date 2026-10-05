@@ -78,6 +78,8 @@ PATCHES = [
     ('DonutChart', "{{ hover === null ? 'Total' : data[hover]!.label }}", "{{ hover === null ? t('Total') : data[hover]!.label }}"),
     ('LineChart', '+t', ''),
     ('LineChart', '<th>Period</th>', "<th>{{ t('Period') }}</th>"),
+    ('FileIcon', "?? ['page', 'text-muted bg-black/5'])", "?? (['page', 'text-muted bg-black/5'] as [string, string]))"),
+    ('Stat', "const props = defineProps<", "import type { AcmeTone as Tone } from '~/utils/acme'\n\nconst props = defineProps<"),
     ('BarList', "{ valueLabel: 'Visitors' })", '{ valueLabel: undefined })'),
     ('BarList', "const fmt = (v: number) => (props.format ? props.format(v) : v.toLocaleString('en-US'))", "const { t, number } = useT()\nconst fmt = (v: number) => (props.format ? props.format(v) : number(v))"),
     ('BarList', '<span>{{ valueLabel }}</span>', "<span>{{ valueLabel ?? t('Visitors') }}</span>"),

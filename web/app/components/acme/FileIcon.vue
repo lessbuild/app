@@ -9,7 +9,7 @@ const map: Record<string, [string, string]> = {
   image: ['image', 'text-violet-600 bg-violet-500/10'],
   slides: ['monitor', 'text-orange-600 bg-orange-500/10'],
 }
-const m = computed(() => map[props.kind] ?? ['page', 'text-muted bg-black/5'])
+const m = computed(() => map[props.kind] ?? (['page', 'text-muted bg-black/5'] as [string, string]))
 const sizes = { sm: ['size-7', 16], md: ['size-9', 18], lg: ['size-14', 28] } as const
 </script>
 
