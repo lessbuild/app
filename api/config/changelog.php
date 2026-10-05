@@ -10,7 +10,6 @@ return [
         'Connect a cloud or Git provider from the new server form, a template or a new repository without leaving it; the form picks it up straight away.',
         'Add an alert destination from a monitor’s or alert rule’s settings when there’s nowhere for alerts to go yet.',
         'Tab rows scroll sideways on phones instead of wrapping.',
-        'Monitoring → Alerts has tabs for rules, destinations, on-call schedules, maintenance and noise.',
         'Install the GitHub App from Account → Providers.',
         'New help guides: domains, your data, commands and the terminal, recipes, load balancers, configuration as code, on-call, SLOs, dashboards and funnels; the rest are updated for the current pages.',
     ]],

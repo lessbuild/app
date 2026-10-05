@@ -18,7 +18,6 @@ const tones: Record<string, 'danger' | 'success' | 'neutral' | 'warning'> = { br
                 <AcmeBtn variant="primary" :to="`/projects/${project.id}/monitoring/rules/create`" icon="plus">{{ t('New rule') }}</AcmeBtn>
             </template>
         </ProjectHeader>
-        <AlertsTabs :project-id="project.id" current="rules" class="mb-6" />
         <div class="space-y-6">
             <SectionNav section="alerts" :project-id="project.id" />
             <EmptyState v-if="data.rules.length === 0" icon="bell" :title="t('No alert rules yet')" :description="t('Add a rule to be told when errors rise, requests slow down or a metric crosses a line.')">
