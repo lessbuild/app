@@ -38,7 +38,7 @@ final class ShowFeaturesController
 
         return response()->json([
             'meta' => PageMeta::for(
-                $definition->name().': '.$copy['eyebrow'],
+                (string) ($copy['search_title'] ?? $definition->name().': '.$copy['eyebrow']),
                 (string) $copy['summary'],
                 route('features', $service),
                 in_array($service, self::PREVIEW_IMAGES, true) ? $service.'.png' : null,

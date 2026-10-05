@@ -13,6 +13,8 @@ const drawer = ref(false);
 
 useHead({ htmlAttrs: { 'data-frame': 'app' } });
 watch(() => route.fullPath, () => (drawer.value = false));
+const sharedProvider = useSharedDialog('add-provider');
+const sharedDestination = useSharedDialog('add-destination');
 
 /**
  * Close the drawer with Escape.
@@ -68,6 +70,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', escape));
             </div>
         </div>
         <PagePanel />
+        <AddProviderDialog v-if="sharedProvider" stay />
+        <AddDestinationDialog v-if="sharedDestination && typeof route.params.project === 'string'" :project-id="route.params.project" />
         <ConfirmIdentityDialog />
         <Toaster />
     </div>

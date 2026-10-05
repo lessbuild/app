@@ -7,7 +7,7 @@ import type { ProjectOverview, ProjectSetup } from '~/types/projects';
  * step done in a form (a provider, a website, a variable, an Analytics site) opens it in a dialog over the guide, and
  * saving it comes back here.
  */
-definePageMeta({ layout: 'app' });
+definePageMeta({ layout: 'app', dialogs: ['add-provider'] });
 const { t } = useT();
 const route = useRoute();
 const { data, refresh } = await useApi<{ overview: ProjectOverview; setup: ProjectSetup; canChange: boolean }>(() => `/projects/${route.params.project}/setup`);

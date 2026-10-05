@@ -38,6 +38,8 @@ return [
             'accent' => 'deploy',
             'icon' => 'cloud-upload',
             'eyebrow' => 'Build and ship',
+            // The page's title in search results: what someone would search for.
+            'search_title' => 'Git deployment to your own servers, with previews and rollback',
             'headline' => 'Deploy with clarity. Recover with confidence.',
             'summary' => 'Release from GitHub, GitLab or Bitbucket to servers you own, with approvals, safe strategies, previews and a rollback that’s always one click away.',
             'card_summary' => 'Release from Git to your own servers, with previews, approvals and a recovery point for every deploy.',
@@ -132,6 +134,8 @@ return [
             'accent' => 'infrastructure',
             'icon' => 'server',
             'eyebrow' => 'Servers you own',
+            // The page's title in search results: what someone would search for.
+            'search_title' => 'Server management in your own cloud accounts',
             'headline' => 'Provision without the guesswork.',
             'summary' => 'Create and import servers, host websites with domains and TLS, back them up, and keep an eye on what it all costs.',
             'card_summary' => 'Create servers in your own cloud accounts, host websites on them, and keep them backed up.',
@@ -219,6 +223,8 @@ return [
             'accent' => 'monitor',
             'icon' => 'pulse',
             'eyebrow' => 'Understand production',
+            // The page's title in search results: what someone would search for.
+            'search_title' => 'Uptime monitoring, error tracking and alerts',
             'headline' => 'See health, errors and changes together.',
             'summary' => 'Uptime, heartbeat and queue checks, application telemetry and traces, and alerts that turn the signals that matter into incidents.',
             'card_summary' => 'Understand uptime, application behaviour and incidents across every environment you run.',
@@ -293,6 +299,8 @@ return [
             'accent' => 'security',
             'icon' => 'shield-check',
             'eyebrow' => 'Protect what you run',
+            // The page's title in search results: what someone would search for.
+            'search_title' => 'Security scanning for your code and servers',
             'headline' => 'Find the risks before someone else does.',
             'summary' => 'Vulnerable packages, leaked secrets, unpatched servers, weak domains and attacks, found on the servers and code you already run here, with the fix beside each one.',
             'card_summary' => 'Scan your apps, servers and domains for vulnerabilities, leaked secrets and attacks, and fix what matters first.',
@@ -370,6 +378,8 @@ return [
             'accent' => 'audit',
             'icon' => 'search',
             'eyebrow' => 'See it as visitors do',
+            // The page's title in search results: what someone would search for.
+            'search_title' => 'Website audits by a browser playing a first-time visitor',
             'headline' => 'Watch a visitor try your site. Then fix what got in the way.',
             'summary' => 'A browser plays a first-time visitor on your site and your competitors’, tries real tasks like finding the price or signing up, and shows what to improve with screenshots and mock-ups of the fix.',
             'card_summary' => 'Watch a simulated visitor use your site and your competitors’, and see what to improve, with pictures.',
@@ -444,6 +454,8 @@ return [
             'accent' => 'analytics',
             'icon' => 'chart',
             'eyebrow' => 'Understand your audience',
+            // The page's title in search results: what someone would search for.
+            'search_title' => 'Privacy-friendly website analytics',
             'headline' => 'Understand the work your website is doing.',
             'summary' => 'A privacy-friendly view of visitors, pages, sources and goals, with the depth to explore paths, retention and revenue when you need it.',
             'card_summary' => 'See how visitors find your site, what they read, and which visits turn into outcomes.',

@@ -11,6 +11,7 @@ definePageMeta({ layout: 'app', service: 'deploy' });
 type Reachable = { name: string; url: string; private: boolean; branch: string; updatedAt: string | null };
 const { t } = useT();
 const route = useRoute();
+const dialogLink = useDialogLink();
 const { data } = await useApi<{ overview: ProjectOverview; options: RepositoryFormOptions }>(() => `/projects/${route.params.project}/deploy/repositories/create`);
 const project = computed(() => data.value.overview.project);
 const text = (value: unknown) => (typeof value === 'string' && value !== '' ? value : '');
@@ -56,6 +57,8 @@ function pick(repository: Reachable) {
 }
 
 watch(() => form.provider, load);
+// A provider connected from here (in the dialog) becomes the choice.
+watch(() => data.value.options.providers, (providers) => (form.provider ||= providers[0]?.value ?? ''));
 onMounted(load);
 </script>
 
@@ -66,10 +69,13 @@ onMounted(load);
             <div class="space-y-6">
                 <AcmeCard :title="t('1. Choose a repository')" :description="t('Repositories your Git provider lets us reach.')">
                     <div class="grid gap-3 sm:grid-cols-[14rem_1fr] sm:items-end">
-                        <SelectField id="repository-provider" v-model="form.provider" name="provider_id" :label="t('Git provider')" :options="data.options.providers" :description="data.options.providers.length === 0 ? t('Add a GitHub, GitLab or Bitbucket token under Account → Providers first.') : undefined" />
+                        <SelectField id="repository-provider" v-model="form.provider" name="provider_id" :label="t('Git provider')" :options="data.options.providers"  />
                         <AcmeSearchInput v-model="search" :label="t('Search repositories')" />
                     </div>
-                    <p v-if="loading" class="mt-4 text-sm text-muted" role="status">{{ t('Loading…') }}</p>
+                    <p v-if="data.options.providers.length === 0" class="mt-4 text-sm text-muted">
+                        {{ t('Connect GitHub, GitLab or Bitbucket first.') }} <NuxtLink :to="dialogLink('add-provider')" class="font-medium text-ink underline">{{ t('Connect a provider') }}</NuxtLink>
+                    </p>
+                    <p v-else-if="loading" class="mt-4 text-sm text-muted" role="status">{{ t('Loading…') }}</p>
                     <AcmeAlert v-else-if="problem" tone="warning" class="mt-4">{{ problem }}</AcmeAlert>
                     <ul v-else-if="shown.length > 0" class="mt-4 max-h-80 divide-y divide-line overflow-y-auto rounded-xl border border-line" role="radiogroup" :aria-label="t('Repositories')">
                         <li v-for="repository in shown" :key="repository.url">

@@ -2,7 +2,7 @@
 import type { ProviderSummary, ProviderType } from '~/types/providers';
 
 /** The account's providers: clouds that host servers, Cloudflare for DNS, and Git hosts, each with its connection. */
-definePageMeta({ layout: 'app', area: 'account' });
+definePageMeta({ layout: 'app', area: 'account', dialogs: ['add-provider'] });
 const { t, tc } = useT();
 const route = useRoute();
 const { data } = await useApi<{ account: { id: string; name: string }; providers: ProviderSummary[]; types: ProviderType[] }>('/account/providers');

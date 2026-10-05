@@ -52,7 +52,7 @@ final class DiscoverabilityTest extends TestCase
     public function test_guests_are_told_which_language_a_page_is_in(): void
     {
         $this->getJson('/api/app/site/pricing', ['Accept-Language' => 'de'])->assertOk()->assertHeader('Content-Language', 'de')
-            ->assertJsonPath('meta.title', __('Pricing', [], 'de'));
+            ->assertJsonPath('meta.title', __('Pricing: a free tier for every service', [], 'de'));
     }
 
     /**

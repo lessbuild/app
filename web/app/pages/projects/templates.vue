@@ -9,6 +9,7 @@ import type { ProjectTemplate } from '~/types/projects';
 definePageMeta({ layout: 'app' });
 const { t, tc } = useT();
 const route = useRoute();
+const dialogLink = useDialogLink();
 type Choice = { id: number; label: string };
 const { data } = await useApi<{ account: { id: string; name: string }; templates: ProjectTemplate[]; servers: Choice[]; gitProviders: Choice[] }>('/projects/templates');
 
@@ -71,7 +72,7 @@ async function create() {
         <div class="space-y-6">
             <AcmeAlert v-if="!ready" tone="warning">
                 <p v-if="data.servers.length === 0">{{ t('You need an active app server first.') }} <NuxtLink to="/dashboard" class="font-medium underline">{{ t('Create one from a project’s Infrastructure') }}</NuxtLink></p>
-                <p v-if="data.gitProviders.length === 0">{{ t('Connect GitHub, GitLab or Bitbucket first.') }} <NuxtLink to="/account/providers" class="font-medium underline">{{ t('Providers') }}</NuxtLink></p>
+                <p v-if="data.gitProviders.length === 0">{{ t('Connect GitHub, GitLab or Bitbucket first.') }} <NuxtLink :to="dialogLink('add-provider')" class="font-medium underline">{{ t('Connect a provider') }}</NuxtLink></p>
             </AcmeAlert>
 
             <ul class="grid gap-4 sm:grid-cols-2 @5xl:grid-cols-3" role="radiogroup" :aria-label="t('Templates')">

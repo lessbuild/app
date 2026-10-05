@@ -22,9 +22,10 @@ final class ShowComparisonController
         $copy = config('compare.competitors.'.$competitor);
         abort_unless(is_array($copy), 404);
         $title = __(':app vs :other', ['app' => config('app.name'), 'other' => $copy['name']]);
+        $description = __('Looking for a :other alternative? How :app compares with :other: what both do, where they differ, and when to choose each.', ['app' => config('app.name'), 'other' => $copy['name']]);
 
         return response()->json([
-            'meta' => PageMeta::for($title, __('How :app compares with :other, and when to choose each.', ['app' => config('app.name'), 'other' => $copy['name']]), route('compare', $competitor), null, [
+            'meta' => PageMeta::for(__(':app vs :other: an alternative compared', ['app' => config('app.name'), 'other' => $copy['name']]), $description, route('compare', $competitor), null, [
                 StructuredData::breadcrumbs([config('app.name') => route('home'), $title => route('compare', $competitor)]),
             ]),
             'slug' => $competitor,

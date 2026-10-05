@@ -19,6 +19,7 @@ const kinds = computed(() => [
     { value: 'queue', icon: 'layers', description: t('Jobs aren’t piling up and workers are alive.') },
 ].filter((kind) => kind.value in props.form.types));
 const { t, tc } = useT();
+const dialogLink = useDialogLink();
 const monitor = computed(() => props.form.monitor);
 const value = (number: number | null | undefined, fallback: number | string) => (number === null || number === undefined ? String(fallback) : String(number));
 const environment = ref<string | null>(monitor.value?.environmentId ?? props.environments[0]?.value ?? null);
@@ -217,7 +218,7 @@ const nowLabel = computed(() => (monitor.value ? t('Now: :target. Leave blank to
             />
             <p v-if="form.destinations.length === 0" class="text-sm text-muted">
                 {{ t('No alert destinations yet. Incidents still show up under Incidents.') }}
-                <NuxtLink :to="`/projects/${projectId}/monitoring/alerts`" class="font-medium text-ink underline">{{ t('Add a destination') }}</NuxtLink>
+                <NuxtLink :to="dialogLink('add-destination')" class="font-medium text-ink underline">{{ t('Add a destination') }}</NuxtLink>
             </p>
             </fieldset>
             <div class="mt-4 grid gap-3">

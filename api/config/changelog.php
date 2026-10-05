@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-05', 'title' => 'Stay where you are: forms open in drawers', 'changes' => [
+        'Creating and editing open in a drawer over the page you were on, and saving keeps you there.',
+        'Starting a project from a template opens in a drawer too.',
+        'Connect a cloud or Git provider from the new server form, a template or a new repository without leaving it; the form picks it up straight away.',
+        'Add an alert destination from a monitor’s or alert rule’s settings when there’s nowhere for alerts to go yet.',
+        'Tab rows scroll sideways on phones instead of wrapping.',
+    ]],
     // Shown once Audit is switched on (config/site_audits.php).
     ...((bool) env('AUDIT_ENABLED', false) ? [
         ['date' => '2026-10-03', 'title' => 'Audit: see your site as a first-time visitor does', 'changes' => [

@@ -18,6 +18,7 @@ type RulePage = {
 };
 const { t, number } = useT();
 const route = useRoute();
+const dialogLink = useDialogLink();
 const { data } = await useApi<RulePage>(() => `/projects/${route.params.project}/monitoring/rules/${route.params.rule}`);
 const project = computed(() => data.value.overview.project);
 const rule = computed(() => data.value.rule);
@@ -70,7 +71,7 @@ const stepRows = computed(() => Math.min(data.value.escalationSteps, Math.max(3,
                     <input type="hidden" name="version" :value="rule.version">
                     <p v-if="data.destinations.length === 0" class="text-sm text-muted">
                         {{ t('No alert destinations yet.') }}
-                        <NuxtLink :to="`/projects/${project.id}/monitoring/alerts`" class="font-bold text-primary hover:underline">{{ t('Add a destination') }}</NuxtLink>
+                        <NuxtLink :to="dialogLink('add-destination')" class="font-bold text-primary hover:underline">{{ t('Add a destination') }}</NuxtLink>
                     </p>
                     <CheckboxField
                         v-for="destination in data.destinations"

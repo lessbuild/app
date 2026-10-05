@@ -768,7 +768,10 @@ Artisan::command('platform:self-monitor {email? : The admin who owns it and gets
 
     return 0;
 })->purpose('Monitor the platform with its own Monitoring: uptime, the scheduler and its exceptions');
-Schedule::call(fn () => app(SelfMonitoring::class)->beat(app(App\Actions\Monitoring\RecordHeartbeat::class)))->everyMinute()->name('platform:self-monitor-heartbeat')->withoutOverlapping(5);
+// A closure that returns false counts as a failed task, so the heartbeat's "not set up" answer is dropped.
+Schedule::call(function (): void {
+    app(SelfMonitoring::class)->beat(app(App\Actions\Monitoring\RecordHeartbeat::class));
+})->everyMinute()->name('platform:self-monitor-heartbeat')->withoutOverlapping(5);
 
 Artisan::command('onboarding:remind', function (App\Actions\Onboarding\SendSetupReminders $reminders): void {
     $this->info(trans_choice('Sent :count setup reminder.|Sent :count setup reminders.', $count = $reminders->handle(), ['count' => $count]));

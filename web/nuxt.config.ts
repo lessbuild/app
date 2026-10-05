@@ -30,7 +30,12 @@ export default defineNuxtConfig({
                 { name: 'viewport', content: 'width=device-width, initial-scale=1' },
                 { name: 'theme-color', content: '#f4f7fb' },
             ],
-            link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
+            link: [
+                { rel: 'manifest', href: '/manifest.webmanifest' },
+                { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
+                { rel: 'icon', href: '/icon.svg', type: 'image/svg+xml' },
+                { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+            ],
         },
     },
     routeRules: {

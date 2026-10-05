@@ -20,7 +20,7 @@ final class ShowHelpController
         $guides = collect((array) config('help.guides'));
 
         return response()->json([
-            'meta' => PageMeta::for(__('Help centre'), __('Short guides to every part of :app.', ['app' => config('app.name')]), route('help'), null, [
+            'meta' => PageMeta::for(__('Help centre'), __('Step-by-step guides to :app: connect a cloud provider, create servers, deploy from Git, monitor uptime and errors, add analytics and keep it all secure.', ['app' => config('app.name')]), route('help'), null, [
                 StructuredData::breadcrumbs([config('app.name') => route('home'), __('Help centre') => route('help')]),
             ]),
             'groups' => collect((array) config('help.groups'))->map(fn (array $group, string $key): array => [

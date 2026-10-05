@@ -10,6 +10,7 @@ import type { ServerCreateForm } from '~/types/infrastructure';
 const props = defineProps<{ projectId: string }>();
 const { t } = useT();
 const money = useMoney();
+const dialogLink = useDialogLink();
 const form = ref<ServerCreateForm | null>(null);
 const failed = ref(false);
 const provider = ref<string | null>(null);
@@ -35,6 +36,8 @@ async function load(providerId: string | null) {
 }
 
 onMounted(() => load(null));
+// A provider connected in the dialog over this form shows up in it straight away.
+onDialogClosed('add-provider', () => load(provider.value));
 watch(provider, (value, previous) => {
     if (previous !== null && value !== null && value !== form.value?.providerId) {
         load(value);
@@ -67,9 +70,9 @@ function sizeParts(text: string): { name: string; spec: string } {
             v-else-if="form && form.providers.length === 0"
             icon="cpu"
             :title="t('Connect a cloud provider first')"
-            :description="t('Add a DigitalOcean, Hetzner Cloud, Vultr, Linode, AWS, Google Cloud, Azure, OVHcloud, Scaleway or UpCloud credential on the account’s Providers page.')"
+            :description="t('Add a DigitalOcean, Hetzner Cloud, Vultr, Linode, AWS, Google Cloud, Azure, OVHcloud, Scaleway or UpCloud API token. It opens here, and the form picks it up straight away.')"
         >
-            <AcmeBtn to="/account/providers" icon="plus">{{ t('Providers') }}</AcmeBtn>
+            <AcmeBtn :to="dialogLink('add-provider')" variant="primary" icon="plus">{{ t('Connect a provider') }}</AcmeBtn>
         </AcmeEmptyState>
         <ApiForm v-else-if="form" :action="`/api/app/projects/${projectId}/infrastructure/servers`" class="!grid gap-6 @3xl:grid-cols-[1fr_20rem]">
             <input type="hidden" name="provider_id" :value="form.providerId ?? ''">

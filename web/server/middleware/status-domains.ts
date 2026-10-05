@@ -10,7 +10,7 @@ const REMEMBER = 60_000;
 const known = new Map<string, { status: boolean; until: number }>();
 
 /** The paths a status page's domain serves besides its root: the page's API calls, assets and other status pages. */
-const allowed = [/^\/$/, /^\/_nuxt\//, /^\/__nuxt/, /^\/api\//, /^\/sanctum\//, /^\/status\//, /^\/favicon\.ico$/, /^\/manifest\.webmanifest$/, /^\/robots\.txt$/];
+const allowed = [/^\/$/, /^\/_nuxt\//, /^\/__nuxt/, /^\/api\//, /^\/sanctum\//, /^\/status\//, /^\/favicon\.ico$/, /^\/icon\.svg$/, /^\/apple-touch-icon\.png$/, /^\/images\/icon-\d+\.png$/, /^\/manifest\.webmanifest$/, /^\/robots\.txt$/];
 
 /** Find out (or remember) whether a host is the verified domain of a published status page. */
 async function isStatusDomain(host: string, laravelUrl: string): Promise<boolean> {

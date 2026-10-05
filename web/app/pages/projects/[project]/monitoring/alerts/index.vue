@@ -3,7 +3,7 @@ import type { AlertDestinationOptions } from '~/types/monitoring';
 import type { ProjectOverview } from '~/types/projects';
 
 /** Where the account's alerts go: email, push, texts and calls, webhooks, Slack, Teams, Discord or PagerDuty. */
-definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/rules' });
+definePageMeta({ layout: 'app', service: 'monitoring', tab: 'monitoring/rules', dialogs: ['add-destination'] });
 type Destination = { id: number; name: string; type: string; target: string; monitors: number; enabled: boolean };
 const { t, tc } = useT();
 const route = useRoute();
@@ -45,15 +45,6 @@ const kindIcon = (type: string) => (/mail/i.test(type) ? 'mail' : /slack|teams|d
             </ul>
         </div>
 
-        <FormDialog
-            v-if="data.canManage && data.options"
-            id="add-destination"
-            :title="t('Add a destination')"
-            :description="t('Account admins manage destinations. Pick which monitors use one on each monitor’s settings.')"
-            :action="`/api/app/projects/${project.id}/monitoring/alerts`"
-            :submit="t('Add destination')"
-        >
-            <DestinationFields :options="data.options" />
-        </FormDialog>
+        <AddDestinationDialog v-if="data.canManage && data.options" :project-id="project.id" :options="data.options" />
     </div>
 </template>

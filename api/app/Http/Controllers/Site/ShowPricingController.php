@@ -25,7 +25,7 @@ final class ShowPricingController
     public function __invoke(ServiceRegistry $services): JsonResponse
     {
         return response()->json([
-            'meta' => PageMeta::for(__('Pricing'), __('Each service has its own tiers. Start free and pay for what each project needs.'), route('pricing'), null, [
+            'meta' => PageMeta::for(__('Pricing: a free tier for every service'), __('Deploy, Monitoring, Security, Analytics and Audit each have a free tier, and Infrastructure is included. Pay for what each project needs, on one bill, with your apps on servers in your own cloud.'), route('pricing'), null, [
                 StructuredData::breadcrumbs([config('app.name') => route('home'), __('Pricing') => route('pricing')]),
             ]),
             'trialDays' => (int) config('billing.trial_days'),
