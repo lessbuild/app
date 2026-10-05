@@ -103,3 +103,19 @@ jobs:
           path: web/.output
           include-hidden-files: true
           retention-days: 7
+
+  # The Terraform provider (Go) builds and passes its tests, so dependency updates are checked too.
+  terraform-provider:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: integrations/terraform-provider
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: integrations/terraform-provider/go.mod
+          cache-dependency-path: integrations/terraform-provider/go.sum
+      - run: go mod verify
+      - run: go vet ./...
+      - run: go test ./...
