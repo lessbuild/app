@@ -32,11 +32,11 @@ function access(member: MemberRow): string {
                 <UiButton variant="primary" :to="{ query: { dialog: 'invite-member' } }"><Icon name="plus" class="h-4 w-4" />{{ t('Invite someone') }}</UiButton>
             </template>
 
-        <section aria-labelledby="people-heading" class="grid gap-4 border-b border-line pb-7 last:border-b-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] md:gap-10">
+        <section aria-labelledby="people-heading" class="grid gap-4 border-b border-line pb-7">
             <div>
                 <h2 id="people-heading" class="text-[1.125rem] font-semibold text-ink">{{ t('People') }}</h2>
                 <p class="mt-1 text-[0.9375rem] text-muted">{{ tc(':count person|:count people', overview.members.length, { count: overview.members.length }) }}</p>
-                <TextLink :to="{ query: { dialog: 'roles' } }" variant="muted" size="sm" class="mt-2 inline-block">{{ t('What each role can do') }}</TextLink>
+                <TextLink :to="{ query: { dialog: 'roles' } }" variant="muted" size="sm" class="mt-1 inline-block">{{ t('What each role can do') }}</TextLink>
             </div>
             <ul class="rounded-2xl border border-line bg-surface shadow-card min-w-0 divide-y divide-line self-start overflow-hidden">
                 <li v-for="member in overview.members" :key="member.membershipId" class="flex flex-wrap items-center gap-3 px-4 py-3">

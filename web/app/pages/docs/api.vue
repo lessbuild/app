@@ -47,7 +47,7 @@ onBeforeUnmount(() => observer?.disconnect());
                 <section id="introduction" data-api-section class="scroll-mt-24">
                     <p class="text-sm font-medium text-accent">{{ t('API reference') }}</p>
                     <h1 class="mt-2 text-4xl font-semibold tracking-tight text-ink">{{ t('Introduction') }}</h1>
-                    <p class="mt-4 whitespace-pre-line text-lg leading-relaxed text-muted">{{ data.description }}</p>
+                    <p class="mt-4 text-lg leading-relaxed text-muted">{{ data.description }}</p>
                     <AcmeAlert tone="info" :title="t('API tokens')" class="mt-6">{{ t('Create tokens under Account → API tokens.') }} <a :href="data.openApiUrl" class="font-medium underline">{{ t('OpenAPI description (JSON)') }}</a></AcmeAlert>
                 </section>
                 <section v-for="group in data.groups" :id="slug(group.tag)" :key="group.tag" data-api-section class="scroll-mt-24">
