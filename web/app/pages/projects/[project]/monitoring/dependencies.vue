@@ -29,43 +29,48 @@ function apply() {
 </script>
 
 <template>
-    <div class="space-y-6">
-        <ProjectHeader :overview="data.overview" :title="t('Service map')" :description="t('Which services call which, built from trace spans.')" />
-        <form class="ui-card flex flex-wrap items-end gap-3 p-4" @submit.prevent="apply">
-            <SelectField v-model="range" name="range" :label="t('Time')" :options="ranges" />
-            <SelectField v-model="environment" name="environment" :label="t('Environment')" :placeholder="t('All')" :options="environments" />
-            <AcmeBtn type="submit">{{ t('Show') }}</AcmeBtn>
-        </form>
-        <AcmeAlert v-if="data.map.truncated" tone="warning">{{ t('Only the first :count spans are included. Pick a shorter time range for a complete map.', { count: number(20000) }) }}</AcmeAlert>
-        <div class="grid gap-4 sm:grid-cols-3">
-            <StatCard :label="t('Services')" :value="number(data.map.service_count)" />
-            <StatCard :label="t('Dependencies')" :value="number(data.map.dependency_count)" />
-            <StatCard :label="t('Traces')" :value="number(data.map.traces)" />
+    <div>
+        <ProjectHeader :overview="data.overview" :title="t('Monitoring')" :description="t('Everything your apps sent: search it, follow a trace, see which services call which.')" />
+        <div class="space-y-6">
+            <AcmeCard :padded="false">
+                <div class="px-5 pt-4 sm:px-6"><EventsTabs :project-id="data.overview.project.id" current="map" /></div>
+                <div class="grid gap-5 p-5 sm:p-6">
+                    <form class="flex flex-wrap items-end gap-3" @submit.prevent="apply">
+                        <SelectField v-model="range" name="range" :label="t('Time')" :options="ranges" />
+                        <SelectField v-model="environment" name="environment" :label="t('Environment')" :placeholder="t('All')" :options="environments" />
+                        <AcmeBtn type="submit">{{ t('Show') }}</AcmeBtn>
+                        <p class="ml-auto text-sm text-muted">{{ t(':services services · :dependencies dependencies · :traces traces', { services: number(data.map.service_count), dependencies: number(data.map.dependency_count), traces: number(data.map.traces) }) }}</p>
+                    </form>
+                    <AcmeAlert v-if="data.map.truncated" tone="warning">{{ t('Only the first :count spans are included. Pick a shorter time range for a complete map.', { count: number(20000) }) }}</AcmeAlert>
+                    <ServiceMap v-if="data.map.services.length > 0" :services="data.map.services" :edges="data.map.edges" :label="t('Service map')" />
+                    <AcmeEmptyState v-else icon="branch" :title="t('No spans in this range.')" :description="t('No calls between services in this range. Spans need a parent in another service to appear here.')" />
+                    <DataTable v-if="data.map.edges.length > 0" :caption="t('Calls between services')" :framed="false">
+                        <template #head>
+                            <tr><th scope="col">{{ t('From') }}</th><th scope="col">{{ t('To') }}</th><th scope="col" class="text-right">{{ t('Calls') }}</th><th scope="col" class="text-right">{{ t('Errors') }}</th><th scope="col" class="text-right">{{ t('Average') }}</th></tr>
+                        </template>
+                        <tr v-for="edge in data.map.edges" :key="`${edge.source}->${edge.target}`">
+                            <td class="font-medium text-ink">{{ edge.source }}</td>
+                            <td><span aria-hidden="true" class="text-muted">→ </span>{{ edge.target }}</td>
+                            <td class="text-right tabular-nums">{{ number(edge.calls) }}</td>
+                            <td :class="['text-right tabular-nums', edge.error_rate > 1 && 'text-rose-600 dark:text-rose-400']">{{ decimal(edge.error_rate) }}%</td>
+                            <td class="whitespace-nowrap text-right tabular-nums">{{ ms(edge.average_duration) }}</td>
+                        </tr>
+                    </DataTable>
+                </div>
+            </AcmeCard>
+            <AcmeCard v-if="data.map.services.length > 0" :title="t('Services')" :padded="false">
+                <DataTable :caption="t('Services')" :framed="false">
+                    <template #head>
+                        <tr><th scope="col">{{ t('Service') }}</th><th scope="col" class="text-right">{{ t('Spans') }}</th><th scope="col" class="text-right">{{ t('Errors') }}</th><th scope="col" class="text-right">{{ t('Average') }}</th></tr>
+                    </template>
+                    <tr v-for="service in data.map.services" :key="service.name">
+                        <td class="font-medium text-ink">{{ service.name }}</td>
+                        <td class="text-right tabular-nums">{{ number(service.span_count) }}</td>
+                        <td :class="['text-right tabular-nums', service.error_rate > 1 && 'text-rose-600 dark:text-rose-400']">{{ decimal(service.error_rate) }}%</td>
+                        <td class="whitespace-nowrap text-right tabular-nums">{{ ms(service.average_duration) }}</td>
+                    </tr>
+                </DataTable>
+            </AcmeCard>
         </div>
-        <DataTable :caption="t('Calls between services')">
-            <template #head>
-                <tr><th scope="col">{{ t('From') }}</th><th scope="col">{{ t('To') }}</th><th scope="col" class="text-right">{{ t('Calls') }}</th><th scope="col" class="text-right">{{ t('Errors') }}</th><th scope="col" class="text-right">{{ t('Average') }}</th></tr>
-            </template>
-            <tr v-for="edge in data.map.edges" :key="`${edge.source}->${edge.target}`">
-                <td class="font-semibold">{{ edge.source }}</td>
-                <td><span aria-hidden="true" class="text-muted">→ </span>{{ edge.target }}</td>
-                <td class="text-right tabular-nums">{{ number(edge.calls) }}</td>
-                <td class="text-right tabular-nums" :class="edge.error_rate > 0 && 'text-danger'">{{ decimal(edge.error_rate) }}%</td>
-                <td class="whitespace-nowrap text-right tabular-nums">{{ ms(edge.average_duration) }}</td>
-            </tr>
-            <tr v-if="data.map.edges.length === 0"><td colspan="5" class="py-10 text-center text-muted">{{ t('No calls between services in this range. Spans need a parent in another service to appear here.') }}</td></tr>
-        </DataTable>
-        <DataTable :caption="t('Services')">
-            <template #head>
-                <tr><th scope="col">{{ t('Service') }}</th><th scope="col" class="text-right">{{ t('Spans') }}</th><th scope="col" class="text-right">{{ t('Errors') }}</th><th scope="col" class="text-right">{{ t('Average') }}</th></tr>
-            </template>
-            <tr v-for="service in data.map.services" :key="service.name">
-                <td class="font-semibold">{{ service.name }}</td>
-                <td class="text-right tabular-nums">{{ number(service.span_count) }}</td>
-                <td class="text-right tabular-nums" :class="service.error_rate > 0 && 'text-danger'">{{ decimal(service.error_rate) }}%</td>
-                <td class="whitespace-nowrap text-right tabular-nums">{{ ms(service.average_duration) }}</td>
-            </tr>
-            <tr v-if="data.map.services.length === 0"><td colspan="4" class="py-10 text-center text-muted">{{ t('No spans in this range.') }}</td></tr>
-        </DataTable>
     </div>
 </template>

@@ -77,14 +77,17 @@ final class TelemetryPagesTest extends TestCase
         $base = "/api/app/projects/{$this->project->id}/monitoring";
         $issue = Issue::query()->sole();
 
-        $this->actingAs($this->owner)->getJson("{$base}/issues")->assertOk()->assertSee('Payment declined');
-        $this->actingAs($this->owner)->getJson("{$base}/issues/{$issue->id}")->assertOk()->assertSee('Payment declined')->assertJsonPath('issue.open', true)->assertJsonPath('canUpdate', true);
+        $this->actingAs($this->owner)->getJson("{$base}/issues")->assertOk()->assertSee('Payment declined')
+            ->assertJsonPath('stats.open', 1)->assertJsonPath('stats.newToday', 1)->assertJsonPath('stats.events', 1)->assertJsonPath('stats.hourly.23', 1)
+            ->assertJsonPath('issues.0.trend.11', 1);
+        $this->actingAs($this->owner)->getJson("{$base}/issues/{$issue->id}")->assertOk()->assertSee('Payment declined')->assertJsonPath('issue.open', true)->assertJsonPath('canUpdate', true)
+            ->assertJsonPath('issue.where.0', ['label' => '/checkout', 'value' => 100])->assertJsonPath('issue.firstRelease', '2.4.0')->assertJsonPath('issue.latest.traceId', 'trace-pages');
         $this->actingAs($this->owner)->getJson("{$base}/events")->assertOk()->assertJsonFragment(['name' => 'GET /checkout']);
         $this->actingAs($this->owner)->getJson("{$base}/events?type=exception")->assertOk()->assertJsonFragment(['name' => 'PaymentDeclined'])->assertJsonMissing(['name' => 'GET /checkout']);
         $this->actingAs($this->owner)->getJson("{$base}/traces/trace-pages")->assertOk()->assertJsonFragment(['name' => 'GET /checkout']);
         $this->actingAs($this->owner)->getJson("{$base}/traces/unknown-trace")->assertNotFound();
         $this->actingAs($this->owner)->getJson("{$base}/dependencies")->assertOk();
-        $this->actingAs($this->owner)->getJson("{$base}/releases")->assertOk()->assertSee('2.4.0');
+        $this->actingAs($this->owner)->getJson("{$base}/releases")->assertOk()->assertSee('2.4.0')->assertJsonPath('releases.0.issues', 1)->assertJsonPath('releases.0.errorRate', 0)->assertJsonPath('releases.0.averageMs', 42);
         $release = $this->project->releases()->sole();
         $this->actingAs($this->owner)->getJson("{$base}/releases/{$release->id}")->assertOk()->assertSee('Payment declined');
         $event = $issue->telemetryEvents()->firstOrFail();

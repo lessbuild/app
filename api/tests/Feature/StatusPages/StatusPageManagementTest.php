@@ -57,7 +57,7 @@ final class StatusPageManagementTest extends TestCase
         $this->assertSame([$second->id, $monitor->id], $page->components()->pluck('monitor_id')->all());
         $this->assertSame(['Dashboard', 'Payments API'], $page->components()->pluck('label')->all());
         $this->assertSame(AuditAction::StatusPageCreated, AuditEntry::query()->where('account_id', $this->project->account_id)->sole()->action);
-        $this->actingAs($this->owner)->getJson($this->base)->assertOk()->assertJsonHasText('Acme status')->assertJsonFragment(['slug' => 'acme-status']);
+        $this->actingAs($this->owner)->getJson($this->base)->assertOk()->assertJsonHasText('Acme status')->assertJsonFragment(['slug' => 'acme-status'])->assertJsonPath('pages.0.preview.0.health', 'Unknown')->assertJsonPath('pages.0.allUp', false)->assertJsonPath('pages.0.domain', null);
         $this->actingAs($this->owner)->getJson("{$this->base}/{$page->id}")->assertOk()->assertJsonHasText('Payments API')->assertJsonHasText(route('status.show', 'acme-status'));
         $this->getJson('/api/app/status/acme-status')->assertOk()->assertJsonHasText('Acme status')->assertJsonHasText('Payments API')->assertJsonLacksText('private.internal.example');
     }

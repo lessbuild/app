@@ -159,12 +159,12 @@ final class MonitoringPagesTest extends TestCase
         $this->assertFalse($monitor->fresh()?->enabled);
         $this->getJson("{$base}/monitors/{$monitor->id}")->assertOk()->assertJsonPath('monitor.health', 'Paused')->assertJsonPath('monitor.enabled', false);
         $this->putJson("{$base}/monitors/{$monitor->id}/enabled", ['enabled' => true, 'version' => $monitor->state_version])->assertStatus(409);
-        $this->putJson("{$base}/monitors/{$monitor->id}/enabled", ['enabled' => true, 'version' => $monitor->fresh()?->state_version])->assertOk();
-        $this->assertTrue($monitor->fresh()?->enabled);
+        $this->putJson("{$base}/monitors/{$monitor->id}/enabled", ['enabled' => true, 'version' => $monitor->refresh()->state_version])->assertOk();
+        $this->assertTrue($monitor->refresh()->enabled);
 
         $viewer = User::factory()->create();
         $this->member($viewer, AccountRole::Viewer);
-        $this->actingAs($viewer)->putJson("{$base}/monitors/{$monitor->id}/enabled", ['enabled' => false, 'version' => $monitor->fresh()?->state_version])->assertForbidden();
+        $this->actingAs($viewer)->putJson("{$base}/monitors/{$monitor->id}/enabled", ['enabled' => false, 'version' => $monitor->refresh()->state_version])->assertForbidden();
     }
 
     /**
@@ -190,7 +190,7 @@ final class MonitoringPagesTest extends TestCase
         $this->patchJson($url, ['action' => 'resolve', 'version' => (int) $incident->fresh()?->state_version])->assertSuccessful();
         $this->assertSame('resolved', $incident->fresh()?->status);
         $this->getJson($url)->assertJsonPath('incident.statusLabel', 'Resolved by hand')->assertJsonPath('activities.0.label', 'Resolved by hand');
-        $this->patchJson($url, ['action' => 'resolve', 'version' => (int) $incident->fresh()?->state_version])->assertStatus(409);
+        $this->patchJson($url, ['action' => 'resolve', 'version' => (int) $incident->refresh()->state_version])->assertStatus(409);
     }
 
     /**

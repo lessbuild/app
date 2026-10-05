@@ -10,6 +10,8 @@ use App\Models\ServiceLevelObjective;
 use App\Models\User;
 use App\Queries\Monitoring\ProjectAlertRulesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
+use App\Services\Billing\Entitlements;
+use App\Services\Monitoring\ServiceObjectiveBurnRate;
 use App\Services\Monitoring\ServiceObjectiveReport;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
@@ -24,13 +26,24 @@ final class ShowObjectivesController
      * @param  ProjectOverviewQuery  $overview
      * @param  ProjectAlertRulesQuery  $rules
      * @param  ServiceObjectiveReport  $reports
+     * @param  ServiceObjectiveBurnRate  $burnRates
+     * @param  Entitlements  $entitlements
      * @return JsonResponse
      */
-    public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, ServiceObjectiveReport $reports): JsonResponse
+    public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, ServiceObjectiveReport $reports, ServiceObjectiveBurnRate $burnRates, Entitlements $entitlements): JsonResponse
     {
+        $burns = $entitlements->for($project->account)->has('monitoring.slo_burn_rate');
+
         return response()->json([
             'overview' => $overview->handle($project, $user),
-            'objectives' => array_map(fn (ServiceLevelObjective $objective): ObjectiveSummary => ObjectiveSummary::from($objective->loadMissing('environment.project'), $reports->forObjective($objective)), $rules->objectives($project)),
+            'objectives' => array_map(function (ServiceLevelObjective $objective) use ($reports, $burnRates, $burns): array {
+                $burn = $burns ? $burnRates->forObjective($objective) : null;
+
+                return [
+                    ...(array) ObjectiveSummary::from($objective->loadMissing('environment.project'), $reports->forObjective($objective)),
+                    'burn' => $burn === null ? null : ['short' => $burn['short']['burn_rate'] ?? null, 'long' => $burn['long']['burn_rate'] ?? null],
+                ];
+            }, $rules->objectives($project)),
             'canManage' => $user->can('create', [ServiceLevelObjective::class, $project]),
         ]);
     }

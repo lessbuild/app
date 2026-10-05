@@ -16,6 +16,7 @@ use App\Models\TelemetryEvent;
 use App\Models\User;
 use App\Queries\Monitoring\ProjectIncidentsQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
+use App\Queries\Telemetry\IssueActivityQuery;
 use App\Services\Monitoring\TelemetryRedactor;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
@@ -31,9 +32,10 @@ final class ShowIssueController
      * @param  ProjectOverviewQuery  $overview
      * @param  TelemetryRedactor  $redactor
      * @param  ProjectIncidentsQuery  $members
+     * @param  IssueActivityQuery  $activity
      * @return JsonResponse
      */
-    public function __invoke(#[CurrentUser] User $user, Project $project, Issue $issue, ProjectOverviewQuery $overview, TelemetryRedactor $redactor, ProjectIncidentsQuery $members): JsonResponse
+    public function __invoke(#[CurrentUser] User $user, Project $project, Issue $issue, ProjectOverviewQuery $overview, TelemetryRedactor $redactor, ProjectIncidentsQuery $members, IssueActivityQuery $activity): JsonResponse
     {
         $events = TelemetryEvent::query()->where('issue_id', $issue->id)->summary()->with('environment')->orderByDesc('occurred_at')->orderByDesc('id')->limit(20)->get();
         $events->each(fn (TelemetryEvent $event): TelemetryEvent => $event->forceFill($redactor->redact($event->only(['name', 'route']))));
@@ -52,6 +54,9 @@ final class ShowIssueController
                 'ticketUrl' => $issue->ticket_url,
                 'ticketKey' => $issue->ticket_key,
                 'open' => $issue->status->value === 'open',
+                'users' => $issue->affected_users,
+                'trend' => $activity->trends([$issue->id])[$issue->id],
+                ...$activity->context($issue),
             ],
             'events' => $events->map(fn (TelemetryEvent $event): EventRow => EventRow::from(new TraceRecord($event)))->values(),
             'activities' => $issue->activities()->with('actor')->latest('id')->limit(50)->get()->map(fn (IssueActivity $activity): array => [

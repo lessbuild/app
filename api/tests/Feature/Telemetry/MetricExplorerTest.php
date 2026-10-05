@@ -61,6 +61,8 @@ final class MetricExplorerTest extends TestCase
             MetricSample::factory()->for($series)->create(['value' => $value, 'value_text' => (string) $value, 'occurred_at' => now()->subMinutes(10 - $minutes)]);
         }
 
+        $this->actingAs($this->ownerOf($this->project))->getJson($this->base)->assertOk()
+            ->assertJsonPath('series.0.values', [0.833])->assertJsonPath('series.0.latest', 1.25);
         $this->actingAs($this->ownerOf($this->project))->getJson("{$this->base}/{$series->id}")->assertOk()
             ->assertJsonPath('series.name', 'cpu.load')->assertSee('db-1')->assertJsonCount(3, 'chart.points')->assertJsonPath('chart.maximum', 1.25)
             ->assertJsonPath('anomalies', false);

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The pages that share a Monitoring section: the alert pages (rules, destinations, on-call, maintenance, noise) or the
- * metric pages (explorer, dashboards).
+ * The pages that share a Monitoring section, as pills (the Acme theme's sub-navigation): the alert pages (rules,
+ * destinations, on-call, maintenance, noise) or the metric pages (explorer, dashboards).
  */
 const props = defineProps<{ section: 'alerts' | 'metrics'; projectId: string }>();
 const { t } = useT();
@@ -27,9 +27,15 @@ const links = computed(() => {
 </script>
 
 <template>
-    <nav class="ui-local-nav" :aria-label="section === 'alerts' ? t('Alerts') : t('Metrics')">
-        <div class="ui-local-nav__scroll">
-            <NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="ui-local-nav__link" :aria-current="link.current ? 'page' : undefined">{{ link.label }}</NuxtLink>
-        </div>
+    <nav class="flex flex-wrap gap-1" :aria-label="section === 'alerts' ? t('Alerts') : t('Metrics')">
+        <NuxtLink
+            v-for="link in links"
+            :key="link.to"
+            :to="link.to"
+            :class="['rounded-lg px-3 py-1.5 text-sm font-medium transition-colors', link.current ? 'bg-black/[.06] text-ink dark:bg-white/10' : 'text-muted hover:bg-black/[.03] hover:text-ink dark:hover:bg-white/[.05]']"
+            :aria-current="link.current ? 'page' : undefined"
+        >
+            {{ link.label }}
+        </NuxtLink>
     </nav>
 </template>

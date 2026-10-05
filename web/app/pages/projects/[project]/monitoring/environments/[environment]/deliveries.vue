@@ -27,8 +27,8 @@ const project = computed(() => data.value.overview.project);
             <template #actions><AcmeBtn :to="`/projects/${project.id}/monitoring/setup`" size="sm">{{ t('Setup') }}</AcmeBtn></template>
         </ProjectHeader>
         <nav :aria-label="t('Delivery status')" class="flex flex-wrap gap-2">
-            <AcmeBtn :to="{ query: {} }" :variant="data.status === null ? 'primary' : 'quiet'" size="sm" :aria-current="data.status === null ? 'page' : undefined">{{ t('All') }}</AcmeBtn>
-            <AcmeBtn v-for="option in data.statuses" :key="option.value" :to="{ query: { status: option.value } }" :variant="data.status === option.value ? 'primary' : 'quiet'" size="sm" :aria-current="data.status === option.value ? 'page' : undefined">
+            <AcmeBtn :to="{ query: {} }" :variant="data.status === null ? 'primary' : 'ghost'" size="sm" :aria-current="data.status === null ? 'page' : undefined">{{ t('All') }}</AcmeBtn>
+            <AcmeBtn v-for="option in data.statuses" :key="option.value" :to="{ query: { status: option.value } }" :variant="data.status === option.value ? 'primary' : 'ghost'" size="sm" :aria-current="data.status === option.value ? 'page' : undefined">
                 {{ option.label }}
             </AcmeBtn>
         </nav>

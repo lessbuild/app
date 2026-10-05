@@ -84,7 +84,7 @@ final class ServiceLevelObjectiveTest extends TestCase
         $objective = ServiceLevelObjective::query()->firstOrFail();
         $this->actingAs($owner)->getJson(route('app.monitoring.objectives.show', [$objective->environment->project_id, $objective->id]))->assertOk()
             ->assertJsonPath('objective.name', 'Checkout availability')->assertJsonPath('objective.status', 'no_data')
-            ->assertJsonPath('report.observed', 0)->assertJsonPath('canExport', false);
+            ->assertJsonPath('report.observed', 0)->assertJsonPath('canExport', false)->assertJsonCount(14, 'history')->assertJsonPath('history.13.remaining', null)->assertJsonPath('allowed', null);
     }
 
     /**
