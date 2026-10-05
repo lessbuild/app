@@ -28,6 +28,7 @@ const filters = reactive<Record<string, string | null>>(Object.fromEntries(keys.
 const options = (labels: Record<string, string>) => Object.entries(labels).map(([value, label]) => ({ value, label }));
 const environments = computed(() => data.value.overview.environments.map((environment) => ({ value: environment.id, label: environment.name })));
 
+const search = computed({ get: () => filters.q ?? '', set: (value: string) => (filters.q = value) });
 const kind = computed({ get: () => filters.type ?? '', set: (value: string | number) => { filters.type = String(value); apply(); } });
 const kinds = computed(() => [{ value: '', label: t('All') }, ...options(data.value.types)]);
 const icon: Record<string, string> = { request: 'globe', exception: 'flame', query: 'code', job: 'layers', log: 'list', metric: 'trending', span: 'branch' };
@@ -59,7 +60,7 @@ function apply() {
                     <div class="flex flex-wrap items-center gap-3">
                         <AcmeSegmented v-model="kind" :options="kinds" :label="t('Kind')" size="sm" />
                         <AcmeBtn size="sm" variant="ghost" icon="filter" :aria-expanded="more" @click="more = !more">{{ t('More filters') }}</AcmeBtn>
-                        <AcmeSearchInput v-model="filters.q" :label="t('Search')" :placeholder="t('Search events')" class="ml-auto w-full sm:w-64" />
+                        <AcmeSearchInput v-model="search" :label="t('Search')" :placeholder="t('Search events')" class="ml-auto w-full sm:w-64" />
                     </div>
                     <div v-show="more" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
                         <SelectField v-model="filters.environment" name="environment" :label="t('Environment')" :placeholder="t('All')" :options="environments" />

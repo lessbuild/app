@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Telemetry;
 
 use App\Http\Requests\Telemetry\IntegrationSetupRequest;
+use App\Models\AlertDestination;
 use App\Models\Environment;
 use App\Models\IngestToken;
 use App\Models\IssueTracker;
+use App\Models\Monitor;
 use App\Models\Project;
+use App\Models\TelemetryEvent;
 use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Queries\Telemetry\CollectionHealthQuery;
@@ -64,6 +67,14 @@ final class ShowTelemetrySetupController
                 'id' => $tracker->id, 'name' => $tracker->name, 'kind' => IssueTracker::KINDS[$tracker->kind] ?? $tracker->kind, 'destination' => $tracker->destination(),
             ])->values(),
             'trackerKinds' => IssueTracker::KINDS,
+            // What's done of getting Monitoring going, for the checklist.
+            'checklist' => [
+                'key' => $tokens->isNotEmpty(),
+                'events' => TelemetryEvent::query()->whereIn('environment_id', $project->environments()->select('id'))->exists(),
+                'monitor' => Monitor::query()->whereIn('environment_id', $project->environments()->select('id'))->exists(),
+                'alerts' => AlertDestination::query()->where('account_id', $project->account_id)->exists(),
+                'release' => $project->releases()->exists(),
+            ],
             'canManage' => $user->can('manageService', [$project, 'monitoring']),
         ]);
     }

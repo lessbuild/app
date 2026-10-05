@@ -36,7 +36,7 @@ final class BrowserErrorsTest extends TestCase
         $this->assertSame(['https://example.com', 'https://www.example.com'], $environment->browser_origins);
         $key = (string) $environment->browser_key;
         $this->assertStringStartsWith('bpb_', $key);
-        $this->actingAs($owner)->getJson("/api/app/projects/{$project->id}/monitoring/setup")->assertOk()->assertJsonFragment(['browserKey' => $key, 'browserOrigins' => 'https://example.com https://www.example.com']);
+        $this->actingAs($owner)->getJson("/api/app/projects/{$project->id}/monitoring/setup")->assertOk()->assertJsonFragment(['browserKey' => $key, 'browserOrigins' => 'https://example.com https://www.example.com'])->assertJsonPath('checklist.monitor', false)->assertJsonPath('checklist.release', false);
 
         $error = ['message' => 'TypeError: cart is undefined', 'source' => 'https://example.com/app.js?v=3', 'line' => 12, 'column' => 7, 'stack' => "TypeError\n at checkout (app.js:12:7)", 'page' => 'https://example.com/checkout?token=secret'];
         $send = fn (string $origin, array $body, string $to = '') => $this->withHeaders(['Origin' => $origin, 'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15'])

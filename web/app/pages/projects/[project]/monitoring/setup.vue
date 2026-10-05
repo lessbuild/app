@@ -23,6 +23,7 @@ type SetupPage = {
     environments: SetupEnvironment[];
     browserScript: string;
     stack: string;
+    checklist: { key: boolean; events: boolean; monitor: boolean; alerts: boolean; release: boolean };
     stacks: Record<string, string>;
     guide: { install: string; token: string; code: string; verification: string };
     otlp: string;
@@ -38,7 +39,16 @@ const project = computed(() => data.value.overview.project);
 const base = computed(() => `/api/app/projects/${project.value.id}/monitoring`);
 const secrets = useSecrets();
 const stack = ref<string | null>(data.value.stack);
-const stacks = computed(() => Object.entries(data.value.stacks).map(([value, label]) => ({ value, label })));
+const stackChoice = computed({ get: () => stack.value ?? '', set: (value: string | number) => { stack.value = String(value); navigateTo({ query: { stack: stack.value } }); } });
+const stackOptions = computed(() => Object.entries(data.value.stacks).map(([value, label]) => ({ value, label })));
+const steps = computed(() => [
+    { done: data.value.checklist.key, label: t('Create an ingest key') },
+    { done: data.value.checklist.events, label: t('Send your first event') },
+    { done: data.value.checklist.monitor, label: t('Add a monitor'), to: `/projects/${project.value.id}/monitoring/monitors/create` },
+    { done: data.value.checklist.alerts, label: t('Choose where alerts go'), to: `/projects/${project.value.id}/monitoring/alerts` },
+    { done: data.value.checklist.release, label: t('Report a release version') },
+]);
+const progress = computed(() => Math.round((steps.value.filter((step) => step.done).length / steps.value.length) * 100));
 const expiries = computed(() => [{ value: '', label: t('Never') }, ...[30, 90, 365].map((days) => ({ value: String(days), label: tc('In :count day|In :count days', days) }))]);
 const trackerKind = ref<string | null>('github');
 const trackerKinds = computed(() => Object.entries(data.value.trackerKinds).map(([value, label]) => ({ value, label })));
@@ -48,11 +58,32 @@ const snippet = (key: string) => `<script src="${data.value.browserScript}" data
 
 <template>
     <div class="space-y-6">
-        <ProjectHeader :overview="data.overview" :title="t('Connect your app')" :description="t('Each environment has its own ingest keys. Send events as JSON or through OpenTelemetry.')" />
+        <ProjectHeader :overview="data.overview" :title="t('Monitoring')" :description="t('Send traces, metrics, logs and errors from your apps. Anything that speaks OpenTelemetry works. Each environment has its own ingest keys.')" />
 
-        <section class="ui-card overflow-hidden">
-            <ul class="divide-y divide-line" :aria-label="t('Environments')">
-                <li v-for="environment in data.environments" :key="environment.id" class="grid gap-3 px-5 py-4">
+        <div class="grid items-start gap-6 xl:grid-cols-[1fr_20rem]">
+            <AcmeCard :title="t('Send data')" :description="t('Pick your stack for a working example. Replace the key placeholder with an ingest key from below.')">
+                <div class="overflow-x-auto"><AcmeSegmented v-if="stackOptions.length <= 6" v-model="stackChoice" :options="stackOptions" :label="t('Stack')" size="sm" /></div>
+                <SelectField v-if="stackOptions.length > 6" id="setup-stack" v-model="stack" name="stack" :label="t('Stack')" :options="stackOptions" @update:model-value="navigateTo({ query: { stack: stack ?? undefined } })" />
+                <p class="mt-4 text-sm text-muted">{{ data.guide.install }}</p>
+                <p class="mt-1 text-sm text-muted">{{ data.guide.token }}</p>
+                <CodeBlock :code="data.guide.code" class="mt-3 overflow-x-auto text-xs" />
+                <p class="mt-3 text-xs text-muted">{{ data.guide.verification }}</p>
+            </AcmeCard>
+            <AcmeCard :title="t('Checklist')">
+                <ol class="space-y-3 text-sm">
+                    <li v-for="step in steps" :key="step.label" class="flex items-center gap-2.5">
+                        <AcmeIcon :name="step.done ? 'checkCircle' : 'circleDashed'" :size="16" :class="step.done ? 'text-emerald-500' : 'text-muted'" />
+                        <NuxtLink v-if="step.to && !step.done" :to="step.to" class="text-ink underline decoration-line underline-offset-2">{{ step.label }}</NuxtLink>
+                        <span v-else :class="step.done ? 'text-muted line-through decoration-muted/40' : 'text-ink'">{{ step.label }}</span>
+                    </li>
+                </ol>
+                <AcmeProgress :value="progress" :label="t('Setup progress')" class="mt-4" />
+            </AcmeCard>
+        </div>
+
+        <AcmeCard :title="t('Ingest keys')" :description="t('Keys go in an environment variable, never in your repository.')" :padded="false">
+            <ul class="divide-y divide-line border-t border-line" :aria-label="t('Environments')">
+                <li v-for="environment in data.environments" :key="environment.id" class="grid gap-3 px-5 py-4 sm:px-6">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div class="min-w-0">
                             <p class="font-semibold text-ink">{{ environment.name }}</p>
@@ -67,7 +98,7 @@ const snippet = (key: string) => `<script src="${data.value.browserScript}" data
                         <p class="font-bold">{{ t('Copy this ingest key now. It won’t be shown again.') }}</p>
                         <CodeBlock :code="secrets.ingest_key" class="mt-2 whitespace-pre-wrap break-all" />
                     </AcmeAlert>
-                    <div v-for="token in environment.tokens" :key="token.id" class="flex flex-wrap items-center justify-between gap-2 rounded-control bg-surface-muted px-3 py-2 text-sm">
+                    <div v-for="token in environment.tokens" :key="token.id" class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line px-3 py-2 text-sm">
                         <span>
                             <span class="font-semibold text-ink">{{ token.name }}</span> <code class="text-xs text-muted">{{ token.prefix }}…</code>
                             <span class="text-xs text-muted">
@@ -91,19 +122,6 @@ const snippet = (key: string) => `<script src="${data.value.browserScript}" data
                     </ApiForm>
                 </li>
             </ul>
-        </section>
-
-        <AcmeCard :padded="false" :title="t('Send events')" :description="t('Pick your stack for a working example. Replace the key placeholder with an ingest key from above.')">
-            <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
-                <form class="flex flex-wrap items-end gap-2" @submit.prevent="navigateTo({ query: { stack: stack ?? undefined } })">
-                    <SelectField id="setup-stack" v-model="stack" name="stack" :label="t('Stack')" :options="stacks" />
-                    <AcmeBtn type="submit" size="sm">{{ t('Show') }}</AcmeBtn>
-                </form>
-                <p class="text-sm text-muted">{{ data.guide.install }}</p>
-                <p class="text-sm text-muted">{{ data.guide.token }}</p>
-                <CodeBlock :code="data.guide.code" class="overflow-x-auto text-xs" />
-                <p class="text-xs text-muted">{{ data.guide.verification }}</p>
-            </div>
         </AcmeCard>
 
         <AcmeCard :padded="false" :title="t('OpenTelemetry')" :description="t('Any OpenTelemetry SDK or collector can export traces, logs and metrics over OTLP/HTTP with JSON.')">

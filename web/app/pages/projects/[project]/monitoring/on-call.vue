@@ -41,33 +41,32 @@ const when = (iso: string, zone: string) => new Intl.DateTimeFormat(locale.value
         <SectionNav section="alerts" :project-id="project.id" />
 
         <EmptyState v-if="data.schedules.length === 0" icon="users" :title="t('No on-call schedules yet')" :description="t('Add a rotation, then choose it as the recipient of an email destination so alerts reach whoever is on call.')" />
-        <section v-for="schedule in data.schedules" :key="schedule.id" class="ui-card grid gap-4 p-5" :aria-labelledby="`schedule-${schedule.id}`">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <h2 :id="`schedule-${schedule.id}`" class="text-lg font-semibold text-ink">{{ schedule.name }}</h2>
-                    <p class="text-sm text-muted">
-                        {{ schedule.rotation === 'weekly' ? t('Weekly, handing over :day at :time', { day: weekday(schedule.handoffDay), time: schedule.handoffTime }) : t('Daily, handing over at :time', { time: schedule.handoffTime }) }}
-                        ({{ schedule.timezone }})
-                    </p>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs font-bold uppercase tracking-wide text-muted">{{ t('On call now') }}</p>
-                    <p class="text-lg font-semibold text-ink">{{ schedule.now ?? t('No one') }}</p>
-                </div>
+        <section v-for="schedule in data.schedules" :key="schedule.id" class="grid gap-5 rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6" :aria-labelledby="`schedule-${schedule.id}`">
+            <div>
+                <h2 :id="`schedule-${schedule.id}`" class="font-semibold text-ink">{{ schedule.name }}</h2>
+                <p class="text-sm text-muted">
+                    {{ schedule.rotation === 'weekly' ? t('Weekly, handing over :day at :time', { day: weekday(schedule.handoffDay), time: schedule.handoffTime }) : t('Daily, handing over at :time', { time: schedule.handoffTime }) }}
+                    ({{ schedule.timezone }})
+                </p>
+            </div>
+            <div :class="['flex items-center gap-3 rounded-xl border p-4', schedule.now ? 'border-emerald-500/30 bg-emerald-500/[.06]' : 'border-amber-500/30 bg-amber-500/[.06]']">
+                <AcmeAvatar v-if="schedule.now" :name="schedule.now" />
+                <AcmeIcon v-else name="alert" class="text-amber-600" />
+                <span><span class="block text-xs text-muted">{{ t('On call now') }}</span><b class="font-medium text-ink">{{ schedule.now ?? t('No one') }}</b></span>
             </div>
             <div class="grid gap-2">
-                <h3 class="text-sm font-bold text-ink">{{ t('Next turns') }}</h3>
+                <h3 class="text-sm font-medium text-ink">{{ t('Next turns') }}</h3>
                 <ol class="grid gap-1 text-sm">
                     <li v-for="(shift, index) in schedule.upcoming" :key="index" class="flex flex-wrap justify-between gap-2">
-                        <span class="font-semibold">{{ shift.user ?? t('No one') }}</span>
+                        <span class="flex items-center gap-2 font-medium text-ink"><AcmeIcon name="clock" :size="14" class="text-muted" />{{ shift.user ?? t('No one') }}</span>
                         <span class="text-muted">{{ when(shift.starts, schedule.timezone) }} – {{ when(shift.ends, schedule.timezone) }}</span>
                     </li>
                 </ol>
             </div>
             <div v-if="schedule.overrides.length > 0" class="grid gap-2">
-                <h3 class="text-sm font-bold text-ink">{{ t('Cover') }}</h3>
+                <h3 class="text-sm font-medium text-ink">{{ t('Cover') }}</h3>
                 <div v-for="override in schedule.overrides" :key="override.id" class="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span><span class="font-semibold">{{ override.user }}</span> <span class="text-muted">{{ when(override.starts, schedule.timezone) }} – {{ when(override.ends, schedule.timezone) }}</span></span>
+                    <span class="rounded-xl border border-line px-3 py-2"><b class="font-medium text-ink">{{ override.user }}</b> <span class="text-muted">{{ when(override.starts, schedule.timezone) }} – {{ when(override.ends, schedule.timezone) }}</span></span>
                     <ApiForm v-if="data.canManage" :action="`${base}/overrides/${override.id}`" method="DELETE"><SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton></ApiForm>
                 </div>
             </div>
