@@ -28,10 +28,10 @@ final class ShowProjectSettingsController
 
         return response()->json([
             'overview' => $query->handle($project, $user),
-            'kinds' => array_values(array_map(
+            'kinds' => array_map(
                 fn (EnvironmentKind $kind): array => ['value' => $kind->value, 'label' => $kind->label()],
                 array_filter(EnvironmentKind::cases(), fn (EnvironmentKind $kind): bool => $kind !== EnvironmentKind::Preview),
-            )),
+            ),
         ]);
     }
 }
