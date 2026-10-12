@@ -28,7 +28,9 @@ class CloneRepositoryScript extends BuildProvisioningScript
         $provider = $repository->provider ?? throw new RuntimeException('The repository has no Git provider.');
         $host = $provider->repositoryHost();
         $username = $provider->type->repositoryCredentialUsername();
-        $setup = $build->deploymentPath('setup');
+        // The whole repository is cloned at the top of the setup directory; a subdirectory deploy (deployment_root, such as
+        // api/) then builds and serves from setup/<subdirectory>, which the later stages use.
+        $setup = "/var/www/{$repository->website->deployment_slug}/setup";
         $setupPath = escapeshellarg($setup);
         $setupParent = escapeshellarg(dirname($setup));
         $credentialDirectory = escapeshellarg("/tmp/lessbuild-build-{$build->id}");
