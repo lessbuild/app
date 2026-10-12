@@ -299,3 +299,12 @@ html:root.dark[data-frame="site"] {
 
 /* The drawer a create or edit page opens in (PagePanel) is wider than a dialog, to fit the page's form and summary. */
 :root dialog.ui-dialog.ui-dialog-large.ui-dialog-panel:modal { width: min(60rem, 100%); }
+
+/* Phones and tablets zoom into a form field whose text is smaller than 16px when it's tapped (iOS Safari does). Fields
+   are 16px on touch screens, so tapping one doesn't zoom the page; pinch-zoom still works. */
+@media (pointer: coarse) {
+  :root input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file']),
+  :root select,
+  :root textarea,
+  :root [contenteditable='true'] { font-size: 16px !important; }
+}

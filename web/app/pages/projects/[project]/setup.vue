@@ -21,6 +21,15 @@ const guides: Record<string, string> = { provider: 'connect-a-provider', server:
 const labels = computed(() => ({ done: t('Done'), working: t('In progress'), todo: t('To do') }));
 const tones = { done: 'green', working: 'blue', todo: 'gray' } as const;
 const currentIndex = computed(() => (current.value ? steps.value.indexOf(current.value) : -1));
+const stepRow = ref<HTMLElement | null>(null);
+// On a phone the steps scroll sideways; bring the current one into view.
+onMounted(() => {
+    const row = stepRow.value;
+    const active = row?.querySelector<HTMLElement>('[data-current]');
+    if (row && active) {
+        row.scrollLeft = Math.max(0, active.offsetLeft - 16);
+    }
+});
 
 let timer: number | undefined;
 onMounted(() => {
@@ -37,15 +46,17 @@ onBeforeUnmount(() => window.clearInterval(timer));
     <div>
         <ProjectHeader :overview="data.overview" :title="t('Setup guide')" :description="t('From an empty project to a deployed, monitored and measured site, one step at a time.')" />
         <div class="space-y-6">
-            <nav :aria-label="t('Setup progress')" class="overflow-x-auto overflow-y-hidden overscroll-x-contain">
-                <ol class="flex min-w-max items-center gap-2">
-                    <li v-for="(step, index) in steps" :key="step.key" class="flex items-center gap-2" :aria-current="index === currentIndex ? 'step' : undefined">
-                        <span :class="['flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm', step.state === 'done' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : index === currentIndex ? 'border-accent bg-accent/10 font-medium text-ink' : 'border-line text-muted']">
+            <nav :aria-label="t('Setup progress')">
+                <div ref="stepRow" class="overflow-x-auto overflow-y-hidden overscroll-x-contain pb-1 [scrollbar-width:none]">
+                <ol class="flex w-max items-center gap-2">
+                    <li v-for="(step, index) in steps" :key="step.key" class="flex shrink-0 items-center gap-2" :data-current="index === currentIndex || undefined" :aria-current="index === currentIndex ? 'step' : undefined">
+                        <span :class="['flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm', step.state === 'done' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : index === currentIndex ? 'border-accent bg-accent/10 font-medium text-ink' : 'border-line text-muted']">
                             <AcmeIcon v-if="step.state === 'done'" name="check" :size="14" /><span v-else class="font-mono text-xs">{{ index + 1 }}</span>{{ step.title }}
                         </span>
-                        <span v-if="index < steps.length - 1" class="h-px w-6 bg-line" aria-hidden="true" />
+                        <span v-if="index < steps.length - 1" class="h-px w-6 shrink-0 bg-line" aria-hidden="true" />
                     </li>
                 </ol>
+                </div>
                 <p class="mt-3 text-sm text-muted">{{ t(':done of :total done', { done, total: steps.length }) }}</p>
             </nav>
 
