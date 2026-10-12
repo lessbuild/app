@@ -11,6 +11,8 @@ use App\Models\Provider;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
+use App\Services\Deploy\Scripts\ActivateReleaseScript;
+use App\Services\Deploy\Scripts\ArtisanCommandsScript;
 use App\Services\Deploy\Scripts\CheckoutRepositoryScript;
 use App\Services\Deploy\Scripts\CloneRepositoryScript;
 use App\Services\Deploy\Scripts\SymlinkScript;
@@ -54,5 +56,12 @@ final class SubdirectoryDeployTest extends TestCase
         // Laravel's storage folders exist even when the shared storage was seeded from a release without them.
         $this->assertStringContainsString('"$SHARED_STORAGE/framework/views"', $symlink);
         $this->assertSame("{$root}/current/api", $build->deploymentPath('current'));
+
+        // Laravel's caches hold full paths, so they're built in the release's final place, not in setup.
+        $this->assertStringNotContainsString('config:cache', app(ArtisanCommandsScript::class)->script(7, $build));
+        $activate = app(ActivateReleaseScript::class)->script(12, $build);
+        $this->assertStringContainsString("cd -- \"\$RELEASE_PATH\"/'api'", $activate);
+        $this->assertLessThan(strpos($activate, 'ln -sfn'), strpos($activate, 'php artisan config:cache'));
+        $this->assertGreaterThan(strpos($activate, 'mv -- "$DEPLOY_ROOT/setup"'), strpos($activate, 'php artisan config:cache'));
     }
 }

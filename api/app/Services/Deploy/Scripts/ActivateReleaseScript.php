@@ -27,6 +27,8 @@ class ActivateReleaseScript extends BuildProvisioningScript
         $root = escapeshellarg("/var/www/{$repository->website->deployment_slug}");
         $release = escapeshellarg($build->releaseIdentifier());
         $progress = $this->progress($step, $build);
+        $subdirectory = $build->deploymentRoot();
+        $appPath = $subdirectory === '.' ? '"$RELEASE_PATH"' : '"$RELEASE_PATH"/'.escapeshellarg($subdirectory);
 
         return <<<SCRIPT
 
@@ -48,6 +50,20 @@ class ActivateReleaseScript extends BuildProvisioningScript
             if [ -d "\$CURRENT_PATH" ] && [ ! -L "\$CURRENT_PATH" ]; then
                 PREVIOUS_RELEASE_PATH="\$DEPLOY_ROOT/releases/legacy-\$RELEASE_NAME"
                 mv -- "\$CURRENT_PATH" "\$PREVIOUS_RELEASE_PATH"
+            fi
+
+            # A Laravel app's caches and storage link hold full paths, so they're built here, in the release's final place,
+            # before it goes live.
+            if [ -f {$appPath}/artisan ]; then
+                (
+                    cd -- {$appPath}
+                    php artisan storage:link --force
+                    php artisan config:cache
+                    php artisan route:cache
+                    php artisan view:cache
+                    php artisan event:cache
+                    chown -R www-data:www-data bootstrap/cache
+                )
             fi
 
             ln -sfn -- "\$RELEASE_PATH" "\$NEXT_LINK"

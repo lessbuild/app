@@ -35,12 +35,9 @@ class ArtisanCommandsScript extends BuildProvisioningScript
 
         cd -- {$candidatePath}
 
+        # Laravel's caches and the storage link hold full paths, so they're built once the release is in its final place
+        # (ActivateReleaseScript); here it's only migrated.
         if [ -f artisan ]; then
-            php artisan storage:link --force
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            php artisan event:cache
         {$check}
             php artisan migrate --force
 
