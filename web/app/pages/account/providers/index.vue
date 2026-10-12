@@ -14,14 +14,12 @@ const back = computed(() => (typeof route.query.return === 'string' ? route.quer
 </script>
 
 <template>
-    <div class="space-y-8">
-        <PageHeader :eyebrow="data.account.name" :title="t('Providers')" :description="t('Credentials for the clouds that host your servers, Cloudflare for DNS, and the Git hosts Deploy builds from.')">
-            <template v-if="data.providers.length > 0" #actions>
-                <a href="/api/app/account/inventory/providers.csv" class="ui-btn ui-btn-quiet" download>{{ t('Export CSV') }}</a>
-                <a v-if="data.githubApp" href="/github-app/connect" class="ui-btn ui-btn-secondary">{{ t('Install the GitHub App') }}</a>
-                <AcmeBtn variant="primary" :to="{ query: { dialog: 'add-provider' } }" icon="plus">{{ t('Connect a provider') }}</AcmeBtn>
-            </template>
-        </PageHeader>
+    <SettingsFrame :title="t('Providers')" :description="t('Credentials for the clouds that host your servers, Cloudflare for DNS, and the Git hosts Deploy builds from.')">
+        <template v-if="data.providers.length > 0" #actions>
+            <a href="/api/app/account/inventory/providers.csv" class="ui-btn ui-btn-quiet" download>{{ t('Export CSV') }}</a>
+            <a v-if="data.githubApp" href="/github-app/connect" class="ui-btn ui-btn-secondary">{{ t('Install the GitHub App') }}</a>
+            <AcmeBtn variant="primary" :to="{ query: { dialog: 'add-provider' } }" icon="plus">{{ t('Connect a provider') }}</AcmeBtn>
+        </template>
 
         <EmptyState v-if="data.providers.length === 0" icon="server" :title="t('No providers yet')" :description="t('Connect DigitalOcean, Hetzner Cloud or Vultr to create servers.')">
             <template #action>
@@ -42,5 +40,5 @@ const back = computed(() => (typeof route.query.return === 'string' ? route.quer
         </ul>
 
         <AddProviderDialog :types="data.types" :back="back" />
-    </div>
+    </SettingsFrame>
 </template>

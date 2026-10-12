@@ -9,13 +9,11 @@ const { data } = await useApi<{ account: { id: string; name: string }; recipes: 
 </script>
 
 <template>
-    <div class="space-y-6">
-        <PageHeader :title="t('Recipes')" :description="t('Scripts that run on new servers at the end of provisioning. Choose them when you create a server, or install one from the gallery.')">
-            <template #actions>
-                <a href="/api/app/account/inventory/recipes.csv" class="ui-btn ui-btn-quiet ui-btn-sm" download>{{ t('Export CSV') }}</a>
-                <AcmeBtn v-if="data.canCreate" variant="primary" :to="{ query: { dialog: 'new-recipe' } }" icon="plus">{{ t('New recipe') }}</AcmeBtn>
-            </template>
-        </PageHeader>
+    <SettingsFrame :title="t('Recipes')" :description="t('Scripts that run on new servers at the end of provisioning. Choose them when you create a server, or install one from the gallery.')">
+        <template #actions>
+            <a href="/api/app/account/inventory/recipes.csv" class="ui-btn ui-btn-quiet ui-btn-sm" download>{{ t('Export CSV') }}</a>
+            <AcmeBtn v-if="data.canCreate" variant="primary" :to="{ query: { dialog: 'new-recipe' } }" icon="plus">{{ t('New recipe') }}</AcmeBtn>
+        </template>
         <RecipeNav :reports="data.canSeeReports" />
 
         <EmptyState v-if="data.recipes.length === 0" icon="code" :title="t('No recipes yet')" :description="t('Write one, or install one from the gallery.')">
@@ -40,5 +38,5 @@ const { data } = await useApi<{ account: { id: string; name: string }; recipes: 
         <FormDialog v-if="data.canCreate" id="new-recipe" :title="t('New recipe')" :description="t('Each save keeps a revision, so you can see what changed and who changed it.')" action="/api/app/account/recipes" :submit="t('Save recipe')" size="large">
             <RecipeFields :recipe="null" :categories="data.categories" />
         </FormDialog>
-    </div>
+    </SettingsFrame>
 </template>

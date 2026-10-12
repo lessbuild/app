@@ -25,13 +25,11 @@ function summary(client: Client): string {
 </script>
 
 <template>
-    <div class="space-y-6">
-        <PageHeader :eyebrow="data.account.name" :title="t('Clients')" :description="t('Tools for agencies: your own branding on what clients see, a monthly report for each client, and costs by client with your markup.')">
-            <template #actions>
-                <a href="/api/app/account/clients/costs.csv" class="ui-btn ui-btn-secondary" download>{{ t('Download costs by client') }}</a>
-                <AcmeBtn variant="primary" :to="{ query: { dialog: 'add-client' } }" icon="plus">{{ t('Add a client') }}</AcmeBtn>
-            </template>
-        </PageHeader>
+    <SettingsFrame :title="t('Clients')" :description="t('Tools for agencies: your own branding on what clients see, a monthly report for each client, and costs by client with your markup.')">
+        <template #actions>
+            <a href="/api/app/account/clients/costs.csv" class="ui-btn ui-btn-secondary" download>{{ t('Download costs by client') }}</a>
+            <AcmeBtn variant="primary" :to="{ query: { dialog: 'add-client' } }" icon="plus">{{ t('Add a client') }}</AcmeBtn>
+        </template>
 
         <AcmeCard id="branding" :padded="false" :title="t('White label')" :description="t('Show your name, logo and colour instead of ours on status pages, shared Analytics reports and client reports, without “Powered by”. Leave the name empty to turn it off.')">
             <ApiForm action="/api/app/account/clients/branding" method="PUT" class="p-4 sm:p-6">
@@ -71,5 +69,5 @@ function summary(client: Client): string {
         <FormDialog id="add-client" :title="t('Add a client')" action="/api/app/account/clients" :submit="t('Add client')">
             <ClientFields prefix="new-client" :projects="data.projects" />
         </FormDialog>
-    </div>
+    </SettingsFrame>
 </template>

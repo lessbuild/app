@@ -10,7 +10,8 @@ const shell = useShell();
 // The account pages that are settings, with the theme's icons; the shell says which the person may open.
 const accountIcons: Record<string, string> = {
     '/account/settings': 'workspace', '/account/members': 'people', '/account/billing': 'billing', '/account/security': 'lock',
-    '/account/api-tokens': 'lockKey', '/account/webhooks': 'link', '/account/audit-log': 'clock',
+    '/account/api-tokens': 'lockKey', '/account/webhooks': 'link', '/account/audit-log': 'clock', '/account/providers': 'cpu',
+    '/account/recipes': 'code', '/account/clients': 'agencies',
 };
 const groups = computed(() => [
     { title: t('Personal'), items: [
