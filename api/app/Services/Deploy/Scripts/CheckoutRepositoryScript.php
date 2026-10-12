@@ -28,7 +28,8 @@ class CheckoutRepositoryScript extends BuildProvisioningScript
     public function script(int $step, Build $build): string
     {
         $repository = $build->repository;
-        $setupPath = escapeshellarg($build->deploymentPath('setup'));
+        // Git works from the top of the clone: a subdirectory deploy's folder may not exist until the branch is checked out.
+        $setupPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
         $branch = escapeshellarg($repository->branch);
         $remoteBranch = escapeshellarg("origin/{$repository->branch}");
         $revision = $build->revision;

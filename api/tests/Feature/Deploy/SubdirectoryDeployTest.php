@@ -11,6 +11,7 @@ use App\Models\Provider;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
+use App\Services\Deploy\Scripts\CheckoutRepositoryScript;
 use App\Services\Deploy\Scripts\CloneRepositoryScript;
 use App\Services\Deploy\Scripts\SymlinkScript;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -44,6 +45,10 @@ final class SubdirectoryDeployTest extends TestCase
         $this->assertStringContainsString("git clone -- 'https://{$repository->url}' '{$root}/setup'", $clone);
         $this->assertStringNotContainsString("{$root}/setup/api'", $clone);
 
+        // The subdirectory may only exist on the branch being deployed, so git works from the top of the clone.
+        $checkout = app(CheckoutRepositoryScript::class)->script(2, $build);
+        $this->assertStringContainsString("git -C '{$root}/setup' ", $checkout);
+        $this->assertStringNotContainsString("{$root}/setup/api", $checkout);
         $this->assertStringContainsString("CURRENT_PATH='{$root}/setup/api'", app(SymlinkScript::class)->script(5, $build));
         $this->assertSame("{$root}/current/api", $build->deploymentPath('current'));
     }
