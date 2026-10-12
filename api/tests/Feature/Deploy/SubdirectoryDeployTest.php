@@ -49,7 +49,10 @@ final class SubdirectoryDeployTest extends TestCase
         $checkout = app(CheckoutRepositoryScript::class)->script(2, $build);
         $this->assertStringContainsString("git -C '{$root}/setup' ", $checkout);
         $this->assertStringNotContainsString("{$root}/setup/api", $checkout);
-        $this->assertStringContainsString("CURRENT_PATH='{$root}/setup/api'", app(SymlinkScript::class)->script(5, $build));
+        $symlink = app(SymlinkScript::class)->script(5, $build);
+        $this->assertStringContainsString("CURRENT_PATH='{$root}/setup/api'", $symlink);
+        // Laravel's storage folders exist even when the shared storage was seeded from a release without them.
+        $this->assertStringContainsString('"$SHARED_STORAGE/framework/views"', $symlink);
         $this->assertSame("{$root}/current/api", $build->deploymentPath('current'));
     }
 }

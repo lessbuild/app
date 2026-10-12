@@ -43,6 +43,9 @@ class SymlinkScript extends BuildProvisioningScript
                 fi
             fi
 
+            # The folders Laravel writes to, in case the shared storage was seeded from a release without them.
+            install -d -m 775 -- "\$SHARED_STORAGE/app/public" "\$SHARED_STORAGE/framework/cache/data" "\$SHARED_STORAGE/framework/sessions" "\$SHARED_STORAGE/framework/views" "\$SHARED_STORAGE/logs"
+
             rm -rf -- "\$CURRENT_PATH/storage"
             ln -sfn -- "\$SHARED_STORAGE" "\$CURRENT_PATH/storage"
             ln -sfn -- "\$DEPLOY_ROOT/.env" "\$CURRENT_PATH/.env"
