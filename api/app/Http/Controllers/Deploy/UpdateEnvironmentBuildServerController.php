@@ -28,11 +28,18 @@ final class UpdateEnvironmentBuildServerController
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, SaveEnvironmentBuildServer $save): JsonResponse
     {
-        $data = $request->validate(['build_server_id' => ['nullable', 'integer'], 'artifact_bucket_id' => ['nullable', 'integer']]);
-        $server = isset($data['build_server_id']) ? Server::query()->where('account_id', $project->account_id)->findOrFail((int) $data['build_server_id']) : null;
-        $bucket = isset($data['artifact_bucket_id']) ? StorageBucket::query()->where('project_id', $project->id)->findOrFail((int) $data['artifact_bucket_id']) : null;
-        $save->handle($user, $environment, $server, $bucket);
+        // "github" in place of a server builds on GitHub Actions.
+        $data = $request->validate(['build_server_id' => ['nullable', 'regex:/\A([0-9]+|github)\z/'], 'artifact_bucket_id' => ['nullable', 'integer']]);
+        $github = ($data['build_server_id'] ?? null) === 'github';
+        $server = isset($data['build_server_id']) && ! $github ? Server::query()->where('account_id', $project->account_id)->findOrFail((int) $data['build_server_id']) : null;
+        $bucket = isset($data['artifact_bucket_id']) && ! $github ? StorageBucket::query()->where('project_id', $project->id)->findOrFail((int) $data['artifact_bucket_id']) : null;
+        $save->handle($user, $environment, $server, $bucket, $github);
+        $message = match (true) {
+            $github => __('Deploys build on GitHub Actions from the next one. Add the workflow shown here to the repository.'),
+            $server !== null => __('Deploys build on :server from the next one.', ['server' => $server->name]),
+            default => __('Deploys build on each website’s server from the next one.'),
+        };
 
-        return response()->json(['redirect' => route('deploy.environments.show', [$project, $environment, 'tab' => 'settings'], false), 'message' => $server !== null ? __('Deploys build on :server from the next one.', ['server' => $server->name]) : __('Deploys build on each website’s server from the next one.')]);
+        return response()->json(['redirect' => route('deploy.environments.show', [$project, $environment, 'tab' => 'settings'], false), 'message' => $message]);
     }
 }

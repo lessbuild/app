@@ -69,6 +69,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property \Carbon\CarbonImmutable|null $hibernated_at when it went to sleep; null while running
  * @property int|null $build_server_id the server deploys build on before their result goes to the websites; null to build on each website's server
  * @property int|null $artifact_bucket_id the storage bucket builds pass through on their way from the build server
+ * @property bool $github_actions_builds deploys build on GitHub Actions and the websites' servers only unpack and run the result
  * @property int|null $legacy_id Deployer's numeric ID, which the Deployer API v1 still accepts
  * @property-read Project $project
  * @property-read \Illuminate\Database\Eloquent\Collection<int, EnvironmentVariable> $variables
@@ -95,7 +96,7 @@ class Environment extends Model
             'requires_deployment_approval' => 'boolean', 'protected' => 'boolean', 'require_variable_approval' => 'boolean', 'deployment_locked_at' => 'immutable_datetime', 'deployment_window_days' => 'array',
             'rolling_pause_seconds' => 'integer', 'automatic_rollback' => 'boolean', 'post_deployment_observation_minutes' => 'integer', 'rollback_error_rate_percent' => 'integer', 'rollback_latency_percent' => 'integer', 'rollback_conversion_drop_percent' => 'integer',
             'container_port' => 'integer', 'minimum_replicas' => 'integer', 'maximum_replicas' => 'integer', 'desired_replicas' => 'integer', 'autoscale_enabled' => 'boolean', 'autoscale_cpu_target' => 'integer', 'autoscaled_at' => 'immutable_datetime', 'maintenance_at' => 'immutable_datetime', 'maintenance_secret' => 'encrypted',
-            'hibernate_after_minutes' => 'integer', 'last_activity_at' => 'immutable_datetime', 'hibernated_at' => 'immutable_datetime', 'recipes_run_on_new_websites' => 'boolean', 'browser_origins' => 'array', 'migration_safety' => 'boolean', 'autoscale_queue_jobs' => 'integer',
+            'hibernate_after_minutes' => 'integer', 'last_activity_at' => 'immutable_datetime', 'hibernated_at' => 'immutable_datetime', 'recipes_run_on_new_websites' => 'boolean', 'github_actions_builds' => 'boolean', 'browser_origins' => 'array', 'migration_safety' => 'boolean', 'autoscale_queue_jobs' => 'integer',
         ];
     }
 

@@ -19,7 +19,8 @@ use LogicException;
  * and a failure trap that restores the previous release and reports the exit code (ported from Deployer's
  * PublishRepositoryAction). With a build server it comes in two parts: the build part clones, installs and builds
  * there and uploads the result to a storage bucket; the release part downloads it on the website's server and runs
- * the remaining stages. Both report the plan's stage numbers, so progress reads the same.
+ * the remaining stages. Both report the plan's stage numbers, so progress reads the same. A build on GitHub Actions
+ * has only the release part, which downloads the workflow's artifact instead.
  */
 final class DeploymentScript
 {
@@ -31,6 +32,20 @@ final class DeploymentScript
      * @param  RepositoryDeploymentPlan  $plan  The stages in order.
      */
     public function __construct(private readonly RepositoryDeploymentPlan $plan) {}
+
+    /**
+     * The release was built on one of the account's servers and waits in a storage bucket as a .tar.gz.
+     *
+     * @var string
+     */
+    public const SOURCE_BUILD_SERVER = 'build_server';
+
+    /**
+     * The release was built on GitHub Actions and waits as the run's artifact: a zip holding buildpusher.tar.gz.
+     *
+     * @var string
+     */
+    public const SOURCE_GITHUB_ACTIONS = 'github_actions';
 
     /** The stages that run on a build server; the rest run on the website's server. */
     private const array BUILD_STAGES = [CloneRepositoryScript::class, CheckoutRepositoryScript::class, InstallDependenciesScript::class, RunBuildCommandsScript::class];
@@ -83,9 +98,10 @@ final class DeploymentScript
      *
      * @param  Build  $build
      * @param  string  $downloadUrl  A presigned GET URL for the artifact.
+     * @param  string  $source  Where it was built: see the SOURCE_ constants.
      * @return string
      */
-    public function renderRelease(Build $build, string $downloadUrl): string
+    public function renderRelease(Build $build, string $downloadUrl, string $source = self::SOURCE_BUILD_SERVER): string
     {
         $setup = escapeshellarg($build->deploymentPath('setup'));
         $artifact = escapeshellarg("/tmp/lessbuild-artifact-{$build->id}.tar.gz");
@@ -93,16 +109,36 @@ final class DeploymentScript
         $buildLog = escapeshellarg(base64_encode((string) $build->log));
         $resources = app(ManagedResourceScript::class)->render($build->environment_payload['resources'] ?? []);
         $stages = $this->stages($build, fn (string $class): bool => ! in_array($class, self::BUILD_STAGES, true));
+        // The whole setup folder starts empty, so nothing left by an earlier deploy goes live beside a subdirectory.
+        $top = escapeshellarg("/var/www/{$build->website->deployment_slug}/setup");
+        if ($source === self::SOURCE_GITHUB_ACTIONS) {
+            // GitHub zips every artifact; the tarball inside keeps the files' permissions, which a zip would lose.
+            $zip = escapeshellarg("/tmp/lessbuild-artifact-{$build->id}.zip");
+            $unzipped = escapeshellarg("/tmp/lessbuild-artifact-{$build->id}");
+            $fetch = <<<SCRIPT
+            echo "Downloading the release built on GitHub Actions"
+            rm -rf -- {$unzipped}
+            curl --fail --silent --show-error --location --retry 3 --output {$zip} {$download}
+            python3 -m zipfile -e {$zip} {$unzipped}
+            test -f {$unzipped}/buildpusher.tar.gz || { echo "The artifact has no buildpusher.tar.gz"; false; }
+            tar --extract --gzip --file {$unzipped}/buildpusher.tar.gz --directory {$setup}
+            rm -rf -- {$zip} {$unzipped}
+            SCRIPT;
+        } else {
+            $fetch = <<<SCRIPT
+            echo "Downloading the release built on the build server"
+            curl --fail --silent --show-error --retry 3 --output {$artifact} {$download}
+            tar --extract --gzip --file {$artifact} --directory {$setup}
+            rm -f -- {$artifact}
+            SCRIPT;
+        }
 
         return $this->wrap($build, <<<SCRIPT
         printf '%s' {$buildLog} | base64 --decode
         echo
-        echo "Downloading the release built on the build server"
-        rm -rf -- {$setup}
+        rm -rf -- {$top}
         install -d -m 755 -- {$setup}
-        curl --fail --silent --show-error --retry 3 --output {$artifact} {$download}
-        tar --extract --gzip --file {$artifact} --directory {$setup}
-        rm -f -- {$artifact}
+        {$fetch}
         {$resources}
         {$stages}
         SCRIPT);

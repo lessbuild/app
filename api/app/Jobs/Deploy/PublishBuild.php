@@ -9,6 +9,7 @@ use App\Events\Deploy\DeployStarted;
 use App\Models\Build;
 use App\Services\Deploy\BuildServers;
 use App\Services\Deploy\DeploymentScript;
+use App\Services\Deploy\GitHubActionsBuilds;
 use App\Services\Infrastructure\RemoteScriptRunner;
 use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
@@ -20,7 +21,8 @@ use Throwable;
 /**
  * Uploads a queued build's deployment script to the website's server and starts it; the script then reports in by
  * callback. When the environment builds on a build server, the build part starts there instead and the release part
- * follows on the website's server once the built release is uploaded.
+ * follows on the website's server once the built release is uploaded. When it builds on GitHub Actions, nothing starts
+ * on a server until the workflow's run has succeeded.
  */
 final class PublishBuild implements ShouldQueue
 {
@@ -57,9 +59,10 @@ final class PublishBuild implements ShouldQueue
      * @param  RemoteScriptRunner  $runner
      * @param  DeploymentScript  $script
      * @param  BuildServers  $buildServers
+     * @param  GitHubActionsBuilds  $actions
      * @return void
      */
-    public function handle(RemoteScriptRunner $runner, DeploymentScript $script, BuildServers $buildServers): void
+    public function handle(RemoteScriptRunner $runner, DeploymentScript $script, BuildServers $buildServers, GitHubActionsBuilds $actions): void
     {
         $build = Build::query()->with(['website.server', 'repository.provider', 'environment.buildServer', 'environment.artifactBucket'])->find($this->buildId);
         if ($build === null || $build->status !== Build::STATUS_QUEUED) {
@@ -77,6 +80,14 @@ final class PublishBuild implements ShouldQueue
         $server = $build->website->server;
         if ($server === null || ! $build->repository->isDeploymentReady()) {
             app(FinishBuild::class)->handle($build, Build::STATUS_FAILED, 'The website, its server or the repository’s Git provider isn’t ready.');
+
+            return;
+        }
+        if ($actions->for($build)) {
+            if (Build::query()->whereKey($build->id)->where('status', Build::STATUS_DEPLOYING)->update(['status' => Build::STATUS_RUNNING, 'build_phase' => 'actions']) === 1) {
+                DeployStarted::dispatch($build->refresh());
+                AwaitGitHubActionsBuild::dispatch($build->id);
+            }
 
             return;
         }

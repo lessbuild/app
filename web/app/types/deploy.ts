@@ -269,6 +269,7 @@ export type EnvironmentDetail = {
     autoscaledAt: string | null;
     buildServerId: number | null;
     artifactBucketId: number | null;
+    githubActionsBuilds: boolean;
     releaseNotesUrl: string | null;
     maintenanceAt: string | null;
     maintenanceSecret: string | null;
@@ -313,5 +314,6 @@ export type EnvironmentPage = {
     destinations: Array<{ id: number; name: string; type: string; enabled: boolean; onSuccess: boolean; onFailure: boolean; onApproval: boolean }>;
     buildServers: Option[];
     storageBuckets: Option[];
+    githubWorkflows: Array<{ website: string; repository: string; path: string; yaml: string }>;
     canManage: boolean;
 };

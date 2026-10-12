@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-12', 'title' => 'Build on GitHub Actions', 'changes' => [
+        'Choose GitHub Actions under an environment’s Build server and add the workflow it shows to your repository: deploys then wait for its run and the server only unpacks the result, so a small server never runs out of memory building.',
+    ]],
     ['date' => '2026-10-12', 'title' => 'Pick the branch from a list', 'changes' => [
         'Connecting a repository, its settings, Deploy a version and Deploy later list the repository’s branches from GitHub, GitLab or Bitbucket to choose from; choose Another… to type a branch, tag or commit.',
     ]],

@@ -61,7 +61,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $promoted_from_build_id the build in an earlier environment whose commit this one ships
  * @property string|null $promotion_note
  * @property int|null $build_server_id the server it was built on, when not its website's
- * @property string|null $build_phase build while it runs on the build server, release once its result is going live on the website's server
+ * @property string|null $build_phase build while it runs on the build server, actions while it builds on GitHub Actions, release once its result is going live on the website's server
  * @property string|null $artifact_key where its built release waits in the environment's storage bucket
  * @property int|null $legacy_id
  * @property Carbon|null $created_at

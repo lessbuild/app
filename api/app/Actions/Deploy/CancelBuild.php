@@ -33,7 +33,8 @@ final class CancelBuild
     {
         Gate::forUser($actor)->authorize('deploy', $build->repository);
         StateConflict::unless($build->isActive(), __('This deploy has already finished.'));
-        $log = $build->status === Build::STATUS_RUNNING ? $this->remote->stop($build) : null;
+        // A build waiting on GitHub Actions, or between its build and release parts, has no script on a server to stop.
+        $log = $build->status === Build::STATUS_RUNNING && $build->remote_process_path !== null ? $this->remote->stop($build) : null;
         $this->finish->handle($build, Build::STATUS_CANCELED, null, $log);
     }
 }

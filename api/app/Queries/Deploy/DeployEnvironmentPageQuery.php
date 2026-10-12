@@ -18,6 +18,7 @@ use App\Models\EnvironmentResource;
 use App\Models\EnvironmentVariable;
 use App\Models\PendingVariableChange;
 use App\Models\Recipe;
+use App\Models\Repository;
 use App\Models\ScalingSchedule;
 use App\Models\ScheduledTask;
 use App\Models\ScheduledTaskRun;
@@ -27,6 +28,7 @@ use App\Models\StorageBucket;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\Deploy\BuildServers;
+use App\Services\Deploy\GitHubActionsBuilds;
 
 /** Reads everything an environment's deploy page shows, tab by tab. */
 final class DeployEnvironmentPageQuery
@@ -35,8 +37,9 @@ final class DeployEnvironmentPageQuery
      * Create a new DeployEnvironmentPageQuery instance.
      *
      * @param  EnvironmentAutomationQuery  $automation  The environment's schedules, tasks and plan.
+     * @param  GitHubActionsBuilds  $actions  Writes the workflow each website needs to build on GitHub Actions.
      */
-    public function __construct(private readonly EnvironmentAutomationQuery $automation) {}
+    public function __construct(private readonly EnvironmentAutomationQuery $automation, private readonly GitHubActionsBuilds $actions) {}
 
     /**
      * Describe the environment for the person looking at it: its controls and freezes, how deploys run, variables
@@ -90,6 +93,7 @@ final class DeployEnvironmentPageQuery
                 'autoscaledAt' => $environment->autoscaled_at?->toIso8601String(),
                 'buildServerId' => $environment->build_server_id,
                 'artifactBucketId' => $environment->artifact_bucket_id,
+                'githubActionsBuilds' => (bool) $environment->github_actions_builds,
                 'releaseNotesUrl' => $environment->release_notes_token === null ? null : route('deploy.release-notes.public', $environment->release_notes_token),
                 'maintenanceAt' => $environment->maintenance_at?->toIso8601String(),
                 'maintenanceSecret' => $environment->maintenance_at === null ? null : $environment->maintenance_secret,
@@ -194,7 +198,26 @@ final class DeployEnvironmentPageQuery
                 ->where('provisioning_status', Server::STATUS_ACTIVE)->orderBy('name')->get()->map(fn (Server $server): array => ['value' => (string) $server->id, 'label' => $server->label()])->values(),
             'storageBuckets' => StorageBucket::query()->where('project_id', $project->id)->orderBy('name')->get(['id', 'name'])
                 ->map(fn (StorageBucket $bucket): array => ['value' => (string) $bucket->id, 'label' => $bucket->name])->values(),
+            'githubWorkflows' => $this->githubWorkflows($environment),
             'canManage' => $viewer->can('configureDeploy', $environment),
         ];
+    }
+
+    /**
+     * The workflow each of the environment's GitHub repositories needs to build on GitHub Actions, and where it goes.
+     *
+     * @param  Environment  $environment
+     * @return list<array{website: string, repository: string, path: string, yaml: string}>
+     */
+    private function githubWorkflows(Environment $environment): array
+    {
+        return array_values(Repository::query()->where('environment_id', $environment->id)->with(['provider', 'website', 'environment'])->orderBy('id')->get()
+            ->filter(fn (Repository $repository): bool => $this->actions->repositoryName($repository) !== null)
+            ->map(fn (Repository $repository): array => [
+                'website' => $repository->website->url,
+                'repository' => (string) $this->actions->repositoryName($repository),
+                'path' => $this->actions->workflowPath($repository),
+                'yaml' => $this->actions->workflow($repository),
+            ])->all());
     }
 }

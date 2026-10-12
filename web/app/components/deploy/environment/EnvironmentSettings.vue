@@ -13,7 +13,9 @@ const errorRate = ref<string | null>(text(environment.value.rollbackErrorRatePer
 const latency = ref<string | null>(text(environment.value.rollbackLatencyPercent));
 const conversion = ref<string | null>(text(environment.value.rollbackConversionDropPercent));
 const runtime = ref<string | null>(environment.value.runtime);
-const buildServer = ref<string | null>(text(environment.value.buildServerId));
+const buildServer = ref<string | null>(environment.value.githubActionsBuilds ? 'github' : text(environment.value.buildServerId));
+const buildPlaces = computed<Option[]>(() => [{ value: 'github', label: t('GitHub Actions') }, ...props.page.buildServers]);
+const onGitHub = computed(() => buildServer.value === 'github');
 const bucket = ref<string | null>(text(environment.value.artifactBucketId));
 const strategies = computed<Option[]>(() => [
     { value: 'blue_green', label: t('Blue-green (switch when ready)') },
@@ -130,15 +132,23 @@ const runtimes: Option[] = [
         <SettingsSection
             id="build-server"
             :title="t('Build server')"
-            :description="t('Build on another of your servers so installing dependencies and compiling assets doesn’t slow the websites. The built release passes through one of this project’s storage buckets with links that expire, and the website’s server only unpacks it and makes it live. Docker builds stay on the website’s server.')"
+            :description="t('Build somewhere else so installing dependencies and compiling assets doesn’t slow the websites, or doesn’t run a small server out of memory. On another of your servers, the built release passes through one of this project’s storage buckets with links that expire. On GitHub Actions, a workflow in the repository builds each commit and the website’s server only unpacks the result. Either way the website’s server makes it live. Docker builds stay on the website’s server.')"
         >
-            <ApiForm :action="`${base}/build-server`" method="PUT" class="p-4 sm:p-6">
+            <ApiForm :action="`${base}/build-server`" method="PUT" class="space-y-5 p-4 sm:p-6">
                 <fieldset :disabled="!page.canManage" class="grid items-end gap-4 sm:grid-cols-3">
-                    <SelectField v-model="buildServer" name="build_server_id" :label="t('Build on')" :placeholder="t('Each website’s own server')" :options="page.buildServers" />
-                    <SelectField v-model="bucket" name="artifact_bucket_id" :label="t('Storage bucket')" :placeholder="t('None')" :options="page.storageBuckets" />
+                    <SelectField v-model="buildServer" name="build_server_id" :label="t('Build on')" :placeholder="t('Each website’s own server')" :options="buildPlaces" />
+                    <SelectField v-if="!onGitHub" v-model="bucket" name="artifact_bucket_id" :label="t('Storage bucket')" :placeholder="t('None')" :options="page.storageBuckets" />
                     <div v-if="page.canManage"><SubmitButton variant="secondary">{{ t('Save') }}</SubmitButton></div>
-                    <p v-if="page.storageBuckets.length === 0" class="text-xs text-muted sm:col-span-3">{{ t('Add a storage bucket to this project under Infrastructure → Storage first.') }}</p>
+                    <p v-if="!onGitHub && page.storageBuckets.length === 0" class="text-xs text-muted sm:col-span-3">{{ t('Add a storage bucket to this project under Infrastructure → Storage first.') }}</p>
                 </fieldset>
+                <div v-if="onGitHub" class="space-y-3">
+                    <p class="text-sm text-muted">{{ t('Add this workflow to the repository at the path shown and push it. Each deploy waits for the workflow’s run on its commit, then downloads the result. Variables the build needs go in the repository’s Actions secrets and variables; this environment’s variables are added on the server.') }}</p>
+                    <p v-if="page.githubWorkflows.length === 0" class="text-sm text-muted">{{ t('Connect a GitHub repository to a website in this environment to see its workflow.') }}</p>
+                    <template v-for="workflow in page.githubWorkflows" :key="workflow.path">
+                        <p class="text-sm"><span class="font-medium text-ink">{{ workflow.website }}</span> <span class="text-muted">· {{ workflow.repository }}</span></p>
+                        <AcmeCodeBlock :title="workflow.path" :code="workflow.yaml" :dark="false" />
+                    </template>
+                </div>
             </ApiForm>
         </SettingsSection>
     </div>
