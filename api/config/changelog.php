@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-12', 'title' => 'Pick the branch from a list', 'changes' => [
+        'Connecting a repository, its settings, Deploy a version and Deploy later list the repository’s branches from GitHub, GitLab or Bitbucket to choose from; choose Another… to type a branch, tag or commit.',
+    ]],
     ['date' => '2026-10-05', 'title' => 'Stay where you are: forms open in drawers', 'changes' => [
         'Creating and editing open in a drawer over the page you were on, and saving keeps you there.',
         'Starting a project from a template opens in a drawer too.',

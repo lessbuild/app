@@ -14,6 +14,8 @@ const { data } = await useApi<RepositoryPage>(() => `/projects/${route.params.pr
 const repository = computed(() => data.value.repository);
 const project = computed(() => data.value.overview.project);
 const base = computed(() => `/api/app/projects/${project.value.id}/deploy/repositories/${repository.value.id}`);
+// The repository's branches, to pick when deploying a version or booking a deploy (loaded as a dialog opens).
+const branchSource = computed(() => `/projects/${project.value.id}/deploy/repositories/${repository.value.id}/branches`);
 const tabs = computed<Record<string, string>>(() => ({
     deploys: t('Deploys'),
     webhook: t('Push deploys'),
@@ -54,7 +56,7 @@ function webhookTurnedOn(result: Record<string, unknown>): null {
                     <template #trigger="{ open }"><AcmeBtn icon="clock" :disabled="!repository.ready" @click="open">{{ t('Deploy later') }}</AcmeBtn></template>
                     <InputField id="schedule-deploy-at" name="deploy_at" type="datetime-local" :label="t('When')" required />
                     <InputField id="schedule-deploy-timezone" name="timezone" :label="t('Time zone')" :model-value="repository.timezone" maxlength="64" required />
-                    <InputField id="schedule-deploy-ref" name="ref" :label="t('Branch, tag or commit')" :description="t('Optional. Leave empty for the latest :branch.', { branch: repository.branch })" maxlength="200" autocomplete="off" />
+                    <BranchField id="schedule-deploy-ref" name="ref" :label="t('Branch, tag or commit')" :source="branchSource" :empty="t('The latest :branch', { branch: repository.branch })" :other="t('Another branch, tag or commit…')" :description="t('Optional. Leave empty for the latest :branch.', { branch: repository.branch })" maxlength="200" />
                 </FormDialog>
                 <FormDialog
                     id="deploy-ref"
@@ -64,7 +66,7 @@ function webhookTurnedOn(result: Record<string, unknown>): null {
                     :submit="t('Deploy')"
                 >
                     <template #trigger="{ open }"><AcmeBtn icon="branch" :disabled="!repository.ready" @click="open">{{ t('Deploy a version') }}</AcmeBtn></template>
-                    <InputField id="deploy-ref-input" name="ref" :label="t('Branch, tag or commit')" placeholder="v1.4.0" maxlength="200" autocomplete="off" required autofocus />
+                    <BranchField id="deploy-ref-input" :model-value="repository.branch" name="ref" :label="t('Branch, tag or commit')" :source="branchSource" :other="t('Another branch, tag or commit…')" placeholder="v1.4.0" maxlength="200" required />
                 </FormDialog>
                 <ApiForm :action="`${base}/builds`" class="!block">
                     <SubmitButton :disabled="!repository.ready">{{ t('Deploy now') }}</SubmitButton>
@@ -204,7 +206,7 @@ function webhookTurnedOn(result: Record<string, unknown>): null {
 
                 <AcmeCard :title="t('Build settings')" :description="t('Changes apply to the next deploy.')">
                     <ApiForm :action="base" method="PUT" class="grid gap-5">
-                        <RepositoryFields :options="data.options" :repository="repository" />
+                        <RepositoryFields :options="data.options" :project-id="project.id" :repository="repository" />
                         <div><SubmitButton>{{ t('Save settings') }}</SubmitButton></div>
                     </ApiForm>
                 </AcmeCard>

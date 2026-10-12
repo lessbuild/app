@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 final class GitRepositories
 {
@@ -62,6 +63,74 @@ final class GitRepositories
             $provider->type === ProviderType::GitLab => $this->gitLab($provider),
             default => $this->bitbucket($provider),
         });
+    }
+
+    /**
+     * List a repository's branches (up to 100, the provider's order), kept for a minute, so people pick one instead of
+     * typing it. The address must be on the provider's own host, e.g. github.com/acme/shop for a GitHub provider.
+     *
+     * @param  Provider  $provider
+     * @param  string  $url  The repository's address, with or without https:// and .git.
+     * @return list<string>
+     *
+     * @throws RuntimeException when the provider can't be listed, the address isn't on its host, or it refuses
+     */
+    public function branches(Provider $provider, string $url): array
+    {
+        $host = match ($provider->type) {
+            ProviderType::GitHub => 'github.com',
+            ProviderType::GitLab => 'gitlab.com',
+            default => 'bitbucket.org',
+        };
+        $path = preg_replace(['#^(https?://)?(www\.)?#i', '#\.git$#i'], '', trim($url, " /\t\n"));
+        if (! $this->canList($provider) || ! is_string($path) || ! preg_match('#^'.preg_quote($host, '#').'/([\w.-]+(?:/[\w.-]+)+)$#i', $path, $match)) {
+            throw new RuntimeException('This repository’s branches can’t be listed.');
+        }
+        $repository = $match[1];
+
+        /** @var list<string> */
+        return Cache::remember("git-branches:{$provider->id}:".md5((string) $provider->updated_at.$repository), 60, function () use ($provider, $repository): array {
+            if ($provider->isGitHubApp()) {
+                return $this->github->branches((string) $provider->external_id, $repository);
+            }
+            $items = match ($provider->type) {
+                ProviderType::GitHub => Http::acceptJson()->timeout(10)->withToken($provider->token)->withHeader('X-GitHub-Api-Version', '2026-03-10')
+                    ->get("https://api.github.com/repos/{$repository}/branches", ['per_page' => 100])->throw()->json(),
+                ProviderType::GitLab => Http::acceptJson()->timeout(10)->withHeader('PRIVATE-TOKEN', $provider->token)
+                    ->get('https://gitlab.com/api/v4/projects/'.rawurlencode($repository).'/repository/branches', ['per_page' => 100])->throw()->json(),
+                default => Http::acceptJson()->timeout(10)->withToken($provider->token)
+                    ->get("https://api.bitbucket.org/2.0/repositories/{$repository}/refs/branches", ['pagelen' => 100])->throw()->json('values', []),
+            };
+            $names = [];
+            foreach (is_array($items) ? $items : [] as $item) {
+                if (is_array($item) && is_string($item['name'] ?? null) && $item['name'] !== '') {
+                    $names[] = $item['name'];
+                }
+            }
+
+            return $names;
+        });
+    }
+
+    /**
+     * List a repository's branches for a person picking one, or none with a reason they can act on when the provider
+     * can't list them or refuses (unexpected failures are reported).
+     *
+     * @param  Provider  $provider
+     * @param  string  $url
+     * @return array{branches: list<string>, error: string|null}
+     */
+    public function branchesOrReason(Provider $provider, string $url): array
+    {
+        try {
+            return ['branches' => $this->branches($provider, $url), 'error' => null];
+        } catch (Throwable $exception) {
+            if (! $exception instanceof RuntimeException) {
+                report($exception);
+            }
+
+            return ['branches' => [], 'error' => __('The branches couldn’t be listed. Type the branch name instead.')];
+        }
     }
 
     /**

@@ -75,6 +75,20 @@ class GitHubApp
     }
 
     /**
+     * List a repository's branch names (first 100) as the installation sees them.
+     *
+     * @param  string  $installationId
+     * @param  string  $repository  owner/name
+     * @return list<string>
+     */
+    public function branches(string $installationId, string $repository): array
+    {
+        $branches = $this->client($installationId)->get('https://api.github.com/repos/'.$repository.'/branches', ['per_page' => 100])->throw()->json();
+
+        return array_values(array_filter(array_map(fn (mixed $branch): ?string => is_array($branch) && is_string($branch['name'] ?? null) ? $branch['name'] : null, is_array($branches) ? $branches : [])));
+    }
+
+    /**
      * Create a check run on a commit showing a preview's state: in progress, or completed as a success (ready),
      * failure (failed) or cancelled (closed).
      *

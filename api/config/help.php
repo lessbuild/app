@@ -290,11 +290,11 @@ return [
             'title' => 'Deploy from Git',
             'summary' => 'Connect a repository and deploy it to a website on every push.',
             'steps' => [
-                ['Connect the repository', 'Deploy → Repositories → Connect a repository. Choose the provider, the repository and branch, the environment, and the website it deploys to.'],
+                ['Connect the repository', 'Deploy → Repositories → Connect a repository. Choose the provider, the repository, the branch (from the list of its branches, or type one), the environment, and the website it deploys to.'],
                 ['Set up the build', 'Add your build commands under Build and filters, and the environment’s variables (see Environments and variables). The repository’s Settings tab has the build cache and build settings for later.'],
                 ['Pipelines', 'Deploy → Pipelines chains repositories, such as the API and then the frontend. Choose Run: the first deploys, each next one starts only once the one before is live, and the run stops if a deploy fails, is rejected or is cancelled. Each step deploys its branch’s latest commit, with the usual approvals and checks.'],
                 ['Monorepos', 'For one app in a larger repository, set Subdirectory to its folder (such as apps/api), and under Push deploys only for these paths list its folder (apps/api/**) plus anything it shares (packages/**). A push that changes nothing there doesn’t deploy it; connect each app in the repository the same way. To check your filters, choose Which would deploy? on the Deploy page and paste a change’s paths (git diff --name-only main lists them).'],
-                ['Deploy', 'Deploy from the repository page (now, a chosen version, or later), or set up the Push deploys tab so every push to the branch deploys. Each deploy is a new release, and the previous ones are kept.'],
+                ['Deploy', 'Deploy from the repository page (now, a version picked from the list of branches or typed as a tag or commit, or later), or set up the Push deploys tab so every push to the branch deploys. Each deploy is a new release, and the previous ones are kept.'],
                 ['Follow it', 'The deploy page shows each step’s log as it runs (Download log saves it), and the release is marked in Monitoring and Analytics once it’s live. Add a team note to say why it happened or what to watch, and use Export CSV on the repository’s Deploys and Push deploys tabs for its history.'],
             ],
         ],

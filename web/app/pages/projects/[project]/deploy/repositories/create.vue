@@ -29,6 +29,7 @@ const loading = ref(false);
 const problem = ref<string | null>(null);
 const advanced = ref(false);
 const shown = computed(() => reachable.value.filter((repository) => repository.name.toLowerCase().includes(search.value.trim().toLowerCase())));
+const branchSource = computed(() => (form.provider && form.url.trim() !== '' ? `/projects/${project.value.id}/deploy/repositories/branches?${new URLSearchParams({ provider: form.provider, url: form.url.trim() })}` : null));
 const label = (options: Array<{ value: string; label: string }>, value: string) => options.find((option) => option.value === value)?.label ?? '—';
 
 /** Load the repositories the chosen provider can reach. */
@@ -97,7 +98,7 @@ onMounted(load);
                 <AcmeCard :title="t('2. Where it deploys')">
                     <div class="grid gap-4 sm:grid-cols-2">
                         <InputField id="repository-name" v-model="form.name" name="name" :label="t('Name')" placeholder="storefront-web" maxlength="120" required />
-                        <InputField id="repository-branch" v-model="form.branch" name="branch" :label="t('Branch')" maxlength="255" required />
+                        <BranchField id="repository-branch" v-model="form.branch" name="branch" :label="t('Branch')" :source="branchSource" required />
                         <SelectField id="repository-website" v-model="form.website" name="website_id" :label="t('Deploys to website')" :options="data.options.websites" />
                         <SelectField id="repository-environment" v-model="form.environment" name="environment_id" :label="t('Environment')" :placeholder="t('None')" :options="data.options.environments" />
                     </div>

@@ -6,13 +6,16 @@ import type { RepositoryDetail, RepositoryFormOptions } from '~/types/deploy';
  * website and environment it deploys to, and the commands around a deploy. `defaults` fills a new one (from the
  * GitHub App's list of repositories).
  */
-const props = withDefaults(defineProps<{ options: RepositoryFormOptions; repository?: RepositoryDetail | null; defaults?: { providerId?: string; url?: string; branch?: string } }>(), {
+const props = withDefaults(defineProps<{ options: RepositoryFormOptions; projectId: string; repository?: RepositoryDetail | null; defaults?: { providerId?: string; url?: string; branch?: string } }>(), {
     repository: null,
     defaults: () => ({}),
 });
 const { t } = useT();
 const provider = ref<string | null>(props.repository?.providerId != null ? String(props.repository.providerId) : (props.defaults.providerId ?? props.options.providers[0]?.value ?? null));
 const website = ref<string | null>(props.repository ? String(props.repository.websiteId) : (props.options.websites[0]?.value ?? null));
+const url = ref(props.repository?.url ?? props.defaults.url ?? '');
+const branch = ref(props.repository?.branch ?? props.defaults.branch ?? 'main');
+const branchSource = computed(() => (provider.value && url.value.trim() !== '' ? `/projects/${props.projectId}/deploy/repositories/branches?${new URLSearchParams({ provider: provider.value, url: url.value.trim() })}` : null));
 const environment = ref<string | null>(props.repository?.environmentId ?? '');
 </script>
 
@@ -26,8 +29,8 @@ const environment = ref<string | null>(props.repository?.environmentId ?? '');
             :options="options.providers"
             :description="options.providers.length === 0 ? t('Add a GitHub, GitLab or Bitbucket token under Account → Providers first.') : undefined"
         />
-        <InputField name="url" :label="t('Repository')" :model-value="repository?.url ?? defaults.url" placeholder="github.com/acme/shop" maxlength="255" required />
-        <InputField name="branch" :label="t('Branch')" :model-value="repository?.branch ?? defaults.branch ?? 'main'" maxlength="255" required />
+        <InputField v-model="url" name="url" :label="t('Repository')" placeholder="github.com/acme/shop" maxlength="255" required />
+        <BranchField v-model="branch" name="branch" :label="t('Branch')" :source="branchSource" required />
         <SelectField v-model="website" name="website_id" :label="t('Deploys to website')" :options="options.websites" />
         <SelectField v-model="environment" name="environment_id" :label="t('Environment')" :description="t('Deploys show up in its Monitoring releases.')" :placeholder="t('None')" :options="options.environments" />
         <InputField name="deployment_root" :label="t('Subdirectory (optional)')" :model-value="repository?.deploymentRoot" placeholder="apps/api" maxlength="512" />
