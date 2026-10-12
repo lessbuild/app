@@ -196,7 +196,7 @@ class DigitalOcean implements ServerProvider, SnapshotsServers
      */
     public function getImages(string $type = 'distribution'): array
     {
-        $response = $this->get(self::IMAGES."?type=$type", []);
+        $response = $this->get(self::IMAGES."?type=$type&per_page=200");
 
         if ($response->status() !== 200) {
             throw new Exception('Invalid response code.');
@@ -328,8 +328,10 @@ class DigitalOcean implements ServerProvider, SnapshotsServers
      */
     public function get(string $endpoint, array $custom_headers = []): Response
     {
+        // An empty query array would replace the endpoint's own query string (?type=, ?per_page=), so only pass one with
+        // something in it.
         return Http::withToken($this->apiToken)
-            ->get($endpoint, $custom_headers);
+            ->get($endpoint, $custom_headers === [] ? null : $custom_headers);
     }
 
     /**

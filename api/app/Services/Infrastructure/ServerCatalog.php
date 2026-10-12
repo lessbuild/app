@@ -76,7 +76,8 @@ class ServerCatalog
                 ),
             ])),
             'images' => $this->sort(collect($client->images())
-                ->filter(fn (array $image): bool => strcasecmp((string) ($image['distribution'] ?? ''), 'Ubuntu') === 0)
+                ->filter(fn (array $image): bool => strcasecmp((string) ($image['distribution'] ?? ''), 'Ubuntu') === 0
+                    && ($image['type'] ?? 'distribution') !== 'application' && self::supportedUbuntu((string) ($image['name'] ?? '')))
                 ->map(fn (array $image): array => [
                     'id' => (string) ($image['slug'] ?? $image['id'] ?? ''),
                     'label' => trim((string) ($image['distribution'] ?? '').' '.(string) ($image['name'] ?? '')),
@@ -110,7 +111,7 @@ class ServerCatalog
                 ),
             ])),
             'images' => $this->sort(collect($client->images())
-                ->filter(fn (array $image): bool => strcasecmp((string) ($image['os_flavor'] ?? ''), 'ubuntu') === 0)
+                ->filter(fn (array $image): bool => strcasecmp((string) ($image['os_flavor'] ?? ''), 'ubuntu') === 0 && self::supportedUbuntu((string) ($image['name'] ?? '')))
                 ->map(fn (array $image): array => [
                     'id' => (string) ($image['name'] ?? $image['id'] ?? ''),
                     'label' => (string) ($image['description'] ?? $image['name'] ?? ''),
@@ -144,7 +145,7 @@ class ServerCatalog
                 ),
             ])),
             'images' => $this->sort(collect($client->images())
-                ->filter(fn (array $image): bool => str_contains(strtolower((string) ($image['name'] ?? '')), 'ubuntu'))
+                ->filter(fn (array $image): bool => str_contains(strtolower((string) ($image['name'] ?? '')), 'ubuntu') && self::supportedUbuntu((string) ($image['name'] ?? '')))
                 ->map(fn (array $image): array => [
                     'id' => (string) ($image['id'] ?? ''),
                     'label' => (string) ($image['name'] ?? ''),
@@ -178,7 +179,7 @@ class ServerCatalog
                 ),
             ])),
             'images' => $this->sort(collect($client->images())
-                ->filter(fn (array $image): bool => str_contains(strtolower((string) ($image['label'] ?? '')), 'ubuntu'))
+                ->filter(fn (array $image): bool => str_contains(strtolower((string) ($image['label'] ?? '')), 'ubuntu') && self::supportedUbuntu((string) ($image['label'] ?? '')))
                 ->map(fn (array $image): array => ['id' => (string) ($image['id'] ?? ''), 'label' => (string) ($image['label'] ?? '')])),
         ];
     }
@@ -217,6 +218,18 @@ class ServerCatalog
             ->filter(fn (array $item): bool => filled($item['id']) && filled($item['label']))
             ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)
             ->all());
+    }
+
+    /**
+     * Whether an image is a plain Ubuntu release our server setup supports (24.04 or 22.04), and not a one-click app
+     * built on one ("Akaunting on Ubuntu 20.04"), which comes with its own software and breaks the setup.
+     *
+     * @param  string  $name  The image's name or label.
+     * @return bool
+     */
+    public static function supportedUbuntu(string $name): bool
+    {
+        return preg_match('/\b(24|22)[.-]?04\b/', $name) === 1 && ! preg_match('/\son\s/i', $name);
     }
 
     /**
