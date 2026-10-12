@@ -5550,6 +5550,7 @@
     "Waiting for someone to approve the deploy to :environment.": "Esperando a que alguien apruebe el despliegue a :environment.",
     "Waiting for the first event": "Esperando el primer evento",
     "Waiting for the first visit to :site. Add its snippet to your pages.": "Esperando la primera visita a :site. Añade su fragmento a tus páginas.",
+    "Waiting for the provider to start the server and give it an address, then for SSH to answer.": "Esperando a que el proveedor arranque el servidor y le asigne una dirección, y a que responda SSH.",
     "Waiting for the provider to start the server and give it an address, then for SSH to answer. This usually takes a minute or two; we keep checking for up to twenty minutes.": "Esperando a que el proveedor arranque el servidor y le asigne una dirección, y luego a que responda SSH. Suele tardar uno o dos minutos; seguimos comprobando hasta veinte minutos.",
     "Waiting for verification": "Esperando verificación",
     "Waiting for your passkey…": "Esperando tu llave de acceso…",

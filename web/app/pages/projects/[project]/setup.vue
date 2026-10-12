@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import type { ServerLiveStatus } from '~/types/infrastructure';
 import type { ProjectOverview, ProjectSetup } from '~/types/projects';
 
 /**
  * The setup guide (the Acme theme's): one step at a time from an empty project to a deployed, monitored and measured site. While a step
- * finishes by itself (a server being set up, a deploy, the first visit), the guide checks again every 15 seconds. A
+ * finishes by itself (a server being set up, a deploy, the first visit), the guide checks again every 5 seconds, and
+ * follows a server's setup stage by stage as its own page does. A
  * step done in a form (a provider, a website, a variable, an Analytics site) opens it in a dialog over the guide, and
  * saving it comes back here.
  */
@@ -31,13 +33,31 @@ onMounted(() => {
     }
 });
 
+// While a server is being set up, its stage and step are followed live, as on the server's own page.
+const serverId = computed(() => (current.value?.key === 'server' && current.value.state === 'working' ? current.value.actionUrl?.match(/\/servers\/(\d+)/)?.[1] ?? null : null));
+const live = ref<ServerLiveStatus | null>(null);
 let timer: number | undefined;
+
+/** Check how the step that's in progress is going, and load the guide again once it's moved on. */
+async function follow() {
+    if (current.value?.state !== 'working') {
+        live.value = null;
+        return;
+    }
+    if (serverId.value === null) {
+        await refresh();
+        return;
+    }
+    live.value = await send<ServerLiveStatus>('GET', `/projects/${project.value.id}/infrastructure/servers/${serverId.value}/status`).catch(() => live.value);
+    if (live.value?.finished) {
+        live.value = null;
+        await refresh();
+    }
+}
+
 onMounted(() => {
-    timer = window.setInterval(() => {
-        if (current.value?.state === 'working') {
-            refresh();
-        }
-    }, 15000);
+    follow();
+    timer = window.setInterval(follow, 5000);
 });
 onBeforeUnmount(() => window.clearInterval(timer));
 </script>
@@ -75,6 +95,12 @@ onBeforeUnmount(() => window.clearInterval(timer));
                     <p v-if="current.detail" class="mt-4 flex items-start gap-2 rounded-xl bg-black/[.03] p-3 text-sm text-ink dark:bg-white/[.04]" role="status">
                         <span v-if="current.state === 'working'" class="mt-1.5 size-2 shrink-0 animate-pulse rounded-full bg-sky-500" aria-hidden="true" />{{ current.detail }}
                     </p>
+                    <div v-if="live && serverId" class="mt-3 rounded-xl border border-sky-500/30 bg-sky-500/[.05] p-3 text-sm" aria-live="polite">
+                        <p class="flex flex-wrap items-center gap-2 font-medium text-ink"><ServerStatusBadge :status="live.status" />{{ t('Stage :stage of :final', { stage: live.stage, final: live.final_stage }) }}</p>
+                        <p v-if="live.step" class="mt-1 text-muted">{{ live.step }}</p>
+                        <p v-else-if="live.status === 'waiting_for_ip'" class="mt-1 text-muted">{{ t('Waiting for the provider to start the server and give it an address, then for SSH to answer.') }}</p>
+                        <AcmeProgress :value="live.final_stage > 0 ? (live.stage / live.final_stage) * 100 : 0" :label="t('Provisioning progress')" class="mt-3" />
+                    </div>
                     <div class="mt-6 flex flex-wrap items-center gap-3">
                         <AcmeBtn v-if="data.canChange && current.actionUrl && current.actionLabel" variant="primary" :to="current.dialog ? { query: { ...route.query, dialog: current.dialog } } : local(current.actionUrl)">{{ current.actionLabel }}</AcmeBtn>
                         <p v-else-if="!data.canChange" class="text-sm text-muted">{{ t('Someone who can change this project needs to do this step.') }}</p>
