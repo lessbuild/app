@@ -27,9 +27,6 @@ final class CreateEnvironment
     public function handle(User $actor, Project $project, string $name, EnvironmentKind $kind): Environment
     {
         Gate::forUser($actor)->authorize('update', $project);
-        if ($kind === EnvironmentKind::Production) {
-            throw ProjectRuleViolation::productionIsFixed();
-        }
         $slug = Str::slug($name) ?: Str::lower(Str::random(6));
         if ($project->environments()->where('slug', $slug)->exists()) {
             throw ProjectRuleViolation::environmentNameTaken();

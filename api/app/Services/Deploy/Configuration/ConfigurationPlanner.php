@@ -62,8 +62,8 @@ final class ConfigurationPlanner
         foreach ($document['remove']['environments'] ?? [] as $slug) {
             unset($kinds[$slug]);
         }
-        if (count(array_keys($kinds, EnvironmentKind::Production->value, true)) !== 1) {
-            $this->invalid('A project has exactly one production environment. It can’t be added, removed or changed by configuration.');
+        if (($kinds['production'] ?? null) !== EnvironmentKind::Production->value) {
+            $this->invalid('The production environment the project was created with can’t be removed or changed by configuration.');
         }
         $ownerships = ConfigurationOwnership::query()->where('project_id', $project->id)->orderBy('id')->get();
         $changes = [];
@@ -77,8 +77,8 @@ final class ConfigurationPlanner
                 }
             }
             $existing = $environments->get($slug);
-            if ($existing?->kind === EnvironmentKind::Production && $desired['type'] !== EnvironmentKind::Production->value) {
-                $this->invalid('A project has exactly one production environment. It can’t be added, removed or changed by configuration.');
+            if ($slug === 'production' && $desired['type'] !== EnvironmentKind::Production->value) {
+                $this->invalid('The production environment the project was created with can’t be removed or changed by configuration.');
             }
             $managedValkey = array_diff($existing?->resources->where('type', 'valkey')->where('is_managed', true)->pluck('name')->all() ?? [], $desired['remove']['resources'] ?? []);
             foreach ($desired['resources'] ?? [] as $name => $resource) {

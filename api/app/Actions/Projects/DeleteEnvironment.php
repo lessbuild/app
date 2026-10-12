@@ -23,7 +23,9 @@ final class DeleteEnvironment
     public function handle(User $actor, Environment $environment): void
     {
         Gate::forUser($actor)->authorize('update', $environment->project);
-        if ($environment->kind === EnvironmentKind::Production) {
+        // The production environment the project was created with stays, so there's always one; extra production
+        // environments (an API beside a website, say) can go.
+        if ($environment->slug === 'production' || ($environment->kind === EnvironmentKind::Production && ! $environment->project->environments()->whereKeyNot($environment->id)->where('kind', EnvironmentKind::Production)->exists())) {
             throw ProjectRuleViolation::productionIsFixed();
         }
 

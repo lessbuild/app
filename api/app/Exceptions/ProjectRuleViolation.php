@@ -19,13 +19,13 @@ final class ProjectRuleViolation extends RuleViolation
     }
 
     /**
-     * Build the violation for creating a second production environment or deleting the one every project has.
+     * Build the violation for deleting the production environment every project keeps (the one it was created with).
      *
      * @return ProjectRuleViolation
      */
     public static function productionIsFixed(): self
     {
-        return new self('kind', __('A project has exactly one production environment, created with the project.'));
+        return new self('kind', __('The production environment the project was created with can’t be removed. Other production environments can.'));
     }
 
     /**

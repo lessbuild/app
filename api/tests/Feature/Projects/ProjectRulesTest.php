@@ -62,15 +62,18 @@ final class ProjectRulesTest extends TestCase
         app(CreateProject::class)->handle($viewer->user, $this->account, new ProjectDetails('Nope'));
     }
 
-    public function test_environments_keep_one_production_and_unique_names(): void
+    public function test_environments_keep_their_original_production_and_unique_names(): void
     {
         $project = Project::factory()->for($this->account)->create();
         $staging = app(CreateEnvironment::class)->handle($this->owner, $project, 'Staging', EnvironmentKind::Staging);
+        // More production environments are fine (an API beside the website), and can be removed again.
+        $api = app(CreateEnvironment::class)->handle($this->owner, $project, 'API', EnvironmentKind::Production);
+        $this->assertSame(EnvironmentKind::Production, $api->kind);
+        app(DeleteEnvironment::class)->handle($this->owner, $api);
 
         foreach ([
-            fn () => app(CreateEnvironment::class)->handle($this->owner, $project, 'Prod 2', EnvironmentKind::Production),
             fn () => app(CreateEnvironment::class)->handle($this->owner, $project, 'staging', EnvironmentKind::Staging),
-            fn () => app(DeleteEnvironment::class)->handle($this->owner, $project->environments()->where('kind', EnvironmentKind::Production)->sole()),
+            fn () => app(DeleteEnvironment::class)->handle($this->owner, $project->environments()->where('slug', 'production')->sole()),
         ] as $breaksARule) {
             try {
                 $breaksARule();

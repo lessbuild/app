@@ -37,13 +37,13 @@ const confirmName = ref('');
                 </ApiForm>
             </AcmeCard>
 
-            <AcmeCard id="environments" class="scroll-mt-6" :title="t('Environments')" :description="t('Production is created with the project and can’t be removed. Add staging, development or preview environments as you need them.')" :padded="false">
+            <AcmeCard id="environments" class="scroll-mt-6" :title="t('Environments')" :description="t('Production is created with the project and always stays. Add more as you need them: staging and development, or another production environment, such as an API deployed beside the website.')" :padded="false">
                 <ul class="divide-y divide-line border-y border-line">
                     <li v-for="environment in data.overview.environments" :key="environment.id" class="flex items-center gap-3 px-5 py-3 sm:px-6">
                         <span class="flex-1 font-medium text-ink">{{ environment.name }}</span>
                         <AcmeBadge :tone="environment.kind === 'production' ? 'violet' : 'gray'">{{ environment.kindLabel }}</AcmeBadge>
                         <DeleteDialog
-                            v-if="environment.kind !== 'production'"
+                            v-if="!environment.permanent"
                             :id="`remove-environment-${environment.id}`"
                             :title="t('Remove :environment?', { environment: environment.name })"
                             :action="`${base}/environments/${environment.id}`"

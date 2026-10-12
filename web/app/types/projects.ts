@@ -27,7 +27,7 @@ export type ServiceOption = { key: string; name: string; tagline: string; icon: 
 
 export type ProjectSummary = { id: string; name: string; description: string | null; accountName: string; isSample: boolean; checklistDismissed: boolean; createdAt: string; archivedAt: string | null };
 
-export type EnvironmentSummary = { id: string; name: string; kind: string; kindLabel: string };
+export type EnvironmentSummary = { id: string; name: string; kind: string; kindLabel: string; permanent: boolean };
 
 export type ServiceCard = ServiceOption & { enabled: boolean; canUse: boolean; canManage: boolean; url: string; sections: Array<{ label: string; url: string }> };
 

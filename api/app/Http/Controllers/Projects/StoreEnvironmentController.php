@@ -31,7 +31,7 @@ final class StoreEnvironmentController
     {
         $validated = $request->validateWithBag('environment', [
             'name' => ['required', 'string', 'max:60'],
-            'kind' => ['required', Rule::enum(EnvironmentKind::class)->except([EnvironmentKind::Production])],
+            'kind' => ['required', Rule::enum(EnvironmentKind::class)],
         ]);
         try {
             $environment = $create->handle($user, $project, $validated['name'], EnvironmentKind::from($validated['kind']));

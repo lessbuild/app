@@ -30,7 +30,7 @@ final class ShowProjectSettingsController
             'overview' => $query->handle($project, $user),
             'kinds' => array_values(array_map(
                 fn (EnvironmentKind $kind): array => ['value' => $kind->value, 'label' => $kind->label()],
-                array_filter(EnvironmentKind::cases(), fn (EnvironmentKind $kind): bool => $kind !== EnvironmentKind::Production && $kind !== EnvironmentKind::Preview),
+                array_filter(EnvironmentKind::cases(), fn (EnvironmentKind $kind): bool => $kind !== EnvironmentKind::Preview),
             )),
         ]);
     }

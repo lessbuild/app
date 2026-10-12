@@ -103,17 +103,18 @@ final class ProjectsTest extends TestCase
         $project = Project::factory()->for($this->account)->create(['name' => 'Old name']);
         $base = "/api/app/projects/{$project->id}";
 
-        $this->actingAs($this->owner)->getJson("{$base}/settings")->assertOk()->assertJsonPath('kinds.0.value', 'staging');
+        $this->actingAs($this->owner)->getJson("{$base}/settings")->assertOk()->assertJsonPath('kinds.0.value', 'production')->assertJsonPath('kinds.1.value', 'staging');
         $this->actingAs($this->owner)->putJson($base, ['name' => 'New name', 'description' => ''])->assertOk()->assertJsonPath('message', __('Project saved.'));
         $this->assertSame('New name', $project->refresh()->name);
 
         $this->actingAs($this->owner)->postJson("{$base}/environments", ['name' => 'Staging', 'kind' => 'staging'])->assertOk();
         $this->actingAs($this->owner)->postJson("{$base}/environments", ['name' => 'staging', 'kind' => 'staging'])->assertUnprocessable()->assertJsonValidationErrors('name');
-        $this->actingAs($this->owner)->postJson("{$base}/environments", ['name' => 'Prod', 'kind' => 'production'])->assertUnprocessable()->assertJsonValidationErrors('kind');
+        $this->actingAs($this->owner)->postJson("{$base}/environments", ['name' => 'API', 'kind' => 'production'])->assertOk();
+        $this->assertSame(2, $project->environments()->where('kind', 'production')->count());
         $staging = $project->environments()->where('slug', 'staging')->sole();
         $this->actingAs($this->owner)->getJson("{$base}/settings")->assertJsonFragment(['name' => 'Staging', 'kind' => 'staging']);
         $this->actingAs($this->owner)->deleteJson("{$base}/environments/{$staging->id}")->assertOk();
-        $this->assertSame(1, $project->environments()->count());
+        $this->assertSame(2, $project->environments()->count());
 
         $this->actingAs($this->owner)->deleteJson($base, ['confirm_name' => 'New name'])->assertStatus(423);
         $confirmed = ['auth.password_confirmed_at' => PHP_INT_MAX];

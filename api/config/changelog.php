@@ -14,6 +14,7 @@ return [
         'Add an alert destination from a monitor’s or alert rule’s settings when there’s nowhere for alerts to go yet.',
         'Tab rows scroll sideways on phones instead of wrapping.',
         'Install the GitHub App from Account → Providers.',
+        'A project can have more than one production environment, such as an API and the website that uses it; the one it was created with always stays.',
         'Pricing: start from a typical setup, estimate metered usage, and compare every tier’s key features.',
         'Comparison pages say what each tool includes, who should choose which and how to move, with a page listing them all.',
         'The status page shows 90 days of uptime for each part of the platform and its recent incidents, and you can subscribe by email.',

@@ -149,7 +149,7 @@ final class ConfigurationTest extends TestCase
         $this->actingAs($this->owner)->postJson("{$this->base}/plan", ['document' => "version: 2\nanchor: &a [1]\nenvironments: *a", 'bindings' => '{}'])->assertJsonValidationErrors('document');
         $this->actingAs($this->owner)->postJson("{$this->base}/plan", ['document' => $this->document(), 'bindings' => '{"placements": {"web": 999999}}'])->assertJsonValidationErrors('bindings');
         $this->actingAs($this->owner)->postJson("{$this->base}/plan", ['document' => "version: 2\nremove:\n  environments: [production]", 'bindings' => '{}'])->assertJsonValidationErrors('plan');
-        $this->actingAs($this->owner)->postJson("{$this->base}/plan", ['document' => str_replace('type: staging', 'type: production', $this->document()), 'bindings' => $this->bindings()])->assertJsonValidationErrors('plan');
+        $this->actingAs($this->owner)->postJson("{$this->base}/plan", ['document' => str_replace("  staging:\n    type: staging", "  production:\n    type: staging", $this->document()), 'bindings' => $this->bindings()])->assertJsonValidationErrors('plan');
     }
 
     /**

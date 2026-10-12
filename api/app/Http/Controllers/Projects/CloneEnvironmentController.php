@@ -33,7 +33,7 @@ final class CloneEnvironmentController
         $data = $request->validateWithBag('cloneEnvironment', [
             'source_id' => ['required', 'string'],
             'name' => ['required', 'string', 'max:60'],
-            'kind' => ['required', Rule::enum(EnvironmentKind::class)->except([EnvironmentKind::Production])],
+            'kind' => ['required', Rule::enum(EnvironmentKind::class)],
         ]);
         $source = Environment::query()->where('project_id', $project->id)->whereKey($data['source_id'])->firstOrFail();
         try {

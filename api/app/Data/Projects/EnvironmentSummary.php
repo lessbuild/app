@@ -17,12 +17,14 @@ final readonly class EnvironmentSummary
      * @param  string  $name
      * @param  string  $kind  production, staging, development or preview
      * @param  string  $kindLabel
+     * @param  bool  $permanent  Whether it's the production environment the project was created with, which stays.
      */
     public function __construct(
         public string $id,
         public string $name,
         public string $kind,
         public string $kindLabel,
+        public bool $permanent = false,
     ) {}
 
     /**
@@ -33,6 +35,6 @@ final readonly class EnvironmentSummary
      */
     public static function from(Environment $environment): self
     {
-        return new self($environment->id, $environment->name, $environment->kind->value, $environment->kind->label());
+        return new self($environment->id, $environment->name, $environment->kind->value, $environment->kind->label(), $environment->slug === 'production');
     }
 }
