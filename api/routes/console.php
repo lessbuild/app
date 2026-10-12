@@ -382,24 +382,7 @@ Artisan::command('domains:check {--limit=100 : Most domains to check}', function
     $limit = max(1, min(500, (int) $this->option('limit')));
     $domains = WebsiteDomain::query()->with('website.server')->whereHas('website')->orderByRaw('last_checked_at IS NOT NULL')->orderBy('last_checked_at')->limit($limit)->get();
     foreach ($domains as $domain) {
-        $addresses = array_values(array_filter(array_map(fn (array $record): ?string => $record['ip'] ?? $record['ipv6'] ?? null, @dns_get_record($domain->hostname, DNS_A | DNS_AAAA) ?: [])));
-        $expected = $domain->website->server?->public_ip;
-        $dns = $expected !== null && in_array($expected, $addresses, true) ? 'active' : 'pending';
-        $context = stream_context_create(['ssl' => ['capture_peer_cert' => true, 'verify_peer' => true, 'verify_peer_name' => true, 'peer_name' => $domain->hostname, 'SNI_enabled' => true]]);
-        try {
-            $socket = @stream_socket_client('ssl://'.$domain->hostname.':443', $code, $error, 8, STREAM_CLIENT_CONNECT, $context);
-            if (! is_resource($socket)) {
-                throw new RuntimeException('TLS connection failed.');
-            }
-            $params = stream_context_get_params($socket);
-            fclose($socket);
-            $certificate = openssl_x509_parse($params['options']['ssl']['peer_certificate'] ?? '');
-            $expires = is_array($certificate) && isset($certificate['validTo_time_t']) ? CarbonImmutable::createFromTimestampUTC((int) $certificate['validTo_time_t']) : throw new RuntimeException('No expiry.');
-            $ssl = $expires->isPast() ? 'expired' : ($expires->lessThanOrEqualTo(now()->addDays((int) config('infrastructure.certificate_warning_days'))) ? 'expiring' : 'active');
-            $domain->forceFill(['dns_status' => $dns, 'ssl_status' => $ssl, 'certificate_expires_at' => $expires, 'last_checked_at' => now(), 'last_error' => null])->save();
-        } catch (Throwable) {
-            $domain->forceFill(['dns_status' => $dns, 'ssl_status' => 'error', 'last_checked_at' => now(), 'last_error' => 'TLS verification failed.'])->save();
-        }
+        app(App\Actions\Infrastructure\CheckWebsiteDomain::class)->handle($domain);
     }
     $this->info("Checked {$domains->count()} domains.");
 

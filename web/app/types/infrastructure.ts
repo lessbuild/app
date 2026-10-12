@@ -218,6 +218,8 @@ export type WebsitePage = {
         dnsStatus: string;
         sslStatus: string;
         certificateExpiresAt: string | null;
+        lastCheckedAt: string | null;
+        lastError: string | null;
         dnsProvider: string | null;
         canSync: boolean;
         edge: { proxied: boolean; blockedCountries: string; blockedIps: string; rateLimit: number | null } | null;

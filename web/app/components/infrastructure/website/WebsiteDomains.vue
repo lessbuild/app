@@ -11,7 +11,7 @@ const dnsProvider = ref<string | null>('');
 </script>
 
 <template>
-    <AcmeCard :padded="false" :title="t('Domains')" :description="t('Aliases serve the website too; redirects send visitors elsewhere. The primary domain changes with the website’s domain setting.')">
+    <AcmeCard :padded="false" :title="t('Domains')" :description="t('Aliases serve the website too; redirects send visitors elsewhere. Removing the primary domain makes another domain the website’s main one. Domains are checked every hour, or now with Check now.')">
         <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
             <ul class="divide-y divide-line">
                 <li v-for="domain in page.domains" :key="domain.id" class="flex flex-wrap items-center justify-between gap-3 py-3">
@@ -27,6 +27,8 @@ const dnsProvider = ref<string | null>('');
                             <template v-if="domain.certificateExpiresAt"> · {{ t('expires :date', { date: date(domain.certificateExpiresAt) }) }}</template>
                             <template v-if="domain.dnsProvider"> · {{ domain.dnsProvider }}</template>
                         </p>
+                        <p v-if="domain.lastError && (domain.dnsStatus !== 'active' || domain.sslStatus === 'error')" class="mt-1 text-xs text-amber-700 dark:text-amber-300">{{ domain.lastError }}</p>
+                        <p v-if="domain.lastCheckedAt" class="text-xs text-muted"><Rich :text="t('Checked :time')"><template #time><RelativeTime :at="domain.lastCheckedAt" /></template></Rich></p>
                         <p v-if="domain.edgeError" class="text-xs text-danger">{{ domain.edgeError }}</p>
                     </div>
                     <div v-if="page.canManage" class="flex flex-wrap gap-1">
@@ -62,10 +64,15 @@ const dnsProvider = ref<string | null>('');
                                 />
                             </div>
                         </FormDialog>
-                        <template v-if="domain.type !== 'primary'">
-                            <ApiForm v-if="domain.canSync" :action="`${base}/domains/${domain.id}/sync`"><SubmitButton variant="quiet" size="sm">{{ t('Update DNS') }}</SubmitButton></ApiForm>
-                            <ApiForm :action="`${base}/domains/${domain.id}`" method="DELETE" :confirm="t('Remove :name?', { name: domain.hostname })"><SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton></ApiForm>
-                        </template>
+                        <ApiForm :action="`${base}/domains/${domain.id}/check`"><SubmitButton variant="quiet" size="sm">{{ t('Check now') }}</SubmitButton></ApiForm>
+                        <ApiForm v-if="domain.type !== 'primary' && domain.canSync" :action="`${base}/domains/${domain.id}/sync`"><SubmitButton variant="quiet" size="sm">{{ t('Update DNS') }}</SubmitButton></ApiForm>
+                        <ApiForm
+                            :action="`${base}/domains/${domain.id}`"
+                            method="DELETE"
+                            :confirm="domain.type === 'primary' ? t('Remove :name? Another of the website’s domains becomes its main domain, and the website is set up again under it.', { name: domain.hostname }) : t('Remove :name?', { name: domain.hostname })"
+                        >
+                            <SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton>
+                        </ApiForm>
                     </div>
                 </li>
             </ul>

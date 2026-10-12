@@ -25,8 +25,10 @@ final class DeleteWebsiteDomainController
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $domain, DeleteWebsiteDomain $delete): JsonResponse
     {
-        $delete->handle($project->account, $user, $website->domains()->findOrFail((int) $domain));
+        $primary = $delete->handle($project->account, $user, $website->domains()->findOrFail((int) $domain));
 
-        return response()->json(['redirect' => route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'domains'], false), 'message' => __('Domain removed.')]);
+        return response()->json(['redirect' => route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'domains'], false), 'message' => $primary === null
+            ? __('Domain removed.')
+            : __('Domain removed. :domain is the website’s main domain now, and the website is being set up again under it.', ['domain' => $primary])]);
     }
 }

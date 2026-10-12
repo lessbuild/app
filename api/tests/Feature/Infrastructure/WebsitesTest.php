@@ -139,11 +139,12 @@ final class WebsitesTest extends TestCase
         $this->actingAs($this->owner)->postJson("{$this->base}/{$website->id}/domains", ['hostname' => 'www.shop.example.com', 'type' => 'alias'])->assertJsonValidationErrors('hostname');
         $git = Provider::factory()->type(ProviderType::GitHub)->create(['account_id' => $this->project->account_id]);
         $this->actingAs($this->owner)->postJson("{$this->base}/{$website->id}/domains", ['hostname' => 'x.example.com', 'type' => 'alias', 'dns_provider_id' => $git->id])->assertJsonValidationErrors('dns_provider_id');
-        $primary = $website->domains()->where('type', 'primary')->value('id');
-        $this->actingAs($this->owner)->deleteJson("{$this->base}/{$website->id}/domains/{$primary}")->assertJsonValidationErrors('domain');
         Http::fake(['*' => Http::response([], 200)]);
         $this->actingAs($this->owner)->deleteJson("{$this->base}/{$website->id}/domains/{$domain->id}")->assertSuccessful();
         $this->assertModelMissing($domain);
+        // With the alias gone, the primary domain is the website's only one, so it stays.
+        $primary = $website->domains()->where('type', 'primary')->value('id');
+        $this->actingAs($this->owner)->deleteJson("{$this->base}/{$website->id}/domains/{$primary}")->assertJsonValidationErrors('domain');
     }
 
     /**

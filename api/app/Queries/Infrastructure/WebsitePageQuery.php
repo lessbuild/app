@@ -97,6 +97,8 @@ final readonly class WebsitePageQuery
                 'dnsStatus' => $domain->dns_status,
                 'sslStatus' => $domain->ssl_status,
                 'certificateExpiresAt' => $domain->certificate_expires_at?->toIso8601String(),
+                'lastCheckedAt' => $domain->last_checked_at?->toIso8601String(),
+                'lastError' => $domain->last_error,
                 'dnsProvider' => $domain->dnsProvider?->name,
                 'canSync' => $domain->dnsProvider !== null,
                 'edge' => $domain->dnsProvider?->type === ProviderType::Cloudflare && $domain->dns_record_id !== null ? [
