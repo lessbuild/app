@@ -167,7 +167,7 @@ return [
                 ['Already running?', 'Import a website adopts an application already in /var/www on one of your app servers. Its files, Caddy site and database are left as they are.'],
                 ['Point the domain', 'Point the domain’s DNS at the server’s IP address, or choose a DNS provider (Cloudflare, DigitalOcean, Hetzner DNS or Route 53) and we’ll create the record in its zone. A certificate is issued automatically.'],
                 ['Aliases and redirects', 'Add more domains on the website’s page, as aliases or as redirects to the main one.'],
-                ['Database', 'App-server websites get their own MySQL database. On the Database tab you can inspect it, add users that expire, and copy data from another website.'],
+                ['Database', 'App-server websites get their own MySQL database. On the Database tab you can inspect it, add users that expire, and copy data from another website. When a website’s settings (its variables or a MySQL resource) point at another website’s database, such as an API sharing its website’s, the tab says so and links to that website’s Database tab, where the data is.'],
                 ['Heal it automatically', 'With the health check on, tick Heal it automatically: when the check fails, BuildPusher restarts Caddy, PHP-FPM or the website’s workers if any have stopped (or reloads them when all are running), at most three times an hour, and notes what it did on the incident.'],
             ],
         ],

@@ -188,6 +188,7 @@ export type WebsiteDetail = {
     cleanupError: string | null;
     directory: string;
     database: string;
+    databaseElsewhere: { name: string; website: string | null; url: string | null } | null;
     releaseRetention: number;
     environmentId: string | null;
     healthCheckEnabled: boolean;

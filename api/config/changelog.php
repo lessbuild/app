@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-13', 'title' => 'See which database holds a website’s data', 'changes' => [
+        'A website whose settings use another website’s database (an API sharing its website’s, say) says so on its Database tab, with a link to the one holding the data.',
+    ]],
     ['date' => '2026-10-12', 'title' => 'Build on GitHub Actions', 'changes' => [
         'Choose GitHub Actions under an environment’s Build server and add the workflow it shows to your repository: deploys then wait for its run and the server only unpacks the result, so a small server never runs out of memory building.',
     ]],

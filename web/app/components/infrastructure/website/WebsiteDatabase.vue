@@ -6,6 +6,7 @@ const props = defineProps<{ page: WebsitePage; base: string }>();
 const { t, tc, number, dateTime } = useT();
 const bytes = useFileSize();
 const inspection = computed(() => props.page.inspection);
+const elsewhere = computed(() => props.page.website.databaseElsewhere);
 const privileges = computed(() => Object.entries(props.page.privileges).map(([value, label]) => ({ value, label })));
 const expiries = computed(() => [1, 7, 30, 90].map((days) => ({ value: String(days), label: tc('In :count day|In :count days', days, { count: days }) })));
 const expiry = ref<string | null>('');
@@ -35,6 +36,11 @@ id="database"
         :description="t('The MySQL database :database on the website’s server: its size and tables, extra logins, and copying it into another website.', { database: page.website.database })"
     >
         <div class="grid gap-5 px-5 pb-5 sm:px-6 sm:pb-6">
+            <AcmeAlert v-if="elsewhere" tone="info">
+                <span v-if="elsewhere.website">{{ t('This website’s settings use the database :database, which belongs to :website, so its data is there and this one stays empty.', { database: elsewhere.name, website: elsewhere.website }) }}</span>
+                <span v-else>{{ t('This website’s settings use the database :database, not its own, so this one stays empty.', { database: elsewhere.name }) }}</span>
+                <NuxtLink v-if="elsewhere.url" :to="elsewhere.url" class="ml-1 font-medium underline">{{ t('Open :website’s database', { website: elsewhere.website }) }}</NuxtLink>
+            </AcmeAlert>
             <AcmeAlert v-if="page.canManage && !page.canManageDatabase" tone="info">{{ t('Database tools come with the Pro Deploy plan and above.') }}</AcmeAlert>
 
             <div class="grid gap-3">

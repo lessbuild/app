@@ -20,6 +20,7 @@ use App\Models\WebsiteBackup;
 use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
 use App\Services\Infrastructure\WebsiteCaddyConfiguration;
+use App\Services\Infrastructure\WebsiteDatabaseInUse;
 use App\Services\Infrastructure\WebsiteProvisioner;
 use App\Support\Infrastructure\DatabaseTuning;
 
@@ -31,8 +32,9 @@ final readonly class WebsitePageQuery
      * @param  WebsitesQuery  $websites
      * @param  BackupsQuery  $backups
      * @param  WebsiteCaddyConfiguration  $caddy
+     * @param  WebsiteDatabaseInUse  $databaseInUse  Finds the database the website's settings really use.
      */
-    public function __construct(private WebsitesQuery $websites, private BackupsQuery $backups, private WebsiteCaddyConfiguration $caddy) {}
+    public function __construct(private WebsitesQuery $websites, private BackupsQuery $backups, private WebsiteCaddyConfiguration $caddy, private WebsiteDatabaseInUse $databaseInUse) {}
 
     /**
      * Describe a website for the person looking at it: setup, health, domains, its database (inspection, users,
@@ -67,6 +69,7 @@ final readonly class WebsitePageQuery
                 'cleanupError' => $website->placement_cleanup_error,
                 'directory' => '/var/www/'.$website->deployment_slug,
                 'database' => $website->databaseIdentifier(),
+                'databaseElsewhere' => $this->databaseElsewhere($project, $website),
                 'releaseRetention' => $website->release_retention,
                 'environmentId' => $website->environment_id,
                 'healthCheckEnabled' => (bool) $website->health_check_enabled,
@@ -147,6 +150,30 @@ final readonly class WebsitePageQuery
             'canBackUp' => $viewer->can('backUp', $website),
             'canManageDatabase' => $viewer->can('manageDatabase', $website),
             'canBrowseFiles' => $website->server !== null && $viewer->can('runCommands', $website->server),
+        ];
+    }
+
+    /**
+     * The database the website's settings use when it isn't the website's own, with a link to the website it belongs
+     * to (in that website's project when it has one) so its Database tab can be opened instead.
+     *
+     * @param  Project  $project
+     * @param  Website  $website
+     * @return array{name: string, website: string|null, url: string|null}|null
+     */
+    private function databaseElsewhere(Project $project, Website $website): ?array
+    {
+        $elsewhere = $this->databaseInUse->elsewhere($website);
+        if ($elsewhere === null) {
+            return null;
+        }
+        $owner = $elsewhere['website'];
+        $owner?->loadMissing('environment');
+
+        return [
+            'name' => $elsewhere['name'],
+            'website' => $owner?->url,
+            'url' => $owner === null ? null : '/projects/'.($owner->environment->project_id ?? $project->id).'/infrastructure/websites/'.$owner->id.'?tab=database',
         ];
     }
 }
