@@ -39,8 +39,11 @@ final class DiskCleanup
     {
         $releases = $this->releaseSelection($server);
 
+        // Missing folders and commands (no pip cache, no Docker) are normal, so a failing step mustn't end the scan:
+        // servers run commands with errexit on.
         return <<<BASH
-        set -uo pipefail
+        set +e
+        set -o pipefail
         sum() { awk '{ bytes += \$1; items++ } END { printf "%d %d\\n", bytes, items }'; }
         printf 'releases '; {$releases} | while IFS= read -r path; do du -sb -- "\$path" 2>/dev/null; done | sum
         printf 'logs '; { find /var/log -type f \\( -name '*.gz' -o -name '*.[0-9]' -o -name '*.old' \\) -printf '%s\\n' 2>/dev/null; find /var/www/*/shared/storage/logs -type f -name '*.log' -mtime +14 -printf '%s\\n' 2>/dev/null; } | sum
@@ -60,14 +63,15 @@ final class DiskCleanup
      */
     public function clean(Server $server, string $category): string
     {
-        return match ($category) {
-            'releases' => "set -uo pipefail\n".$this->releaseSelection($server).' | while IFS= read -r path; do rm -rf -- "$path"; done',
-            'logs' => "set -uo pipefail\nfind /var/log -type f \\( -name '*.gz' -o -name '*.[0-9]' -o -name '*.old' \\) -delete 2>/dev/null\nfind /var/www/*/shared/storage/logs -type f -name '*.log' -mtime +14 -delete 2>/dev/null\njournalctl --vacuum-time=14d >/dev/null 2>&1 || true",
-            'caches' => "set -uo pipefail\napt-get clean >/dev/null 2>&1 || true\nrm -rf /root/.npm/_cacache /root/.cache/composer /root/.cache/pip 2>/dev/null || true",
+        // As with the scan, a step with nothing to clear (a missing folder) mustn't stop the rest or fail the clean.
+        return "set +e\nset -o pipefail\n".match ($category) {
+            'releases' => $this->releaseSelection($server).' | while IFS= read -r path; do rm -rf -- "$path"; done',
+            'logs' => "find /var/log -type f \\( -name '*.gz' -o -name '*.[0-9]' -o -name '*.old' \\) -delete 2>/dev/null\nfind /var/www/*/shared/storage/logs -type f -name '*.log' -mtime +14 -delete 2>/dev/null\njournalctl --vacuum-time=14d >/dev/null 2>&1 || true",
+            'caches' => "apt-get clean >/dev/null 2>&1 || true\nrm -rf /root/.npm/_cacache /root/.cache/composer /root/.cache/pip 2>/dev/null || true",
             'docker' => 'command -v docker >/dev/null 2>&1 && docker image prune --force >/dev/null || true',
             'tmp' => 'find /tmp /var/tmp -xdev -type f -mtime +7 -delete 2>/dev/null || true',
             default => throw new InvalidArgumentException('Unknown disk category.'),
-        };
+        }."\ntrue";
     }
 
     /**

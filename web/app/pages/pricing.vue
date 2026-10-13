@@ -231,7 +231,7 @@ function keys(event: KeyboardEvent) {
         <div class="border-b border-line bg-surface-muted">
             <div class="mx-auto grid max-w-6xl border-x border-line lg:grid-cols-[1fr_20rem]">
                 <div class="min-w-0">
-                    <div class="sticky top-16 z-20 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line bg-surface/90 backdrop-blur [scrollbar-width:none]">
+                    <div v-scroll-row class="sticky top-16 z-20 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line bg-surface/90 backdrop-blur [scrollbar-width:none]">
                         <div class="flex w-max min-w-full" role="tablist" :aria-label="t('Services')" @keydown="keys">
                             <button
                                 v-for="item in data.services"

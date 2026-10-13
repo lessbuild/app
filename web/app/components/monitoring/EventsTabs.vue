@@ -5,7 +5,7 @@ const { t } = useT();
 </script>
 
 <template>
-    <nav class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="t('Events view')">
+    <nav v-scroll-row class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="t('Events view')">
         <NuxtLink
             v-for="tab in [{ key: 'stream', label: t('Stream'), to: `/projects/${projectId}/monitoring/events` }, { key: 'map', label: t('Service map'), to: `/projects/${projectId}/monitoring/dependencies` }]"
             :key="tab.key"

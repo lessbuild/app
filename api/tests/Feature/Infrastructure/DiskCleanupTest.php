@@ -61,4 +61,25 @@ final class DiskCleanupTest extends TestCase
             $this->assertSame(0, $code, implode("\n", $output));
         }
     }
+
+    /**
+     * Check the scan reports every category even when servers run it with errexit on and some folders or commands
+     * are missing (a fresh server has no pip cache and may have no Docker), as it measures this machine read-only.
+     *
+     * @return void
+     */
+    public function test_the_scan_completes_under_errexit_when_folders_are_missing(): void
+    {
+        $server = Server::factory()->create(['provider_id' => Provider::factory()->create()->id]);
+        Website::factory()->create(['server_id' => $server->id, 'deployment_slug' => 'missing-site']);
+        $script = app(DiskCleanup::class)->scan($server);
+
+        exec('bash -e <<\'SCRIPT\''."\n".$script."\nSCRIPT\n".' 2>/dev/null', $output, $code);
+
+        $this->assertSame(0, $code);
+        $this->assertSame(['releases', 'logs', 'caches', 'docker', 'tmp', 'disk'], array_map(fn (string $line): string => explode(' ', $line)[0], $output));
+        foreach (['releases', 'logs', 'caches', 'docker', 'tmp'] as $category) {
+            $this->assertStringStartsWith("set +e\n", app(DiskCleanup::class)->clean($server, $category));
+        }
+    }
 }

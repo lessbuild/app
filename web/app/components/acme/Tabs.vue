@@ -12,7 +12,7 @@ function move(dir: number) {
 </script>
 
 <template>
-  <div ref="root" role="tablist" :aria-label="label" class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" @keydown.right.prevent="move(1)" @keydown.left.prevent="move(-1)">
+  <div v-scroll-row ref="root" role="tablist" :aria-label="label" class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" @keydown.right.prevent="move(1)" @keydown.left.prevent="move(-1)">
     <button
       v-for="t in items" :key="t.value" type="button" role="tab" :aria-selected="value === t.value" :tabindex="value === t.value ? 0 : -1"
       class="flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors"

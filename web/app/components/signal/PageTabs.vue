@@ -8,7 +8,7 @@ withDefaults(defineProps<{ tabs: Record<string, string>; current: string; label:
 </script>
 
 <template>
-    <nav class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="label">
+    <nav v-scroll-row class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="label">
         <NuxtLink
             v-for="(title, key) in tabs"
             :key="key"

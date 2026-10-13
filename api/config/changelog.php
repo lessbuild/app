@@ -5,6 +5,8 @@ declare(strict_types=1);
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
     ['date' => '2026-10-13', 'title' => 'See which database holds a website’s data', 'changes' => [
+        'The disk clean-up scan finishes on servers missing a cache folder or Docker, instead of stopping with raw numbers.',
+        'On phones, tab and section rows fade at the edge that has more, and the current one scrolls into view.',
         'A website whose settings use another website’s database (an API sharing its website’s, say) says so on its Database tab, with a link to the one holding the data.',
     ]],
     ['date' => '2026-10-12', 'title' => 'Build on GitHub Actions', 'changes' => [

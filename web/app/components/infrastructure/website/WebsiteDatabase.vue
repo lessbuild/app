@@ -39,7 +39,7 @@ id="database"
             <AcmeAlert v-if="elsewhere" tone="info">
                 <span v-if="elsewhere.website">{{ t('This website’s settings use the database :database, which belongs to :website, so its data is there and this one stays empty.', { database: elsewhere.name, website: elsewhere.website }) }}</span>
                 <span v-else>{{ t('This website’s settings use the database :database, not its own, so this one stays empty.', { database: elsewhere.name }) }}</span>
-                <NuxtLink v-if="elsewhere.url" :to="elsewhere.url" class="ml-1 font-medium underline">{{ t('Open :website’s database', { website: elsewhere.website }) }}</NuxtLink>
+                <NuxtLink v-if="elsewhere.url" :to="elsewhere.url" class="ml-1 font-medium underline">{{ t('Open :website’s database', { website: elsewhere.website ?? '' }) }}</NuxtLink>
             </AcmeAlert>
             <AcmeAlert v-if="page.canManage && !page.canManageDatabase" tone="info">{{ t('Database tools come with the Pro Deploy plan and above.') }}</AcmeAlert>
 

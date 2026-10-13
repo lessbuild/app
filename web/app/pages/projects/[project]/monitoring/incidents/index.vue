@@ -55,7 +55,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
 
             <AcmeCard :padded="false">
                 <div class="px-5 pt-4 sm:px-6">
-                    <nav class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="t('Incident status')">
+                    <nav v-scroll-row class="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-line [scrollbar-width:none]" :aria-label="t('Incident status')">
                         <NuxtLink
                             v-for="(title, key) in tabs"
                             :key="key"
