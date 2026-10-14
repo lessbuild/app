@@ -166,6 +166,36 @@ final class GitHubActionsBuildsTest extends TestCase
     }
 
     /**
+     * Check redeploying a commit whose artifact GitHub has deleted runs the workflow again, keeps waiting while GitHub
+     * still reports the old run, and asks only once per deploy.
+     *
+     * @return void
+     */
+    public function test_an_expired_artifact_runs_the_workflow_again(): void
+    {
+        $this->production->forceFill(['github_actions_builds' => true])->save();
+        $build = $this->waitingBuild();
+        Http::fake([
+            'api.github.com/repos/acme/shop/actions/workflows/*' => Http::response(['workflow_runs' => [['id' => 12, 'status' => 'completed', 'conclusion' => 'success', 'html_url' => 'https://github.com/acme/shop/actions/runs/12']]]),
+            'api.github.com/repos/acme/shop/actions/runs/12/artifacts*' => Http::response(['artifacts' => [['name' => 'buildpusher', 'expired' => true, 'archive_download_url' => 'https://api.github.com/repos/acme/shop/actions/artifacts/3/zip']]]),
+            'api.github.com/repos/acme/shop/actions/runs/12/rerun' => Http::response('', 201),
+        ]);
+        Queue::fake();
+
+        app()->call([new AwaitGitHubActionsBuild($build->id), 'handle']);
+        $this->assertSame([Build::STATUS_RUNNING, 'GitHub had deleted this commit’s build, so it’s building again: https://github.com/acme/shop/actions/runs/12'], [$build->refresh()->status, $build->log]);
+        Queue::assertPushed(AwaitGitHubActionsBuild::class, 1);
+
+        // GitHub still shows the old finished run: keep waiting rather than failing or asking again.
+        app()->call([new AwaitGitHubActionsBuild($build->id), 'handle']);
+        $this->assertSame(Build::STATUS_RUNNING, $build->refresh()->status);
+        Http::assertSentCount(6);
+        Http::assertSent(fn ($request): bool => $request->method() === 'POST' && str_ends_with($request->url(), '/actions/runs/12/rerun'));
+        $this->assertCount(1, Http::recorded(fn ($request): bool => str_ends_with($request->url(), '/rerun')));
+        $this->assertCount(0, $this->scripts->started);
+    }
+
+    /**
      * Check a deploy whose workflow never runs fails after the wait with what to do, and one still waiting can be
      * cancelled with nothing to stop on a server.
      *

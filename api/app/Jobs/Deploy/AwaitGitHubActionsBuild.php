@@ -14,12 +14,14 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 /**
  * Follows a build on GitHub Actions: finds the website's workflow run for the commit, checks it again every
  * {@see self::INTERVAL} seconds while it runs, and when it succeeds starts the release part on the website's server
- * with a fresh link to the artifact. A run that fails, never starts, or takes too long fails the deploy with the reason.
+ * with a fresh link to the artifact; when GitHub has already deleted the artifact, the run is started again first. A run
+ * that fails, never starts, or takes too long fails the deploy with the reason.
  */
 final class AwaitGitHubActionsBuild implements ShouldQueue
 {
@@ -115,6 +117,23 @@ final class AwaitGitHubActionsBuild implements ShouldQueue
                 return;
             }
             $download = $actions->artifactUrl($build->repository, $run['id']);
+            // Redeploying an older commit can find its artifact deleted: the run is started again (once per deploy) and
+            // followed like a new one. GitHub can report the old finished run for a moment after that, so wait a bit.
+            $rerunKey = "github-actions-rerun:{$build->id}";
+            $rerunAt = Cache::get($rerunKey);
+            if ($download === null && is_int($rerunAt) && now()->getTimestamp() - $rerunAt < 120) {
+                self::dispatch($build->id)->delay(self::INTERVAL);
+
+                return;
+            }
+            if ($download === null && $rerunAt === null && $actions->artifactExpired($build->repository, $run['id'])) {
+                $actions->rerun($build->repository, $run['id']);
+                Cache::put($rerunKey, now()->getTimestamp(), now()->addHours(2));
+                $this->note($build, __('GitHub had deleted this commit’s build, so it’s building again: :url', ['url' => $run['url']]));
+                self::dispatch($build->id)->delay(self::INTERVAL);
+
+                return;
+            }
             if ($download === null) {
                 $finish->handle($build, Build::STATUS_FAILED, __('The GitHub Actions run has no “:artifact” artifact. Update the workflow from the environment’s settings: :url', ['artifact' => GitHubActionsBuilds::ARTIFACT, 'url' => $run['url']]));
 

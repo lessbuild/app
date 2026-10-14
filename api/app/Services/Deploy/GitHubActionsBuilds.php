@@ -157,6 +157,33 @@ class GitHubActionsBuilds
     }
 
     /**
+     * Determine whether a run did upload the artifact but GitHub has since deleted it (it keeps them for the days the
+     * workflow sets), so running the workflow again brings it back.
+     *
+     * @param  Repository  $repository
+     * @param  int  $runId
+     * @return bool
+     */
+    public function artifactExpired(Repository $repository, int $runId): bool
+    {
+        $artifacts = (array) $this->client($repository)->get($this->api($repository, "actions/runs/{$runId}/artifacts"), ['name' => self::ARTIFACT])->throw()->json('artifacts', []);
+
+        return collect($artifacts)->contains(fn (mixed $artifact): bool => is_array($artifact) && ($artifact['name'] ?? null) === self::ARTIFACT && ($artifact['expired'] ?? false) === true);
+    }
+
+    /**
+     * Ask GitHub to run a finished run's jobs again, on the same commit, so it uploads a fresh artifact.
+     *
+     * @param  Repository  $repository
+     * @param  int  $runId
+     * @return void
+     */
+    public function rerun(Repository $repository, int $runId): void
+    {
+        $this->client($repository)->post($this->api($repository, "actions/runs/{$runId}/rerun"))->throw();
+    }
+
+    /**
      * Write the workflow a website needs: on every push to its branch (and by hand), install and build in the
      * deployed subdirectory as the server would, pack the result and upload it as the `buildpusher` artifact.
      *
@@ -203,7 +230,7 @@ class GitHubActionsBuilds
             default => 'tar --create --gzip --file "$RUNNER_TEMP/buildpusher.tar.gz" --exclude=./.git --exclude=./node_modules .',
         };
         $steps[] = "      - name: Pack the release\n        run: |\n".$this->indent($pack, 10);
-        $steps[] = "      - uses: actions/upload-artifact@v4\n        with:\n          name: ".self::ARTIFACT."\n          path: \${{ runner.temp }}/buildpusher.tar.gz\n          retention-days: 1\n          compression-level: 0";
+        $steps[] = "      - uses: actions/upload-artifact@v4\n        with:\n          name: ".self::ARTIFACT."\n          path: \${{ runner.temp }}/buildpusher.tar.gz\n          retention-days: 7\n          compression-level: 0";
         $steps = implode("\n", $steps);
 
         return <<<YAML

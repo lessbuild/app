@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-14', 'title' => 'Redeploys from GitHub Actions', 'changes' => [
+        'Redeploying a commit whose GitHub Actions build has been deleted runs the workflow again instead of failing; the workflow now keeps builds for 7 days (copy it again from the environment’s settings).',
+        'Deploys finishing at the same moment no longer fail with “database is locked”.',
+    ]],
     ['date' => '2026-10-13', 'title' => 'See which database holds a website’s data', 'changes' => [
         'The disk clean-up scan finishes on servers missing a cache folder or Docker, instead of stopping with raw numbers.',
         'On phones, tab and section rows fade at the edge that has more, and the current one scrolls into view.',

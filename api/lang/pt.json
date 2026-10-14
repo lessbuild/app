@@ -2321,6 +2321,7 @@
     "GitHub App": "GitHub App",
     "GitHub App installed. Connect one of its repositories from a project’s Deploy section.": "GitHub App instalado. Conecte um dos repositórios dele pela seção Deploy de um projeto.",
     "GitHub App · :owner": "GitHub App · :owner",
+    "GitHub had deleted this commit’s build, so it’s building again: :url": "O GitHub tinha eliminado a compilação deste commit, por isso está a ser compilado de novo: :url",
     "GitHub or Jira: token": "GitHub ou Jira: token",
     "GitHub: a fine-grained token with Issues read and write. Jira: an API token.": "GitHub: um token refinado com leitura e escrita em Issues. Jira: um token de API.",
     "GitHub: repository": "GitHub: repositório",
