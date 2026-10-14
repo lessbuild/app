@@ -157,21 +157,6 @@ class GitHubActionsBuilds
     }
 
     /**
-     * Determine whether a run did upload the artifact but GitHub has since deleted it (it keeps them for the days the
-     * workflow sets), so running the workflow again brings it back.
-     *
-     * @param  Repository  $repository
-     * @param  int  $runId
-     * @return bool
-     */
-    public function artifactExpired(Repository $repository, int $runId): bool
-    {
-        $artifacts = (array) $this->client($repository)->get($this->api($repository, "actions/runs/{$runId}/artifacts"), ['name' => self::ARTIFACT])->throw()->json('artifacts', []);
-
-        return collect($artifacts)->contains(fn (mixed $artifact): bool => is_array($artifact) && ($artifact['name'] ?? null) === self::ARTIFACT && ($artifact['expired'] ?? false) === true);
-    }
-
-    /**
      * Ask GitHub to run a finished run's jobs again, on the same commit, so it uploads a fresh artifact.
      *
      * @param  Repository  $repository

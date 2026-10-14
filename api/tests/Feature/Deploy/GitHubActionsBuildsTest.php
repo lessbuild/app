@@ -167,7 +167,7 @@ final class GitHubActionsBuildsTest extends TestCase
 
     /**
      * Check redeploying a commit whose artifact GitHub has deleted runs the workflow again, keeps waiting while GitHub
-     * still reports the old run, and asks only once per deploy.
+     * still reports the old run, asks only once per deploy, and fails if the run still uploads none.
      *
      * @return void
      */
@@ -177,7 +177,8 @@ final class GitHubActionsBuildsTest extends TestCase
         $build = $this->waitingBuild();
         Http::fake([
             'api.github.com/repos/acme/shop/actions/workflows/*' => Http::response(['workflow_runs' => [['id' => 12, 'status' => 'completed', 'conclusion' => 'success', 'html_url' => 'https://github.com/acme/shop/actions/runs/12']]]),
-            'api.github.com/repos/acme/shop/actions/runs/12/artifacts*' => Http::response(['artifacts' => [['name' => 'buildpusher', 'expired' => true, 'archive_download_url' => 'https://api.github.com/repos/acme/shop/actions/artifacts/3/zip']]]),
+            // GitHub stops listing an artifact once it has deleted it.
+            'api.github.com/repos/acme/shop/actions/runs/12/artifacts*' => Http::response(['artifacts' => []]),
             'api.github.com/repos/acme/shop/actions/runs/12/rerun' => Http::response('', 201),
         ]);
         Queue::fake();
@@ -189,10 +190,17 @@ final class GitHubActionsBuildsTest extends TestCase
         // GitHub still shows the old finished run: keep waiting rather than failing or asking again.
         app()->call([new AwaitGitHubActionsBuild($build->id), 'handle']);
         $this->assertSame(Build::STATUS_RUNNING, $build->refresh()->status);
-        Http::assertSentCount(6);
+        Http::assertSentCount(5);
         Http::assertSent(fn ($request): bool => $request->method() === 'POST' && str_ends_with($request->url(), '/actions/runs/12/rerun'));
         $this->assertCount(1, Http::recorded(fn ($request): bool => str_ends_with($request->url(), '/rerun')));
         $this->assertCount(0, $this->scripts->started);
+
+        // Once the re-run has had time to start, a run that still has no artifact means the workflow uploads none.
+        $this->travel(3)->minutes();
+        app()->call([new AwaitGitHubActionsBuild($build->id), 'handle']);
+        $this->assertSame(Build::STATUS_FAILED, $build->refresh()->status);
+        $this->assertStringContainsString('has no “buildpusher” artifact', (string) $build->failure_message);
+        $this->assertCount(1, Http::recorded(fn ($request): bool => str_ends_with($request->url(), '/rerun')));
     }
 
     /**

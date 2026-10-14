@@ -117,8 +117,8 @@ final class AwaitGitHubActionsBuild implements ShouldQueue
                 return;
             }
             $download = $actions->artifactUrl($build->repository, $run['id']);
-            // Redeploying an older commit can find its artifact deleted: the run is started again (once per deploy) and
-            // followed like a new one. GitHub can report the old finished run for a moment after that, so wait a bit.
+            // Redeploying an older commit can find its artifact deleted (GitHub then stops listing it at all): the run is
+            // started again, once per deploy, and followed like a new one; a workflow that uploads none still fails below. GitHub can report the old finished run for a moment after that, so wait a bit.
             $rerunKey = "github-actions-rerun:{$build->id}";
             $rerunAt = Cache::get($rerunKey);
             if ($download === null && is_int($rerunAt) && now()->getTimestamp() - $rerunAt < 120) {
@@ -126,7 +126,7 @@ final class AwaitGitHubActionsBuild implements ShouldQueue
 
                 return;
             }
-            if ($download === null && $rerunAt === null && $actions->artifactExpired($build->repository, $run['id'])) {
+            if ($download === null && $rerunAt === null) {
                 $actions->rerun($build->repository, $run['id']);
                 Cache::put($rerunKey, now()->getTimestamp(), now()->addHours(2));
                 $this->note($build, __('GitHub had deleted this commit’s build, so it’s building again: :url', ['url' => $run['url']]));
