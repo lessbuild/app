@@ -165,7 +165,8 @@ class GitHubActionsBuilds
      */
     public function rerun(Repository $repository, int $runId): void
     {
-        $this->client($repository)->post($this->api($repository, "actions/runs/{$runId}/rerun"))->throw();
+        // An empty body must be a JSON object: GitHub rejects the `[]` an empty array encodes to.
+        $this->client($repository)->withBody('{}', 'application/json')->post($this->api($repository, "actions/runs/{$runId}/rerun"))->throw();
     }
 
     /**

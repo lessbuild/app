@@ -191,7 +191,7 @@ final class GitHubActionsBuildsTest extends TestCase
         app()->call([new AwaitGitHubActionsBuild($build->id), 'handle']);
         $this->assertSame(Build::STATUS_RUNNING, $build->refresh()->status);
         Http::assertSentCount(5);
-        Http::assertSent(fn ($request): bool => $request->method() === 'POST' && str_ends_with($request->url(), '/actions/runs/12/rerun'));
+        Http::assertSent(fn ($request): bool => $request->method() === 'POST' && str_ends_with($request->url(), '/actions/runs/12/rerun') && $request->body() === '{}');
         $this->assertCount(1, Http::recorded(fn ($request): bool => str_ends_with($request->url(), '/rerun')));
         $this->assertCount(0, $this->scripts->started);
 
