@@ -118,7 +118,7 @@ return [
             'summary' => 'Add the hostnames a project serves and verify them, so no other account can claim them.',
             'steps' => [
                 ['Add a domain', 'Open the project’s Domains page (under the project’s name in the sidebar) and choose Add a domain. Enter the hostname, such as shop.example.com, and optionally the environment it belongs to.'],
-                ['Verify it', 'Add the TXT record shown, with its name and value, at your DNS provider, then choose Check DNS. Once it’s found, the domain is marked Verified and no other account can claim it.'],
+                ['Verify it', 'Add the TXT record shown at your DNS provider, then choose Check DNS. Most providers (Namecheap, GoDaddy, Cloudflare) ask for a Host and add your domain to it themselves, so enter the Host shown (_buildpusher for example.com, _buildpusher.shop for shop.example.com); if yours asks for the full name, use the one under it. Once the record is found, the domain is marked Verified and no other account can claim it.'],
                 ['Keep track', 'Each domain shows when it was verified and last checked. Add www and the bare domain separately if you serve both.'],
                 ['Remove one', 'Removing a domain means the project stops claiming it, and its services stop serving it.'],
             ],

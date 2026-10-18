@@ -20,6 +20,8 @@ final readonly class DomainRow
      * @param  ?CarbonImmutable  $lastCheckedAt  When we last looked for the TXT record.
      * @param  string  $recordName  The TXT record's name to create at the DNS host.
      * @param  string  $recordValue  The TXT record's value.
+     * @param  string  $recordHost  The record's name as most providers' Host field wants it.
+     * @param  string  $rootDomain  The registered domain those providers add to the Host.
      */
     public function __construct(
         public string $id,
@@ -29,5 +31,7 @@ final readonly class DomainRow
         public ?CarbonImmutable $lastCheckedAt,
         public string $recordName,
         public string $recordValue,
+        public string $recordHost,
+        public string $rootDomain,
     ) {}
 }

@@ -72,6 +72,26 @@ class Domain extends Model
     }
 
     /**
+     * Get that TXT record's name as most DNS providers' Host field wants it, without the registered domain they add.
+     *
+     * @return string
+     */
+    public function recordHost(): string
+    {
+        return Hostname::host($this->recordName());
+    }
+
+    /**
+     * Get the registered domain the hostname is under, as people read it: what DNS providers add to a Host.
+     *
+     * @return string
+     */
+    public function rootDomain(): string
+    {
+        return Hostname::display(Hostname::root($this->hostname));
+    }
+
+    /**
      * Get the value that TXT record must have.
      *
      * @return string

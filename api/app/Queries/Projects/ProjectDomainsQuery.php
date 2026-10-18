@@ -29,6 +29,8 @@ final class ProjectDomainsQuery
                 lastCheckedAt: $domain->last_checked_at ? CarbonImmutable::instance($domain->last_checked_at) : null,
                 recordName: $domain->recordName(),
                 recordValue: $domain->recordValue(),
+                recordHost: $domain->recordHost(),
+                rootDomain: $domain->rootDomain(),
             ))
             ->all());
     }

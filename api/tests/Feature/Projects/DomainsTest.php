@@ -50,7 +50,7 @@ final class DomainsTest extends TestCase
         $this->assertSame($production->id, $domain->environment_id);
 
         $this->actingAs($this->owner)->getJson($base)->assertOk()
-            ->assertJsonPath('domains.0.recordName', '_buildpusher.shop.example.com')->assertJsonPath('domains.0.recordValue', $domain->recordValue())->assertJsonPath('domains.0.verifiedAt', null);
+            ->assertJsonPath('domains.0.recordName', '_buildpusher.shop.example.com')->assertJsonPath('domains.0.recordHost', '_buildpusher.shop')->assertJsonPath('domains.0.rootDomain', 'example.com')->assertJsonPath('domains.0.recordValue', $domain->recordValue())->assertJsonPath('domains.0.verifiedAt', null);
 
         $this->actingAs($this->owner)->postJson("{$base}/{$domain->id}/verify")->assertOk()->assertJsonPath('redirect', $page);
         $this->assertNull($domain->refresh()->verified_at);

@@ -67,12 +67,18 @@ const verified = computed(() => data.value.domains.filter((domain) => domain.ver
                         <div v-if="!domain.verifiedAt" class="mt-4 rounded-xl bg-black/[.03] p-4 dark:bg-white/[.04]">
                             <p class="text-sm font-medium text-ink">{{ t('Add this TXT record at your DNS provider') }}</p>
                             <dl class="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-                                <div v-for="[label, value] in [[t('Name'), domain.recordName], [t('Value'), domain.recordValue]]" :key="label" class="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
+                                <div v-for="[label, value] in [[t('Host'), domain.recordHost], [t('Value'), domain.recordValue]]" :key="label" class="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
                                     <dt class="w-12 shrink-0 text-xs text-muted">{{ label }}</dt>
                                     <dd class="min-w-0 flex-1 truncate font-mono text-xs text-ink">{{ value }}</dd>
                                     <AcmeBtn size="sm" variant="ghost" icon="copy" :label="t('Copy :what', { what: label })" @click="copyText(value!)" />
                                 </div>
                             </dl>
+                            <p class="mt-3 text-xs text-muted">
+                                <Rich :text="t('Most DNS providers (Namecheap, GoDaddy, Cloudflare) add :domain to the host themselves. If yours asks for the full name instead, use :name.')">
+                                    <template #domain><span class="font-mono">{{ domain.rootDomain }}</span></template>
+                                    <template #name><span class="break-all font-mono text-ink">{{ domain.recordName }}</span></template>
+                                </Rich>
+                            </p>
                         </div>
                     </li>
                 </ul>

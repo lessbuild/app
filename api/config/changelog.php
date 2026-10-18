@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-18', 'title' => 'Domain verification for Namecheap and friends', 'changes' => [
+        'Verifying a domain shows the TXT record’s Host as Namecheap, GoDaddy and Cloudflare want it (_buildpusher.api rather than _buildpusher.api.example.com), with the full name underneath for providers that need it.',
+    ]],
     ['date' => '2026-10-14', 'title' => 'Redeploys from GitHub Actions', 'changes' => [
         'Redeploying a commit whose GitHub Actions build has been deleted runs the workflow again instead of failing; the workflow now keeps builds for 7 days (copy it again from the environment’s settings).',
         'Deploys finishing at the same moment no longer fail with “database is locked”.',

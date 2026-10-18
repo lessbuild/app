@@ -68,4 +68,45 @@ final class Hostname
     {
         return strtolower(rtrim(preg_replace('#^https?://#i', '', trim(is_string($value) ? $value : '')) ?? '', '/'));
     }
+
+    /**
+     * Endings registered under two labels, so the domain someone owns is three labels long (shop.co.uk). The common
+     * ones only: a domain under a rarer one is shown one label shorter than it is, and the full name still works.
+     *
+     * @var list<string>
+     */
+    private const TWO_LABEL_SUFFIXES = [
+        'co.uk', 'org.uk', 'me.uk', 'ltd.uk', 'plc.uk', 'net.uk', 'ac.uk', 'gov.uk', 'com.au', 'net.au', 'org.au', 'co.nz',
+        'org.nz', 'co.za', 'com.br', 'com.mx', 'com.ar', 'com.tr', 'com.sg', 'com.my', 'com.hk', 'com.cn', 'com.tw', 'co.jp',
+        'co.kr', 'co.in', 'co.id', 'co.il', 'co.th', 'com.ph', 'com.pk', 'com.ng', 'com.eg', 'com.sa', 'com.ua', 'com.pl',
+    ];
+
+    /**
+     * Get the domain someone registered that a hostname is under: shop.example.com → example.com, shop.co.uk → shop.co.uk.
+     *
+     * @param  string  $hostname  ASCII, lowercase.
+     * @return string
+     */
+    public static function root(string $hostname): string
+    {
+        $labels = explode('.', trim($hostname, '.'));
+        $keep = count($labels) >= 3 && in_array(implode('.', array_slice($labels, -2)), self::TWO_LABEL_SUFFIXES, true) ? 3 : 2;
+
+        return implode('.', array_slice($labels, -$keep));
+    }
+
+    /**
+     * Get a DNS name as most providers' Host field wants it: without the registered domain they add themselves
+     * (_verify.shop.example.com → _verify.shop), or "@" for the domain itself.
+     *
+     * @param  string  $name  ASCII, lowercase.
+     * @return string
+     */
+    public static function host(string $name): string
+    {
+        $name = trim($name, '.');
+        $root = self::root($name);
+
+        return $name === $root ? '@' : substr($name, 0, -strlen('.'.$root));
+    }
 }

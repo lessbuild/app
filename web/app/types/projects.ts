@@ -54,6 +54,6 @@ export type ProjectSetup = { steps: SetupStep[] };
 /** One entry of a project's recent changes, from the audit log. */
 export type AuditEntryView = { id: string; actor: string; actorEmail?: string | null; description: string; ipAddress?: string | null; device?: string | null; at: string; category?: string };
 
-export type DomainRow = { id: string; name: string; environment: string | null; verifiedAt: string | null; lastCheckedAt: string | null; recordName: string; recordValue: string };
+export type DomainRow = { id: string; name: string; environment: string | null; verifiedAt: string | null; lastCheckedAt: string | null; recordName: string; recordValue: string; recordHost: string; rootDomain: string };
 
 export type ProjectTemplate = { key: string; name: string; description: string; savedId: number | null; environments: number; monitors: number; goals: number; services: string[]; icon: string };
