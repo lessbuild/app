@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# One heavy job at a time on this server, across projects: wait for any other build or deploy (/usr/local/bin/one-build).
+[ -n "${ONE_BUILD:-}" ] || exec one-build "$0" "$@"
 # Publishes a green CI run of the developer branch to https://buildpusher.com: scripts/deploy-production.sh <run-id>.
 # Each deploy is a release in /var/www/buildpusher/releases/<commit> (the API from git, its PHP dependencies, and the
 # web server and admin theme GitHub built), sharing the settings, storage and database on the volume. Once it's
