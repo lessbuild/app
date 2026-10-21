@@ -12,6 +12,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
+use RuntimeException;
 use Tests\TestCase;
 
 final class ClaudeAuditAnalystTest extends TestCase
@@ -110,12 +111,30 @@ final class ClaudeAuditAnalystTest extends TestCase
     }
 
     /**
+     * Without an Anthropic key the run stops with a message people can understand, before anything is sent.
+     */
+    public function test_a_missing_key_is_a_readable_error(): void
+    {
+        $analyst = $this->analyst([]);
+        config(['services.anthropic.key' => null]);
+
+        try {
+            $analyst->suggestCompetitors(['url' => 'https://example.com/', 'title' => 'E', 'description' => '', 'text' => ''], []);
+            $this->fail('Expected the missing key to stop the request.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Audits aren’t available right now because Claude isn’t connected. Please try again later.', $exception->getMessage());
+        }
+        $this->assertSame([], $this->sent);
+    }
+
+    /**
      * Build an analyst whose client answers with the given responses and records each request.
      *
      * @param  list<Response>  $responses
      */
     private function analyst(array $responses): ClaudeAuditAnalyst
     {
+        config(['services.anthropic.key' => 'test-key']);
         $stack = HandlerStack::create(new MockHandler($responses));
         $stack->push(Middleware::mapRequest(function (RequestInterface $request): RequestInterface {
             $this->sent[] = $request;

@@ -2,8 +2,9 @@
 # Puts BuildPusher's own details in production's settings and fixes how the Nuxt server reaches Laravel:
 # scripts/configure-production.sh [--mail-from address]
 #
-# 1. The shared .env gets APP_NAME=BuildPusher and a real sender address (the defaults said "Laravel" and
-#    hello@example.com), then Laravel's caches are rebuilt and the queue workers restarted to read them.
+# 1. The shared .env gets APP_NAME=BuildPusher, a real sender address (the defaults said "Laravel" and
+#    hello@example.com) and where Audit's Chromium is, then Laravel's caches are rebuilt and the queue workers
+#    restarted to read them.
 # 2. Caddy's internal listener (127.0.0.1:8100) keeps the visitor's X-Forwarded-For, -Host and -Proto that the Nuxt
 #    server forwards. Without it Laravel builds http://127.0.0.1:443 links (canonical, link previews) and rate limits
 #    every visitor as one. The new config is validated before Caddy reloads; a failure puts the old one back.
@@ -45,7 +46,9 @@ cp -a "$env_file" "$env_file.bak-$stamp"
 set_env APP_NAME BuildPusher
 set_env MAIL_FROM_ADDRESS "\"$mail_from\""
 set_env MAIL_FROM_NAME '"${APP_NAME}"'
-grep -E '^(APP_NAME|MAIL_FROM_ADDRESS|MAIL_FROM_NAME|MAIL_MAILER)=' "$env_file"
+# Where deploy-production.sh puts Audit's Chromium.
+set_env PLAYWRIGHT_BROWSERS_PATH "$(dirname "$env_file")/pw-browsers"
+grep -E '^(APP_NAME|MAIL_FROM_ADDRESS|MAIL_FROM_NAME|MAIL_MAILER|PLAYWRIGHT_BROWSERS_PATH)=' "$env_file"
 
 echo "== Caddy ($caddy_file)"
 if grep -q 'header_up X-Forwarded-Host' "$caddy_file"; then
@@ -91,6 +94,7 @@ echo "== Laravel"
 cd "$api"
 runuser -u www-data -- "$php" artisan optimize >/dev/null
 systemctl restart buildpusher-web buildpusher-queue-main buildpusher-queue-telemetry
+systemctl try-restart buildpusher-queue-audits
 echo "Caches rebuilt; web and queue workers restarted."
 
 echo "== Check"

@@ -44,6 +44,11 @@ ln -sfn "$shared/.env" .env
 rm -rf storage
 ln -sfn "$shared/storage" storage
 COMPOSER_ALLOW_SUPERUSER=1 "$php" /usr/bin/composer install --no-dev --optimize-autoloader --no-interaction --no-progress -q
+# Audit's browser runner (resources/site-audit/runner.mjs) needs Playwright and axe-core, the API's only npm
+# dependencies; Chromium lives on the volume (PLAYWRIGHT_BROWSERS_PATH in .env) and is only downloaded when the
+# Playwright version changes.
+npm ci --omit=dev --no-audit --no-fund --loglevel=error
+PLAYWRIGHT_BROWSERS_PATH="$shared/pw-browsers" npx --no-install playwright install --only-shell chromium >/dev/null
 "$php" artisan storage:link -q --force
 chown -R www-data:www-data "$release/api/bootstrap/cache"
 runuser -u www-data -- "$php" artisan migrate --force
@@ -54,6 +59,12 @@ mv -Tf "$base/current.next" "$base/current"
 
 kill -USR2 "$(cat /run/buildpusher/php-fpm.pid)"
 systemctl restart buildpusher-web buildpusher-queue-main buildpusher-queue-telemetry
+# Audit runs have their own worker (scripts/systemd/buildpusher-queue-audits.service).
+if systemctl cat buildpusher-queue-audits >/dev/null 2>&1; then
+    systemctl restart buildpusher-queue-audits
+else
+    echo "Warning: buildpusher-queue-audits isn't installed, so Audit runs will stay queued. See scripts/systemd/." >&2
+fi
 
 # Keep the three newest releases.
 ls -1dt "$base"/releases/*/ | tail -n +4 | xargs -r rm -rf

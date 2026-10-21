@@ -1,0 +1,21 @@
+# Production worker for Audit runs (headless Chromium + Claude). Install once, as root:
+#   cp scripts/systemd/buildpusher-queue-audits.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now buildpusher-queue-audits
+[Unit]
+Description=BuildPusher v3 queue worker (site-audits)
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/buildpusher/current/api
+# Keep this to ONE worker: the database queue's retry_after is 90 seconds and an audit can take 30 minutes,
+# so a second worker would pick the same audit up again.
+ExecStart=/root/.local/share/buildpusher/php-8.5.10/bin/php artisan queue:work --queue=site-audits --sleep=5 --tries=1 --timeout=1830 --max-time=3600
+Restart=always
+RestartSec=5
+# Chromium is the big part; cap it so an audit can't starve the other services.
+MemoryMax=2G
+
+[Install]
+WantedBy=multi-user.target

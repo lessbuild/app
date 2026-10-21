@@ -350,6 +350,10 @@ final class ClaudeAuditAnalyst implements AuditAnalyst
      */
     private function create(string $system, array $content, int $maxTokens, string $effort, array $tools = [], ?BetaJSONOutputFormat $format = null): BetaMessage
     {
+        // Without a key every request fails with Anthropic's authentication error, which tells people nothing useful.
+        if (blank(config('services.anthropic.key'))) {
+            throw new RuntimeException(__('Audits aren’t available right now because Claude isn’t connected. Please try again later.'));
+        }
         try {
             // Refusal fallbacks: if the model declines a page, the request is retried on its default fallback model.
             $message = $this->client->beta->messages->create(

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-21', 'title' => 'Audits run again', 'changes' => [
+        'Audit runs that were stuck on “Queued” now start: they have their own worker and browser on buildpusher.com.',
+        'If an audit can’t reach Claude, the run says so instead of failing with an authentication error.',
+    ]],
     ['date' => '2026-10-18', 'title' => 'Domain verification for Namecheap and friends', 'changes' => [
         'Verifying a domain shows the TXT record’s Host as Namecheap, GoDaddy and Cloudflare want it (_buildpusher.api rather than _buildpusher.api.example.com), with the full name underneath for providers that need it.',
     ]],

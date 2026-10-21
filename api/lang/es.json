@@ -950,6 +950,7 @@
     "Audit stream removed.": "Flujo de auditoría eliminado.",
     "Audit → Deploy and Analytics": "Audit → Deploy y Analytics",
     "Audits": "Auditorías",
+    "Audits aren’t available right now because Claude isn’t connected. Please try again later.": "Las auditorías no están disponibles en este momento porque Claude no está conectado. Inténtalo de nuevo más tarde.",
     "Audits per month": "Auditorías al mes",
     "Authentication code": "Código de autenticación",
     "Authentication: HTTP header (bearer token). Unique identifier: userName, the person’s email address. Supported: creating, updating, deactivating and deleting users. Roles are set here, not in groups.": "Autenticación: cabecera HTTP (token bearer). Identificador único: userName, la dirección de correo de la persona. Se admite crear, actualizar, desactivar y eliminar usuarios. Los roles se definen aquí, no en grupos.",
