@@ -167,7 +167,7 @@ class GitHubApp
      * @param  string  $installationId
      * @return PendingRequest
      */
-    private function client(string $installationId): PendingRequest
+    public function client(string $installationId): PendingRequest
     {
         return Http::acceptJson()->withToken($this->installationToken($installationId))->withHeader('X-GitHub-Api-Version', '2026-03-10');
     }

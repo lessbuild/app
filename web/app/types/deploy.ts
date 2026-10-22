@@ -72,6 +72,24 @@ export type RepositoryDetail = {
     previewDatabaseAnonymise: boolean;
 };
 
+/** An app found in a repository, and what deploying it takes. */
+export type DetectedApp = {
+    path: string;
+    framework: string;
+    label: string;
+    runtime: string;
+    runtimeVersion: string | null;
+    database: string | null;
+    queue: boolean;
+    scheduler: boolean;
+    redis: boolean;
+    buildCommand: string | null;
+    startCommand: string | null;
+    port: number | null;
+    notes: string[];
+    workerCommand: string | null;
+};
+
 export type RepositoryPage = {
     overview: ProjectOverview;
     repository: RepositoryDetail;
@@ -84,6 +102,7 @@ export type RepositoryPage = {
     options: RepositoryFormOptions;
     canDeploy: boolean;
     canManage: boolean;
+    stack: { apps: DetectedApp[]; deploys: string | null; checkedAt: string | null; error: string | null; suggestions: ProductionIssue[] };
 };
 
 /** Before-and-after measures of a release, keyed by measure. */

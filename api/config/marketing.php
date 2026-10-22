@@ -73,6 +73,7 @@ return [
             'groups' => [
                 ['label' => 'Release', 'title' => 'Make every deployment traceable', 'description' => 'From the first commit to a verified release, every step stays visible and recoverable.', 'features' => [
                     ['Release per build', 'Each deploy is its own release directory; the previous ones stay for instant rollbacks.'],
+                    ['Reads your repository', 'Finds the apps in a repository and what they need (database, queue worker, scheduler, Redis), and adds what’s missing in a click.'],
                     ['Production check', 'Each environment flags debug settings, missing queue workers and servers too full or too small for what runs on them, with one-click fixes.'],
                     ['Safe strategies', 'Blue-green, canary and rolling deploys, with health observation and automatic rollback.'],
                     ['Secrets from your vault', 'Sync secrets from Doppler, 1Password or AWS Secrets Manager into each environment.'],

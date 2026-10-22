@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Deploy;
 
+use App\Data\Deploy\ProductionIssue;
 use App\Data\Deploy\RepositoryFormOptions;
 use App\Models\Build;
 use App\Models\Preview;
@@ -15,6 +16,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Queries\Deploy\RepositoryFormQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
+use App\Services\Deploy\StackSuggestions;
 use App\Services\Infrastructure\DatabaseCommands;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
@@ -31,9 +33,10 @@ final class ShowRepositoryController
      * @param  Repository  $repository
      * @param  ProjectOverviewQuery  $overview
      * @param  RepositoryFormQuery  $form
+     * @param  StackSuggestions  $suggestions  What the repository's app still needs from its environment.
      * @return JsonResponse
      */
-    public function __invoke(#[CurrentUser] User $user, Project $project, Repository $repository, ProjectOverviewQuery $overview, RepositoryFormQuery $form): JsonResponse
+    public function __invoke(#[CurrentUser] User $user, Project $project, Repository $repository, ProjectOverviewQuery $overview, RepositoryFormQuery $form, StackSuggestions $suggestions): JsonResponse
     {
         $repository->load(['website.server', 'environment', 'provider', 'preview']);
         $website = $repository->website;
@@ -97,6 +100,13 @@ final class ShowRepositoryController
             'options' => RepositoryFormOptions::from($form->handle($project)),
             'canDeploy' => $user->can('deploy', $repository),
             'canManage' => $user->can('update', $repository),
+            'stack' => [
+                'apps' => array_map(fn (array $app): array => [...$app, 'notes' => array_map(fn (string $note): string => (string) __($note), (array) ($app['notes'] ?? []))], $repository->stack ?? []),
+                'deploys' => $suggestions->app($repository)?->path,
+                'checkedAt' => $repository->stack_checked_at?->toIso8601String(),
+                'error' => $repository->stack_error !== null ? (string) __($repository->stack_error) : null,
+                'suggestions' => array_map(fn (ProductionIssue $suggestion): array => $suggestion->toArray(), $suggestions->suggestions($repository)),
+            ],
         ]);
     }
 }

@@ -58,6 +58,9 @@ use Illuminate\Support\Carbon;
  * @property-read Project $project
  * @property-read Provider|null $provider
  * @property-read Website $website
+ * @property list<array<string, mixed>>|null $stack the apps found in it (DetectedApp::toArray()), when it's been read
+ * @property CarbonImmutable|null $stack_checked_at
+ * @property string|null $stack_error why it couldn't be read the last time
  * @property-read Environment|null $environment
  * @property-read \Illuminate\Database\Eloquent\Collection<int, Build> $builds
  * @property-read Preview|null $preview the preview this repository deploys, when it's a preview's own repository
@@ -228,6 +231,7 @@ class Repository extends Model
             'auto_deploy_include_paths' => 'array', 'auto_deploy_exclude_paths' => 'array', 'webhook_secret' => 'encrypted',
             'webhook_enabled' => 'boolean', 'webhook_pending' => 'boolean', 'webhook_last_received_at' => 'immutable_datetime',
             'previews_enabled' => 'boolean', 'preview_database_anonymise' => 'boolean', 'build_cache_enabled' => 'boolean', 'build_cache_version' => 'integer', 'preview_ttl_hours' => 'integer',
+            'stack' => 'array', 'stack_checked_at' => 'immutable_datetime',
         ];
     }
 }

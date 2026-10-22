@@ -30,11 +30,11 @@ pages. Status: `[ ]` to do, `[x]` done.
 
 ## Stage 3: stack detection
 
-- [ ] `RepositoryInspector` reads a repository through its Git provider (no clone): the apps in it (root and one
+- [x] `RepositoryInspector` reads a repository through its Git provider (no clone): the apps in it (root and one
       level down, such as `api/` and `web/`), each one's framework and version (Laravel, Symfony, WordPress, Nuxt,
       Next.js, Astro, Vite, Express, Django, Flask, Rails, Docker, Compose), what it needs (database engine, queue,
       scheduler, Redis) and its build and start commands.
-- [ ] The repository page shows what was found and offers what's missing, such as a queue worker or the scheduler on
+- [x] The repository page shows what was found and offers what's missing, such as a queue worker or the scheduler on
       the site that runs them.
 
 ## Stage 4: launch from a repository

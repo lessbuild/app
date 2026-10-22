@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Deploy;
 
+use App\Jobs\Deploy\InspectRepository;
 use App\Models\Environment;
 use App\Models\Project;
 use App\Models\Provider;
@@ -16,7 +17,8 @@ use Illuminate\Validation\ValidationException;
 final class SaveRepository
 {
     /**
-     * Connect a repository to a website in the project's account, or change it.
+     * Connect a repository to a website in the project's account, or change it, then read what's in it (in the
+     * background) when it's new or points somewhere else.
      *
      * @param  User  $actor
      * @param  Project  $project
@@ -55,6 +57,10 @@ final class SaveRepository
             'auto_deploy_include_paths' => ($data['auto_deploy_include_paths'] ?? []) ?: null, 'auto_deploy_exclude_paths' => ($data['auto_deploy_exclude_paths'] ?? []) ?: null,
             ...$webhook,
         ])->save();
+        // Find out what's in it, for the repository page's suggestions, whenever what it points at changes.
+        if ($repository->wasRecentlyCreated || $repository->wasChanged(['url', 'branch', 'provider_id'])) {
+            InspectRepository::dispatch($repository->id)->afterCommit();
+        }
 
         return $repository;
     }

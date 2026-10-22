@@ -2,9 +2,9 @@
 import type { RepositoryPage } from '~/types/deploy';
 
 /**
- * One repository (the Acme theme's repository page): deploying it (now, a chosen version, or later), booked deploys,
- * and tabs for its deploys, push deploys through a webhook, and its settings (build cache, pull-request previews,
- * build settings, removing it).
+ * One repository (the Acme theme's repository page): deploying it (now, a chosen version, or later), what's in it and
+ * what its environment still needs, booked deploys, and tabs for its deploys, push deploys through a webhook, and its
+ * settings (build cache, pull-request previews, build settings, removing it).
  */
 definePageMeta({ layout: 'app', service: 'deploy' });
 const { t, number, dateTime } = useT();
@@ -76,6 +76,8 @@ function webhookTurnedOn(result: Record<string, unknown>): null {
         <div class="space-y-6">
             <AcmeAlert v-if="!repository.ready" tone="warning">{{ t('Not ready: the website must be live on an active server, with a Git provider for this address.') }}</AcmeAlert>
             <p v-else class="text-sm text-muted">{{ t('Deploys to :website on :server', { website: repository.website, server: repository.server ?? '—' }) }}<template v-if="repository.environment"> · {{ repository.environment }}</template></p>
+
+            <RepositoryStack v-if="tab === 'deploys'" :page="data" :base="base" />
 
             <AcmeAlert v-if="data.scheduledDeploys.length > 0" tone="info" :title="t('Booked deploys')">
                 <ul class="mt-1 space-y-1">

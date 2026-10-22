@@ -19,6 +19,7 @@ final readonly class ProductionIssue
      * @param  array<string, string>  $variables  the variables the fix sets
      * @param  array{name: string, type: string, command: string}|null  $process  the worker the fix adds
      * @param  string|null  $url  where to fix it by hand, when Buildpusher can't
+     * @param  array{name: string, type: string}|null  $resource  the managed resource the fix adds
      */
     public function __construct(
         public string $key,
@@ -29,6 +30,7 @@ final readonly class ProductionIssue
         public array $variables = [],
         public ?array $process = null,
         public ?string $url = null,
+        public ?array $resource = null,
     ) {}
 
     /**
@@ -38,7 +40,7 @@ final readonly class ProductionIssue
      */
     public function fixable(): bool
     {
-        return $this->fixLabel !== null && ($this->variables !== [] || $this->process !== null);
+        return $this->fixLabel !== null && ($this->variables !== [] || $this->process !== null || $this->resource !== null);
     }
 
     /**

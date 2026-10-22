@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-22', 'title' => 'Buildpusher reads your repository', 'changes' => [
+        'Connecting a repository now reads it through GitHub, GitLab or Bitbucket: the apps in it (Laravel, Symfony, WordPress, Nuxt, Next.js, Astro, SvelteKit, Vite, Express, Django, Flask, FastAPI, Rails, Docker and Compose), each with what it needs.',
+        'The repository page offers what its environment is missing (a queue worker, the scheduler, Redis, the database) in one click, and says when the subdirectory or runtime doesn’t match the app.',
+    ]],
     ['date' => '2026-10-22', 'title' => 'One database, clearly shared', 'changes' => [
         'A managed MySQL resource now names the website whose database it uses (choose it under Database for managed MySQL), instead of quietly taking the first repository’s, and shows it on the Resources tab.',
         'New websites can go without a MySQL database (turn off Create a MySQL database for a Node.js, Python or static site), so there’s no empty second database to wonder about.',
