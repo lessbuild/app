@@ -48,7 +48,8 @@ COMPOSER_ALLOW_SUPERUSER=1 "$php" /usr/bin/composer install --no-dev --optimize-
 # dependencies; Chromium lives on the volume (PLAYWRIGHT_BROWSERS_PATH in .env) and is only downloaded when the
 # Playwright version changes.
 npm ci --omit=dev --no-audit --no-fund --loglevel=error
-PLAYWRIGHT_BROWSERS_PATH="$shared/pw-browsers" npx --no-install playwright install --only-shell chromium >/dev/null
+# Playwright's own CLI (npm doesn't always link its `playwright` command beside playwright-core's).
+PLAYWRIGHT_BROWSERS_PATH="$shared/pw-browsers" node node_modules/playwright/cli.js install --only-shell chromium >/dev/null
 "$php" artisan storage:link -q --force
 chown -R www-data:www-data "$release/api/bootstrap/cache"
 runuser -u www-data -- "$php" artisan migrate --force
