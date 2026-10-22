@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Security;
 
+use App\Data\Security\Finding;
 use App\Enums\SelectionKind;
 use App\Jobs\Security\PatchServer;
 use App\Models\BillingSelection;
@@ -14,6 +15,7 @@ use App\Models\ServerFirewallRule;
 use App\Models\Website;
 use App\Services\Security\HardeningScripts;
 use App\Services\Security\PatchSchedule;
+use App\Services\Security\ServerAudit;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -33,14 +35,14 @@ final class ServerHardeningTest extends TestCase
      *
      * @var string
      */
-    private const NEGLECTED = "PASSWORD_AUTH=yes\nROOT_LOGIN=yes\nUFW=inactive\nFAIL2BAN=inactive\nUNATTENDED=off\nUPDATES=31\nSECURITY_UPDATES=12\nREBOOT=yes\nUBUNTU=20.04\nLISTEN=0.0.0.0:22\nLISTEN=0.0.0.0:3306\nLISTEN=127.0.0.1:6379\nLISTEN=[::]:8080\n";
+    private const NEGLECTED = "PASSWORD_AUTH=yes\nROOT_LOGIN=yes\nUFW=inactive\nFAIL2BAN=inactive\nUNATTENDED=off\nUPDATES=31\nSECURITY_UPDATES=12\nREBOOT=yes\nUBUNTU=20.04\nPHP=8.5.10\nPHP=8.5.10\nPHP=7.4.33\nPHP_PPA=yes\nPHP_AUTO_UPDATES=off\nLISTEN=0.0.0.0:22\nLISTEN=0.0.0.0:3306\nLISTEN=127.0.0.1:6379\nLISTEN=[::]:8080\n";
 
     /**
      * What a hardened server reports.
      *
      * @var string
      */
-    private const HARDENED = "PASSWORD_AUTH=no\nROOT_LOGIN=without-password\nUFW=active\nUFW_ALLOW=22/tcp\nUFW_ALLOW=80/tcp\nUFW_ALLOW=443/tcp\nFAIL2BAN=active\nUNATTENDED=on\nUPDATES=0\nSECURITY_UPDATES=0\nREBOOT=no\nUBUNTU=24.04\nLISTEN=0.0.0.0:22\nLISTEN=0.0.0.0:3306\n";
+    private const HARDENED = "PASSWORD_AUTH=no\nROOT_LOGIN=without-password\nUFW=active\nUFW_ALLOW=22/tcp\nUFW_ALLOW=80/tcp\nUFW_ALLOW=443/tcp\nFAIL2BAN=active\nUNATTENDED=on\nUPDATES=0\nSECURITY_UPDATES=0\nREBOOT=no\nUBUNTU=24.04\nPHP=8.5.12\nPHP=8.3.36\nPHP_PPA=yes\nPHP_AUTO_UPDATES=on\nLISTEN=0.0.0.0:22\nLISTEN=0.0.0.0:3306\n";
 
     /**
      * Check a server's audit, a one-click fix, the rescan clearing what was fixed, and update windows.
@@ -69,6 +71,10 @@ final class ServerHardeningTest extends TestCase
         $this->assertSame('low', $titles['Port 8080 on web-1 is open to the internet']);
         $this->assertSame('high', $titles['web-1 has 12 security updates waiting']);
         $this->assertSame('high', $titles['web-1 runs Ubuntu 20.04, which is at or near the end of its support']);
+        $this->assertSame('critical', $titles['web-1 runs PHP 8.5.10, which has known security holes']);
+        $this->assertSame('critical', $titles['web-1 runs PHP 7.4.33, which no longer gets security fixes']);
+        $this->assertSame(1, SecurityFinding::query()->where('title', 'web-1 runs PHP 8.5.10, which has known security holes')->count(), 'One finding per PHP version.');
+        $this->assertArrayNotHasKey('web-1’s automatic updates skip PHP', $titles, 'Automatic updates are off altogether, which is its own finding.');
         $this->assertArrayNotHasKey('Redis on web-1 can be reached from the internet', $titles, 'Listening on 127.0.0.1 is fine.');
 
         $firewall = SecurityFinding::query()->where('title', 'web-1’s firewall is off')->sole();
@@ -82,9 +88,19 @@ final class ServerHardeningTest extends TestCase
         $this->assertSame('resolved', $firewall->refresh()->status, 'The server was audited again and the finding cleared.');
         $this->assertSame(0, SecurityFinding::query()->where('source', 'servers')->where('status', 'open')->count(), 'Behind the firewall, MySQL on 0.0.0.0 is no longer exposed.');
 
+        $php = SecurityFinding::query()->where('title', 'web-1 runs PHP 8.5.10, which has known security holes')->sole();
+        $this->assertSame('resolved', $php->status, 'PHP 8.5.12 and 8.3.36 are safe.');
+
         $script = app(HardeningScripts::class)->script('ssh-keys-only', $server);
         $this->assertStringContainsString('if sshd -t', $script, 'Bad SSH settings are undone, never reloaded.');
         $this->assertStringContainsString('prohibit-password', app(HardeningScripts::class)->script('root-keys-only', $server), 'Root keeps key access, which BuildPusher uses.');
+
+        $updates = app(HardeningScripts::class)->script('apply-updates', $server);
+        $this->assertStringContainsString('origin=LP-PPA-ondrej-php', $updates, 'Automatic updates include PHP from then on.');
+        $this->assertStringContainsString('--only-upgrade install $php_packages', $updates, 'PHP is updated even where unattended-upgrades skips it.');
+        $this->assertStringContainsString("systemctl try-restart 'php*-fpm.service'", $updates, 'PHP-FPM restarts on the new version.');
+        $this->assertStringContainsString('supervisorctl restart all', $updates, 'Queue workers restart on the new version.');
+        $this->assertStringContainsString('origin=LP-PPA-ondrej-php', app(HardeningScripts::class)->script('enable-auto-updates', $server));
 
         Queue::fake();
         $this->actingAs($owner)->getJson("{$page}/servers")->assertOk()->assertJsonPath('servers.0.name', 'web-1')->assertJsonPath('servers.0.patchDay', null);
@@ -101,5 +117,25 @@ final class ServerHardeningTest extends TestCase
 
         $other = Server::factory()->create(['account_id' => $project->account_id]);
         $this->actingAs($owner)->putJson("{$page}/servers/{$other->id}/patch", ['patch_day' => 1])->assertJsonValidationErrors('patch_day');
+    }
+
+    /**
+     * A server whose automatic updates are on but leave out PHP's source is told so, with the fix that includes it.
+     *
+     * @return void
+     */
+    public function test_automatic_updates_that_skip_php_are_a_finding(): void
+    {
+        $server = Server::factory()->make(['name' => 'web-2']);
+        $base = "UNATTENDED=on\nPHP=8.5.12\n";
+
+        $php = array_values(array_filter((new ServerAudit)->findings($server, $base."PHP_PPA=yes\nPHP_AUTO_UPDATES=off\n"), fn (Finding $finding): bool => str_starts_with($finding->key, 'php')));
+        $this->assertCount(1, $php);
+        $this->assertSame('php-auto-updates', $php[0]->key);
+        $this->assertSame('enable-auto-updates', $php[0]->data['fix_action']);
+
+        $keys = fn (string $output): array => array_map(fn (Finding $finding): string => $finding->key, (new ServerAudit)->findings($server, $output));
+        $this->assertNotContains('php-auto-updates', $keys($base."PHP_PPA=yes\nPHP_AUTO_UPDATES=on\n"));
+        $this->assertNotContains('php-auto-updates', $keys($base."PHP_PPA=no\nPHP_AUTO_UPDATES=off\n"), 'PHP from elsewhere is updated by Ubuntu’s own updates.');
     }
 }

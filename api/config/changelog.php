@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
-    ['date' => '2026-10-21', 'title' => 'Audits run again', 'changes' => [
-        'Audit runs that were stuck on “Queued” now start: they have their own worker and browser on buildpusher.com.',
+    ['date' => '2026-10-22', 'title' => 'PHP security updates on your servers', 'changes' => [
+        'Automatic security updates now include PHP, which Ubuntu’s updater left out because it comes from ppa:ondrej/php. New servers get this straight away; on existing ones, Install updates now or Turn on automatic security updates adds it.',
+        'Installing updates also updates PHP, then restarts PHP-FPM and the queue workers so the patched version is the one running.',
+        'Security flags servers running a PHP with known holes, such as the PHP2Shell flaws fixed on 21 October (CVE-2026-109618 and CVE-2026-109619), or a PHP that no longer gets security fixes.',
+    ]],
+    ['date' => '2026-10-21', 'title' => 'Clearer audit errors', 'changes' => [
         'If an audit can’t reach Claude, the run says so instead of failing with an authentication error.',
     ]],
     ['date' => '2026-10-18', 'title' => 'Domain verification for Namecheap and friends', 'changes' => [

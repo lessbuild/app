@@ -491,9 +491,10 @@ return [
             'title' => 'Harden and update servers',
             'summary' => 'See how each server is set up, fix problems in a click, and install security updates on a schedule.',
             'steps' => [
-                ['What’s checked', 'On Pro and above, Security audits each server the project runs on: SSH passwords and root sign-in, the firewall and anything open to the internet (such as a database), fail2ban, automatic updates, waiting security updates, a pending reboot, and the Ubuntu release.'],
+                ['What’s checked', 'On Pro and above, Security audits each server the project runs on: SSH passwords and root sign-in, the firewall and anything open to the internet (such as a database), fail2ban, automatic updates, waiting security updates, PHP versions with known security holes, a pending reboot, and the Ubuntu release.'],
                 ['Fix in a click', 'Findings with a fix have a button, such as Turn the firewall on or Allow SSH keys only. Fixes never remove BuildPusher’s own key access, and the server is checked again afterwards.'],
                 ['Update windows', 'Security → Servers sets a weekly window (day and hour, in UTC) when each server installs its security updates, optionally rebooting if they need it. Install updates now runs them straight away.'],
+                ['PHP updates', 'BuildPusher installs PHP from ppa:ondrej/php, which Ubuntu’s automatic updates leave out by default, so new servers and Turn on automatic security updates include it. Installing updates also updates PHP and restarts PHP-FPM and the queue workers, so nothing keeps running the old version.'],
             ],
         ],
         'security-firewall' => [

@@ -31,6 +31,13 @@ final class HardeningScripts
     ];
 
     /**
+     * Where the setting that lets automatic updates install PHP is written.
+     *
+     * @var string
+     */
+    public const PHP_UPDATES_FILE = '/etc/apt/apt.conf.d/51buildpusher-php';
+
+    /**
      * Create a new HardeningScripts instance.
      *
      * @param  ServerTaskScripts  $tasks  Writes the server's own firewall rules back.
@@ -55,6 +62,7 @@ final class HardeningScripts
             'install-fail2ban' => "{$wait}\napt-get update -qq\napt-get install -y -qq fail2ban\nsystemctl enable --now fail2ban",
             'enable-auto-updates' => "{$wait}\napt-get update -qq\napt-get install -y -qq unattended-upgrades\n"
                 ."printf 'APT::Periodic::Update-Package-Lists \"1\";\\nAPT::Periodic::Unattended-Upgrade \"1\";\\n' > /etc/apt/apt.conf.d/20auto-upgrades\n"
+                .self::phpUpdateSource()."\n"
                 .'systemctl enable --now unattended-upgrades',
             'apply-updates' => $this->updates(false),
             'reboot' => 'shutdown -r +1 "Rebooting to finish updates (BuildPusher Security)"',
@@ -75,14 +83,38 @@ final class HardeningScripts
         while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 3; done
         export DEBIAN_FRONTEND=noninteractive
         apt-get update -qq
+        php_before="$(dpkg-query -W 'php*' 2>/dev/null)"
         if command -v unattended-upgrade >/dev/null 2>&1; then
             unattended-upgrade -v
         else
             apt-get -y -o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef upgrade
         fi
+        # PHP comes from ppa:ondrej/php, which unattended-upgrades skips unless told otherwise, so update it explicitly.
+        php_packages="$(dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' 'php*' 2>/dev/null | awk '$1 == "ii" { print $2 }')"
+        if [ -n "$php_packages" ]; then
+            apt-get -y -o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef --only-upgrade install $php_packages
+        fi
+        # Running PHP keeps the old, vulnerable code in memory until it restarts: PHP-FPM and the queue workers.
+        if [ "$php_before" != "$(dpkg-query -W 'php*' 2>/dev/null)" ]; then
+            systemctl try-restart 'php*-fpm.service' || true
+            if command -v supervisorctl >/dev/null 2>&1; then supervisorctl restart all >/dev/null || true; fi
+        fi
         BASH;
+        $script = self::phpUpdateSource()."\n".$script;
 
         return $reboot ? $script."\nif [ -f /var/run/reboot-required ]; then shutdown -r +1 \"Rebooting after security updates (BuildPusher)\"; fi" : $script;
+    }
+
+    /**
+     * Get the command that lets automatic security updates install PHP from ppa:ondrej/php, where BuildPusher
+     * installs it. Without it unattended-upgrades only takes Ubuntu's own packages and PHP never gets patched.
+     *
+     * @return string
+     */
+    public static function phpUpdateSource(): string
+    {
+        return "printf '%s\\n' '// Written by BuildPusher: automatic security updates also install PHP from ppa:ondrej/php.' "
+            ."'Unattended-Upgrade::Origins-Pattern { \"origin=LP-PPA-ondrej-php\"; };' > ".self::PHP_UPDATES_FILE;
     }
 
     /**

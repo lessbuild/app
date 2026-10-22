@@ -9,7 +9,8 @@ use App\Models\Server;
 
 /**
  * Audits a server the way a security reviewer would: SSH settings, the firewall and what's open to the internet,
- * brute-force protection, pending and automatic security updates, a pending reboot, and the Ubuntu release. One
+ * brute-force protection, pending and automatic security updates (PHP's included), PHP versions with known holes, a
+ * pending reboot, and the Ubuntu release. One
  * read-only script gathers the facts as KEY=value lines; findings name the one-click fix that applies, if any.
  */
 final class ServerAudit
@@ -20,6 +21,15 @@ final class ServerAudit
      * @var array<int, string>
      */
     private const RISKY_PORTS = [3306 => 'MySQL', 5432 => 'PostgreSQL', 6379 => 'Redis', 11211 => 'Memcached', 27017 => 'MongoDB', 9200 => 'Elasticsearch', 7700 => 'Meilisearch', 8108 => 'Typesense', 2375 => 'Docker API', 5672 => 'RabbitMQ', 15672 => 'RabbitMQ management'];
+
+    /**
+     * The first safe release of each supported PHP branch. Raise these when PHP ships a security release (last:
+     * 2026-10-21, CVE-2026-109618 and CVE-2026-109619, which let anyone run code on the server). Older branches no
+     * longer get security fixes at all.
+     *
+     * @var array<string, string>
+     */
+    public const SAFE_PHP = ['8.2' => '8.2.35', '8.3' => '8.3.36', '8.4' => '8.4.27', '8.5' => '8.5.12'];
 
     /**
      * Get the read-only script that gathers the facts.
@@ -39,6 +49,9 @@ final class ServerAudit
         upgradable="$(apt-get -s -o Debug::NoLocking=1 upgrade 2>/dev/null | grep '^Inst' || true)"
         echo "UPDATES=$(printf '%s' "$upgradable" | grep -c . || true)"
         echo "SECURITY_UPDATES=$(printf '%s' "$upgradable" | grep -ci security || true)"
+        for php in /usr/bin/php[0-9]*; do [ -x "$php" ] && echo "PHP=$("$php" -r 'echo PHP_VERSION;' 2>/dev/null)"; done
+        echo "PHP_PPA=$(grep -rqs 'ondrej/php' /etc/apt/sources.list /etc/apt/sources.list.d/ && echo yes || echo no)"
+        echo "PHP_AUTO_UPDATES=$(apt-config dump 2>/dev/null | grep -q 'LP-PPA-ondrej-php' && echo on || echo off)"
         echo "REBOOT=$([ -f /var/run/reboot-required ] && echo yes || echo no)"
         echo "UBUNTU=$( (lsb_release -rs 2>/dev/null) || (. /etc/os-release 2>/dev/null; echo "${VERSION_ID:-}") )"
         ss -tlnH 2>/dev/null | awk '{print "LISTEN=" $4}'
@@ -55,7 +68,7 @@ final class ServerAudit
     public function findings(Server $server, string $output): array
     {
         $facts = [];
-        $lists = ['LISTEN' => [], 'UFW_ALLOW' => []];
+        $lists = ['LISTEN' => [], 'UFW_ALLOW' => [], 'PHP' => []];
         foreach (preg_split('/\R/', $output) ?: [] as $line) {
             if (preg_match('/^([A-Z0-9_]+)=(.*)$/', trim($line), $parts) === 1) {
                 if (isset($lists[$parts[1]])) {
@@ -100,6 +113,21 @@ final class ServerAudit
         }
         if (($facts['UNATTENDED'] ?? 'off') !== 'on') {
             $findings[] = $finding('auto-updates', 'medium', (string) __(':server doesn’t install security updates automatically', ['server' => $name]), null, (string) __('Turn on automatic security updates, or set an update window in Security → Servers.'), 'enable-auto-updates');
+        }
+        if (($facts['UNATTENDED'] ?? 'off') === 'on' && ($facts['PHP_PPA'] ?? 'no') === 'yes' && ($facts['PHP_AUTO_UPDATES'] ?? 'on') === 'off') {
+            $findings[] = $finding('php-auto-updates', 'medium', (string) __(':server’s automatic updates skip PHP', ['server' => $name]), (string) __('PHP comes from ppa:ondrej/php, which automatic updates leave out unless they’re told to include it.'),
+                (string) __('Include PHP in automatic security updates.'), 'enable-auto-updates');
+        }
+        foreach (array_unique(array_filter($lists['PHP'], fn (string $version): bool => preg_match('/^\d+\.\d+\.\d+/', $version) === 1)) as $version) {
+            $branch = implode('.', array_slice(explode('.', $version), 0, 2));
+            $safe = self::SAFE_PHP[$branch] ?? null;
+            if ($safe === null && version_compare($branch, array_key_first(self::SAFE_PHP), '<')) {
+                $findings[] = $finding("php-{$branch}-unsupported", 'critical', (string) __(':server runs PHP :version, which no longer gets security fixes', ['server' => $name, 'version' => $version]), null,
+                    (string) __('Move the websites to PHP :branch or newer.', ['branch' => array_key_last(self::SAFE_PHP)]));
+            } elseif ($safe !== null && version_compare($version, $safe, '<')) {
+                $findings[] = $finding("php-{$branch}-vulnerable", 'critical', (string) __(':server runs PHP :version, which has known security holes', ['server' => $name, 'version' => $version]),
+                    (string) __('Versions before :safe have publicly known security holes.', ['safe' => $safe]), (string) __('Apply the updates now; PHP and its workers restart on the new version.'), 'apply-updates');
+            }
         }
         $security = (int) ($facts['SECURITY_UPDATES'] ?? 0);
         if ($security > 0) {

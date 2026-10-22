@@ -6,6 +6,7 @@ namespace App\Services\Infrastructure\Scripts\Server;
 
 use App\Contracts\Infrastructure\ServerScript;
 use App\Models\Server;
+use App\Services\Security\HardeningScripts;
 
 class UpdateDependenciesScript implements ServerScript
 {
@@ -24,6 +25,8 @@ class UpdateDependenciesScript implements ServerScript
      */
     public function script(int $step, Server $server): string
     {
+        $phpUpdates = HardeningScripts::phpUpdateSource();
+
         return <<<SCRIPT
 
         provisionPing {$server->id} {$step}
@@ -35,6 +38,8 @@ class UpdateDependenciesScript implements ServerScript
         apt_wait
         sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y software-properties-common ca-certificates curl gnupg ufw
         sudo apt-add-repository ppa:ondrej/php -y
+        # Automatic security updates only take Ubuntu's own packages unless told to include PHP's source too.
+        {$phpUpdates}
         SCRIPT;
     }
 }
