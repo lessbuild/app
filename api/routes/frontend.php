@@ -64,6 +64,8 @@ Route::get('/projects/{project}/deploy/configuration/applications/{application}'
 Route::get('/projects/{project}/deploy/configuration/reviews/{review}', FrontendPageController::class)->name('deploy.configuration.reviews.show');
 Route::get('/projects/{project}/deploy/environments', FrontendPageController::class)->name('deploy.environments');
 Route::get('/projects/{project}/deploy/environments/{environment}', FrontendPageController::class)->name('deploy.environments.show');
+Route::get('/projects/{project}/deploy/launch', FrontendPageController::class)->name('deploy.launch.page');
+Route::get('/projects/{project}/deploy/launches/{launch}', FrontendPageController::class)->name('deploy.launches.show');
 Route::get('/projects/{project}/deploy/pipelines', FrontendPageController::class)->name('deploy.pipelines');
 Route::get('/projects/{project}/deploy/previews', FrontendPageController::class)->name('deploy.previews');
 Route::get('/projects/{project}/deploy/repositories/create', FrontendPageController::class)->name('deploy.repositories.create');

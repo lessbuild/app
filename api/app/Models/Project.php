@@ -82,6 +82,16 @@ class Project extends Model
     }
 
     /**
+     * Get the project's launches from a repository.
+     *
+     * @return HasMany<Launch, $this>
+     */
+    public function launches(): HasMany
+    {
+        return $this->hasMany(Launch::class);
+    }
+
+    /**
      * Get the project's domains.
      *
      * @return HasMany<Domain, $this>

@@ -341,3 +341,73 @@ export type EnvironmentPage = {
     canManage: boolean;
     productionCheck: ProductionIssue[];
 };
+
+/** One app in a launch plan: what was found, and the choices the Launch page edits. */
+export type LaunchPlanApp = {
+    path: string;
+    label: string;
+    framework: string;
+    runtime: string;
+    runtimeVersion: string | null;
+    backend: boolean;
+    name: string;
+    domain: string;
+    environment: string;
+    mysql: boolean;
+    canUseMysql: boolean;
+    redis: boolean;
+    queue: boolean;
+    workerCommand: string | null;
+    scheduler: boolean;
+    buildCommand: string | null;
+    startCommand: string | null;
+    port: number | null;
+    healthPath: string;
+    includePaths: string[];
+    variables: Record<string, string>;
+    secrets: string[];
+    notes: string[];
+    githubActions?: boolean;
+    secretValues?: Record<string, string>;
+};
+
+/** How Buildpusher proposes to launch a repository. */
+export type LaunchPlan = {
+    repository: { provider_id: number; url: string; branch: string; name: string };
+    apps: LaunchPlanApp[];
+    memoryNeededMb: number;
+    servers: Array<{ id: number; label: string; ip: string | null; memoryGb: number | null; neededGb: number; fits: boolean }>;
+    recommendedSize: { id: string; memoryGb: number; price: string | null } | null;
+};
+
+export type LaunchFormPage = {
+    overview: ProjectOverview;
+    sources: Option[];
+    clouds: Option[];
+    launches: Array<{ id: number; repository: string; status: string; createdAt: string | null }>;
+};
+
+export type LaunchPage = {
+    overview: ProjectOverview;
+    launch: {
+        id: number;
+        status: string;
+        error: string | null;
+        active: boolean;
+        repository: string;
+        branch: string;
+        server: { label: string; ip: string | null; status: string; url: string } | null;
+        steps: Array<{ key: string; label: string; state: 'done' | 'current' | 'failed' | 'waiting' }>;
+        apps: Array<{
+            name: string;
+            label: string;
+            domain: string;
+            website: { status: string; url: string } | null;
+            repository: string | null;
+            environment: string | null;
+            build: { status: string; url: string } | null;
+            checklist: Array<{ key: string; label: string; done: boolean }>;
+        }>;
+    };
+    canRetry: boolean;
+};

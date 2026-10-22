@@ -41,6 +41,7 @@ function change(now: number | null, before: number | null, unit = ''): string | 
             <template #actions>
                 <AcmeBtn icon="download" to="/api/app/account/inventory/repositories.csv" external download>{{ t('Export CSV') }}</AcmeBtn>
                 <ImpactPreviewDialog :project-id="project.id"><template #trigger="{ open }"><AcmeBtn icon="branch" @click="open">{{ t('Which would deploy?') }}</AcmeBtn></template></ImpactPreviewDialog>
+                <AcmeBtn v-if="data.canCreate" icon="rocket" :to="`/projects/${project.id}/deploy/launch`">{{ t('Launch from a repository') }}</AcmeBtn>
                 <AcmeBtn v-if="data.canCreate" variant="primary" icon="plus" :to="`/projects/${project.id}/deploy/repositories/create`">{{ t('Connect repository') }}</AcmeBtn>
             </template>
         </ProjectHeader>

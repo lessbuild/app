@@ -285,6 +285,18 @@ return [
                 ['Take one out', 'Take out removes a node from rotation, for maintenance for example; Put back returns it. Nodes that fail the health check are skipped on their own.'],
             ],
         ],
+        'launch-from-repository' => [
+            'group' => 'deploy',
+            'title' => 'Launch from a repository',
+            'summary' => 'Set up everything a repository needs, from the server to the first deploy, on one page.',
+            'steps' => [
+                ['Start', 'Deploy → Launch from a repository. Choose the Git provider, the repository and branch, and the domain (an API in the repository gets api. in front), then Read the repository.'],
+                ['Check the plan', 'Buildpusher proposes a website and environment for each app it finds, with its domain, runtime, production settings, database, queue worker, scheduler and Redis, and asks for the secrets its .env.example leaves empty. Change any of it; leave secrets empty to add them later under Variables.'],
+                ['The server', 'Pick one of your app servers (each says whether everything fits beside what already runs on it), or a new one: choose the cloud provider and region, and the size that fits is chosen for you, with its price.'],
+                ['Launch', 'Launch creates the server if needed and waits for it, creates the websites, sets up the environments, connects the repository once per app (with its subdirectory, path filters and build cache), then deploys the API first and the rest after it. You can leave the page; it carries on.'],
+                ['Go live', 'The launch page ends on a checklist for each app: point its domain at the server (an A record), the first deploy live, and answering over HTTPS once Caddy has its certificate. If something stops, it says why; Try again carries on from there, keeping what was made.'],
+            ],
+        ],
         'deploy-from-git' => [
             'group' => 'deploy',
             'title' => 'Deploy from Git',

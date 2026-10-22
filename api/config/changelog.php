@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-22', 'title' => 'Launch from a repository', 'changes' => [
+        'Deploy → Launch from a repository reads a repository and proposes the whole set-up on one page: a website and environment per app with its domain, production settings, database, workers, Redis and the secrets still needed, and a server with room for it (one of yours, or a new one at the size that fits, with its price).',
+        'Launch sets it all up in order and deploys the API first, then the rest, and ends on a checklist (DNS, the first deploy, HTTPS). A launch that stops says why and carries on from there.',
+    ]],
     ['date' => '2026-10-22', 'title' => 'Buildpusher reads your repository', 'changes' => [
         'Connecting a repository now reads it through GitHub, GitLab or Bitbucket: the apps in it (Laravel, Symfony, WordPress, Nuxt, Next.js, Astro, SvelteKit, Vite, Express, Django, Flask, FastAPI, Rails, Docker and Compose), each with what it needs.',
         'The repository page offers what its environment is missing (a queue worker, the scheduler, Redis, the database) in one click, and says when the subdirectory or runtime doesn’t match the app.',

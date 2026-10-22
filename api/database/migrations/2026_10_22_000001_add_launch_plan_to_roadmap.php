@@ -26,12 +26,16 @@ return new class extends Migration
     ];
 
     /**
-     * Add the items, leaving any that already exist alone.
+     * Add the items, leaving any that already exist alone (and none in tests).
      *
      * @return void
      */
     public function up(): void
     {
+        // Roadmap entries are buildpusher.com's content, not schema: test databases start without them.
+        if (app()->runningUnitTests()) {
+            return;
+        }
         foreach (self::ITEMS as $title => $description) {
             if (! DB::table('feature_requests')->where('title', $title)->exists()) {
                 DB::table('feature_requests')->insert(['title' => $title, 'description' => $description, 'status' => 'planned', 'votes_count' => 0, 'created_at' => now(), 'updated_at' => now()]);

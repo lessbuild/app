@@ -39,11 +39,11 @@ pages. Status: `[ ]` to do, `[x]` done.
 
 ## Stage 4: launch from a repository
 
-- [ ] Projects → Launch from a repository: pick the repository and branch; Buildpusher inspects it and proposes one
+- [x] Projects → Launch from a repository: pick the repository and branch; Buildpusher inspects it and proposes one
       plan on one page: the server (existing, or a new one at a size that fits the stack, with its monthly cost),
       a website and environment per app with its domain, the database, workers, production variables, the secrets
       still needed, path filters and the build cache.
-- [ ] Launch creates it all in order and deploys the API first, then the rest, ending on a checklist (DNS, TLS,
+- [x] Launch creates it all in order and deploys the API first, then the rest, ending on a checklist (DNS, TLS,
       health checks).
 
 ## Stage 5: the GitHub workflow by pull request

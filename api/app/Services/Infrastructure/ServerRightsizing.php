@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Infrastructure;
 
 use App\Enums\ProviderType;
+use App\Models\Provider;
 use App\Models\Server;
 use App\Models\ServerMetric;
 use Illuminate\Support\Facades\Cache;
@@ -157,17 +158,38 @@ final class ServerRightsizing
     }
 
     /**
-     * Get the provider's sizes for the server's region, normalised, cached for six hours per provider.
+     * Get the server's provider's sizes for its region.
      *
      * @param  Server  $server
      * @return list<array{id: string, vcpus: float, memory_gb: float, price: float|null}>
      */
     private function sizes(Server $server): array
     {
-        $provider = $server->provider;
-        if ($provider === null) {
-            return [];
-        }
+        return $server->provider === null ? [] : $this->sizesFor($server->provider, $server->region);
+    }
+
+    /**
+     * Get the cheapest priced size from a provider with at least the given memory, for a new server.
+     *
+     * @param  Provider  $provider
+     * @param  float  $memoryGb
+     * @param  string|null  $region
+     * @return array{id: string, vcpus: float, memory_gb: float, price: float|null}|null
+     */
+    public function cheapestFor(Provider $provider, float $memoryGb, ?string $region = null): ?array
+    {
+        return collect($this->sizesFor($provider, $region))->filter(fn (array $size): bool => $size['price'] !== null && $size['memory_gb'] >= $memoryGb)->sortBy('price')->first();
+    }
+
+    /**
+     * Get a provider's sizes, normalised, cached for six hours per provider.
+     *
+     * @param  Provider  $provider
+     * @param  string|null  $region  for regional prices
+     * @return list<array{id: string, vcpus: float, memory_gb: float, price: float|null}>
+     */
+    private function sizesFor(Provider $provider, ?string $region): array
+    {
 
         /** @var list<array<string, mixed>> $raw */
         $raw = Cache::remember('rightsizing.sizes.'.$provider->id, now()->addHours(6), function () use ($provider): array {
@@ -189,7 +211,7 @@ final class ServerRightsizing
             if (! is_string($id) || ! is_numeric($vcpus) || ! is_numeric($memory)) {
                 continue;
             }
-            $sizes[] = ['id' => $id, 'vcpus' => (float) $vcpus, 'memory_gb' => round((float) $memory, 2), 'price' => $this->pricing->price($provider->type, $raw, $id, $server->region)];
+            $sizes[] = ['id' => $id, 'vcpus' => (float) $vcpus, 'memory_gb' => round((float) $memory, 2), 'price' => $this->pricing->price($provider->type, $raw, $id, $region)];
         }
 
         return $sizes;
