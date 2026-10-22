@@ -67,13 +67,8 @@ class InstallPHPScript implements ServerScript
         # Misc. PHP FPM Configuration
         sudo sed -i "s/display_errors = .*/display_errors = Off/" /etc/php/{$version}/fpm/php.ini
 
-        # Ensure PHPRedis Extension Is Available
-        echo "Configuring PHPRedis"
-        echo "extension=redis.so" > /etc/php/{$version}/mods-available/redis.ini
-
-        # Ensure Imagick Is Available
-        echo "Configuring Imagick"
-        echo "extension=imagick.so" > /etc/php/{$version}/mods-available/imagick.ini
+        # php-redis and php-imagick ship and enable their own .ini files. Rewriting them drops redis's
+        # "; priority=25" (it has to load after igbinary), and the next package update then enables it a second time.
         SCRIPT;
     }
 }

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-22', 'title' => 'Faster PHP sites, quieter Node sites', 'changes' => [
+        'Each PHP deploy gives PHP-FPM production OPcache settings, with room for a Laravel app and all its packages; PHP’s defaults left part of a larger app uncompiled.',
+        'An environment’s Laravel workers (php artisan …) no longer run on its Node or Python site, where they failed and restarted every few seconds. The deploy log says when one is skipped, and the next deploy removes any already installed.',
+        'Servers no longer load PHP’s redis extension twice (“Module redis is already loaded”); Install updates now repairs servers set up earlier.',
+    ]],
     ['date' => '2026-10-22', 'title' => 'PHP security updates on your servers', 'changes' => [
         'Automatic security updates now include PHP, which Ubuntu’s updater left out because it comes from ppa:ondrej/php. New servers get this straight away; on existing ones, Install updates now or Turn on automatic security updates adds it.',
         'Installing updates also updates PHP, then restarts PHP-FPM and the queue workers so the patched version is the one running.',

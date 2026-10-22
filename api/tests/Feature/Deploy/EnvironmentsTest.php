@@ -94,6 +94,9 @@ final class EnvironmentsTest extends TestCase
         $this->assertSame('shop', collect($resources)->firstWhere('name', 'database')['configuration']['variables']['DB_DATABASE'] ?? null);
         $script = $this->scripts->started[0]['script'];
         $this->assertStringContainsString('buildpusher-shop-queue', $script);
+        $this->assertStringContainsString('/fpm/conf.d/99-buildpusher-opcache.ini', $script, 'PHP sites get production OPcache settings.');
+        preg_match("#printf '%s' '([A-Za-z0-9+/=]+)' \\| base64 --decode > '/etc/php/8\\.4/fpm/conf\\.d/99-buildpusher-opcache\\.ini'#", $script, $opcache);
+        $this->assertStringContainsString('opcache.max_accelerated_files=32531', (string) base64_decode($opcache[1] ?? '', true), 'Enough room for a Laravel app and its packages.');
         preg_match("#printf '%s' '([A-Za-z0-9+/=]+)' \\| base64 --decode > '/var/www/shop/\\.env'#", $script, $env);
         $this->assertStringContainsString('AWS_BUCKET="assets"', (string) base64_decode($env[1] ?? '', true));
 
@@ -271,6 +274,32 @@ final class EnvironmentsTest extends TestCase
         $this->actingAs($this->owner)->postJson($clone, ['source_id' => $this->production->id, 'name' => 'Staging', 'kind' => 'staging'])->assertJsonValidationErrors('name');
         $foreign = Project::factory()->create()->environments()->firstOrFail();
         $this->actingAs($this->owner)->postJson($clone, ['source_id' => $foreign->id, 'name' => 'Stolen', 'kind' => 'staging'])->assertNotFound();
+    }
+
+    /**
+     * The environment's Laravel worker isn't installed on its Node site, where it would fail and restart forever; the
+     * deploy says why, and the Node site's own workers still run.
+     *
+     * @return void
+     */
+    public function test_a_node_site_skips_the_environments_artisan_workers(): void
+    {
+        $this->actingAs($this->owner)->putJson("{$this->base}/settings", $this->settings(['runtime_type' => 'node', 'start_command' => 'node .output/server/index.mjs', 'container_port' => 3000]))->assertSuccessful();
+        foreach ([['queue', 'php artisan queue:work'], ['mailer', '/usr/bin/php8.4 artisan queue:work --queue=mail'], ['jobs', 'node worker.mjs']] as [$name, $command]) {
+            $this->actingAs($this->owner)->postJson("{$this->base}/processes", ['name' => $name, 'type' => 'worker', 'command' => $command, 'replicas' => 1, 'restart_policy' => 'always', 'restart_delay_seconds' => 5])->assertSuccessful();
+        }
+
+        $this->actingAs($this->owner)->postJson("/api/app/projects/{$this->project->id}/deploy/repositories/{$this->repository->id}/builds")->assertSuccessful();
+        $script = $this->scripts->started[0]['script'];
+
+        $this->assertStringContainsString('Skipped queue: it runs php artisan, which only runs on a PHP site.', $script);
+        $this->assertStringContainsString('Skipped mailer: it runs php artisan', $script);
+        $this->assertStringNotContainsString('buildpusher-shop-queue-1.service', $script);
+        $this->assertStringNotContainsString('buildpusher-shop-mailer-1.service', $script);
+        $this->assertStringContainsString('buildpusher-shop-jobs-1.service', $script, 'Node workers still run on the Node site.');
+        $this->assertStringNotContainsString('99-buildpusher-opcache.ini', $script, 'Node sites have no PHP-FPM to tune.');
+        exec('bash -n <<\'SCRIPT\''."\n".$script."\nSCRIPT\n".' 2>&1', $output, $code);
+        $this->assertSame(0, $code, implode("\n", $output));
     }
 
     /**

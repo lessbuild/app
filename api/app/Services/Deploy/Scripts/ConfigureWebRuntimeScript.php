@@ -52,6 +52,7 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
         }
         if (! in_array($type, ['node', 'python', 'docker'], true)) {
             $phpFpmService = escapeshellarg('php'.$build->repository->website->phpVersion().'-fpm');
+            $opcache = self::opcache($build->repository->website->phpVersion());
             if ($build->deploymentRoot() !== '.') {
                 $website = $build->repository->website;
                 $documentRoot = $build->deploymentPath('current').'/public';
@@ -66,13 +67,14 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
                 printf '%s' {$encodedConfig} | base64 --decode > {$configPath}
                 caddy validate --config /etc/caddy/Caddyfile
                 systemctl reload caddy
+                {$opcache}
                 systemctl reload {$phpFpmService}
                 # PHP-FPM continues to serve the selected service root
                 {$progress}
                 SCRIPT;
             }
 
-            return "# PHP remains served by Caddy and PHP-FPM\nsystemctl reload {$phpFpmService}\n{$progress}";
+            return "# PHP remains served by Caddy and PHP-FPM\n{$opcache}\nsystemctl reload {$phpFpmService}\n{$progress}";
         }
 
         $website = $build->repository->website;
@@ -205,5 +207,26 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
         fi
         {$progress}
         SCRIPT;
+    }
+
+    /**
+     * Get the commands that give PHP-FPM production OPcache settings; the reload after them applies them. PHP's
+     * defaults cache at most 10,000 files, fewer than a Laravel app with its packages, so the rest are compiled on
+     * every request. Timestamps are still checked (every 10 seconds), so a cached config rewritten without a deploy
+     * shows up on its own.
+     *
+     * @param  string  $version  The site's PHP version, such as 8.4.
+     * @return string
+     */
+    public static function opcache(string $version): string
+    {
+        if (preg_match('/\A\d+\.\d+\z/', $version) !== 1) {
+            throw new InvalidArgumentException('The PHP version is not supported.');
+        }
+        $settings = "; Written by BuildPusher on each deploy: production OPcache settings.\nopcache.enable=1\nopcache.memory_consumption=128\nopcache.interned_strings_buffer=16\nopcache.max_accelerated_files=32531\nopcache.validate_timestamps=1\nopcache.revalidate_freq=10\nopcache.save_comments=1\n";
+        $path = escapeshellarg("/etc/php/{$version}/fpm/conf.d/99-buildpusher-opcache.ini");
+        $encoded = escapeshellarg(base64_encode($settings));
+
+        return "if [ -d /etc/php/{$version}/fpm/conf.d ]; then printf '%s' {$encoded} | base64 --decode > {$path}; fi";
     }
 }

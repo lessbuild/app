@@ -36,9 +36,18 @@ class ConfigureProcessesScript extends BuildProvisioningScript
         $desiredReplicas = max(1, min($maximumReplicas, (int) ($runtime['desired_replicas'] ?? 1)));
         $rolling = ($runtime['deployment_strategy'] ?? 'blue_green') === 'rolling';
         $rollingPause = max(0, min(30, (int) ($runtime['rolling_pause_seconds'] ?? 2)));
+        $runsPhp = ! in_array($runtime['type'] ?? 'php', ['node', 'python'], true);
+        $skipped = '';
         foreach (($build->environment_payload['processes'] ?? []) as $process) {
             $name = Str::slug((string) ($process['name'] ?? ''));
             if ($name === '' || ! in_array($process['type'] ?? null, ['worker', 'scheduler'], true)) {
+                continue;
+            }
+            // Processes belong to the environment, but a Laravel worker can't run on the environment's Node or Python
+            // site: it would fail and restart forever. It runs on the environment's PHP site instead.
+            if (! $runsPhp && self::runsArtisan((string) ($process['command'] ?? 'php artisan queue:work'))) {
+                $skipped .= 'echo '.escapeshellarg("Skipped {$name}: it runs php artisan, which only runs on a PHP site.")."\n";
+
                 continue;
             }
             $configuredReplicas = max(1, min(20, (int) ($process['replicas'] ?? 1)));
@@ -90,7 +99,7 @@ class ConfigureProcessesScript extends BuildProvisioningScript
         $progress = $this->progress($step, $build);
 
         return <<<SCRIPT
-        DEPLOY_ROOT={$root}
+        {$skipped}DEPLOY_ROOT={$root}
         PROCESS_DIR="\$DEPLOY_ROOT/shared/processes"
         MANIFEST="\$PROCESS_DIR/units"
         ACTIVE_MANIFEST="\$PROCESS_DIR/active-units"
@@ -111,5 +120,16 @@ class ConfigureProcessesScript extends BuildProvisioningScript
         {$cleanupExisting}
         {$progress}
         SCRIPT;
+    }
+
+    /**
+     * Whether a process command runs Laravel's artisan, which only works in a PHP release.
+     *
+     * @param  string  $command
+     * @return bool
+     */
+    private static function runsArtisan(string $command): bool
+    {
+        return preg_match('/(^|[\s;&|\/])(php[0-9.]*\s+)?artisan(\s|$)/', trim($command)) === 1;
     }
 }

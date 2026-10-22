@@ -94,6 +94,14 @@ final class HardeningScripts
         if [ -n "$php_packages" ]; then
             apt-get -y -o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef --only-upgrade install $php_packages
         fi
+        # Servers set up before 2026-10-22 had redis.ini rewritten without its priority, so PHP loaded redis twice
+        # ("Module "redis" is already loaded"). Put the package's file back and drop the duplicate.
+        for ini in /etc/php/*/mods-available/redis.ini; do
+            if [ -f "$ini" ] && ! grep -q 'priority' "$ini"; then printf '; priority=25\nextension=redis.so\n' > "$ini"; fi
+        done
+        for dir in /etc/php/*/*/conf.d; do
+            if [ -e "$dir/25-redis.ini" ]; then rm -f -- "$dir/20-redis.ini"; fi
+        done
         # Running PHP keeps the old, vulnerable code in memory until it restarts: PHP-FPM and the queue workers.
         if [ "$php_before" != "$(dpkg-query -W 'php*' 2>/dev/null)" ]; then
             systemctl try-restart 'php*-fpm.service' || true

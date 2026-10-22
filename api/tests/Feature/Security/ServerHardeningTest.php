@@ -100,6 +100,7 @@ final class ServerHardeningTest extends TestCase
         $this->assertStringContainsString('--only-upgrade install $php_packages', $updates, 'PHP is updated even where unattended-upgrades skips it.');
         $this->assertStringContainsString("systemctl try-restart 'php*-fpm.service'", $updates, 'PHP-FPM restarts on the new version.');
         $this->assertStringContainsString('supervisorctl restart all', $updates, 'Queue workers restart on the new version.');
+        $this->assertStringContainsString('rm -f -- "$dir/20-redis.ini"', $updates, 'The duplicate redis module from older setups is removed.');
         $this->assertStringContainsString('origin=LP-PPA-ondrej-php', app(HardeningScripts::class)->script('enable-auto-updates', $server));
 
         Queue::fake();
