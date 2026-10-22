@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs\Security;
 
 use App\Actions\Security\QueueSecurityScan;
+use App\Data\Infrastructure\ShellResult;
 use App\Models\SecurityFinding;
 use App\Models\Server;
 use App\Services\Infrastructure\ServerShell;
@@ -15,6 +16,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use RuntimeException;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Throwable;
 
 final class RunSecurityFix implements ShouldQueue
@@ -63,7 +65,7 @@ final class RunSecurityFix implements ShouldQueue
             return;
         }
         $snapshots->before($server, 'Before a security fix: '.$this->action);
-        $result = $shell->run($server, $scripts->script($this->action, $server));
+        $result = $this->runUpdates(fn () => $shell->run($server, $scripts->script($this->action, $server), timeout: HardeningScripts::timeout($this->action)));
         if (! $result->successful()) {
             throw new RuntimeException(str(trim($result->errorOutput ?: $result->output))->limit(500)->toString() ?: 'The fix failed.');
         }
@@ -83,5 +85,21 @@ final class RunSecurityFix implements ShouldQueue
     {
         $finding = SecurityFinding::query()->find($this->findingId);
         $finding?->forceFill(['data' => [...($finding->data ?? []), 'fix_status' => 'failed', 'fix_error' => str($exception->getMessage())->limit(500)->toString()]])->save();
+    }
+
+    /**
+     * Run the script, turning a time-out into a reason people can act on (the server finishes any half-done install
+     * next time).
+     *
+     * @param  callable(): ShellResult  $run
+     * @return ShellResult
+     */
+    private function runUpdates(callable $run): ShellResult
+    {
+        try {
+            return $run();
+        } catch (ProcessTimedOutException $exception) {
+            throw new RuntimeException(__('It took longer than :minutes minutes on the server and was stopped. Try again: anything left half-installed is finished first.', ['minutes' => (int) round($exception->getExceededTimeout() / 60)]), 0, $exception);
+        }
     }
 }

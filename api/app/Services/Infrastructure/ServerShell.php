@@ -26,11 +26,12 @@ class ServerShell
      * @param  Server  $server
      * @param  string  $command
      * @param  bool  $logOutput
+     * @param  int|null  $timeout  seconds it may run, for long jobs such as installing updates (60 by default)
      * @return ShellResult
      */
-    public function run(Server $server, string $command, bool $logOutput = false): ShellResult
+    public function run(Server $server, string $command, bool $logOutput = false, ?int $timeout = null): ShellResult
     {
-        $process = $this->runner->server($server)->create($logOutput)->execute($command);
+        $process = $this->runner->server($server)->create($logOutput, $timeout)->execute($command);
 
         return new ShellResult($process->getOutput(), $process->getErrorOutput(), $process->getExitCode());
     }

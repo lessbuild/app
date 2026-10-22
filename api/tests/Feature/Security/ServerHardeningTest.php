@@ -19,6 +19,7 @@ use App\Services\Security\ServerAudit;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use RuntimeException;
 use Tests\Feature\Infrastructure\InfrastructureHelpers;
 use Tests\Feature\Monitoring\MonitoringHelpers;
 use Tests\TestCase;
@@ -138,5 +139,41 @@ final class ServerHardeningTest extends TestCase
         $keys = fn (string $output): array => array_map(fn (Finding $finding): string => $finding->key, (new ServerAudit)->findings($server, $output));
         $this->assertNotContains('php-auto-updates', $keys($base."PHP_PPA=yes\nPHP_AUTO_UPDATES=on\n"));
         $this->assertNotContains('php-auto-updates', $keys($base."PHP_PPA=no\nPHP_AUTO_UPDATES=off\n"), 'PHP from elsewhere is updated by Ubuntu’s own updates.');
+    }
+
+    /**
+     * Installing updates gets the time it needs (not the usual minute), finishes any half-done install first, and a
+     * run that still takes too long is saved as a reason people can act on, not the command.
+     *
+     * @return void
+     */
+    public function test_installing_updates_has_time_and_explains_a_time_out(): void
+    {
+        $this->fakeInfrastructure();
+        $server = Server::factory()->create(['name' => 'vacenly', 'provisioning_status' => Server::STATUS_ACTIVE]);
+        (new PatchServer($server->id, false))->handle($this->shell, app(HardeningScripts::class), app(\App\Services\Infrastructure\ServerSnapshots::class));
+        $this->assertSame(HardeningScripts::UPDATE_SECONDS, $this->shell->ran[0]['timeout']);
+        $this->assertStringContainsString('dpkg --configure -a', $this->shell->ran[0]['command']);
+
+        $slow = new class extends \App\Services\Infrastructure\ServerShell
+        {
+            public function __construct() {}
+
+            public function run(Server $server, string $command, bool $logOutput = false, ?int $timeout = null): \App\Data\Infrastructure\ShellResult
+            {
+                $process = new \Symfony\Component\Process\Process(['true']);
+                $process->setTimeout((float) $timeout);
+
+                throw new \Symfony\Component\Process\Exception\ProcessTimedOutException($process, \Symfony\Component\Process\Exception\ProcessTimedOutException::TYPE_GENERAL);
+            }
+        };
+        $job = new PatchServer($server->id, false);
+        try {
+            $job->handle($slow, app(HardeningScripts::class), app(\App\Services\Infrastructure\ServerSnapshots::class));
+            $this->fail('Expected the time-out to stop it.');
+        } catch (RuntimeException $exception) {
+            $job->failed($exception);
+        }
+        $this->assertSame('It took longer than 25 minutes on the server and was stopped. Try again: anything left half-installed is finished first.', $server->refresh()->last_patch_error);
     }
 }

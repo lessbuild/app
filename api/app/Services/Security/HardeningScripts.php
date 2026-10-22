@@ -38,6 +38,13 @@ final class HardeningScripts
     public const PHP_UPDATES_FILE = '/etc/apt/apt.conf.d/51buildpusher-php';
 
     /**
+     * How long, in seconds, installing updates may take (inside the jobs' half hour).
+     *
+     * @var int
+     */
+    public const UPDATE_SECONDS = 1500;
+
+    /**
      * Create a new HardeningScripts instance.
      *
      * @param  ServerTaskScripts  $tasks  Writes the server's own firewall rules back.
@@ -71,6 +78,22 @@ final class HardeningScripts
     }
 
     /**
+     * How long, in seconds, a fix may run on the server: installing updates and packages takes minutes; the rest
+     * the usual minute.
+     *
+     * @param  string  $action  one of ACTIONS' keys
+     * @return int|null
+     */
+    public static function timeout(string $action): ?int
+    {
+        return match ($action) {
+            'apply-updates' => self::UPDATE_SECONDS,
+            'enable-auto-updates', 'install-fail2ban' => 600,
+            default => null,
+        };
+    }
+
+    /**
      * Get the script that installs pending security updates (all updates when unattended-upgrades isn't available),
      * and optionally reboots afterwards if the updates need it.
      *
@@ -82,6 +105,8 @@ final class HardeningScripts
         $script = <<<'BASH'
         while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 3; done
         export DEBIAN_FRONTEND=noninteractive
+        # Finish anything an earlier run left half-installed (one that was cut off, say) before installing more.
+        dpkg --configure -a --force-confold
         apt-get update -qq
         php_before="$(dpkg-query -W 'php*' 2>/dev/null)"
         if command -v unattended-upgrade >/dev/null 2>&1; then

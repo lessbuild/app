@@ -3,7 +3,8 @@ import type { EnvironmentPage } from '~/types/deploy';
 
 /**
  * An environment's variables: changes waiting for a second person, secrets synced from a password manager, the
- * variables themselves (secret values never shown), adding one and replacing them all from a .env file.
+ * variables themselves (secret values never shown) to edit or remove, adding one and replacing them all from a .env
+ * file.
  */
 const props = defineProps<{ page: EnvironmentPage; base: string }>();
 const { t, date } = useT();
@@ -50,9 +51,14 @@ const scopeLabel = (scope: string) => props.page.scopes[scope] ?? scope;
                                 · {{ scopeLabel(variable.scope) }} · v{{ variable.version }}<template v-if="variable.rotationDueAt"> · {{ t('rotate by :date', { date: date(variable.rotationDueAt) }) }}</template>
                             </span>
                         </span>
-                        <ApiForm v-if="page.canManage" :action="`${base}/variables/${variable.id}`" method="DELETE" :confirm="t('Remove :name?', { name: variable.key })">
-                            <SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton>
-                        </ApiForm>
+                        <span v-if="page.canManage" class="flex items-center gap-1">
+                            <EditVariableDialog :page="page" :base="base" :variable="variable">
+                                <template #trigger="{ open }"><UiButton variant="quiet" size="sm" @click="open">{{ t('Edit') }}</UiButton></template>
+                            </EditVariableDialog>
+                            <ApiForm :action="`${base}/variables/${variable.id}`" method="DELETE" :confirm="t('Remove :name?', { name: variable.key })">
+                                <SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton>
+                            </ApiForm>
+                        </span>
                     </li>
                 </ul>
                 <p v-else class="text-sm text-muted">{{ t('No variables yet.') }}</p>

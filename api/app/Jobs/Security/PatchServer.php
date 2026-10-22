@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs\Security;
 
+use App\Data\Infrastructure\ShellResult;
 use App\Models\Server;
 use App\Services\Infrastructure\ServerShell;
 use App\Services\Infrastructure\ServerSnapshots;
@@ -13,6 +14,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use RuntimeException;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Throwable;
 
 final class PatchServer implements ShouldQueue
@@ -58,7 +60,7 @@ final class PatchServer implements ShouldQueue
             return;
         }
         $snapshots->before($server, 'Before installing updates');
-        $result = $shell->run($server, $scripts->updates($this->reboot));
+        $result = $this->runUpdates(fn () => $shell->run($server, $scripts->updates($this->reboot), timeout: HardeningScripts::UPDATE_SECONDS));
         if (! $result->successful()) {
             throw new RuntimeException(str(trim($result->errorOutput ?: $result->output))->limit(500)->toString() ?: 'Updating failed.');
         }
@@ -74,5 +76,21 @@ final class PatchServer implements ShouldQueue
     public function failed(Throwable $exception): void
     {
         Server::query()->whereKey($this->serverId)->update(['last_patch_error' => str($exception->getMessage())->limit(500)->toString(), 'last_patched_at' => now()]);
+    }
+
+    /**
+     * Run the script, turning a time-out into a reason people can act on (the server finishes any half-done install
+     * next time).
+     *
+     * @param  callable(): ShellResult  $run
+     * @return ShellResult
+     */
+    private function runUpdates(callable $run): ShellResult
+    {
+        try {
+            return $run();
+        } catch (ProcessTimedOutException $exception) {
+            throw new RuntimeException(__('It took longer than :minutes minutes on the server and was stopped. Try again: anything left half-installed is finished first.', ['minutes' => (int) round($exception->getExceededTimeout() / 60)]), 0, $exception);
+        }
     }
 }

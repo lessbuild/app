@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-22', 'title' => 'Edit environment variables, and updates that finish', 'changes' => [
+        'Each variable on an environment’s Variables tab now has Edit: change its value, what it’s used for, whether it’s secret, or when to rotate it, as a new version. A secret left empty keeps its value.',
+        'Install updates now gives the server up to 25 minutes (it was stopped after one), finishes anything an earlier run left half-installed, and says plainly when it runs out of time.',
+    ]],
     ['date' => '2026-10-22', 'title' => 'Faster deploys', 'changes' => [
         'Pipeline steps can deploy side by side: tick Deploy at the same time, and the next step waits for all of them.',
         'Launch from a repository turns on the build cache and path filters for each app, so a push to web/ doesn’t redeploy the API, and deploys the apps that don’t depend on each other together.',

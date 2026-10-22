@@ -11,7 +11,7 @@ use App\Services\Infrastructure\ServerShell;
 /** Answers commands with queued results (or a default), and records what ran. */
 final class FakeServerShell extends ServerShell
 {
-    /** @var list<array{server: int, command: string}> */
+    /** @var list<array{server: int, command: string, timeout: int|null}> */
     public array $ran = [];
 
     /** @var list<ShellResult> */
@@ -26,9 +26,9 @@ final class FakeServerShell extends ServerShell
         return $this;
     }
 
-    public function run(Server $server, string $command, bool $logOutput = false): ShellResult
+    public function run(Server $server, string $command, bool $logOutput = false, ?int $timeout = null): ShellResult
     {
-        $this->ran[] = ['server' => $server->id, 'command' => $command];
+        $this->ran[] = ['server' => $server->id, 'command' => $command, 'timeout' => $timeout];
 
         return array_shift($this->results) ?? new ShellResult('ok', '', 0);
     }

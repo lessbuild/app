@@ -185,6 +185,7 @@ use App\Http\Controllers\Deploy\UpdateEnvironmentHibernationController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentMaintenanceController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentRecipeSettingsController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentRuntimeController;
+use App\Http\Controllers\Deploy\UpdateEnvironmentVariableController;
 use App\Http\Controllers\Deploy\UpdateReleaseNotesPageController;
 use App\Http\Controllers\Deploy\UpdateRepositoryController;
 use App\Http\Controllers\Deploy\UpdateRepositoryPreviewsController;
@@ -780,6 +781,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
             Route::post('/environments/{environment}/secret-syncs', StoreSecretSyncController::class)->middleware('throttle:10,1')->name('environments.secret-syncs.store');
             Route::match(['POST', 'DELETE'], '/environments/{environment}/secret-syncs/{sync}', UpdateSecretSyncController::class)->whereNumber('sync')->middleware('throttle:20,1')->name('environments.secret-syncs.update');
             Route::put('/environments/{environment}/variables', ReplaceEnvironmentVariablesController::class)->name('environments.variables.replace');
+            Route::put('/environments/{environment}/variables/{variable}', UpdateEnvironmentVariableController::class)->whereNumber('variable')->middleware('throttle:30,1')->name('environments.variables.update');
             Route::post('/environments/{environment}/variable-changes/{change}', DecideVariableChangeController::class)->whereNumber('change')->name('environments.variable-changes.decide');
             Route::post('/environments/{environment}/processes', StoreEnvironmentProcessController::class)->name('environments.processes.store');
             Route::post('/environments/{environment}/production-check', FixProductionIssuesController::class)->middleware('throttle:20,1')->name('environments.production-check.fix');

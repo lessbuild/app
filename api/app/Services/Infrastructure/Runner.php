@@ -35,11 +35,12 @@ class Runner
      * Create an SSH connection
      *
      * @param  bool  $logOutput
+     * @param  int|null  $timeout  seconds a command may run (the configured ssh_command_timeout when null)
      * @return ManagedSsh
      *
      * @throws Exception
      */
-    public function create(bool $logOutput = true): ManagedSsh
+    public function create(bool $logOutput = true, ?int $timeout = null): ManagedSsh
     {
         $user = 'root';
         $hostname = $this->server->public_ip;
@@ -58,8 +59,8 @@ class Runner
         $ssh->usePrivateKeyContents($privateKey);
         $ssh->disablePasswordAuthentication()
             ->addExtraOption('-o ConnectTimeout='.(int) config('infrastructure.ssh_connect_timeout', 10))
-            ->configureProcess(static function (Process $process) {
-                $process->setTimeout(max(1, (int) config('infrastructure.ssh_command_timeout', 60)));
+            ->configureProcess(static function (Process $process) use ($timeout) {
+                $process->setTimeout(max(1, $timeout ?? (int) config('infrastructure.ssh_command_timeout', 60)));
             });
         if ($this->server->ssh_host_key) {
             $ssh->useKnownHost($this->server->ssh_host_key);
