@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string $type mysql, postgresql, redis, valkey or object_storage
  * @property bool $is_managed
- * @property array{variables?: array<string, string>, container_name?: string|null}|null $configuration encrypted
+ * @property array{variables?: array<string, string>, container_name?: string|null, database_website_id?: int|null}|null $configuration encrypted
  * @property string $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

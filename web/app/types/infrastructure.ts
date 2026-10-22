@@ -189,6 +189,9 @@ export type WebsiteDetail = {
     directory: string;
     database: string;
     databaseElsewhere: { name: string; website: string | null; url: string | null } | null;
+    hasDatabase: boolean;
+    databaseUsedBy: Array<{ website: string; url: string }>;
+    databaseUnused: boolean;
     releaseRetention: number;
     environmentId: string | null;
     healthCheckEnabled: boolean;

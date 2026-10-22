@@ -70,6 +70,9 @@ final readonly class WebsitePageQuery
                 'directory' => '/var/www/'.$website->deployment_slug,
                 'database' => $website->databaseIdentifier(),
                 'databaseElsewhere' => $this->databaseElsewhere($project, $website),
+                'hasDatabase' => $website->has_database,
+                'databaseUsedBy' => $this->databaseUsedBy($project, $website),
+                'databaseUnused' => $website->has_database && ! $this->databaseInUse->usesOwn($website) && $this->databaseInUse->usedBy($website) === [],
                 'releaseRetention' => $website->release_retention,
                 'environmentId' => $website->environment_id,
                 'healthCheckEnabled' => (bool) $website->health_check_enabled,
@@ -175,5 +178,22 @@ final readonly class WebsitePageQuery
             'website' => $owner?->url,
             'url' => $owner === null ? null : '/projects/'.($owner->environment->project_id ?? $project->id).'/infrastructure/websites/'.$owner->id.'?tab=database',
         ];
+    }
+
+    /**
+     * The other websites whose settings use this website's database, each with a link to it, so the website holding
+     * the data says who reads it.
+     *
+     * @param  Project  $project
+     * @param  Website  $website
+     * @return list<array{website: string, url: string}>
+     */
+    private function databaseUsedBy(Project $project, Website $website): array
+    {
+        return array_map(function (Website $other) use ($project): array {
+            $other->loadMissing('environment');
+
+            return ['website' => $other->url, 'url' => '/projects/'.($other->environment->project_id ?? $project->id).'/infrastructure/websites/'.$other->id];
+        }, $this->databaseInUse->usedBy($website));
     }
 }

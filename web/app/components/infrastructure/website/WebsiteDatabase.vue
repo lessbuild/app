@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { WebsitePage } from '~/types/infrastructure';
 
-/** A website's MySQL database: its size and tables, slow queries and tuning, extra users, and copying it elsewhere. */
+/**
+ * A website's MySQL database: who uses it (or that nothing does), its size and tables, slow queries and tuning, extra
+ * users, and copying it elsewhere.
+ */
 const props = defineProps<{ page: WebsitePage; base: string }>();
 const { t, tc, number, dateTime } = useT();
 const bytes = useFileSize();
@@ -41,6 +44,11 @@ id="database"
                 <span v-else>{{ t('This website’s settings use the database :database, not its own, so this one stays empty.', { database: elsewhere.name }) }}</span>
                 <NuxtLink v-if="elsewhere.url" :to="elsewhere.url" class="ml-1 font-medium underline">{{ t('Open :website’s database', { website: elsewhere.website ?? '' }) }}</NuxtLink>
             </AcmeAlert>
+            <AcmeAlert v-else-if="page.website.databaseUnused" tone="info">{{ t('Nothing uses this database yet: this website’s settings don’t point at it, and no other website’s do. A managed MySQL resource on the environment’s Resources tab connects it.') }}</AcmeAlert>
+            <p v-if="page.website.databaseUsedBy.length > 0" class="text-sm text-muted">
+                {{ t('Also used by') }}
+                <template v-for="(user, index) in page.website.databaseUsedBy" :key="user.url"><template v-if="index > 0">, </template><NuxtLink :to="user.url" class="font-medium text-ink underline">{{ user.website }}</NuxtLink></template>
+            </p>
             <AcmeAlert v-if="page.canManage && !page.canManageDatabase" tone="info">{{ t('Database tools come with the Pro Deploy plan and above.') }}</AcmeAlert>
 
             <div class="grid gap-3">

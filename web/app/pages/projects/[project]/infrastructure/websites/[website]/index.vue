@@ -15,7 +15,7 @@ const secrets = useSecrets();
 const tabs = computed<Record<string, string>>(() => ({
     overview: t('Overview'),
     domains: t('Domains'),
-    database: t('Database'),
+    ...(website.value.hasDatabase ? { database: t('Database') } : {}),
     backups: t('Backups'),
     ...(data.value.canBrowseFiles ? { files: t('Files') } : {}),
     ...(data.value.canManage ? { settings: t('Settings') } : {}),

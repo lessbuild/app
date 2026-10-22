@@ -34,6 +34,7 @@ use Illuminate\Support\Str;
  * @property string $deployment_slug directory, Caddy file and database name on the server
  * @property string|null $env_file
  * @property string|null $database_password
+ * @property bool $has_database
  * @property int $setup_stage
  * @property string $provisioning_status queued, provisioning, active or failed
  * @property string|null $provisioning_error
@@ -307,7 +308,7 @@ class Website extends Model
         return [
             'env_file' => 'encrypted', 'database_password' => 'encrypted', 'setup_stage' => 'integer', 'previous_server_id' => 'integer',
             'provisioned_at' => 'immutable_datetime', 'release_retention' => 'integer', 'log_retention_lines' => 'integer',
-            'health_check_enabled' => 'boolean', 'health_monitoring_enabled' => 'boolean', 'self_healing' => 'boolean', 'health_check_interval_minutes' => 'integer',
+            'has_database' => 'boolean', 'health_check_enabled' => 'boolean', 'health_monitoring_enabled' => 'boolean', 'self_healing' => 'boolean', 'health_check_interval_minutes' => 'integer',
             'health_failure_threshold' => 'integer', 'health_failure_count' => 'integer', 'health_last_checked_at' => 'immutable_datetime',
         ];
     }

@@ -25,6 +25,14 @@ const thresholds = computed(() => props.options.failureThresholds.map((count) =>
                 <SelectField v-model="server" name="server_id" :label="t('Server')" :options="options.hosts" required />
                 <InputField name="url" :label="t('Domain')" :model-value="website?.url" maxlength="255" placeholder="shop.example.com" :description="t('Point its DNS at the server; Caddy gets the certificate.')" required />
                 <InputField name="release_retention" type="number" min="2" max="20" :label="t('Releases to keep')" :model-value="String(website?.releaseRetention ?? 5)" />
+                <ToggleField
+                    v-if="!website"
+                    id="website-database"
+                    name="has_database"
+                    :label="t('Create a MySQL database')"
+                    checked
+                    :description="t('Leave it off for a Node.js, Python or static site that doesn’t use one, or one that shares another website’s.')"
+                />
                 <TextareaField name="description" :label="t('Description')" :model-value="website?.description" rows="2" maxlength="2000" />
             </fieldset>
             <fieldset class="grid content-start gap-4 rounded-2xl border border-line bg-surface p-5 shadow-card">

@@ -4,6 +4,15 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-22', 'title' => 'One database, clearly shared', 'changes' => [
+        'A managed MySQL resource now names the website whose database it uses (choose it under Database for managed MySQL), instead of quietly taking the first repository’s, and shows it on the Resources tab.',
+        'New websites can go without a MySQL database (turn off Create a MySQL database for a Node.js, Python or static site), so there’s no empty second database to wonder about.',
+        'A website’s Database tab lists the other websites using its database, and says when nothing uses it yet.',
+    ]],
+    ['date' => '2026-10-22', 'title' => 'Production check', 'changes' => [
+        'Each environment page now starts with a production check: debug mode or debug logging left on, a log that never rotates, cache and sessions on the database, an APP_URL ending in a slash, queued jobs with no worker, and servers whose disk is nearly full or that are too small for what runs on them (with a size that fits and its price).',
+        'Fix, or Fix all, makes the change as an ordinary versioned variable or worker change for the next deploy, and each deploy’s log starts with the same list.',
+    ]],
     ['date' => '2026-10-22', 'title' => 'Faster PHP sites, quieter Node sites', 'changes' => [
         'Each PHP deploy gives PHP-FPM production OPcache settings, with room for a Laravel app and all its packages; PHP’s defaults left part of a larger app uncompiled.',
         'An environment’s Laravel workers (php artisan …) no longer run on its Node or Python site, where they failed and restarted every few seconds. The deploy log says when one is skipped, and the next deploy removes any already installed.',

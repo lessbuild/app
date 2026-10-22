@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Queries\Deploy;
 
 use App\Actions\Deploy\UpdateEnvironmentHibernation;
+use App\Data\Deploy\ProductionIssue;
 use App\Enums\AlertDestinationType;
 use App\Enums\ServerType;
 use App\Models\AlertDestination;
@@ -29,6 +30,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Services\Deploy\BuildServers;
 use App\Services\Deploy\GitHubActionsBuilds;
+use App\Services\Deploy\ProductionCheck;
 
 /** Reads everything an environment's deploy page shows, tab by tab. */
 final class DeployEnvironmentPageQuery
@@ -38,8 +40,9 @@ final class DeployEnvironmentPageQuery
      *
      * @param  EnvironmentAutomationQuery  $automation  The environment's schedules, tasks and plan.
      * @param  GitHubActionsBuilds  $actions  Writes the workflow each website needs to build on GitHub Actions.
+     * @param  ProductionCheck  $check  Lists what isn't right for production.
      */
-    public function __construct(private readonly EnvironmentAutomationQuery $automation, private readonly GitHubActionsBuilds $actions) {}
+    public function __construct(private readonly EnvironmentAutomationQuery $automation, private readonly GitHubActionsBuilds $actions, private readonly ProductionCheck $check) {}
 
     /**
      * Describe the environment for the person looking at it: its controls and freezes, how deploys run, variables
@@ -152,7 +155,9 @@ final class DeployEnvironmentPageQuery
                 'type' => EnvironmentResource::TYPES[$resource->type] ?? $resource->type,
                 'managed' => (bool) $resource->is_managed,
                 'variables' => array_keys($resource->configuration['variables'] ?? []),
+                'database' => $resource->type === 'mysql' && $resource->is_managed ? ($resource->configuration['variables']['DB_DATABASE'] ?? null) : null,
             ])->values(),
+            'databaseWebsites' => $this->databaseWebsites($environment),
             'resourceTypes' => EnvironmentResource::TYPES,
             'deploySchedules' => $automation['deploySchedules']->map(fn (DeploymentSchedule $schedule): array => [
                 'id' => $schedule->id, 'name' => $schedule->name, 'cron' => $schedule->cron_expression, 'timezone' => $schedule->timezone,
@@ -200,6 +205,7 @@ final class DeployEnvironmentPageQuery
                 ->map(fn (StorageBucket $bucket): array => ['value' => (string) $bucket->id, 'label' => $bucket->name])->values(),
             'githubWorkflows' => $this->githubWorkflows($environment),
             'canManage' => $viewer->can('configureDeploy', $environment),
+            'productionCheck' => array_map(fn (ProductionIssue $issue): array => $issue->toArray(), $this->check->issues($environment)),
         ];
     }
 
@@ -219,5 +225,24 @@ final class DeployEnvironmentPageQuery
                 'path' => $this->actions->workflowPath($repository),
                 'yaml' => $this->actions->workflow($repository),
             ])->all());
+    }
+
+    /**
+     * The project's websites with a database, for choosing the one a managed MySQL resource uses; the environment's
+     * own come first, and the first of those is the default.
+     *
+     * @param  Environment  $environment
+     * @return list<array{value: string, label: string}>
+     */
+    private function databaseWebsites(Environment $environment): array
+    {
+        $own = Repository::query()->where('environment_id', $environment->id)->pluck('website_id')->all();
+        $ids = [...$own, ...Repository::query()->where('project_id', $environment->project_id)->pluck('website_id')->all(),
+            ...Website::query()->whereIn('environment_id', $environment->project->environments()->pluck('id'))->pluck('id')->all()];
+
+        return array_values(Website::query()->whereIn('id', array_unique($ids))->where('has_database', true)->get()
+            ->sortBy(fn (Website $website): string => (in_array($website->id, $own, true) ? '0' : '1').$website->url)
+            ->map(fn (Website $website): array => ['value' => (string) $website->id, 'label' => (string) __(':website (database :database)', ['website' => $website->url, 'database' => $website->databaseIdentifier()])])
+            ->all());
     }
 }

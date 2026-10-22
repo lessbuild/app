@@ -32,11 +32,11 @@ final class StoreWebsiteController
             return response()->json(['redirect' => $guide, 'message' => $message]);
         }
 
-        // The database password is shown once, on the website's page.
+        // The database password is shown once, on the website's page (when it has a database).
         return response()->json([
             'redirect' => route('infrastructure.websites.show', [$project, $website->id], false),
             'message' => $message,
-            'secrets' => ['database' => $website->database_password, 'database_name' => $website->databaseIdentifier()],
+            ...($website->has_database ? ['secrets' => ['database' => $website->database_password, 'database_name' => $website->databaseIdentifier()]] : []),
         ]);
     }
 }

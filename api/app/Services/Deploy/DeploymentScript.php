@@ -58,7 +58,32 @@ final class DeploymentScript
      */
     public function render(Build $build): string
     {
-        return $this->wrap($build, $this->stages($build, fn (string $class): bool => true));
+        return $this->wrap($build, $this->productionNotes($build).$this->stages($build, fn (string $class): bool => true));
+    }
+
+    /**
+     * Get commands that start the log with the environment's production check, so the deploy shows what isn't right
+     * for production (it never stops a deploy). Nothing when all's well or the build has no environment.
+     *
+     * @param  Build  $build
+     * @return string
+     */
+    private function productionNotes(Build $build): string
+    {
+        $environment = $build->repository->environment;
+        if ($environment === null) {
+            return '';
+        }
+        $issues = app(ProductionCheck::class)->issues($environment);
+        if ($issues === []) {
+            return '';
+        }
+        $lines = ['echo '.escapeshellarg((string) trans_choice('Production check: :count thing to look at (environment page → Production check)|Production check: :count things to look at (environment page → Production check)', count($issues), ['count' => count($issues)]))];
+        foreach ($issues as $issue) {
+            $lines[] = 'echo '.escapeshellarg('  - '.$issue->title);
+        }
+
+        return implode("\n", $lines)."\n";
     }
 
     /**
@@ -77,8 +102,10 @@ final class DeploymentScript
         $ready = escapeshellarg(ProvisioningCallbackUrl::buildArtifact($build));
         $stages = $this->stages($build, fn (string $class): bool => in_array($class, self::BUILD_STAGES, true) || $class === SyncEnvironmentScript::class, true);
 
+        $notes = $this->productionNotes($build);
+
         return $this->wrap($build, <<<SCRIPT
-        {$stages}
+        {$notes}{$stages}
         echo "Packing the release for the website's server"
         tar --create --gzip --file {$artifact} --directory {$setup} .
         curl --fail --silent --show-error --retry 3 --upload-file {$artifact} {$upload}
@@ -133,10 +160,13 @@ final class DeploymentScript
             SCRIPT;
         }
 
+        // Built on GitHub Actions, this is the first part that runs on a server, so its log starts with the check.
+        $notes = $source === self::SOURCE_GITHUB_ACTIONS ? $this->productionNotes($build) : '';
+
         return $this->wrap($build, <<<SCRIPT
         printf '%s' {$buildLog} | base64 --decode
         echo
-        rm -rf -- {$top}
+        {$notes}rm -rf -- {$top}
         install -d -m 755 -- {$setup}
         {$fetch}
         {$resources}

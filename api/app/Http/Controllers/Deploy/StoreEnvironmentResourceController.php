@@ -30,8 +30,9 @@ final class StoreEnvironmentResourceController
             'name' => ['required', 'string', 'max:60', 'regex:/\A[a-z0-9][a-z0-9-]*\z/'],
             'type' => ['required', 'in:mysql,postgresql,redis,valkey,object_storage'],
             'variables' => ['nullable', 'string', 'max:20000'],
+            'database_website_id' => ['nullable', 'integer', 'min:1'],
         ]);
-        $save->handle($user, $environment, ['name' => $data['name'], 'type' => $data['type'], 'is_managed' => $request->boolean('is_managed'), 'variables' => $data['variables'] ?? null]);
+        $save->handle($user, $environment, ['name' => $data['name'], 'type' => $data['type'], 'is_managed' => $request->boolean('is_managed'), 'variables' => $data['variables'] ?? null, 'database_website_id' => $data['database_website_id'] ?? null]);
 
         return response()->json(['redirect' => route('deploy.environments.show', [$project, $environment, 'tab' => 'resources'], false), 'message' => __('Resource saved.')]);
     }

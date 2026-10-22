@@ -41,6 +41,33 @@ final class WebsiteDatabaseInUse
     }
 
     /**
+     * List the other websites on the same server whose settings use this website's database.
+     *
+     * @param  Website  $website
+     * @return list<Website>
+     */
+    public function usedBy(Website $website): array
+    {
+        return array_values(Website::query()->where('server_id', $website->server_id)->whereKeyNot($website->id)->get()
+            ->filter(fn (Website $other): bool => ($this->elsewhere($other)['website'] ?? null)?->is($website) === true)->all());
+    }
+
+    /**
+     * Whether the website's own settings use its own MySQL database (rather than SQLite, another engine, or another
+     * website's database).
+     *
+     * @param  Website  $website
+     * @return bool
+     */
+    public function usesOwn(Website $website): bool
+    {
+        $settings = $this->settings($website);
+
+        return in_array(strtolower(trim((string) ($settings['DB_CONNECTION'] ?? ''))), ['mysql', 'mariadb'], true)
+            && trim((string) ($settings['DB_DATABASE'] ?? '')) === $website->databaseIdentifier();
+    }
+
+    /**
      * Read the settings the website's last deploy wrote (a successful one when there is one): its base `.env`, then
      * the environment's variables and resources on top, as the deploy merges them.
      *

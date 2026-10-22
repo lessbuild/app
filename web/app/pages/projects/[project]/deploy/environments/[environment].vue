@@ -4,7 +4,7 @@ import type { EnvironmentPage } from '~/types/deploy';
 /**
  * One environment's deploy settings (the Acme theme's environment page), a tab per area: controls and freezes, how
  * deploys run, variables, workers, resources, automation, recipes and notifications, with an "On this page" list
- * beside the longer ones. Changes apply to the next deploy.
+ * beside the longer ones, under the production check. Changes apply to the next deploy.
  */
 definePageMeta({ layout: 'app', service: 'deploy' });
 const { t } = useT();
@@ -38,6 +38,8 @@ const sections = computed<Record<string, Array<[string, string]>>>(() => ({
         </ProjectHeader>
         <div class="space-y-6">
             <AcmeAlert v-if="data.blockReason" tone="warning">{{ data.blockReason }} {{ t('Pushes wait and deploy once allowed.') }}</AcmeAlert>
+
+            <ProductionCheck :page="data" :base="base" />
 
             <PageTabs :tabs="tabs" :current="tab" :label="t('Environment sections')" />
 

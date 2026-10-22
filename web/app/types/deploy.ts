@@ -280,6 +280,9 @@ export type EnvironmentDetail = {
     recipesRunOnNewWebsites: boolean;
 };
 
+/** Something about an environment that isn't right for production, and whether one click fixes it. */
+export type ProductionIssue = { key: string; severity: 'critical' | 'warning' | 'notice'; title: string; detail: string; fixLabel: string | null; fixable: boolean; url: string | null };
+
 export type EnvironmentPage = {
     overview: ProjectOverview;
     environment: EnvironmentDetail;
@@ -292,7 +295,8 @@ export type EnvironmentPage = {
     secretSyncs: Array<{ id: number; name: string; provider: string; lastSyncedAt: string | null; lastError: string | null; lastResult: { added: number; updated: number; removed: number; skipped: string[] } | null }>;
     secretProviders: Record<string, string>;
     processes: Array<{ id: number; name: string; command: string; type: string; replicas: number; enabled: boolean }>;
-    resources: Array<{ id: number; name: string; type: string; managed: boolean; variables: string[] }>;
+    resources: Array<{ id: number; name: string; type: string; managed: boolean; variables: string[]; database: string | null }>;
+    databaseWebsites: Option[];
     resourceTypes: Record<string, string>;
     deploySchedules: Array<{ id: number; name: string; cron: string; timezone: string; nextRunAt: string | null; lastResult: string | null }>;
     scalingSchedules: Array<{ id: number; name: string; replicas: number; cron: string; timezone: string; nextRunAt: string | null }>;
@@ -316,4 +320,5 @@ export type EnvironmentPage = {
     storageBuckets: Option[];
     githubWorkflows: Array<{ website: string; repository: string; path: string; yaml: string }>;
     canManage: boolean;
+    productionCheck: ProductionIssue[];
 };

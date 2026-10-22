@@ -10,7 +10,7 @@ final class CreateMysqlDatabaseScript extends WebsiteProvisioningScript
 {
     /**
      * Create the website's database and user (or resets the user's password) with every privilege on that database
-     * only.
+     * only. Nothing for a website that goes without a database.
      *
      * @param  int  $step
      * @param  Website  $website
@@ -18,6 +18,9 @@ final class CreateMysqlDatabaseScript extends WebsiteProvisioningScript
      */
     public function script(int $step, Website $website): string
     {
+        if (! $website->has_database) {
+            return "# This website goes without a MySQL database\n".$this->progress($step, $website);
+        }
         $database = $website->databaseIdentifier();
         $rootPassword = escapeshellarg((string) $website->server?->mysql_root_password);
         $password = str_replace(['\\', "'"], ['\\\\', "\\'"], (string) $website->database_password);

@@ -56,6 +56,8 @@ final class CreateWebsite
                 ...WebsiteAttributes::from($data),
                 'account_id' => $account->id, 'created_by' => $actor->id, 'server_id' => $server->id, 'environment_id' => WebsiteEnvironment::resolve($account, $data['environment_id'] ?? null),
                 'database_password' => Str::random(32), 'provisioning_status' => Website::STATUS_QUEUED,
+                // Only on creation: a website keeps or goes without its database from then on.
+                'has_database' => (bool) ($data['has_database'] ?? true),
             ])->save();
             ProvisionWebsite::dispatch($website->id, (string) $website->provisioning_token)->afterCommit();
             $this->health->sync($website, $actor);

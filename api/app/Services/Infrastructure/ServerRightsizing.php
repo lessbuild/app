@@ -110,6 +110,37 @@ final class ServerRightsizing
     }
 
     /**
+     * Get the server's current size from its provider's list, or null when it can't be read.
+     *
+     * @param  Server  $server
+     * @return array{id: string, vcpus: float, memory_gb: float, price: float|null}|null
+     */
+    public function size(Server $server): ?array
+    {
+        if ($server->provider === null || ! $server->provider->type->hostsServers() || $server->size === null) {
+            return null;
+        }
+
+        return collect($this->sizes($server))->firstWhere('id', $server->size);
+    }
+
+    /**
+     * Get the cheapest priced size from the server's provider with at least the given memory and the server's CPUs.
+     *
+     * @param  Server  $server
+     * @param  float  $memoryGb
+     * @return array{id: string, vcpus: float, memory_gb: float, price: float|null}|null
+     */
+    public function smallestWith(Server $server, float $memoryGb): ?array
+    {
+        $current = $this->size($server);
+
+        return collect($this->sizes($server))
+            ->filter(fn (array $size): bool => $size['price'] !== null && $size['memory_gb'] >= $memoryGb && $size['vcpus'] >= ($current['vcpus'] ?? 1))
+            ->sortBy('price')->first();
+    }
+
+    /**
      * Read the value a metric stays under 95% of the time over the period.
      *
      * @param  Server  $server

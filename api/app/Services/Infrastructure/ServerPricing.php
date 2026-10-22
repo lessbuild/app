@@ -57,6 +57,20 @@ class ServerPricing
     }
 
     /**
+     * Format a monthly price in the currency the server's provider bills in, e.g. "$12.00" or "€4.51".
+     *
+     * @param  float  $price
+     * @param  Server  $server
+     * @return string
+     */
+    public static function format(float $price, Server $server): string
+    {
+        $currency = $server->provider !== null ? self::currency($server->provider->type) : 'USD';
+
+        return ($currency === 'EUR' ? '€' : '$').number_format($price, 2);
+    }
+
+    /**
      * The currency a provider bills in: euros for Hetzner, Scaleway, UpCloud and OVHcloud, dollars for the rest.
      *
      * @param  ProviderType  $type
