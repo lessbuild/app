@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Deploy;
 
-use App\Data\Deploy\RepositorySnapshot;
 use App\Enums\ProviderType;
 use App\Models\Provider;
 use Illuminate\Http\Client\Response;

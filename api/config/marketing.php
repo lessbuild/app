@@ -80,7 +80,7 @@ return [
                     ['Secrets from your vault', 'Sync secrets from Doppler, 1Password or AWS Secrets Manager into each environment.'],
                     ['Containers and Compose', 'Deploy a Dockerfile or a whole Docker Compose stack to your own servers, behind HTTPS.'],
                     ['Branch environments', 'A temporary environment for any branch, with a closing date, as well as for pull requests.'],
-                    ['Pipelines', 'Deploy several apps in order, such as the API and then the frontend, and stop if one fails.'],
+                    ['Pipelines', 'Deploy several apps in order, such as the API and then the frontend, or side by side, and stop if one fails.'],
                     ['Approvals in Slack', 'Approve or reject a waiting deploy from buttons in Slack or Teams.'],
                     ['Release notes', 'Notes written from each deploy’s commits, sent to Slack and published on a public page if you like.'],
                     ['Migration safety', 'Deploys stop before destructive database migrations until someone else approves them.'],

@@ -7,6 +7,7 @@ const props = defineProps<{ page: EnvironmentPage; base: string }>();
 const { t, tc } = useT();
 const environment = computed(() => props.page.environment);
 const text = (value: number | null) => (value === null ? '' : String(value));
+const workflowStatus = computed<Record<string, string>>(() => ({ missing: t('Not in the repository yet'), outdated: t('Out of date'), current: t('Up to date') }));
 const strategy = ref<string | null>(environment.value.strategy);
 const observation = ref<string | null>(text(environment.value.observationMinutes));
 const errorRate = ref<string | null>(text(environment.value.rollbackErrorRatePercent));
@@ -142,10 +143,20 @@ const runtimes: Option[] = [
                     <p v-if="!onGitHub && page.storageBuckets.length === 0" class="text-xs text-muted sm:col-span-3">{{ t('Add a storage bucket to this project under Infrastructure → Storage first.') }}</p>
                 </fieldset>
                 <div v-if="onGitHub" class="space-y-3">
-                    <p class="text-sm text-muted">{{ t('Add this workflow to the repository at the path shown and push it. Each deploy waits for the workflow’s run on its commit, then downloads the result. Variables the build needs go in the repository’s Actions secrets and variables; this environment’s variables are added on the server.') }}</p>
+                    <p class="text-sm text-muted">{{ t('Each repository needs this workflow at the path shown: Open a pull request adds it (or brings it up to date), or copy it in by hand. Each deploy waits for the workflow’s run on its commit, then downloads the result. Variables the build needs go in the repository’s Actions secrets and variables; this environment’s variables are added on the server.') }}</p>
                     <p v-if="page.githubWorkflows.length === 0" class="text-sm text-muted">{{ t('Connect a GitHub repository to a website in this environment to see its workflow.') }}</p>
                     <template v-for="workflow in page.githubWorkflows" :key="workflow.path">
-                        <p class="text-sm"><span class="font-medium text-ink">{{ workflow.website }}</span> <span class="text-muted">· {{ workflow.repository }}</span></p>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <p class="flex flex-wrap items-center gap-2 text-sm">
+                                <span class="font-medium text-ink">{{ workflow.website }}</span> <span class="text-muted">· {{ workflow.repository }}</span>
+                                <AcmeBadge v-if="workflow.status !== 'unknown'" :tone="workflow.status === 'current' ? 'green' : 'amber'" dot>{{ workflowStatus[workflow.status] }}</AcmeBadge>
+                                <a v-if="workflow.pullRequest && workflow.status !== 'current'" :href="workflow.pullRequest" target="_blank" rel="noopener" class="font-medium text-ink underline">{{ t('Pull request') }}</a>
+                            </p>
+                            <ApiForm v-if="page.canManage && workflow.status !== 'current'" :action="`${base}/workflow-pull-requests`">
+                                <input type="hidden" name="repository_id" :value="workflow.id">
+                                <SubmitButton variant="secondary" size="sm">{{ workflow.pullRequest ? t('Update the pull request') : t('Open a pull request') }}</SubmitButton>
+                            </ApiForm>
+                        </div>
                         <AcmeCodeBlock :title="workflow.path" :code="workflow.yaml" :dark="false" />
                     </template>
                 </div>

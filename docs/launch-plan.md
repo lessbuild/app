@@ -48,11 +48,11 @@ pages. Status: `[ ]` to do, `[x]` done.
 
 ## Stage 5: the GitHub workflow by pull request
 
-- [ ] Build server settings: Open a pull request adds or updates the workflow file through the GitHub App, instead
+- [x] Build server settings: Open a pull request adds or updates the workflow file through the GitHub App, instead
       of copying it by hand.
-- [ ] When a repository's workflow is older than Buildpusher's, the environment says so and offers the pull request.
+- [x] When a repository's workflow is older than Buildpusher's, the environment says so and offers the pull request.
 
 ## Stage 6: faster deploys
 
-- [ ] Pipelines can deploy steps side by side (a step can start with the one before it).
-- [ ] Launch turns on the build cache and path filters, so a push to `web/` doesn't redeploy the API.
+- [x] Pipelines can deploy steps side by side (a step can start with the one before it).
+- [x] Launch turns on the build cache and path filters, so a push to `web/` doesn't redeploy the API.

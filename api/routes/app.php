@@ -129,6 +129,7 @@ use App\Http\Controllers\Deploy\ListReachableRepositoriesController;
 use App\Http\Controllers\Deploy\ListRepositoryBranchesController;
 use App\Http\Controllers\Deploy\MoveEnvironmentRecipeController;
 use App\Http\Controllers\Deploy\OpenBranchPreviewController;
+use App\Http\Controllers\Deploy\OpenWorkflowPullRequestController;
 use App\Http\Controllers\Deploy\PlanConfigurationController;
 use App\Http\Controllers\Deploy\PlanLaunchController;
 use App\Http\Controllers\Deploy\PromoteBuildController;
@@ -773,6 +774,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
             Route::put('/environments/{environment}/settings', UpdateEnvironmentDeploySettingsController::class)->name('environments.settings');
             Route::put('/environments/{environment}/controls', UpdateDeploymentControlsController::class)->name('environments.controls');
             Route::put('/environments/{environment}/build-server', UpdateEnvironmentBuildServerController::class)->name('environments.build-server');
+            Route::post('/environments/{environment}/workflow-pull-requests', OpenWorkflowPullRequestController::class)->middleware('throttle:10,1')->name('environments.workflow-pull-requests');
             Route::post('/environments/{environment}/freezes', StoreEnvironmentFreezeController::class)->name('environments.freezes.store');
             Route::post('/environments/{environment}/variables', StoreEnvironmentVariableController::class)->name('environments.variables.store');
             Route::post('/environments/{environment}/secret-syncs', StoreSecretSyncController::class)->middleware('throttle:10,1')->name('environments.secret-syncs.store');

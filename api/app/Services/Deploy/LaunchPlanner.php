@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Deploy;
 
 use App\Data\Deploy\DetectedApp;
-use App\Data\Deploy\RepositorySnapshot;
 use App\Enums\ServerType;
 use App\Models\Project;
 use App\Models\Provider;

@@ -210,7 +210,7 @@ export type PipelineRun = { id: number; status: string; createdAt: string | null
 
 export type PipelinesPage = {
     overview: ProjectOverview;
-    pipelines: Array<{ id: number; name: string; steps: Array<{ id: number; name: string | null; environment: string | null }>; runs: PipelineRun[] }>;
+    pipelines: Array<{ id: number; name: string; steps: Array<{ id: number; name: string | null; environment: string | null; together: boolean }>; runs: PipelineRun[] }>;
     repositories: Option[];
     canManage: boolean;
 };
@@ -337,7 +337,7 @@ export type EnvironmentPage = {
     destinations: Array<{ id: number; name: string; type: string; enabled: boolean; onSuccess: boolean; onFailure: boolean; onApproval: boolean }>;
     buildServers: Option[];
     storageBuckets: Option[];
-    githubWorkflows: Array<{ website: string; repository: string; path: string; yaml: string }>;
+    githubWorkflows: Array<{ id: number; website: string; repository: string; path: string; yaml: string; status: 'missing' | 'outdated' | 'current' | 'unknown'; pullRequest: string | null }>;
     canManage: boolean;
     productionCheck: ProductionIssue[];
 };
@@ -406,6 +406,7 @@ export type LaunchPage = {
             repository: string | null;
             environment: string | null;
             build: { status: string; url: string } | null;
+            workflow: { url: string | null; error: string | null; waiting: boolean } | null;
             checklist: Array<{ key: string; label: string; done: boolean }>;
         }>;
     };

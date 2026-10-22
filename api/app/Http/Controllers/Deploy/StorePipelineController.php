@@ -24,9 +24,19 @@ final class StorePipelineController
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, SavePipeline $save): JsonResponse
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:80'], 'steps' => ['required', 'array', 'max:8'], 'steps.*' => ['nullable', 'integer']]);
-        $steps = array_values(array_filter(array_map('intval', $data['steps'])));
-        $save->handle($user, $project, $data['name'], $steps);
+        $data = $request->validate(['name' => ['required', 'string', 'max:80'], 'steps' => ['required', 'array', 'max:8'], 'steps.*' => ['nullable', 'integer'], 'together' => ['nullable', 'array'], 'together.*' => ['nullable', 'boolean']]);
+        // Empty steps are dropped, so "start with the step before" is renumbered to the steps that are left.
+        $steps = [];
+        $together = [];
+        foreach ($data['steps'] as $index => $step) {
+            if ((int) $step > 0) {
+                if (count($steps) > 0 && filter_var($data['together'][$index] ?? false, FILTER_VALIDATE_BOOL)) {
+                    $together[] = count($steps);
+                }
+                $steps[] = (int) $step;
+            }
+        }
+        $save->handle($user, $project, $data['name'], $steps, $together);
 
         return response()->json(['redirect' => route('deploy.pipelines', $project, false), 'message' => __('Pipeline saved.')]);
     }

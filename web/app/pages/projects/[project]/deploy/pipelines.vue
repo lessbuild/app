@@ -3,7 +3,8 @@ import type { PipelinesPage } from '~/types/deploy';
 
 /**
  * Pipelines (the Acme theme's pipelines page): repositories deployed in order, each waiting for the one before to go
- * live, with their recent runs. A new pipeline takes up to eight steps, added, removed and reordered as you go.
+ * live (or side by side with it), with their recent runs. A new pipeline takes up to eight steps, added, removed and
+ * reordered as you go.
  */
 definePageMeta({ layout: 'app', service: 'deploy' });
 const { t } = useT();
@@ -17,6 +18,8 @@ const runs = computed<Record<string, { tone: 'green' | 'red' | 'blue'; label: st
     running: { tone: 'blue', label: t('Running') },
 }));
 const draft = ref<string[]>(['', '']);
+// Whether each step deploys at the same time as the one before it (the first never does).
+const together = ref<boolean[]>([false, false]);
 
 /**
  * Move a step up or down the new pipeline.
@@ -28,12 +31,15 @@ function move(index: number, by: number) {
     const steps = [...draft.value];
     [steps[index], steps[index + by]] = [steps[index + by]!, steps[index]!];
     draft.value = steps;
+    const alongside = [...together.value];
+    [alongside[index], alongside[index + by]] = [alongside[index + by] ?? false, alongside[index] ?? false];
+    together.value = alongside;
 }
 </script>
 
 <template>
     <div>
-        <ProjectHeader :overview="data.overview" :title="t('Pipelines')" :description="t('Deploy several repositories in order, such as the API and then the frontend. Each waits for the one before to go live, and the run stops if one fails.')">
+        <ProjectHeader :overview="data.overview" :title="t('Pipelines')" :description="t('Deploy several repositories in order, such as the API and then the frontend, or side by side when they don’t depend on each other. Each waits for the ones before to go live, and the run stops if one fails.')">
             <template v-if="data.canManage && data.repositories.length >= 2" #actions>
                 <AcmeBtn variant="primary" icon="plus" :to="{ query: { dialog: 'new-pipeline' } }">{{ t('New pipeline') }}</AcmeBtn>
             </template>
@@ -57,7 +63,10 @@ function move(index: number, by: number) {
                             <span class="font-mono text-ink">{{ step.name ?? t('Removed repository') }}</span>
                             <span v-if="step.environment" class="text-xs text-muted">{{ step.environment }}</span>
                         </span>
-                        <AcmeIcon v-if="index < pipeline.steps.length - 1" name="arrowRight" :size="16" class="text-muted" />
+                        <template v-if="index < pipeline.steps.length - 1">
+                            <span v-if="pipeline.steps[index + 1]?.together" class="text-xs font-medium text-muted">{{ t('and at the same time') }}</span>
+                            <AcmeIcon v-else name="arrowRight" :size="16" class="text-muted" />
+                        </template>
                     </li>
                 </ol>
                 <h3 class="section-label mt-6">{{ t('Recent runs') }}</h3>
@@ -83,13 +92,19 @@ function move(index: number, by: number) {
             size="large"
         >
             <InputField id="pipeline-name" name="name" :label="t('Name')" maxlength="80" required placeholder="API then web" autofocus />
-            <div v-for="(step, index) in draft" :key="index" class="flex items-end gap-2">
-                <SelectField :id="`pipeline-step-${index + 1}`" v-model="draft[index]" :name="`steps[${index}]`" error-key="steps" :label="t('Step :step', { step: index + 1 })" :placeholder="t('Choose a repository')" :options="data.repositories" class="flex-1" />
-                <AcmeBtn variant="ghost" icon="arrowUp" :label="t('Move step :step up', { step: index + 1 })" :disabled="index === 0" @click="move(index, -1)" />
-                <AcmeBtn variant="ghost" icon="arrowDown" :label="t('Move step :step down', { step: index + 1 })" :disabled="index === draft.length - 1" @click="move(index, 1)" />
-                <AcmeBtn variant="ghost" icon="trash" :label="t('Remove step :step', { step: index + 1 })" :disabled="draft.length <= 2" @click="draft.splice(index, 1)" />
+            <div v-for="(step, index) in draft" :key="index" class="grid gap-1">
+                <label v-if="index > 0" class="flex items-center gap-2 text-xs text-muted">
+                    <input v-model="together[index]" type="checkbox" :name="`together[${index}]`" value="1">
+                    {{ t('Deploy at the same time as step :step, instead of after it', { step: index }) }}
+                </label>
+                <div class="flex items-end gap-2">
+                    <SelectField :id="`pipeline-step-${index + 1}`" v-model="draft[index]" :name="`steps[${index}]`" error-key="steps" :label="t('Step :step', { step: index + 1 })" :placeholder="t('Choose a repository')" :options="data.repositories" class="flex-1" />
+                    <AcmeBtn variant="ghost" icon="arrowUp" :label="t('Move step :step up', { step: index + 1 })" :disabled="index === 0" @click="move(index, -1)" />
+                    <AcmeBtn variant="ghost" icon="arrowDown" :label="t('Move step :step down', { step: index + 1 })" :disabled="index === draft.length - 1" @click="move(index, 1)" />
+                    <AcmeBtn variant="ghost" icon="trash" :label="t('Remove step :step', { step: index + 1 })" :disabled="draft.length <= 2" @click="draft.splice(index, 1); together.splice(index, 1)" />
+                </div>
             </div>
-            <div><AcmeBtn size="sm" icon="plus" :disabled="draft.length >= 8" @click="draft.push('')">{{ t('Add step') }}</AcmeBtn></div>
+            <div><AcmeBtn size="sm" icon="plus" :disabled="draft.length >= 8" @click="draft.push(''); together.push(false)">{{ t('Add step') }}</AcmeBtn></div>
         </FormDialog>
     </div>
 </template>

@@ -76,6 +76,7 @@ final class ShowLaunchController
             'repository' => isset($made['repository_id']) ? "/projects/{$project->id}/deploy/repositories/{$made['repository_id']}" : null,
             'environment' => isset($made['environment_id']) ? "/projects/{$project->id}/deploy/environments/{$made['environment_id']}" : null,
             'build' => $build === null ? null : ['status' => $build->status, 'url' => "/projects/{$project->id}/deploy/builds/{$build->id}"],
+            'workflow' => (bool) ($app['githubActions'] ?? false) ? ['url' => $made['workflow'] ?? null, 'error' => $made['workflowError'] ?? null, 'waiting' => (bool) ($made['waitingForWorkflow'] ?? false)] : null,
             'checklist' => [
                 ['key' => 'dns', 'label' => $server?->public_ip !== null ? __('Point :domain at :ip (an A record)', ['domain' => $domain, 'ip' => $server->public_ip]) : __('Point :domain at the server', ['domain' => $domain]), 'done' => $server?->public_ip !== null && in_array($server->public_ip, $addresses, true)],
                 ['key' => 'deploy', 'label' => __('First deploy live'), 'done' => $build?->status === Build::STATUS_SUCCEEDED],

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Deploy;
 
 use App\Data\Deploy\DetectedApp;
-use App\Data\Deploy\RepositorySnapshot;
+use App\Services\Deploy\RepositorySnapshot;
 use App\Services\Deploy\StackDetector;
 use Tests\TestCase;
 

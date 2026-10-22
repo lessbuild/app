@@ -3,7 +3,8 @@ import type { LaunchPage } from '~/types/deploy';
 
 /**
  * One launch, followed live: its steps (the server, websites, environments, repository, deploys), and per app a
- * checklist (DNS pointing at the server, the first deploy live, answering over HTTPS) with links to what it made.
+ * checklist (DNS pointing at the server, the first deploy live, answering over HTTPS) with links to what it made, and
+ * the workflow pull request to merge for an app that builds on GitHub Actions.
  * A launch that stopped says why and can carry on from there.
  */
 definePageMeta({ layout: 'app', service: 'deploy' });
@@ -49,6 +50,11 @@ onBeforeUnmount(() => window.clearInterval(timer));
             </AcmeCard>
 
             <AcmeCard v-for="app in launch.apps" :key="app.domain" :title="`${app.name} · ${app.label}`" :description="app.domain">
+                <AcmeAlert v-if="app.workflow?.error" tone="warning" class="mb-4">{{ app.workflow.error }}</AcmeAlert>
+                <AcmeAlert v-else-if="app.workflow?.waiting" tone="info" class="mb-4">
+                    {{ t('It builds on GitHub Actions: merge the pull request with the workflow and its deploy starts.') }}
+                    <a v-if="app.workflow.url" :href="app.workflow.url" target="_blank" rel="noopener" class="ml-1 font-medium underline">{{ t('Open the pull request') }}</a>
+                </AcmeAlert>
                 <ul class="grid gap-2">
                     <li v-for="item in app.checklist" :key="item.key" class="flex items-center gap-2 text-sm">
                         <AcmeIcon :name="item.done ? 'check' : 'clock'" :size="16" :class="item.done ? 'text-success' : 'text-muted'" />

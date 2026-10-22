@@ -23,6 +23,7 @@ use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use stdClass;
 use Tests\Feature\Infrastructure\InfrastructureHelpers;
 use Tests\Feature\Monitoring\MonitoringHelpers;
 use Tests\TestCase;
@@ -75,6 +76,9 @@ final class LaunchTest extends TestCase
             'api.github.com/repos/acme/shop/git/trees/main*' => Http::response(['tree' => array_map(fn (string $path): array => ['path' => $path], ['api', 'api/app', 'api/app/Jobs', 'api/routes', 'web', ...array_keys($files)])]),
             'api.github.com/repos/acme/shop/contents/*' => function ($request) use ($files) {
                 $path = (string) preg_replace('#^.*/contents/([^?]+).*$#', '$1', rawurldecode($request->url()));
+                if (str_starts_with($path, '.github/')) {
+                    return null; // Left to the workflow tests' own fakes.
+                }
 
                 return isset($files[$path]) ? Http::response($files[$path]) : Http::response('', 404);
             },
@@ -172,5 +176,51 @@ final class LaunchTest extends TestCase
         $this->actingAs($this->owner)->postJson("{$this->base}/launches/{$launch->id}/retry")->assertOk();
         $this->assertSame('queued', $launch->refresh()->status);
         $this->assertSame(2, Website::query()->whereIn('url', ['api.example.com', 'example.com'])->count(), 'Nothing was made twice.');
+    }
+
+    /**
+     * A site built on GitHub Actions gets a pull request with its workflow, and its deploy waits until the workflow
+     * is on the branch, then goes ahead.
+     *
+     * @return void
+     */
+    public function test_a_site_built_on_github_actions_waits_for_its_workflow(): void
+    {
+        $workflow = new stdClass;
+        $workflow->merged = false;
+        Http::fake([
+            'api.github.com/repos/acme/shop/contents/.github*' => function (\Illuminate\Http\Client\Request $request) {
+                if ($request->method() === 'PUT') {
+                    return Http::response(['content' => []], 201);
+                }
+
+                return cache('test.workflow-merged') === true ? Http::response(app(\App\Services\Deploy\GitHubActionsBuilds::class)->workflow(Repository::query()->where('deployment_root', 'web')->with(['website', 'environment', 'provider'])->firstOrFail())) : Http::response('', 404);
+            },
+            'api.github.com/repos/acme/shop/git/ref/heads/main' => Http::response(['object' => ['sha' => 'abc123']]),
+            'api.github.com/repos/acme/shop/git/ref/heads/*' => Http::response(['message' => 'Not Found'], 404),
+            'api.github.com/repos/acme/shop/git/refs' => Http::response([], 201),
+            'api.github.com/repos/acme/shop/pulls*' => fn (\Illuminate\Http\Client\Request $request) => $request->method() === 'GET' ? Http::response([]) : Http::response(['html_url' => 'https://github.com/acme/shop/pull/9'], 201),
+        ]);
+        Queue::fake();
+        $this->actingAs($this->owner)->postJson("{$this->base}/launches", [
+            'provider_id' => $this->github->id, 'url' => 'github.com/acme/shop', 'branch' => 'main', 'domain' => 'example.com',
+            'server' => ['mode' => 'existing', 'server_id' => $this->server->id], 'apps' => [[], ['githubActions' => true]],
+        ])->assertOk();
+        $launch = Launch::query()->sole();
+        $run = fn () => (new RunLaunch($launch->id))->handle();
+        $run();
+        Website::query()->update(['provisioning_status' => Website::STATUS_ACTIVE]);
+        $run();
+        Build::query()->update(['status' => Build::STATUS_SUCCEEDED]);
+        $run();
+
+        $this->assertSame(1, Build::query()->count(), 'The site waits for its workflow.');
+        $page = $this->actingAs($this->owner)->getJson("{$this->base}/launches/{$launch->id}")->assertOk();
+        $page->assertJsonPath('launch.apps.1.workflow', ['url' => 'https://github.com/acme/shop/pull/9', 'error' => null, 'waiting' => true]);
+        $this->assertTrue(Environment::query()->where('name', 'Production-web')->sole()->github_actions_builds);
+
+        cache()->put('test.workflow-merged', true);
+        $run();
+        $this->assertSame(2, Build::query()->count(), 'Merged, so it deploys.');
     }
 }

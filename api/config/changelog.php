@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-22', 'title' => 'Faster deploys', 'changes' => [
+        'Pipeline steps can deploy side by side: tick Deploy at the same time, and the next step waits for all of them.',
+        'Launch from a repository turns on the build cache and path filters for each app, so a push to web/ doesn’t redeploy the API, and deploys the apps that don’t depend on each other together.',
+    ]],
+    ['date' => '2026-10-22', 'title' => 'The GitHub Actions workflow by pull request', 'changes' => [
+        'Building on GitHub Actions no longer means copying a file by hand: the environment shows whether each repository’s workflow is missing, out of date or up to date, and Open a pull request adds or updates it.',
+        'Launch from a repository opens that pull request for apps that build on GitHub Actions, and deploys each one as soon as its workflow is merged.',
+    ]],
     ['date' => '2026-10-22', 'title' => 'Launch from a repository', 'changes' => [
         'Deploy → Launch from a repository reads a repository and proposes the whole set-up on one page: a website and environment per app with its domain, production settings, database, workers, Redis and the secrets still needed, and a server with room for it (one of yours, or a new one at the size that fits, with its price).',
         'Launch sets it all up in order and deploys the API first, then the rest, and ends on a checklist (DNS, the first deploy, HTTPS). A launch that stops says why and carries on from there.',

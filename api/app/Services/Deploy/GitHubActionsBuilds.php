@@ -260,7 +260,7 @@ class GitHubActionsBuilds
      * @param  Repository  $repository
      * @return PendingRequest
      */
-    private function client(Repository $repository): PendingRequest
+    public function client(Repository $repository): PendingRequest
     {
         $provider = $repository->provider ?? throw new RuntimeException('The repository has no Git provider.');
         $token = $provider->isGitHubApp() ? $this->app->installationToken((string) $provider->external_id) : (string) $provider->token;
@@ -275,7 +275,7 @@ class GitHubActionsBuilds
      * @param  string  $path
      * @return string
      */
-    private function api(Repository $repository, string $path): string
+    public function api(Repository $repository, string $path): string
     {
         $name = $this->repositoryName($repository) ?? throw new RuntimeException('The repository isn’t on GitHub.');
 

@@ -21,7 +21,8 @@ final class RunPipeline
     public function __construct(private readonly StartPipelineStep $steps) {}
 
     /**
-     * Start a run: deploy the first repository now; the rest follow one by one as each succeeds. One run at a time.
+     * Start a run: deploy the first step now (with any steps set to start alongside it); each next group follows once
+     * every deploy in the one before is live. One run at a time.
      *
      * @param  User  $actor
      * @param  DeployPipeline  $pipeline
@@ -32,11 +33,18 @@ final class RunPipeline
         if ($pipeline->runs()->where('status', 'running')->exists()) {
             throw new AccountRuleViolation('pipeline', __('This pipeline is already running.'));
         }
-        $first = Repository::query()->where('project_id', $pipeline->project_id)->findOrFail($pipeline->repository_ids[0]);
-        Gate::forUser($actor)->authorize('deploy', $first);
+        $first = Repository::query()->where('project_id', $pipeline->project_id)->whereKey($pipeline->groups()[0])->get()->sortBy(fn (Repository $repository): int => (int) array_search($repository->id, $pipeline->repository_ids, true));
+        foreach ($first as $repository) {
+            Gate::forUser($actor)->authorize('deploy', $repository);
+        }
         $run = new DeployPipelineRun;
         $run->forceFill(['pipeline_id' => $pipeline->id, 'started_by' => $actor->id, 'status' => 'running', 'step' => 0, 'build_ids' => []])->save();
-        $this->steps->handle($run, $actor, $first);
+        // The first group's deploys start together; the next group starts once they're all live.
+        foreach ($first as $repository) {
+            if ($run->status === 'running') {
+                $this->steps->handle($run, $actor, $repository);
+            }
+        }
 
         return $run;
     }

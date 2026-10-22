@@ -79,4 +79,43 @@ final class PipelinesTest extends TestCase
 
         $this->actingAs($owner)->getJson($base)->assertOk()->assertJsonPath('pipelines.0.name', 'API then web')->assertSeeInOrder(['api', 'web'])->assertJsonPath('pipelines.0.runs.0.status', $stopped->status);
     }
+
+    /**
+     * Steps set to deploy at the same time start together, and the next step waits for all of them; an empty step
+     * in the form doesn't shift which steps go together.
+     *
+     * @return void
+     */
+    public function test_steps_can_deploy_side_by_side(): void
+    {
+        $this->fakeInfrastructure();
+        $this->withoutMiddleware(RequirePassword::class);
+        $project = Project::factory()->withServices(['deploy', 'infrastructure'])->create();
+        $owner = $this->ownerOf($project);
+        $this->onTier($project, 'deploy', 'pro');
+        $environment = $project->environments()->where('slug', 'production')->firstOrFail();
+        $server = Server::factory()->create(['provider_id' => Provider::factory()->create(['account_id' => $project->account_id])->id]);
+        $github = Provider::factory()->type(ProviderType::GitHub)->create(['account_id' => $project->account_id]);
+        [$api, $web, $docs] = array_map(fn (string $name): Repository => Repository::factory()->create([
+            'project_id' => $project->id, 'name' => $name, 'environment_id' => $environment->id, 'provider_id' => $github->id,
+            'website_id' => Website::factory()->create(['server_id' => $server->id, 'deployment_slug' => $name, 'url' => $name.'.example.com'])->id,
+        ]), ['api', 'web', 'docs']);
+        $base = "/api/app/projects/{$project->id}/deploy/pipelines";
+
+        $this->actingAs($owner)->postJson($base, ['name' => 'API, then web and docs', 'steps' => [$api->id, '', $web->id, $docs->id], 'together' => [3 => '1']])->assertSuccessful();
+        $pipeline = DeployPipeline::query()->sole();
+        $this->assertSame([[$api->id], [$web->id, $docs->id]], $pipeline->groups());
+        $this->actingAs($owner)->getJson($base)->assertJsonPath('pipelines.0.steps.2.together', true)->assertJsonPath('pipelines.0.steps.1.together', false);
+
+        $this->actingAs($owner)->postJson("{$base}/{$pipeline->id}/run")->assertSuccessful();
+        app(FinishBuild::class)->handle(Build::query()->where('repository_id', $api->id)->sole(), Build::STATUS_SUCCEEDED, null);
+        $webBuild = Build::query()->where('repository_id', $web->id)->sole();
+        $docsBuild = Build::query()->where('repository_id', $docs->id)->sole();
+        $this->assertSame('pipeline', $docsBuild->trigger_source, 'Web and docs started together.');
+
+        app(FinishBuild::class)->handle($webBuild, Build::STATUS_SUCCEEDED, null);
+        $this->assertSame('running', DeployPipelineRun::query()->sole()->status, 'Still waiting for the docs.');
+        app(FinishBuild::class)->handle($docsBuild, Build::STATUS_SUCCEEDED, null);
+        $this->assertSame('succeeded', DeployPipelineRun::query()->sole()->status);
+    }
 }

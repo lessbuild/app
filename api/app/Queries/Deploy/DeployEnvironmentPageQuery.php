@@ -30,6 +30,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Services\Deploy\BuildServers;
 use App\Services\Deploy\GitHubActionsBuilds;
+use App\Services\Deploy\GitHubWorkflowPullRequests;
 use App\Services\Deploy\ProductionCheck;
 
 /** Reads everything an environment's deploy page shows, tab by tab. */
@@ -41,8 +42,9 @@ final class DeployEnvironmentPageQuery
      * @param  EnvironmentAutomationQuery  $automation  The environment's schedules, tasks and plan.
      * @param  GitHubActionsBuilds  $actions  Writes the workflow each website needs to build on GitHub Actions.
      * @param  ProductionCheck  $check  Lists what isn't right for production.
+     * @param  GitHubWorkflowPullRequests  $workflows  Says whether each repository's workflow is up to date.
      */
-    public function __construct(private readonly EnvironmentAutomationQuery $automation, private readonly GitHubActionsBuilds $actions, private readonly ProductionCheck $check) {}
+    public function __construct(private readonly EnvironmentAutomationQuery $automation, private readonly GitHubActionsBuilds $actions, private readonly ProductionCheck $check, private readonly GitHubWorkflowPullRequests $workflows) {}
 
     /**
      * Describe the environment for the person looking at it: its controls and freezes, how deploys run, variables
@@ -210,20 +212,24 @@ final class DeployEnvironmentPageQuery
     }
 
     /**
-     * The workflow each of the environment's GitHub repositories needs to build on GitHub Actions, and where it goes.
+     * The workflow each of the environment's GitHub repositories needs to build on GitHub Actions, where it goes, and
+     * whether the repository has it (checked when the environment builds there).
      *
      * @param  Environment  $environment
-     * @return list<array{website: string, repository: string, path: string, yaml: string}>
+     * @return list<array{id: int, website: string, repository: string, path: string, yaml: string, status: string, pullRequest: string|null}>
      */
     private function githubWorkflows(Environment $environment): array
     {
         return array_values(Repository::query()->where('environment_id', $environment->id)->with(['provider', 'website', 'environment'])->orderBy('id')->get()
             ->filter(fn (Repository $repository): bool => $this->actions->repositoryName($repository) !== null)
             ->map(fn (Repository $repository): array => [
+                'id' => $repository->id,
                 'website' => $repository->website->url,
                 'repository' => (string) $this->actions->repositoryName($repository),
                 'path' => $this->actions->workflowPath($repository),
                 'yaml' => $this->actions->workflow($repository),
+                'status' => $environment->github_actions_builds ? $this->workflows->status($repository) : 'unknown',
+                'pullRequest' => $repository->workflow_pull_request_url,
             ])->all());
     }
 

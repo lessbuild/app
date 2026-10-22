@@ -21,9 +21,10 @@ final class SavePipeline
      * @param  Project  $project
      * @param  string  $name
      * @param  list<int>  $repositoryIds
+     * @param  list<int>  $together  the steps (by index in $repositoryIds) that start with the one before them
      * @return DeployPipeline
      */
-    public function handle(User $actor, Project $project, string $name, array $repositoryIds): DeployPipeline
+    public function handle(User $actor, Project $project, string $name, array $repositoryIds, array $together = []): DeployPipeline
     {
         $repositoryIds = array_values(array_unique(array_map('intval', $repositoryIds)));
         if (count($repositoryIds) < 2 || count($repositoryIds) > 8) {
@@ -37,7 +38,9 @@ final class SavePipeline
             Gate::forUser($actor)->authorize('deploy', $repository);
         }
         $pipeline = new DeployPipeline;
-        $pipeline->forceFill(['project_id' => $project->id, 'created_by' => $actor->id, 'name' => mb_substr(trim($name), 0, 80), 'repository_ids' => $repositoryIds])->save();
+        $together = array_values(array_unique(array_filter(array_map('intval', $together), fn (int $index): bool => $index >= 1 && $index < count($repositoryIds))));
+        sort($together);
+        $pipeline->forceFill(['project_id' => $project->id, 'created_by' => $actor->id, 'name' => mb_substr(trim($name), 0, 80), 'repository_ids' => $repositoryIds, 'together' => $together])->save();
 
         return $pipeline;
     }

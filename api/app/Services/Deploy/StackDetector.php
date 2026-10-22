@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Deploy;
 
 use App\Data\Deploy\DetectedApp;
-use App\Data\Deploy\RepositorySnapshot;
 
 /**
  * Finds the apps in a repository from its files: the top level, each folder in it, and each folder under apps/ and

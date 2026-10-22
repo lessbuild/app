@@ -32,8 +32,8 @@ final class DeployPipelineSubscriber
     }
 
     /**
-     * Move a pipeline run on when its current step's deploy finishes: deploy the next repository after a success, and
-     * stop the run when the deploy failed, was cancelled or rejected, or it was the last step.
+     * When one of a running pipeline's deploys finishes: a failure stops the run; a success, once every deploy in its
+     * group is live, starts the next group's deploys together, or ends the run when there's none.
      *
      * @param  DeployFinished  $event
      * @return void
@@ -42,7 +42,7 @@ final class DeployPipelineSubscriber
     {
         $build = $event->build;
         $run = DeployPipelineRun::query()->where('status', 'running')->with(['pipeline', 'starter'])->get()
-            ->first(fn (DeployPipelineRun $run): bool => ($run->build_ids[array_key_last($run->build_ids) ?? 0] ?? null) === $build->id);
+            ->first(fn (DeployPipelineRun $run): bool => in_array($build->id, $this->groupBuilds($run), true));
         if ($run === null) {
             return;
         }
@@ -52,21 +52,42 @@ final class DeployPipelineSubscriber
 
             return;
         }
+        $statuses = Build::query()->whereKey($this->groupBuilds($run))->pluck('status')->all();
+        if (count($statuses) < count($run->pipeline->groups()[$run->step] ?? []) || array_any($statuses, fn (string $status): bool => $status !== Build::STATUS_SUCCEEDED)) {
+            return;
+        }
         $next = $run->step + 1;
-        $nextId = $run->pipeline->repository_ids[$next] ?? null;
-        if ($nextId === null) {
+        $group = $run->pipeline->groups()[$next] ?? null;
+        if ($group === null) {
             $run->forceFill(['status' => 'succeeded', 'step' => $next, 'finished_at' => now()])->save();
 
             return;
         }
-        $nextRepository = Repository::query()->where('project_id', $run->pipeline->project_id)->find($nextId);
+        $repositories = Repository::query()->where('project_id', $run->pipeline->project_id)->whereKey($group)->get();
         $starter = $run->starter;
-        if ($nextRepository === null || $starter === null) {
+        if ($repositories->count() !== count($group) || $starter === null) {
             $run->forceFill(['status' => 'failed', 'failure' => __('Stopped: the next repository or the person who started the run is gone.'), 'finished_at' => now()])->save();
 
             return;
         }
         $run->forceFill(['step' => $next])->save();
-        $this->steps->handle($run, $starter, $nextRepository);
+        foreach ($repositories->sortBy(fn (Repository $repository): int => (int) array_search($repository->id, $run->pipeline->repository_ids, true)) as $nextRepository) {
+            if ($run->status === 'running') {
+                $this->steps->handle($run, $starter, $nextRepository);
+            }
+        }
+    }
+
+    /**
+     * The deploys of the run's current group: the last ones it started, one per step in the group.
+     *
+     * @param  DeployPipelineRun  $run
+     * @return list<int>
+     */
+    private function groupBuilds(DeployPipelineRun $run): array
+    {
+        $size = count($run->pipeline->groups()[$run->step] ?? []);
+
+        return $size === 0 ? [] : array_slice($run->build_ids, -$size);
     }
 }

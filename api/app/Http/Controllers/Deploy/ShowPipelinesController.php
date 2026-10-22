@@ -37,7 +37,7 @@ final class ShowPipelinesController
             'pipelines' => $pipelines->map(fn (DeployPipeline $pipeline): array => [
                 'id' => $pipeline->id,
                 'name' => $pipeline->name,
-                'steps' => array_map($describe, $pipeline->repository_ids),
+                'steps' => array_map(fn (int $id, int $index): array => [...$describe($id), 'together' => $index > 0 && in_array($index, $pipeline->together ?? [], true)], $pipeline->repository_ids, array_keys($pipeline->repository_ids)),
                 'runs' => $pipeline->runs->map(fn (DeployPipelineRun $run): array => [
                     'id' => $run->id,
                     'status' => $run->status,

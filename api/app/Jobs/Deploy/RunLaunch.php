@@ -25,6 +25,7 @@ use App\Models\Repository;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
+use App\Services\Deploy\GitHubWorkflowPullRequests;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -38,8 +39,9 @@ use Throwable;
 /**
  * Works through a launch one step at a time, as the person who started it: the server (made, or an existing one),
  * a website per app, an environment per app with its runtime, production settings, secrets, workers and resources,
- * the repository connected once per app (with its subdirectory, path filters and build cache), then the deploys,
- * backends first and the rest together. While something is being set up it checks again a little later instead of
+ * the repository connected once per app (with its subdirectory, path filters and build cache, and a pull request with
+ * the GitHub Actions workflow when it builds there), then the deploys, backends first and the rest together, each
+ * built on GitHub Actions once its workflow is merged. While something is being set up it checks again a little later instead of
  * waiting, and each step records what it made, so trying again carries on where it stopped.
  */
 final class RunLaunch implements ShouldQueue
@@ -270,6 +272,14 @@ final class RunLaunch implements ShouldQueue
             ]);
             app(UpdateBuildCache::class)->handle($actor, $repository, true);
             $this->rememberApp($launch, $index, ['repository_id' => $repository->id]);
+            if ((bool) ($app['githubActions'] ?? false)) {
+                // The build needs the workflow in the repository; a pull request adds it for someone to merge.
+                try {
+                    $this->rememberApp($launch, $index, ['workflow' => app(GitHubWorkflowPullRequests::class)->open($repository->load(['provider', 'website', 'environment']))]);
+                } catch (RuntimeException $exception) {
+                    $this->rememberApp($launch, $index, ['workflowError' => $exception->getMessage()]);
+                }
+            }
         }
 
         return true;
@@ -290,7 +300,16 @@ final class RunLaunch implements ShouldQueue
             foreach (array_keys($group) as $index) {
                 $buildId = $launch->result['apps'][$index]['build_id'] ?? null;
                 if ($buildId === null) {
-                    $build = app(DeployRepository::class)->handle($actor, Repository::query()->findOrFail((int) ($launch->result['apps'][$index]['repository_id'] ?? 0)), null, 'manual');
+                    $repository = Repository::query()->with(['provider', 'website', 'environment'])->findOrFail((int) ($launch->result['apps'][$index]['repository_id'] ?? 0));
+                    // Built on GitHub Actions, it waits for the workflow pull request to be merged.
+                    if ((bool) ($launch->plan['apps'][$index]['githubActions'] ?? false) && app(GitHubWorkflowPullRequests::class)->status($repository, true) !== 'current') {
+                        $this->rememberApp($launch, $index, ['waitingForWorkflow' => true]);
+                        $live = false;
+
+                        continue;
+                    }
+                    $this->rememberApp($launch, $index, ['waitingForWorkflow' => false]);
+                    $build = app(DeployRepository::class)->handle($actor, $repository, null, 'manual');
                     $this->rememberApp($launch, $index, ['build_id' => $build->id]);
                     $live = false;
 

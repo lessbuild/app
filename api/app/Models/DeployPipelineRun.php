@@ -15,8 +15,8 @@ use Illuminate\Support\Carbon;
  * @property int $pipeline_id
  * @property string|null $started_by
  * @property string $status running, succeeded or failed
- * @property int $step the index of the repository being deployed
- * @property list<int> $build_ids the deploy of each step so far
+ * @property int $step the index of the group being deployed (see DeployPipeline::groups())
+ * @property list<int> $build_ids the deploy of each step so far, in the order they started
  * @property string|null $failure why it stopped
  * @property Carbon|null $finished_at
  * @property Carbon|null $created_at

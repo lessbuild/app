@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Data\Deploy;
+namespace App\Services\Deploy;
 
 use Closure;
 

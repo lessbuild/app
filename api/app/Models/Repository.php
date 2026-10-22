@@ -61,6 +61,7 @@ use Illuminate\Support\Carbon;
  * @property list<array<string, mixed>>|null $stack the apps found in it (DetectedApp::toArray()), when it's been read
  * @property CarbonImmutable|null $stack_checked_at
  * @property string|null $stack_error why it couldn't be read the last time
+ * @property string|null $workflow_pull_request_url the pull request Buildpusher opened with its GitHub Actions workflow
  * @property-read Environment|null $environment
  * @property-read \Illuminate\Database\Eloquent\Collection<int, Build> $builds
  * @property-read Preview|null $preview the preview this repository deploys, when it's a preview's own repository
