@@ -14,7 +14,7 @@ branch=developer
 base=/var/www/buildpusher
 shared=/mnt/volume_nyc1_1789401255960/buildpusher-v3/shared
 root="$(cd "$(dirname "$0")/.." && pwd)"
-php=/root/.local/share/buildpusher/php-8.5.10/bin/php
+php=/root/.local/share/buildpusher/php-8.5/bin/php
 
 run=${1:?Give the CI run to deploy: scripts/deploy-production.sh <run-id>}
 read -r status sha < <(gh run view "$run" -R "$repo" --json conclusion,headSha -q '"\(.conclusion) \(.headSha)"')

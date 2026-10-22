@@ -15,7 +15,7 @@ set -euo pipefail
 env_file=/mnt/volume_nyc1_1789401255960/buildpusher-v3/shared/.env
 caddy_file=/etc/caddy/buildpusher-production.caddy
 api=/var/www/buildpusher/current/api
-php=/root/.local/share/buildpusher/php-8.5.10/bin/php
+php=/root/.local/share/buildpusher/php-8.5/bin/php
 mail_from=support@buildpusher.com
 stamp=$(date +%Y%m%d%H%M%S)
 
