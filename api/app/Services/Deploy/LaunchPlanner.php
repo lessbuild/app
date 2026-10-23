@@ -9,8 +9,10 @@ use App\Enums\ServerType;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Server;
+use App\Models\User;
 use App\Services\Infrastructure\ServerPricing;
 use App\Services\Infrastructure\ServerRightsizing;
+use App\Services\Projects\ProjectResources;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -57,9 +59,10 @@ final class LaunchPlanner
      * @param  string  $domain  the main domain, e.g. example.com; an API gets api.example.com
      * @param  Provider|null  $cloud  a cloud provider, to suggest a new server's size from
      * @param  string|null  $region
+     * @param  User|null  $viewer  who's asking, so only servers they may use are offered
      * @return array{repository: array{provider_id: int, url: string, branch: string, name: string}, apps: list<array<string, mixed>>, memoryNeededMb: int, servers: list<array<string, mixed>>, recommendedSize: array{id: string, memoryGb: float, price: string|null}|null}
      */
-    public function plan(Project $project, Provider $provider, string $url, string $branch, string $domain, ?Provider $cloud = null, ?string $region = null): array
+    public function plan(Project $project, Provider $provider, string $url, string $branch, string $domain, ?Provider $cloud = null, ?string $region = null, ?User $viewer = null): array
     {
         try {
             $snapshot = $this->files->open($provider, $url, $branch);
@@ -93,7 +96,8 @@ final class LaunchPlanner
             'repository' => ['provider_id' => $provider->id, 'url' => $url, 'branch' => $branch, 'name' => $name],
             'apps' => $planned,
             'memoryNeededMb' => $need,
-            'servers' => $this->servers($project, $need),
+            'servers' => array_values(array_filter($this->servers($project, $need), fn (array $server): bool => $viewer === null
+                || app(ProjectResources::class)->mayUseServer($viewer, Server::query()->findOrFail((int) $server['id']), $project->id))),
             'recommendedSize' => $recommended === null ? null : ['id' => $recommended['id'], 'memoryGb' => $recommended['memory_gb'],
                 'price' => $recommended['price'] !== null ? $symbol.number_format((float) $recommended['price'], 2) : null],
         ];

@@ -52,6 +52,26 @@ final class PublicHttpTarget
     }
 
     /**
+     * Resolve a URL and build the HTTP options that keep a request to it off the internal network: redirects and
+     * proxies off, and the connection pinned to the public address that was checked, so DNS can't change underneath.
+     * Returns null when the URL isn't a public HTTPS target.
+     *
+     * @param  string  $url
+     * @param  bool  $httpsOnly  reject http:// (true for the integrations that must use HTTPS)
+     * @return array<string, mixed>|null
+     */
+    public function pinnedOptions(string $url, bool $httpsOnly = true): ?array
+    {
+        $resolved = $this->resolve($url);
+        if ($resolved['error'] !== null || ($httpsOnly && $resolved['scheme'] !== 'https')) {
+            return null;
+        }
+        $address = str_contains((string) $resolved['address'], ':') ? '['.$resolved['address'].']' : $resolved['address'];
+
+        return ['allow_redirects' => false, 'proxy' => '', 'curl' => [CURLOPT_RESOLVE => [$resolved['host'].':'.$resolved['port'].':'.$address]]];
+    }
+
+    /**
      * Resolve the target to the address to connect to, or say why it can't be reached: invalid, not resolvable, or
      * resolving to any non-public address.
      *

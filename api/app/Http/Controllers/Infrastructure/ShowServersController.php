@@ -32,7 +32,8 @@ final class ShowServersController
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ServersQuery $servers, Entitlements $entitlements, ServerProvisioningPlan $plan): JsonResponse
     {
-        $list = $servers->handle($project->account_id);
+        // People limited to some projects see only the servers those projects' websites run on.
+        $list = $servers->handle($project->account_id)->filter(fn (Server $server): bool => $user->can('view', $server))->values();
         $metrics = ServerMetric::query()->whereIn('id', ServerMetric::query()->whereIn('server_id', $list->modelKeys())->where('recorded_at', '>=', now()->subHour())->selectRaw('MAX(id)')->groupBy('server_id'))
             ->get()->keyBy('server_id');
 

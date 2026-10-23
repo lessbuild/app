@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteDomain;
 use App\Services\Deploy\LaunchPlanner;
+use App\Services\Projects\ProjectResources;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -47,7 +48,7 @@ final class StartLaunch
         if ($provider === null || ! $provider->type->isSourceControl()) {
             throw ValidationException::withMessages(['provider_id' => __('Choose a GitHub, GitLab or Bitbucket provider from this account.')]);
         }
-        $server = $this->server($project, (array) $data['server']);
+        $server = $this->server($actor, $project, (array) $data['server']);
         $plan = $this->planner->plan($project, $provider, (string) $data['url'], (string) $data['branch'], (string) $data['domain']);
         $apps = [];
         $domains = [];
@@ -88,18 +89,22 @@ final class StartLaunch
     }
 
     /**
-     * Check the server choice: one of the account's active app servers, or a new one from a cloud provider.
+     * Check the server choice: one of the account's active app servers (one of the person's projects', when they're
+     * limited to some), or a new one from a cloud provider.
      *
+     * @param  User  $actor
      * @param  Project  $project
      * @param  array<string, mixed>  $choice
      * @return array<string, mixed>
      */
-    private function server(Project $project, array $choice): array
+    private function server(User $actor, Project $project, array $choice): array
     {
         if (($choice['mode'] ?? null) === 'existing') {
             $server = Server::query()->where('account_id', $project->account_id)->where('type', ServerType::App)->where('provisioning_status', Server::STATUS_ACTIVE)->find((int) ($choice['server_id'] ?? 0));
 
-            return $server !== null ? ['mode' => 'existing', 'server_id' => $server->id] : throw ValidationException::withMessages(['server.server_id' => __('Choose one of your active app servers.')]);
+            $allowed = $server !== null && app(ProjectResources::class)->mayUseServer($actor, $server, $project->id);
+
+            return $allowed ? ['mode' => 'existing', 'server_id' => $server->id] : throw ValidationException::withMessages(['server.server_id' => __('Choose one of your active app servers.')]);
         }
         $provider = Provider::query()->where('account_id', $project->account_id)->find((int) ($choice['provider_id'] ?? 0));
         if ($provider === null || ! $provider->type->hostsServers()) {

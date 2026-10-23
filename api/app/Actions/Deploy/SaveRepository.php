@@ -11,6 +11,7 @@ use App\Models\Provider;
 use App\Models\Repository;
 use App\Models\User;
 use App\Models\Website;
+use App\Services\Projects\ProjectResources;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -37,7 +38,7 @@ final class SaveRepository
             throw ValidationException::withMessages(['url' => __('Use a :host repository address for this provider.', ['host' => $provider->repositoryHost()])]);
         }
         $website = Website::query()->where('account_id', $project->account_id)->find((int) $data['website_id']);
-        if ($website === null) {
+        if ($website === null || ! app(ProjectResources::class)->mayUseWebsite($actor, $website, $project->id)) {
             throw ValidationException::withMessages(['website_id' => __('Choose a website in this account.')]);
         }
         $environment = filled($data['environment_id'] ?? null) ? Environment::query()->where('project_id', $project->id)->find($data['environment_id']) : null;

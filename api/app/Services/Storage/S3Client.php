@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Storage;
 
+use App\Services\Monitoring\PublicHttpTarget;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Response;
 use RuntimeException;
@@ -19,8 +20,9 @@ final class S3Client
      * Create a new S3Client instance.
      *
      * @param  Factory  $http  Makes the signed requests.
+     * @param  PublicHttpTarget  $targets  Pins each request to the endpoint's checked public address (no SSRF).
      */
-    public function __construct(private readonly Factory $http) {}
+    public function __construct(private readonly Factory $http, private readonly PublicHttpTarget $targets) {}
 
     /**
      * Send one signed request for an object in a bucket.
@@ -39,7 +41,13 @@ final class S3Client
             throw new RuntimeException('The bucket name is invalid.');
         }
         $uri = $this->path($basePath, $location->bucket, $key);
-        $request = $this->http->connectTimeout(5)->timeout($timeout)
+        // Pin to the endpoint's public address with redirects off, so a storage endpoint can't be aimed at the
+        // internal network (the Host header stays the endpoint host, so the AWS signature is unaffected).
+        $options = $this->targets->pinnedOptions($base.$uri);
+        if ($options === null) {
+            throw new RuntimeException('Storage must use a public HTTPS endpoint.');
+        }
+        $request = $this->http->connectTimeout(5)->timeout($timeout)->withoutRedirecting()->withOptions($options)
             ->withHeaders($this->signedHeaders($method, $uri, $host, trim($location->region), $location->accessKey, $location->secretKey, $body));
         if ($method === 'PUT') {
             $request->withBody($body, 'application/octet-stream');

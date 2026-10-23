@@ -22,6 +22,17 @@ abstract class TestCase extends BaseTestCase
         // The admin panel's theme is built by CI (vite build), not before tests: render pages without its manifest.
         $this->withoutVite();
 
+        // Tests run without network. Resolve any hostname to a public address by default, so the SSRF-pinned clients
+        // (storage, 1Password, SSO, webhooks) work offline; tests that check private or unresolvable hosts bind their
+        // own resolver, which replaces this one.
+        $this->app->bind(\App\Contracts\Monitoring\DnsResolver::class, fn (): \App\Contracts\Monitoring\DnsResolver => new class implements \App\Contracts\Monitoring\DnsResolver
+        {
+            public function addresses(string $hostname): array
+            {
+                return ['93.184.216.34'];
+            }
+        });
+
         // The app's API answers a write with `{ "redirect": "/path" }` where a page used to redirect. Compare paths, so
         // tests can pass route() URLs (absolute) or the API's own paths (under /api/app) as before.
         TestResponse::macro('assertJsonRedirect', function (string $url): TestResponse {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Identity;
 
-use App\Contracts\Monitoring\DnsResolver;
 use App\Models\Account;
+use App\Services\Monitoring\PublicHttpTarget;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -28,10 +28,10 @@ final class AccountSso
     /**
      * Create a new AccountSso instance.
      *
-     * @param  DnsResolver  $dns  Resolves the issuer's hosts, so private addresses can be refused.
      * @param  AccountSaml  $saml  Handles accounts that use SAML rather than OpenID Connect.
+     * @param  PublicHttpTarget  $targets  Pins the provider's requests to its checked public address (no SSRF).
      */
-    public function __construct(private readonly DnsResolver $dns, private readonly AccountSaml $saml) {}
+    public function __construct(private readonly AccountSaml $saml, private readonly PublicHttpTarget $targets) {}
 
     /**
      * Start signing in (or proving it's you) through the account's identity provider (OpenID Connect, or SAML for
@@ -77,14 +77,14 @@ final class AccountSso
         }
         $account = Account::query()->whereKey((string) ($attempt['account'] ?? ''))->first() ?? throw new RuntimeException(__('That account no longer exists.'));
         $metadata = $this->metadata($account);
-        $token = Http::asForm()->acceptJson()->timeout(15)->post($metadata['token_endpoint'], [
+        $token = Http::asForm()->acceptJson()->timeout(15)->withoutRedirecting()->withOptions($this->pinned($metadata['token_endpoint']))->post($metadata['token_endpoint'], [
             'grant_type' => 'authorization_code', 'code' => $code, 'redirect_uri' => route('sso.callback'),
             'client_id' => $account->sso_client_id, 'client_secret' => $account->sso_client_secret, 'code_verifier' => (string) ($attempt['verifier'] ?? ''),
         ])->json('access_token');
         if (! is_string($token) || $token === '') {
             throw new RuntimeException(__('The identity provider didn’t sign you in.'));
         }
-        $profile = Http::acceptJson()->withToken($token)->timeout(15)->get($metadata['userinfo_endpoint'])->json();
+        $profile = Http::acceptJson()->withToken($token)->timeout(15)->withoutRedirecting()->withOptions($this->pinned($metadata['userinfo_endpoint']))->get($metadata['userinfo_endpoint'])->json();
         $email = mb_strtolower(is_array($profile) && is_string($profile['email'] ?? null) ? $profile['email'] : '');
         if (! filter_var($email, FILTER_VALIDATE_EMAIL) || ($profile['email_verified'] ?? true) === false) {
             throw new RuntimeException(__('The identity provider didn’t share a verified email address.'));
@@ -135,7 +135,7 @@ final class AccountSso
         }
         $issuer = rtrim((string) $account->sso_issuer, '/');
         $this->assertPublicHttps($issuer);
-        $metadata = Http::acceptJson()->timeout(15)->get($issuer.'/.well-known/openid-configuration')->json();
+        $metadata = Http::acceptJson()->timeout(15)->withoutRedirecting()->withOptions($this->pinned($issuer.'/.well-known/openid-configuration'))->get($issuer.'/.well-known/openid-configuration')->json();
         $endpoints = [];
         foreach (['authorization_endpoint', 'token_endpoint', 'userinfo_endpoint'] as $key) {
             $url = is_array($metadata) ? ($metadata[$key] ?? null) : null;
@@ -159,16 +159,20 @@ final class AccountSso
      */
     private function assertPublicHttps(string $url): void
     {
-        $parts = parse_url($url);
-        $host = is_array($parts) ? (string) ($parts['host'] ?? '') : '';
-        if (! is_array($parts) || ($parts['scheme'] ?? '') !== 'https' || $host === '' || isset($parts['user']) || isset($parts['pass'])) {
-            throw new RuntimeException(__('The identity provider must use a public HTTPS address.'));
-        }
-        $addresses = filter_var($host, FILTER_VALIDATE_IP) !== false ? [$host] : $this->dns->addresses($host);
-        foreach ($addresses === [] ? [''] : $addresses as $address) {
-            if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-                throw new RuntimeException(__('The identity provider must use a public HTTPS address.'));
-            }
-        }
+        $this->pinned($url);
+    }
+
+    /**
+     * Get the HTTP options that pin a request to the provider's checked public address, with redirects off, so the
+     * identity provider's URLs can't reach Buildpusher's own network. Throws when the URL isn't public HTTPS.
+     *
+     * @param  string  $url
+     * @return array<string, mixed>
+     *
+     * @throws RuntimeException
+     */
+    private function pinned(string $url): array
+    {
+        return $this->targets->pinnedOptions($url) ?? throw new RuntimeException(__('The identity provider must use a public HTTPS address.'));
     }
 }

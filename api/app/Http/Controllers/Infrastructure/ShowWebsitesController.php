@@ -32,7 +32,7 @@ final class ShowWebsitesController
 
         return response()->json([
             'overview' => $overview->handle($project, $user),
-            'websites' => $websites->handle($project->account_id)->map(fn (Website $website): array => [
+            'websites' => $websites->handle($project->account_id)->filter(fn (Website $website): bool => $user->can('view', $website))->map(fn (Website $website): array => [
                 'id' => $website->id,
                 'name' => $website->name,
                 'url' => $website->url,

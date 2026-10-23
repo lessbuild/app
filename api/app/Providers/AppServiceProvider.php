@@ -47,6 +47,7 @@ use App\Services\Monitoring\NativeDnsRecordResolver;
 use App\Services\Monitoring\NativeDnsResolver;
 use App\Services\Monitoring\NativeTcpConnector;
 use App\Services\Monitoring\NativeTlsCertificateInspector;
+use App\Services\Projects\ProjectResources;
 use App\Services\Security\NetworkDomainProbe;
 use App\Services\Security\OsvDatabase;
 use App\Services\SiteAudits\BraveWebSearch;
@@ -75,6 +76,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(SocialSignInGateway::class, SocialiteSignInGateway::class);
         $this->app->bind(RequestOrigin::class, HttpRequestOrigin::class);
+        // One per request (and per queued job), so the project limits it works out are read once.
+        $this->app->scoped(ProjectResources::class);
         $this->app->singleton(CountryLookup::class, DbIpCountryLookup::class);
         $this->app->bind(SearchConsole::class, GoogleSearchConsole::class);
         $this->app->bind(GoogleAnalyticsData::class, GoogleAnalytics::class);

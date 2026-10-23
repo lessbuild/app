@@ -10,6 +10,7 @@ use App\Models\StorageBucket;
 use App\Models\User;
 use App\Services\Deploy\BuildServers;
 use App\Services\Deploy\GitHubActionsBuilds;
+use App\Services\Projects\ProjectResources;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -41,7 +42,8 @@ final class SaveEnvironmentBuildServer
         if (($server === null) !== ($bucket === null)) {
             throw ValidationException::withMessages(['build_server_id' => __('Choose both a build server and a storage bucket, or neither.')]);
         }
-        if ($server !== null && ($server->account_id !== $environment->project->account_id || ! in_array($server->type, BuildServers::TYPES, true))) {
+        if ($server !== null && ($server->account_id !== $environment->project->account_id || ! in_array($server->type, BuildServers::TYPES, true)
+            || ! app(ProjectResources::class)->mayUseServer($actor, $server, $environment->project_id))) {
             throw ValidationException::withMessages(['build_server_id' => __('Choose one of this account’s app or worker servers.')]);
         }
         if ($bucket !== null && $bucket->project_id !== $environment->project_id) {

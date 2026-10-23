@@ -11,6 +11,7 @@ use App\Models\Server;
 use App\Models\User;
 use App\Policies\Concerns\ChecksAccountRole;
 use App\Services\Billing\Entitlements;
+use App\Services\Projects\ProjectResources;
 use Illuminate\Auth\Access\Response;
 
 /**
@@ -30,7 +31,7 @@ final class ServerPolicy
      */
     public function view(User $user, Server $server): bool
     {
-        return $this->allows($user, $server->account_id, AccountPermission::ViewProjects, 'infrastructure');
+        return $this->allows($user, $server->account_id, AccountPermission::ViewProjects, 'infrastructure') && app(ProjectResources::class)->mayUseServer($user, $server);
     }
 
     /**
@@ -75,7 +76,7 @@ final class ServerPolicy
      */
     public function update(User $user, Server $server): bool
     {
-        return $this->allows($user, $server->account_id, AccountPermission::ManageSettings);
+        return $this->allows($user, $server->account_id, AccountPermission::ManageSettings) && app(ProjectResources::class)->mayUseServer($user, $server);
     }
 
     /**

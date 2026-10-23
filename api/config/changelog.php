@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-23', 'title' => 'Security fixes', 'changes' => [
+        'People limited to certain projects can no longer reach another project’s websites, servers or database through the account: connecting a repository, choosing a build server, a managed database or a Launch server, and the website and server lists and pages all now stay within the person’s projects.',
+        'Storage endpoints, 1Password Connect and single sign-on addresses are now pinned to their checked public address with redirects off, so they can’t be aimed at an internal network.',
+    ]],
     ['date' => '2026-10-22', 'title' => 'Edit environment variables, and updates that finish', 'changes' => [
         'Each variable on an environment’s Variables tab now has Edit: change its value, what it’s used for, whether it’s secret, or when to rotate it, as a new version. A secret left empty keeps its value.',
         'Install updates now gives the server up to 25 minutes (it was stopped after one), finishes anything an earlier run left half-installed, and says plainly when it runs out of time.',

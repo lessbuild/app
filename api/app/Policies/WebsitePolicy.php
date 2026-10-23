@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Policies\Concerns\ChecksAccountRole;
 use App\Services\Billing\Entitlements;
+use App\Services\Projects\ProjectResources;
 use Illuminate\Auth\Access\Response;
 
 /** Like servers: anyone who can use Infrastructure sees websites (and their backups); owners and admins create, change, back up, restore and delete them. */
@@ -27,7 +28,7 @@ final class WebsitePolicy
      */
     public function view(User $user, Website $website): bool
     {
-        return $this->allows($user, $website->account_id, AccountPermission::ViewProjects, 'infrastructure');
+        return $this->allows($user, $website->account_id, AccountPermission::ViewProjects, 'infrastructure') && app(ProjectResources::class)->mayUseWebsite($user, $website);
     }
 
     /**
@@ -52,7 +53,7 @@ final class WebsitePolicy
      */
     public function update(User $user, Website $website): bool
     {
-        return $this->allows($user, $website->account_id, AccountPermission::ManageSettings);
+        return $this->allows($user, $website->account_id, AccountPermission::ManageSettings) && app(ProjectResources::class)->mayUseWebsite($user, $website);
     }
 
     /**

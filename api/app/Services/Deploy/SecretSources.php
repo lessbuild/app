@@ -63,10 +63,11 @@ final class SecretSources
     private function onePassword(array $settings): array
     {
         $host = rtrim($settings['host'] ?? '', '/');
-        if ($this->targets->parse($host) === null || ! str_starts_with($host, 'https://')) {
+        $options = $this->targets->pinnedOptions($host);
+        if ($options === null) {
             throw new RuntimeException('The Connect server needs a public https:// address.');
         }
-        $response = Http::timeout(15)->withToken($settings['token'] ?? '')->acceptJson()->withoutRedirecting()
+        $response = Http::timeout(15)->withToken($settings['token'] ?? '')->acceptJson()->withoutRedirecting()->withOptions($options)
             ->get($host.'/v1/vaults/'.rawurlencode($settings['vault'] ?? '').'/items/'.rawurlencode($settings['item'] ?? ''));
         if ($response->failed()) {
             throw new RuntimeException('1Password Connect answered HTTP '.$response->status().': '.(string) $response->json('message', 'no details'));

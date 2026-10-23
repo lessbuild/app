@@ -10,6 +10,7 @@ use App\Models\Repository;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\Billing\Entitlements;
+use App\Services\Projects\ProjectResources;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -43,7 +44,7 @@ final class SaveEnvironmentResource
         $variables = [];
         $databaseWebsite = null;
         if ($data['is_managed']) {
-            $website = $data['type'] === 'mysql' ? $databaseWebsite = $this->databaseWebsite($environment, $data['database_website_id'] ?? null) : null;
+            $website = $data['type'] === 'mysql' ? $databaseWebsite = $this->databaseWebsite($actor, $environment, $data['database_website_id'] ?? null) : null;
             $variables = match ($data['type']) {
                 'mysql' => $website === null ? throw ValidationException::withMessages(['type' => __('Connect a repository that deploys this environment to a website with a database first.')]) : [
                     'DB_CONNECTION' => 'mysql', 'DB_HOST' => '127.0.0.1', 'DB_PORT' => '3306', 'DB_DATABASE' => $website->databaseIdentifier(),
@@ -76,16 +77,19 @@ final class SaveEnvironmentResource
      * Find the website whose database a managed MySQL resource uses: the one chosen, which must belong to the account
      * and have a database, or else the first of the environment's own websites that has one. Null when there's none.
      *
+     * @param  User  $actor
      * @param  Environment  $environment
      * @param  int|string|null  $chosen  a website ID
      * @return Website|null
      */
-    private function databaseWebsite(Environment $environment, int|string|null $chosen): ?Website
+    private function databaseWebsite(User $actor, Environment $environment, int|string|null $chosen): ?Website
     {
         if ($chosen !== null && $chosen !== '') {
             $website = Website::query()->whereKey((int) $chosen)->where('account_id', $environment->project->account_id)->where('has_database', true)->first();
+            // Someone limited to some projects can only use their projects' databases.
+            $allowed = $website !== null && app(ProjectResources::class)->mayUseWebsite($actor, $website, $environment->project_id);
 
-            return $website ?? throw ValidationException::withMessages(['database_website_id' => __('Choose one of your websites that has a database.')]);
+            return $allowed ? $website : throw ValidationException::withMessages(['database_website_id' => __('Choose one of your websites that has a database.')]);
         }
 
         return Repository::query()->where('environment_id', $environment->id)->with('website')->get()
