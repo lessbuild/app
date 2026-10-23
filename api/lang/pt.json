@@ -6019,6 +6019,7 @@
     "Your :provider account must have a verified email address.": "Sua conta de :provider precisa ter um endereço de e-mail verificado.",
     "Your Analytics plan has no room for another site.": "Seu plano do Analytics não tem espaço para outro site.",
     "Your Audit plan doesn’t include this schedule. Upgrade on the billing page to run audits automatically.": "Seu plano do Audit não inclui este agendamento. Faça upgrade na página de cobrança para executar auditorias automaticamente.",
+    "Your GitLab must be reachable at a public address.": "O seu GitLab tem de estar acessível num endereço público.",
     "Your Monitoring plan allows :count dashboard. Upgrade to add more.|Your Monitoring plan allows :count dashboards. Upgrade to add more.": "Seu plano do Monitoring permite :count painel. Faça upgrade para adicionar mais.|Seu plano do Monitoring permite :count painéis. Faça upgrade para adicionar mais.",
     "Your Monitoring plan allows :count escalation step.|Your Monitoring plan allows :count escalation steps.": "Seu plano do Monitoring permite :count etapa de escalonamento.|Seu plano do Monitoring permite :count etapas de escalonamento.",
     "Your Security plan doesn’t include this check.": "Seu plano do Security não inclui esta verificação.",
