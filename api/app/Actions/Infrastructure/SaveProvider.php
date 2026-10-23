@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Infrastructure;
 
 use App\Actions\Audit\RecordAuditEntry;
+use App\Contracts\Monitoring\DnsResolver;
 use App\Enums\AuditAction;
 use App\Enums\ProviderType;
 use App\Models\Account;
@@ -13,6 +14,7 @@ use App\Models\User;
 use App\Services\Infrastructure\Azure;
 use App\Services\Infrastructure\GoogleCompute;
 use App\Services\Infrastructure\Ovh;
+use App\Services\Monitoring\PublicWebhookTarget;
 use App\Support\Hostname;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -124,6 +126,12 @@ final class SaveProvider
         $path = rtrim((string) ($parts['path'] ?? ''), '/');
         if ($path !== '' && preg_match('#\A(/[A-Za-z0-9._-]+)+\z#', $path) !== 1) {
             throw ValidationException::withMessages(['base_url' => __('Enter your GitLab’s HTTPS address, such as https://gitlab.example.com.')]);
+        }
+        // The server fetches this GitLab's API (OAuth, repositories), so it can't point at an internal address.
+        $target = app(PublicWebhookTarget::class);
+        $addresses = filter_var($host, FILTER_VALIDATE_IP) !== false ? [$host] : app(DnsResolver::class)->addresses($host);
+        if ($addresses === [] || array_any($addresses, fn (string $address): bool => ! $target->isPublic($address))) {
+            throw ValidationException::withMessages(['base_url' => __('Your GitLab must be reachable at a public address.')]);
         }
 
         return 'https://'.$host.$path;

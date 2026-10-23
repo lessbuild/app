@@ -124,4 +124,25 @@ final class ProvidersTest extends TestCase
         }
         $this->assertSame(3, \App\Models\ProviderConnectionCheck::query()->where('source', 'automatic')->count());
     }
+
+    /**
+     * A self-hosted GitLab address that resolves to an internal network is refused, so the server can't be made to
+     * reach it; a public one is accepted.
+     *
+     * @return void
+     */
+    public function test_a_self_hosted_gitlab_must_be_public(): void
+    {
+        $this->mock(\App\Contracts\Monitoring\DnsResolver::class)->shouldReceive('addresses')->andReturn(['10.0.0.5']);
+        $this->actingAs($this->owner)->postJson('/api/app/account/providers', ['name' => 'Internal GitLab', 'type' => 'gitlab', 'token' => 't', 'base_url' => 'https://git.internal.example'])
+            ->assertJsonValidationErrors('base_url');
+
+        $this->mock(\App\Contracts\Monitoring\DnsResolver::class)->shouldReceive('addresses')->andReturn(['93.184.216.34']);
+        $this->actingAs($this->owner)->postJson('/api/app/account/providers', ['name' => 'Our GitLab', 'type' => 'gitlab', 'token' => 't', 'base_url' => 'https://git.example.com'])->assertOk();
+        $this->assertSame('https://git.example.com', Provider::query()->where('name', 'Our GitLab')->value('base_url'));
+
+        // An internal IP written straight into the address is refused without any DNS.
+        $this->actingAs($this->owner)->postJson('/api/app/account/providers', ['name' => 'Raw IP', 'type' => 'gitlab', 'token' => 't', 'base_url' => 'https://169.254.169.254'])
+            ->assertJsonValidationErrors('base_url');
+    }
 }

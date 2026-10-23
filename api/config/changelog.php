@@ -5,6 +5,7 @@ declare(strict_types=1);
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
     ['date' => '2026-10-23', 'title' => 'Security fixes', 'changes' => [
+        'A self-hosted GitLab address must now resolve to a public network, so the server can’t be pointed at an internal one.',
         'People limited to certain projects can no longer reach another project’s websites, servers or database through the account: connecting a repository, choosing a build server, a managed database or a Launch server, and the website and server lists and pages all now stay within the person’s projects.',
         'Storage endpoints, 1Password Connect and single sign-on addresses are now pinned to their checked public address with redirects off, so they can’t be aimed at an internal network.',
     ]],
