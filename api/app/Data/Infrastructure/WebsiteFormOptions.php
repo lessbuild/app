@@ -42,9 +42,14 @@ final readonly class WebsiteFormOptions
      */
     public static function for(WebsitesQuery $websites, Account $account, ?Project $project = null): self
     {
-        // Default a new website to the current project's production environment (else its first), so a website added
-        // inside a project is linked to it and shows on the project's setup guide and overview.
+        // Default a new website to the project's production environment (else its first) so it's linked and shows on
+        // the setup guide — but only while that environment has no website yet. Once one does, a new website gets no
+        // environment by default: a second app would otherwise land on the first's environment and clash with its
+        // runtime (a Laravel API on a Nuxt environment, say). Launch, or the environment picker, gives it its own.
         $default = $project?->environments()->orderByRaw("CASE WHEN kind = 'production' THEN 0 ELSE 1 END")->orderBy('id')->value('id');
+        if ($default !== null && Website::query()->where('environment_id', $default)->exists()) {
+            $default = null;
+        }
 
         return new self(
             hosts: array_values($websites->hosts($account->id)->map(fn (Server $host): array => ['value' => (string) $host->id, 'label' => $host->label().' · '.$host->public_ip])->all()),

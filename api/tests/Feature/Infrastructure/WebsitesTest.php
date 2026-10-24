@@ -65,6 +65,10 @@ final class WebsitesTest extends TestCase
         $website = Website::query()->where('url', 'shop.example.com')->sole();
         $this->assertSame($production->id, $website->environment_id);
 
+        // Now that the production environment has a website, a second one defaults to no environment, so a different
+        // app isn't dropped onto the first's environment (and its runtime).
+        $this->actingAs($this->owner)->getJson("{$this->base}/create")->assertOk()->assertJsonPath('options.defaultEnvironment', null);
+
         // The project's setup guide now recognises it (not just the account-wide list).
         $step = collect((array) $this->actingAs($this->owner)->getJson("/api/app/projects/{$this->project->id}/setup")->assertOk()->json('setup.steps'))->firstWhere('key', 'website');
         $this->assertStringContainsString('Shop', (string) $step['detail']);
