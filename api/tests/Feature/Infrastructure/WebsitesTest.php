@@ -49,6 +49,26 @@ final class WebsitesTest extends TestCase
     /**
      * A website is set up on its server and goes live through callbacks.
      */
+    /**
+     * A website added from within a project defaults to that project's production environment, so it's linked to the
+     * project and shows on its setup guide (instead of floating unlinked and seeming to vanish).
+     *
+     * @return void
+     */
+    public function test_a_new_website_defaults_to_the_projects_environment(): void
+    {
+        $production = $this->project->environments()->where('slug', 'production')->firstOrFail();
+        $this->actingAs($this->owner)->getJson("{$this->base}/create")->assertOk()->assertJsonPath('options.defaultEnvironment', (string) $production->id);
+
+        $this->actingAs($this->owner)->postJson($this->base, ['name' => 'Shop', 'server_id' => $this->server->id, 'url' => 'shop.example.com', 'environment_id' => (string) $production->id])->assertSuccessful();
+        $website = Website::query()->where('url', 'shop.example.com')->sole();
+        $this->assertSame($production->id, $website->environment_id);
+
+        // The project's setup guide now recognises it (not just the account-wide list).
+        $step = collect($this->actingAs($this->owner)->getJson("/api/app/projects/{$this->project->id}/setup")->assertOk()->json('setup.steps'))->firstWhere('key', 'website');
+        $this->assertStringContainsString('Shop', (string) $step['detail']);
+    }
+
     public function test_a_website_is_set_up_on_its_server_and_goes_live_through_callbacks(): void
     {
         $this->actingAs($this->owner)->postJson($this->base, $this->website())->assertSuccessful()->assertJsonStructure(['secrets' => ['database', 'database_name']]);

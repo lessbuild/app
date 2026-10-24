@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-24', 'title' => 'New websites link to their project', 'changes' => [
+        'Adding a website inside a project now defaults its environment to that project’s production environment, so the website is linked to the project and shows on its setup guide and overview instead of appearing unlinked. You can still choose another environment or none.',
+    ]],
     ['date' => '2026-10-24', 'title' => 'Servers are watched by default', 'changes' => [
         'Every server now starts with built-in alerts for low disk (85%) and high memory (90%), so owners and admins are told before a server fills up or runs out of memory — no setup needed. They can be turned off but not deleted, and your own alert rules work alongside them.',
     ]],

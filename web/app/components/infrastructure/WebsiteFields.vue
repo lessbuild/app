@@ -8,7 +8,7 @@ import type { WebsiteDetail, WebsiteFormOptions } from '~/types/infrastructure';
 const props = withDefaults(defineProps<{ options: WebsiteFormOptions; website?: WebsiteDetail | null }>(), { website: null });
 const { t, tc } = useT();
 const server = ref<string | null>(props.website?.serverId != null ? String(props.website.serverId) : (props.options.hosts[0]?.value ?? null));
-const environment = ref<string | null>(props.website?.environmentId ?? '');
+const environment = ref<string | null>(props.website?.environmentId ?? props.options.defaultEnvironment ?? '');
 const interval = ref<string | null>(String(props.website?.healthCheckIntervalMinutes ?? 5));
 const threshold = ref<string | null>(String(props.website?.healthFailureThreshold ?? 3));
 const health = ref(props.website?.healthCheckEnabled ?? false);

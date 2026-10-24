@@ -28,7 +28,7 @@ final class CreateWebsiteController
     {
         return response()->json([
             'overview' => $overview->handle($project, $user),
-            'options' => WebsiteFormOptions::for($websites, $project->account),
+            'options' => WebsiteFormOptions::for($websites, $project->account, $project),
         ]);
     }
 }

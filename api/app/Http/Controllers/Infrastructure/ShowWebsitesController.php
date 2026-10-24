@@ -45,7 +45,7 @@ final class ShowWebsitesController
                 'cdn' => (bool) $website->getAttribute('cdn'),
             ])->values(),
             'limit' => $entitlements->for($project->account)->limit('deploy.websites.max'),
-            'options' => $canManage ? WebsiteFormOptions::for($websites, $project->account) : null,
+            'options' => $canManage ? WebsiteFormOptions::for($websites, $project->account, $project) : null,
             'canManage' => $canManage,
         ]);
     }

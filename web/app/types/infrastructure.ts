@@ -146,7 +146,7 @@ export type TerminalPage = {
 };
 
 /** The choices on a website's form. */
-export type WebsiteFormOptions = { hosts: Option[]; environments: Option[]; healthIntervals: number[]; failureThresholds: number[] };
+export type WebsiteFormOptions = { hosts: Option[]; environments: Option[]; healthIntervals: number[]; failureThresholds: number[] ; defaultEnvironment: string | null };
 
 export type WebsitesPage = {
     overview: ProjectOverview;
