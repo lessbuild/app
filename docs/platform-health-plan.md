@@ -50,11 +50,63 @@ pages — same as docs/launch-plan.md. Status: `[ ]` to do, `[x]` done.
 - [ ] Turn raw provisioning and deploy errors into a cause + next step (as done for the "database is locked" deploy
       and the 60-second update time-out), across the deploy, provisioning and server-task paths.
 
-## Further ideas (not yet scheduled)
+## Stage 7: TLS and DNS drift alerts
 
-- Secret rotation reminders: `rotation_due_at` is stored on variables but not surfaced — notify when one is due.
-- Cost anomaly alerts: tell the account when a provider bill jumps against its recent trend.
-- One-click environment-wide rollback (not just per repository).
-- Server provisioning resumability: resume a provision that stopped half-way, like RunLaunch resumes a launch.
-- Backup confidence: show each website's last successful restore drill prominently, not only in the Backups tab.
-- Onboarding: measure time-to-first-successful-deploy and guide accounts that stall.
+- [ ] Warn before a website's TLS certificate expires, and when a domain's DNS stops pointing at its server
+      (A/AAAA drift) — classic silent outages the monitoring stack can catch.
+
+## Stage 8: dependency-update pull requests for customer apps
+
+- [ ] The OSV scan already flags vulnerable packages in a website's composer.lock / package-lock.json; add a flow
+      that opens a pull request bumping the fixed version, mirroring the GitHub-workflow PR mechanism.
+
+## Stage 9: uptime and latency budgets
+
+- [ ] A per-environment monthly summary built on the existing SLO / burn-rate data: "99.9% this month, here's what
+      spent the budget," with the incidents that caused it.
+
+## Stage 10: deploy impact preview
+
+- [ ] Before a deploy, show what it will touch — pending migrations (with the destructive-migration check already
+      built), changed env vars, new or removed workers, and the files changed — from RepositoryChangeImpactEvaluator.
+
+## Stage 11: recovery drills
+
+- [ ] One action that proves recovery across database restore, shared files and (where there's a replica) failover,
+      building on the monthly restore drills and replica promotion that already exist; show the last result plainly.
+
+## Stage 12: audit log export
+
+- [ ] Stream the account audit log to a webhook / SIEM and offer a CSV export, for teams that need compliance
+      evidence.
+
+## Stage 13: cost control
+
+- [ ] Alert when a provider bill jumps against its recent trend, and proactively suggest hibernating idle
+      preview/staging environments and right-sizing over-provisioned servers (reusing the hibernation and
+      right-sizing code), each with the saving shown.
+
+## Stage 14: secret rotation reminders
+
+- [ ] `rotation_due_at` is stored on variables but not surfaced — notify when a secret is due to rotate, and make
+      rotating it a guided step.
+
+## Stage 15: environment-wide rollback
+
+- [ ] One action to roll an entire environment (every repository it deploys) back to a known-good set of releases,
+      not just one repository at a time.
+
+## Stage 16: provisioning resumability
+
+- [ ] Resume a server provision that stopped half-way from where it stopped, the way RunLaunch resumes a launch,
+      instead of starting over or being stuck.
+
+## Stage 17: getting started
+
+- [ ] A demo/sandbox project that deploys a sample app without the person first connecting their own cloud and
+      repository, so the first screen isn't empty.
+- [ ] An importer that adopts an existing server and its sites from Forge, Ploi or a plain server, extending the
+      "move from Forge or Ploi" guidance into a guided flow.
+- [ ] Shareable preview links: a URL (and screenshot) per pull-request preview that a reviewer can open without a
+      Buildpusher account.
+- [ ] Measure time-to-first-successful-deploy and guide accounts that stall before it.
