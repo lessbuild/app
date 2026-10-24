@@ -110,3 +110,26 @@ pages — same as docs/launch-plan.md. Status: `[ ]` to do, `[x]` done.
 - [ ] Shareable preview links: a URL (and screenshot) per pull-request preview that a reviewer can open without a
       Buildpusher account.
 - [ ] Measure time-to-first-successful-deploy and guide accounts that stall before it.
+
+## Stage 18: access and governance
+
+- [ ] Break-glass access: time-boxed, audited elevation to a protected environment or a server's root, so everyday
+      roles stay least-privilege (builds on the project-isolation work).
+- [ ] Enforce SSO and/or 2FA across an account, not just offer them.
+- [ ] Recurring access reviews that nudge owners to re-confirm who can reach what.
+
+## Stage 19: CLI and CI integration
+
+- [ ] A first-class `buildpusher` CLI and a composite GitHub Action over the existing API, so Buildpusher fits into
+      people's own pipelines (the Terraform provider already exists).
+- [ ] Local/preview parity: generate a `.env` and a compose/devcontainer from an environment.
+
+## Stage 20: AI-assisted incidents
+
+- [ ] When an alert fires, have the assistant summarise the likely cause from recent deploys and error spikes and
+      draft the postmortem, using the telemetry, audit log and assistant/MCP already in place.
+
+## Stage 21: portability and disaster recovery
+
+- [ ] Extend website moves into "stand up a warm copy in another region or provider and fail over," for teams that
+      need DR and fear lock-in.
