@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-24', 'title' => 'Deleting a website frees its domain', 'changes' => [
+        'After you delete a website, its domain can be used again straight away — adding a website on that domain no longer says it’s already taken by the one you removed.',
+    ]],
     ['date' => '2026-10-24', 'title' => 'Launch onto a website you already have', 'changes' => [
         'Launch from a repository now picks the repository from a list of the ones your provider can reach, instead of typing its address.',
         'Each app launches onto one of your websites: add it under Infrastructure → Websites (there’s an Add a website link right on the launch page), then choose it per app. Launch no longer creates websites by typing a domain — websites are added in one place. An app keeps the environment of the website it launches onto.',

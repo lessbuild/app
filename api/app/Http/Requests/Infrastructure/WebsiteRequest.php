@@ -15,8 +15,9 @@ use Illuminate\Validation\Rule;
 final class WebsiteRequest extends FormRequest
 {
     /**
-     * Get the validation rules for a website's settings. Its hostname must not be used by another website or domain
-     * (its own primary domain excepted), and the health check path must be an absolute path.
+     * Get the validation rules for a website's settings. Its hostname must not be used by another live website or
+     * domain (its own primary domain excepted; a deleted website's url is free to reuse), and the health check path
+     * must be an absolute path.
      *
      * @return array<string, array<mixed>>
      */
@@ -29,7 +30,7 @@ final class WebsiteRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255', 'not_regex:/[\x00-\x1F\x7F]/u'],
             'server_id' => ['required', 'integer', 'min:1'],
-            'url' => ['required', 'string', 'max:255', new Hostname, Rule::unique('websites', 'url')->ignore($websiteId), Rule::unique('website_domains', 'hostname')->ignore($primaryDomain)],
+            'url' => ['required', 'string', 'max:255', new Hostname, Rule::unique('websites', 'url')->ignore($websiteId)->whereNull('deleted_at'), Rule::unique('website_domains', 'hostname')->ignore($primaryDomain)],
             'description' => ['nullable', 'string', 'max:2000'],
             'environment_id' => ['nullable', 'string', 'max:26'],
             'env_file' => ['nullable', 'string', 'max:65535'],

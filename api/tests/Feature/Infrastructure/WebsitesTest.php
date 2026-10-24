@@ -17,6 +17,7 @@ use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\Feature\Monitoring\MonitoringHelpers;
 use Tests\TestCase;
 
@@ -261,6 +262,22 @@ final class WebsitesTest extends TestCase
         $this->actingAs($this->owner)->getJson("{$this->base}/{$website->id}")->assertOk()
             ->assertJsonStructure(['website', 'health', 'domains', 'inspection', 'databaseUsers', 'backups', 'schedules', 'options', 'caddyConfiguration'])
             ->assertJsonPath('canBrowseFiles', true);
+    }
+
+    /**
+     * A deleted website's domain is free again: the same url can be added to a new website, rather than being
+     * turned away as already taken by the website that's gone.
+     *
+     * @return void
+     */
+    public function test_a_deleted_websites_domain_can_be_added_again(): void
+    {
+        Queue::fake();
+        $website = Website::factory()->create(['account_id' => $this->project->account_id, 'server_id' => $this->server->id, 'url' => 'reuse.example.com', 'deployment_slug' => 'reuse']);
+        $this->actingAs($this->owner)->deleteJson("{$this->base}/{$website->id}")->assertJsonRedirect($this->base);
+
+        $this->actingAs($this->owner)->postJson($this->base, $this->website(['url' => 'reuse.example.com', 'deployment_slug' => 'reuse-2']))->assertSuccessful();
+        $this->assertSame(1, Website::query()->where('url', 'reuse.example.com')->count());
     }
 
     /**
