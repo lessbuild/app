@@ -7,6 +7,7 @@ namespace App\Services\Projects;
 use App\Enums\AccountRole;
 use App\Models\Environment;
 use App\Models\Membership;
+use App\Models\Project;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\User;
@@ -139,5 +140,54 @@ final class ProjectResources
         $projects = $projectId === null ? $limited : array_values(array_intersect($limited, [$projectId]));
 
         return $projects !== [] && in_array($server->id, $this->serverIds($projects), true);
+    }
+
+    /**
+     * The websites to show on a project's Infrastructure pages: the project's own (serving its environments, or
+     * deployed to by its repositories) plus any website not yet assigned to any project, so a freshly-created or
+     * unlinked website stays visible rather than seeming to vanish.
+     *
+     * @param  Project  $project
+     * @return list<int>
+     */
+    public function visibleWebsiteIds(Project $project): array
+    {
+        $own = $this->websiteIds([$project->id]);
+        $assigned = $this->assignedWebsiteIds($project->account_id);
+        $unassigned = Website::query()->where('account_id', $project->account_id)->whereNotIn('id', $assigned)->pluck('id')->all();
+
+        return array_values(array_unique(array_map(intval(...), [...$own, ...$unassigned])));
+    }
+
+    /**
+     * The servers to show on a project's Infrastructure pages: the ones hosting the project's websites, plus any
+     * server not yet assigned to a project (hosting no website, or only websites that are themselves unassigned),
+     * so a freshly-created server — or one under an unlinked website — stays visible rather than seeming to vanish.
+     *
+     * @param  Project  $project
+     * @return list<int>
+     */
+    public function visibleServerIds(Project $project): array
+    {
+        $own = $this->serverIds([$project->id]);
+        $hostingAssigned = Website::query()->where('account_id', $project->account_id)->whereNotNull('server_id')->whereIn('id', $this->assignedWebsiteIds($project->account_id))->pluck('server_id')->all();
+        $unassigned = Server::query()->where('account_id', $project->account_id)->whereNotIn('id', $hostingAssigned)->pluck('id')->all();
+
+        return array_values(array_unique(array_map(intval(...), [...$own, ...$unassigned])));
+    }
+
+    /**
+     * Every website in the account that belongs to some project: it serves an environment (which belongs to a
+     * project) or a repository deploys to it.
+     *
+     * @param  string  $accountId
+     * @return list<int>
+     */
+    private function assignedWebsiteIds(string $accountId): array
+    {
+        return array_values(array_unique(array_map(intval(...), [
+            ...Website::query()->where('account_id', $accountId)->whereNotNull('environment_id')->pluck('id')->all(),
+            ...Repository::query()->whereNotNull('website_id')->whereHas('website', fn ($query) => $query->where('account_id', $accountId))->pluck('website_id')->all(),
+        ])));
     }
 }

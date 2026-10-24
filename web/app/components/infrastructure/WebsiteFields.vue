@@ -5,7 +5,7 @@ import type { WebsiteDetail, WebsiteFormOptions } from '~/types/infrastructure';
  * A website's fields (the Acme theme's create website form): the website itself, then its environment and health
  * checks, which show their settings once they're on. Side by side when there's room. `website` is null when creating.
  */
-const props = withDefaults(defineProps<{ options: WebsiteFormOptions; website?: WebsiteDetail | null }>(), { website: null });
+const props = withDefaults(defineProps<{ options: WebsiteFormOptions; website?: WebsiteDetail | null; projectId?: string | null }>(), { website: null, projectId: null });
 const { t, tc } = useT();
 const server = ref<string | null>(props.website?.serverId != null ? String(props.website.serverId) : (props.options.hosts[0]?.value ?? null));
 const environment = ref<string | null>(props.website?.environmentId ?? props.options.defaultEnvironment ?? '');
@@ -22,7 +22,10 @@ const thresholds = computed(() => props.options.failureThresholds.map((count) =>
             <fieldset class="grid content-start gap-4 rounded-2xl border border-line bg-surface p-5 shadow-card">
                 <legend class="float-left mb-1 font-semibold text-ink">{{ t('Website') }}</legend>
                 <InputField name="name" :label="t('Name')" :model-value="website?.name" maxlength="255" placeholder="Shop" required />
-                <SelectField v-model="server" name="server_id" :label="t('Server')" :options="options.hosts" required />
+                <div>
+                    <SelectField v-model="server" name="server_id" :label="t('Server')" :options="options.hosts" required />
+                    <NuxtLink v-if="projectId" :to="`/projects/${projectId}/infrastructure/servers/create`" class="mt-1 inline-block text-xs font-medium text-accent hover:underline">{{ t('Create another server') }}</NuxtLink>
+                </div>
                 <InputField name="url" :label="t('Domain')" :model-value="website?.url" maxlength="255" placeholder="shop.example.com" :description="t('Point its DNS at the server; Caddy gets the certificate.')" required />
                 <InputField name="release_retention" type="number" min="2" max="20" :label="t('Releases to keep')" :model-value="String(website?.releaseRetention ?? 5)" />
                 <ToggleField

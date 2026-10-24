@@ -16,7 +16,7 @@ const { data, failed } = useDialogData<{ options: WebsiteFormOptions }>('create-
     <FormDialog v-if="data && data.options.hosts.length > 0" id="create-website" :title="t('Create a website')" :description="t('We set up the Caddy site, a MySQL database and user, and the .env file.')" :action="`/api/app/projects/${projectId}/infrastructure/websites`" :submit="t('Create website')" size="large">
         <input v-if="back" type="hidden" name="_return" :value="back">
         <PlanLimitAlert billing-url="/account/billing" />
-        <WebsiteFields :options="data.options" />
+        <WebsiteFields :options="data.options" :project-id="projectId" />
     </FormDialog>
     <UiDialog v-else id="create-website" :title="t('Create a website')">
         <EmptyState v-if="data" icon="server" :title="t('No app servers ready')" :description="t('Websites need an active app server with MySQL. Create one first.')">

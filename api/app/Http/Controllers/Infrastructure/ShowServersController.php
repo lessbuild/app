@@ -13,6 +13,7 @@ use App\Queries\Infrastructure\ServersQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Services\Billing\Entitlements;
 use App\Services\Infrastructure\ServerProvisioningPlan;
+use App\Services\Projects\ProjectResources;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
@@ -33,7 +34,9 @@ final class ShowServersController
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ServersQuery $servers, Entitlements $entitlements, ServerProvisioningPlan $plan): JsonResponse
     {
         // People limited to some projects see only the servers those projects' websites run on.
-        $list = $servers->handle($project->account_id)->filter(fn (Server $server): bool => $user->can('view', $server))->values();
+        $list = $servers->handle($project->account_id)
+            ->whereIn('id', app(ProjectResources::class)->visibleServerIds($project))
+            ->filter(fn (Server $server): bool => $user->can('view', $server))->values();
         $metrics = ServerMetric::query()->whereIn('id', ServerMetric::query()->whereIn('server_id', $list->modelKeys())->where('recorded_at', '>=', now()->subHour())->selectRaw('MAX(id)')->groupBy('server_id'))
             ->get()->keyBy('server_id');
 

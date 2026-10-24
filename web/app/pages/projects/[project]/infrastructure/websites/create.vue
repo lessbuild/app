@@ -29,7 +29,7 @@ const back = computed(() => (typeof route.query._return === 'string' ? route.que
             <PlanLimitAlert billing-url="/account/billing" />
             <input v-if="back" type="hidden" name="_return" :value="back">
             <AcmeCard v-if="importing" :title="t('Website')" class="max-w-2xl"><WebsiteImportFields :hosts="data.options.hosts" /></AcmeCard>
-            <WebsiteFields v-else :options="data.options" />
+            <WebsiteFields v-else :options="data.options" :project-id="project.id" />
             <div class="flex flex-wrap gap-2">
                 <SubmitButton>{{ importing ? t('Import website') : t('Create website') }}</SubmitButton>
                 <CancelButton :to="back ?? `/projects/${project.id}/infrastructure/websites`" />

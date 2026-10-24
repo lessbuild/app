@@ -11,6 +11,7 @@ use App\Models\Website;
 use App\Queries\Infrastructure\WebsitesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Services\Billing\Entitlements;
+use App\Services\Projects\ProjectResources;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
@@ -32,18 +33,20 @@ final class ShowWebsitesController
 
         return response()->json([
             'overview' => $overview->handle($project, $user),
-            'websites' => $websites->handle($project->account_id)->filter(fn (Website $website): bool => $user->can('view', $website))->map(fn (Website $website): array => [
-                'id' => $website->id,
-                'name' => $website->name,
-                'url' => $website->url,
-                'server' => $website->server?->label(),
-                'status' => $website->provisioning_status,
-                'directory' => $website->deployment_slug,
-                'php' => $website->phpVersion(),
-                'healthChecked' => $website->health_check_enabled,
-                'environment' => $website->environment !== null ? $website->environment->project->name.' · '.$website->environment->name : null,
-                'cdn' => (bool) $website->getAttribute('cdn'),
-            ])->values(),
+            'websites' => $websites->handle($project->account_id)
+                ->whereIn('id', app(ProjectResources::class)->visibleWebsiteIds($project))
+                ->filter(fn (Website $website): bool => $user->can('view', $website))->map(fn (Website $website): array => [
+                    'id' => $website->id,
+                    'name' => $website->name,
+                    'url' => $website->url,
+                    'server' => $website->server?->label(),
+                    'status' => $website->provisioning_status,
+                    'directory' => $website->deployment_slug,
+                    'php' => $website->phpVersion(),
+                    'healthChecked' => $website->health_check_enabled,
+                    'environment' => $website->environment !== null ? $website->environment->project->name.' · '.$website->environment->name : null,
+                    'cdn' => (bool) $website->getAttribute('cdn'),
+                ])->values(),
             'limit' => $entitlements->for($project->account)->limit('deploy.websites.max'),
             'options' => $canManage ? WebsiteFormOptions::for($websites, $project->account, $project) : null,
             'canManage' => $canManage,

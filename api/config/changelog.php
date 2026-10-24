@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-24', 'title' => 'Infrastructure stays within its project', 'changes' => [
+        'A project’s Websites and Servers pages now list that project’s own resources plus anything not yet assigned to a project — not another project’s websites and servers. Nothing is hidden that you could already open; the lists are just no longer a mix of every project in the account.',
+        'When you’re adding a website and picking its server, a “Create another server” link takes you straight to adding a server to the project, so you don’t have to leave the form to make one first.',
+    ]],
     ['date' => '2026-10-24', 'title' => 'New websites link to their project', 'changes' => [
         'Adding a website inside a project now defaults its environment to that project’s production environment, so the website is linked to the project and shows on its setup guide and overview instead of appearing unlinked. You can still choose another environment or none.',
     ]],
