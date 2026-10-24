@@ -85,29 +85,62 @@ final class InfrastructureHealthTest extends TestCase
         $this->addMember($this->project, $member, AccountRole::Member);
         $base = "/api/app/projects/{$this->project->id}/infrastructure/servers/{$this->server->id}";
         $this->actingAs($this->owner)->postJson("{$base}/alerts", ['name' => 'Disk almost full', 'metric' => 'disk_percent', 'operator' => 'gte', 'threshold' => 90, 'consecutive_breaches' => 2, 'cooldown_minutes' => 60, 'scope' => 'server'])->assertSuccessful();
-        $rule = ServerAlertRule::query()->sole();
+        $rule = ServerAlertRule::query()->where('name', 'Disk almost full')->sole();
+        $sent = fn (User $user): int => Notification::sent($user, ServerAlertChanged::class)->filter(fn (ServerAlertChanged $n): bool => str_contains($n->toArray($user)['title'], 'Disk almost full'))->count();
 
         foreach ([95, 96, 97] as $disk) {
             $this->reading($disk);
         }
         $this->assertTrue($this->reload($rule)->is_alerting);
-        Notification::assertSentToTimes($this->owner, ServerAlertChanged::class, 1);
+        $this->assertSame(1, $sent($this->owner));
         Notification::assertSentTo($admin, ServerAlertChanged::class, fn (ServerAlertChanged $notification): bool => $notification->toArray($admin)['title'] === 'Disk almost full on '.$this->server->label());
         Notification::assertNotSentTo($member, ServerAlertChanged::class);
 
         $this->reading(40);
         $this->assertFalse($this->reload($rule)->is_alerting);
-        Notification::assertSentToTimes($this->owner, ServerAlertChanged::class, 2);
+        $this->assertSame(2, $sent($this->owner));
 
         // Tripping again inside the cooldown stays quiet.
         $this->reading(95);
         $this->reading(95);
-        Notification::assertSentToTimes($this->owner, ServerAlertChanged::class, 2);
+        $this->assertSame(2, $sent($this->owner));
 
-        $this->actingAs($this->owner)->getJson($base)->assertJsonPath('alertRules.0.name', 'Disk almost full')->assertJsonPath('alertRules.0.everyServer', false);
+        $this->actingAs($this->owner)->getJson($base)->assertJsonFragment(['name' => 'Disk almost full', 'everyServer' => false, 'builtIn' => false]);
         $this->actingAs($member)->postJson("{$base}/alerts", ['name' => 'x', 'metric' => 'cpu_percent', 'operator' => 'gte', 'threshold' => 1, 'consecutive_breaches' => 1, 'cooldown_minutes' => 5, 'scope' => 'account'])->assertForbidden();
         $this->actingAs($this->owner)->deleteJson("{$base}/alerts/{$rule->id}")->assertSuccessful();
         $this->assertModelMissing($rule);
+    }
+
+    /**
+     * Every server is watched by Buildpusher's built-in disk and memory alerts without anyone setting them up: they
+     * appear on the first reading, trip on a full disk, can be turned off but not deleted, and stay quiet once off.
+     *
+     * @return void
+     */
+    public function test_servers_get_built_in_disk_and_memory_alerts(): void
+    {
+        Notification::fake();
+        $base = "/api/app/projects/{$this->project->id}/infrastructure/servers/{$this->server->id}";
+
+        $this->reading(50);
+        $disk = ServerAlertRule::query()->where('server_id', $this->server->id)->where('built_in', true)->where('metric', 'disk_percent')->sole();
+        $this->assertSame(['Disk space low', 'Memory running high'], ServerAlertRule::query()->where('built_in', true)->orderBy('id')->pluck('name')->all());
+
+        $this->reading(90);
+        $this->assertTrue($this->reload($disk)->is_alerting);
+        Notification::assertSentTo($this->owner, ServerAlertChanged::class, fn (ServerAlertChanged $n): bool => str_contains($n->toArray($this->owner)['title'], 'Disk space low'));
+
+        // A built-in rule can't be deleted, only turned off.
+        $this->actingAs($this->owner)->deleteJson("{$base}/alerts/{$disk->id}")->assertJsonValidationErrors('rule');
+        $this->actingAs($this->owner)->patchJson("{$base}/alerts/{$disk->id}", ['enabled' => '0'])->assertSuccessful();
+        $this->assertFalse($this->reload($disk)->is_enabled);
+        $this->assertFalse($this->reload($disk)->is_alerting);
+
+        // While off it doesn't alert, and it isn't recreated as enabled on the next reading.
+        Notification::fake();
+        $this->reading(99);
+        Notification::assertNothingSent();
+        $this->assertFalse($this->reload($disk)->is_enabled);
     }
 
     private function reading(int $disk): void

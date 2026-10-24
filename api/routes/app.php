@@ -274,6 +274,7 @@ use App\Http\Controllers\Infrastructure\StoreWebsiteController;
 use App\Http\Controllers\Infrastructure\StoreWebsiteDomainController;
 use App\Http\Controllers\Infrastructure\StoreWebsiteImportController;
 use App\Http\Controllers\Infrastructure\SyncWebsiteDomainController;
+use App\Http\Controllers\Infrastructure\ToggleServerAlertRuleController;
 use App\Http\Controllers\Infrastructure\UpdateBackupDestinationController;
 use App\Http\Controllers\Infrastructure\UpdateDomainEdgeController;
 use App\Http\Controllers\Infrastructure\UpdateInfrastructureBudgetController;
@@ -869,6 +870,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::post('/servers/{server}/logs/{type}', RefreshServerLogController::class)->whereNumber('server')->middleware(['can:view,server', 'throttle:20,1'])->name('servers.logs.refresh');
         Route::get('/servers/{server}/logs/{type}', App\Http\Controllers\Infrastructure\DownloadServerLogController::class)->whereNumber('server')->where('type', '[a-z0-9_-]+')->middleware(['can:view,server', 'throttle:30,1'])->name('servers.logs.download');
         Route::post('/servers/{server}/alerts', StoreServerAlertRuleController::class)->whereNumber('server')->middleware(['can:create,App\\Models\\ServerAlertRule,project', 'throttle:20,1'])->name('servers.alerts.store');
+        Route::patch('/servers/{server}/alerts/{rule}', ToggleServerAlertRuleController::class)->whereNumber(['server', 'rule'])->middleware('can:update,server')->name('servers.alerts.toggle');
         Route::delete('/servers/{server}/alerts/{rule}', DeleteServerAlertRuleController::class)->whereNumber(['server', 'rule'])->middleware('can:update,server')->name('servers.alerts.destroy');
         Route::post('/servers/{server}/diagnostics', RunServerDiagnosticsController::class)->whereNumber('server')->middleware(['can:view,server', 'throttle:10,1'])->name('servers.diagnostics');
         Route::get('/websites', ShowWebsitesController::class)->name('websites');

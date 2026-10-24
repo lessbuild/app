@@ -22,6 +22,13 @@ final class ServerAlertRulePolicy
      * @param  Account|Project  $scope
      * @return bool
      */
+    /**
+     * Determine whether the user can add a server alert rule.
+     *
+     * @param  User  $user
+     * @param  Account|Project  $scope
+     * @return bool
+     */
     public function create(User $user, Account|Project $scope): bool
     {
         return $this->allows($user, $this->accountIdOf($scope), AccountPermission::ManageSettings);
@@ -29,6 +36,25 @@ final class ServerAlertRulePolicy
 
     /**
      * Determine whether the user can remove a rule: the same people.
+     *
+     * @param  User  $user
+     * @param  ServerAlertRule  $rule
+     * @return bool
+     */
+    /**
+     * Determine whether the user can enable or disable a server alert rule.
+     *
+     * @param  User  $user
+     * @param  ServerAlertRule  $rule
+     * @return bool
+     */
+    public function update(User $user, ServerAlertRule $rule): bool
+    {
+        return $this->allows($user, $rule->account_id, AccountPermission::ManageSettings);
+    }
+
+    /**
+     * Determine whether the user can delete a server alert rule.
      *
      * @param  User  $user
      * @param  ServerAlertRule  $rule

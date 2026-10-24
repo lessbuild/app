@@ -23,9 +23,45 @@ class ServerAlerts
      * @param  ServerMetric  $metric
      * @return void
      */
+    /**
+     * The rules Buildpusher keeps on every server itself, so disk and memory are watched without anyone setting a
+     * rule up. Keyed by a stable name; created if missing, and protected from deletion.
+     *
+     * @var array<string, array{metric: string, operator: string, threshold: float, consecutive_breaches: int, cooldown_minutes: int}>
+     */
+    public const BUILT_IN = [
+        'Disk space low' => ['metric' => 'disk_percent', 'operator' => 'gte', 'threshold' => 85.0, 'consecutive_breaches' => 1, 'cooldown_minutes' => 720],
+        'Memory running high' => ['metric' => 'memory_percent', 'operator' => 'gte', 'threshold' => 90.0, 'consecutive_breaches' => 5, 'cooldown_minutes' => 360],
+    ];
+
+    /**
+     * Make sure a server has Buildpusher's built-in disk and memory rules, creating any that are missing. Returns
+     * nothing; called before each evaluation so every active server is watched by default.
+     *
+     * @param  \App\Models\Server  $server
+     * @return void
+     */
+    public function ensureBuiltIn(\App\Models\Server $server): void
+    {
+        $existing = ServerAlertRule::query()->where('server_id', $server->id)->where('built_in', true)->pluck('name')->all();
+        foreach (self::BUILT_IN as $name => $rule) {
+            if (! in_array($name, $existing, true)) {
+                (new ServerAlertRule)->forceFill([...$rule, 'account_id' => $server->account_id, 'server_id' => $server->id, 'built_in' => true, 'name' => $name, 'is_enabled' => true])->save();
+            }
+        }
+    }
+
+    /**
+     * Check a new reading against this server's rules (including the built-in ones), tripping or recovering each and
+     * notifying owners and admins when its state changes.
+     *
+     * @param  ServerMetric  $metric
+     * @return void
+     */
     public function evaluate(ServerMetric $metric): void
     {
         $server = $metric->server;
+        $this->ensureBuiltIn($server);
         $now = CarbonImmutable::now('UTC');
         $rules = ServerAlertRule::query()->where('account_id', $server->account_id)->where('is_enabled', true)
             ->where(fn ($query) => $query->whereNull('server_id')->orWhere('server_id', $server->id))->get();

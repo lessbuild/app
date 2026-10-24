@@ -103,6 +103,7 @@ final readonly class ServerPageQuery
                 ->map(fn (ServerAlertRule $rule): array => [
                     'id' => $rule->id, 'name' => $rule->name, 'metric' => __(ServerAlertRule::METRICS[$rule->metric] ?? $rule->metric), 'operator' => $rule->operator,
                     'threshold' => (float) $rule->threshold, 'readings' => $rule->consecutive_breaches, 'everyServer' => $rule->server_id === null, 'alerting' => (bool) $rule->is_alerting,
+                    'builtIn' => (bool) $rule->built_in, 'enabled' => (bool) $rule->is_enabled,
                 ])->values() : [],
             'alertMetrics' => array_map(fn (string $label): string => __($label), ServerAlertRule::METRICS),
             'diagnostics' => $server->diagnosticSnapshot === null ? null : [

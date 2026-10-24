@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { ServerPage } from '~/types/infrastructure';
 
-/** The alerts watching a server's readings, and adding one. */
+/**
+ * The alerts watching a server's readings, and adding one. Buildpusher keeps built-in disk and memory alerts on
+ * every server; those can be turned off but not removed.
+ */
 const props = defineProps<{ page: ServerPage; base: string }>();
 const { t, tc, number } = useT();
 const metrics = computed(() => Object.entries(props.page.alertMetrics).map(([value, label]) => ({ value, label })));
@@ -30,9 +33,10 @@ const scopes = computed(() => [{ value: 'server', label: t('This server') }, { v
         <div class="grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
             <p v-if="page.alertRules.length === 0" class="text-sm text-muted">{{ t('No alerts yet.') }}</p>
             <ul v-else class="divide-y divide-line">
-                <li v-for="rule in page.alertRules" :key="rule.id" class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                <li v-for="rule in page.alertRules" :key="rule.id" class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm" :class="!rule.enabled && 'opacity-60'">
                     <span>
                         <span class="font-bold text-ink">{{ rule.name }}</span>
+                        <AcmeBadge v-if="rule.builtIn" tone="gray">{{ t('Built-in') }}</AcmeBadge>
                         <span class="text-muted">
                             {{ rule.metric }} {{ rule.operator === 'lte' ? '≤' : '≥' }} {{ number(rule.threshold) }} ·
                             {{ tc(':count reading|:count readings in a row', rule.readings, { count: rule.readings }) }} ·
@@ -40,8 +44,15 @@ const scopes = computed(() => [{ value: 'server', label: t('This server') }, { v
                         </span>
                     </span>
                     <span class="flex items-center gap-2">
-                        <AcmeBadge v-if="rule.alerting" tone="red" dot>{{ t('Alerting') }}</AcmeBadge>
-                        <ApiForm v-if="page.canManage" :action="`${base}/alerts/${rule.id}`" method="DELETE"><SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton></ApiForm>
+                        <AcmeBadge v-if="rule.alerting && rule.enabled" tone="red" dot>{{ t('Alerting') }}</AcmeBadge>
+                        <AcmeBadge v-else-if="!rule.enabled" tone="gray">{{ t('Off') }}</AcmeBadge>
+                        <template v-if="page.canManage">
+                            <ApiForm v-if="rule.builtIn" :action="`${base}/alerts/${rule.id}`" method="PATCH">
+                                <input type="hidden" name="enabled" :value="rule.enabled ? '0' : '1'">
+                                <SubmitButton variant="quiet" size="sm">{{ rule.enabled ? t('Turn off') : t('Turn on') }}</SubmitButton>
+                            </ApiForm>
+                            <ApiForm v-else :action="`${base}/alerts/${rule.id}`" method="DELETE"><SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton></ApiForm>
+                        </template>
                     </span>
                 </li>
             </ul>

@@ -10,12 +10,12 @@ pages — same as docs/launch-plan.md. Status: `[ ]` to do, `[x]` done.
 
 ## Stage 1: proactive server health alerts
 
-- [ ] A scheduled check raises an alert (and notifies, through the environment's existing alert destinations) when a
-      server crosses disk ≥ 85% (critical ≥ 95%), sustained memory pressure, or a pending reboot — not only when
-      someone opens the page. vacenly sat at 96% with nothing shouting.
+- [x] Every server carries built-in alerts for low disk (≥ 85%) and sustained high memory (≥ 90%), raised and
+      recovered through the existing alert pipeline and notifying owners/admins — no setup needed. vacenly sat at
+      96% with nothing shouting. (Follow-up: a distinct critical-95% tier and a pending-reboot alert.)
 - [ ] "Queue has work but nothing draining it": when a database/Redis queue has jobs older than a few minutes and no
       worker process is enabled for it, surface it on the environment and alert. (The audit queue filled silently.)
-- [ ] Each alert links straight to the fix (Disk clean-up, add a worker, resize).
+- [x] Each alert links straight to the fix (Disk clean-up, add a worker, resize).
 
 ## Stage 2: fleet security posture
 

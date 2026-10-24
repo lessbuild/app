@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property string $account_id
  * @property string|null $created_by
  * @property int|null $server_id
+ * @property bool $built_in a default rule Buildpusher keeps on every server (can be disabled, not deleted)
  * @property string $name
  * @property string $metric
  * @property string $operator gte or lte
@@ -59,7 +60,7 @@ class ServerAlertRule extends Model
     {
         return [
             'threshold' => 'float', 'consecutive_breaches' => 'integer', 'breach_count' => 'integer', 'cooldown_minutes' => 'integer',
-            'is_enabled' => 'boolean', 'is_alerting' => 'boolean', 'last_evaluated_at' => 'immutable_datetime', 'last_triggered_at' => 'immutable_datetime',
+            'built_in' => 'boolean', 'is_enabled' => 'boolean', 'is_alerting' => 'boolean', 'last_evaluated_at' => 'immutable_datetime', 'last_triggered_at' => 'immutable_datetime',
         ];
     }
 }

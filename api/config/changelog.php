@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-24', 'title' => 'Servers are watched by default', 'changes' => [
+        'Every server now starts with built-in alerts for low disk (85%) and high memory (90%), so owners and admins are told before a server fills up or runs out of memory — no setup needed. They can be turned off but not deleted, and your own alert rules work alongside them.',
+    ]],
     ['date' => '2026-10-23', 'title' => 'Security fixes', 'changes' => [
         'A self-hosted GitLab address must now resolve to a public network, so the server can’t be pointed at an internal one.',
         'People limited to certain projects can no longer reach another project’s websites, servers or database through the account: connecting a repository, choosing a build server, a managed database or a Launch server, and the website and server lists and pages all now stay within the person’s projects.',

@@ -73,7 +73,7 @@ export type ServerPage = {
     };
     latest: { cpu: number; memory: number; disk: number; load: number; recordedAt: string; uptimeDays: number; processes: number } | null;
     cpu: Array<{ at: string; value: number }>;
-    alertRules: Array<{ id: number; name: string; metric: string; operator: string; threshold: number; readings: number; everyServer: boolean; alerting: boolean }>;
+    alertRules: Array<{ id: number; name: string; metric: string; operator: string; threshold: number; readings: number; everyServer: boolean; alerting: boolean ; builtIn: boolean; enabled: boolean }>;
     alertMetrics: Record<string, string>;
     diagnostics: { running: boolean; finishedAt: string | null; checks: Array<{ name: string; detail: string; passed: boolean }> } | null;
     diskScan: { status: string; error: string | null; scannedAt: string | null; free: number | null; size: number | null; categories: Array<{ key: string; label: string; bytes: number }> } | null;

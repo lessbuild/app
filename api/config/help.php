@@ -179,6 +179,7 @@ return [
                 ['Cron jobs', 'On the server’s Processes & cron tab, add a command and a schedule (or pick a preset such as every minute). It runs as the server’s user.'],
                 ['Processes', 'The same tab keeps commands running and restarts them if they stop: queue workers, Horizon, Reverb, Pulse or your own. Restart one after a deploy from its row.'],
                 ['Firewall', 'The Network tab opens or closes ports, for everyone or only some addresses. Turn on Private network there to let your other servers in the same region connect.'],
+                ['Alerts', 'The Alerts tab watches the server’s readings and emails owners and admins (and sends an inbox message) when one stays past a threshold, and again when it recovers. Every server starts with built-in alerts for low disk (85%) and high memory (90%) so it’s watched without any setup — you can turn those off but not delete them. Add your own for CPU, load or other thresholds.'],
                 ['Services', 'The Services tab installs Meilisearch, Typesense or Redis, listening on the server only or on the private network. Its address and key are shown once it’s running.'],
             ],
         ],
