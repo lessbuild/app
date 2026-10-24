@@ -39,8 +39,8 @@ final class ProjectScopedInfraTest extends TestCase
         $payeioServer = Server::factory()->create(['account_id' => $vacenly->account_id, 'provider_id' => $provider->id, 'name' => 'payeio-box']);
         $freshServer = Server::factory()->create(['account_id' => $vacenly->account_id, 'provider_id' => $provider->id, 'name' => 'unassigned-box']);
 
-        $vacenlyWeb = Website::factory()->create(['account_id' => $vacenly->account_id, 'server_id' => $vacenlyServer->id, 'environment_id' => $vacenly->environments()->first()->id, 'url' => 'vacenly.com', 'deployment_slug' => 'vacenly']);
-        $payeioWeb = Website::factory()->create(['account_id' => $vacenly->account_id, 'server_id' => $payeioServer->id, 'environment_id' => $payeio->environments()->first()->id, 'url' => 'payeio.com', 'deployment_slug' => 'payeio']);
+        $vacenlyWeb = Website::factory()->create(['account_id' => $vacenly->account_id, 'server_id' => $vacenlyServer->id, 'environment_id' => $vacenly->environments()->firstOrFail()->id, 'url' => 'vacenly.com', 'deployment_slug' => 'vacenly']);
+        $payeioWeb = Website::factory()->create(['account_id' => $vacenly->account_id, 'server_id' => $payeioServer->id, 'environment_id' => $payeio->environments()->firstOrFail()->id, 'url' => 'payeio.com', 'deployment_slug' => 'payeio']);
         $unassignedWeb = Website::factory()->create(['account_id' => $vacenly->account_id, 'server_id' => $freshServer->id, 'environment_id' => null, 'url' => 'floating.com', 'deployment_slug' => 'floating']);
 
         // On Vacenly: its own website + the unassigned one; not Payeio's.
