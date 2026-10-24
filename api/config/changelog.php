@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-24', 'title' => 'Clearer launch domain errors', 'changes' => [
+        'Launch from a repository now says which domain is already taken and suggests a free one (payeio.com → payeio-2.com), instead of telling you to “use a domain no other website has, such as payeio.com” — the very domain that was taken. An invalid domain gets its own message.',
+    ]],
     ['date' => '2026-10-24', 'title' => 'Infrastructure stays within its project', 'changes' => [
         'A project’s Websites and Servers pages now list that project’s own resources plus anything not yet assigned to a project — not another project’s websites and servers. Nothing is hidden that you could already open; the lists are just no longer a mix of every project in the account.',
         'When you’re adding a website and picking its server, a “Create another server” link takes you straight to adding a server to the project, so you don’t have to leave the form to make one first.',

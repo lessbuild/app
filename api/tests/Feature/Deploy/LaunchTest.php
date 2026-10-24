@@ -162,7 +162,10 @@ final class LaunchTest extends TestCase
             'server' => ['mode' => 'existing', 'server_id' => $this->server->id], 'apps' => [[], []], ...$overrides,
         ]);
         Website::factory()->create(['url' => 'api.taken.com']);
-        $start(['domain' => 'taken.com'])->assertJsonValidationErrors('apps.0.domain');
+        $message = (string) $start(['domain' => 'taken.com'])->assertJsonValidationErrors('apps.0.domain')->json('errors')['apps.0.domain'][0];
+        $this->assertStringContainsString('api.taken.com already belongs to another website', $message, 'The error names the taken domain.');
+        $this->assertStringContainsString('api-2.taken.com', $message, 'The error suggests a free domain, not the taken one.');
+        $start(['domain' => 'not a domain'])->assertJsonValidationErrors(['apps.0.domain' => 'Enter a valid domain']);
         $start(['server' => ['mode' => 'new']])->assertJsonValidationErrors('server.provider_id');
 
         Queue::fake();
