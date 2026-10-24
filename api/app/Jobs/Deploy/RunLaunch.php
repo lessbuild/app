@@ -174,7 +174,7 @@ final class RunLaunch implements ShouldQueue
         $ready = true;
         foreach ($launch->plan['apps'] as $index => $app) {
             $id = $launch->result['apps'][$index]['website_id'] ?? null;
-            if ($id === null) {
+            if ($id === null && empty($app['websiteId'])) {
                 $website = app(CreateWebsite::class)->handle($launch->project->account, $actor, [
                     'name' => (string) $app['name'], 'server_id' => (int) ($launch->result['server_id'] ?? 0), 'url' => (string) $app['domain'],
                     'has_database' => (bool) $app['mysql'], 'health_check_enabled' => true, 'health_check_path' => (string) $app['healthPath'],
@@ -183,6 +183,11 @@ final class RunLaunch implements ShouldQueue
                 $ready = false;
 
                 continue;
+            }
+            if ($id === null) {
+                // The person is launching this app onto a website they already added; use it rather than making one.
+                $id = (int) $app['websiteId'];
+                $this->rememberApp($launch, $index, ['website_id' => $id]);
             }
             $website = Website::query()->findOrFail((int) $id);
             if ($website->provisioning_status === Website::STATUS_FAILED) {
@@ -204,12 +209,24 @@ final class RunLaunch implements ShouldQueue
      */
     private function environments(Launch $launch, User $actor): bool
     {
+        // Environments already spoken for in this launch — those the chosen websites bring with them — so a new app
+        // wanting the same name (e.g. Production) gets its own instead of landing on another app's.
+        $claimed = [];
+        foreach ($launch->plan['apps'] as $index => $ignored) {
+            $id = $launch->result['apps'][$index]['website_id'] ?? null;
+            if ($id !== null && ($environmentId = Website::query()->find((int) $id)?->environment_id) !== null) {
+                $claimed[] = $environmentId;
+            }
+        }
         foreach ($launch->plan['apps'] as $index => $app) {
             if (isset($launch->result['apps'][$index]['environment_id'])) {
                 continue;
             }
             $website = Website::query()->findOrFail((int) ($launch->result['apps'][$index]['website_id'] ?? 0));
-            $environment = $this->environmentFor($launch, $actor, (string) $app['environment']);
+            // A website the person chose may already belong to an environment (from the setup guide); deploy into that
+            // one rather than making another. A website Launch created has none yet, so it gets a fresh environment.
+            $environment = $website->environment_id !== null ? Environment::query()->findOrFail($website->environment_id) : $this->environmentFor($launch, $actor, (string) $app['environment'], $claimed);
+            $claimed[] = $environment->id;
             $this->runtime($actor, $environment, $app);
             $variables = (array) $app['variables'];
             if ($app['framework'] === 'laravel') {
@@ -227,16 +244,16 @@ final class RunLaunch implements ShouldQueue
                     app(SaveEnvironmentVariable::class)->handle($actor, $environment, ['key' => (string) $key, 'value' => (string) $value, 'is_secret' => true, 'scope' => 'runtime']);
                 }
             }
-            if ($app['queue'] && filled($app['workerCommand'])) {
+            if ($app['queue'] && filled($app['workerCommand']) && $environment->processes()->where('name', 'queue')->doesntExist()) {
                 app(SaveEnvironmentProcess::class)->handle($actor, $environment, ['name' => 'queue', 'type' => 'worker', 'command' => (string) $app['workerCommand'], 'replicas' => 1, 'restart_policy' => 'always', 'restart_delay_seconds' => 5, 'is_enabled' => true]);
             }
-            if ($app['scheduler']) {
+            if ($app['scheduler'] && $environment->processes()->where('name', 'scheduler')->doesntExist()) {
                 app(SaveEnvironmentProcess::class)->handle($actor, $environment, ['name' => 'scheduler', 'type' => 'scheduler', 'command' => 'php artisan schedule:work', 'replicas' => 1, 'restart_policy' => 'always', 'restart_delay_seconds' => 5, 'is_enabled' => true]);
             }
-            if ($app['mysql']) {
+            if ($app['mysql'] && $environment->resources()->where('type', 'mysql')->doesntExist()) {
                 app(SaveEnvironmentResource::class)->handle($actor, $environment, ['name' => 'database', 'type' => 'mysql', 'is_managed' => true, 'variables' => null, 'database_website_id' => $website->id]);
             }
-            if ($app['redis']) {
+            if ($app['redis'] && $environment->resources()->where('type', 'redis')->doesntExist()) {
                 app(SaveEnvironmentResource::class)->handle($actor, $environment, ['name' => 'redis', 'type' => 'redis', 'is_managed' => true, 'variables' => null]);
             }
             if ((bool) ($app['githubActions'] ?? false)) {
@@ -330,19 +347,20 @@ final class RunLaunch implements ShouldQueue
     }
 
     /**
-     * Use the project's Production for the first app when nothing deploys to it yet; otherwise create the one named,
-     * numbering it when the name's taken.
+     * Use the project's Production for the first app when nothing deploys to it yet and this launch hasn't already
+     * claimed it; otherwise create the one named, numbering it when the name's taken.
      *
      * @param  Launch  $launch
      * @param  User  $actor
      * @param  string  $name
+     * @param  list<string>  $claimed  Environment ids already taken by other apps in this launch.
      * @return Environment
      */
-    private function environmentFor(Launch $launch, User $actor, string $name): Environment
+    private function environmentFor(Launch $launch, User $actor, string $name, array $claimed = []): Environment
     {
         $project = $launch->project;
         $existing = $project->environments()->where('slug', Str::slug($name))->first();
-        if ($existing !== null && ! Repository::query()->where('environment_id', $existing->id)->exists()) {
+        if ($existing !== null && ! in_array($existing->id, $claimed, true) && ! Repository::query()->where('environment_id', $existing->id)->exists()) {
             return $existing;
         }
         $candidate = $name;

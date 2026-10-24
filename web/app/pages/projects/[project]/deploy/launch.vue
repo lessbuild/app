@@ -3,10 +3,10 @@ import type { LaunchFormPage, LaunchPlan } from '~/types/deploy';
 import { ValidationError } from '~/utils/client';
 
 /**
- * Launch from a repository: pick the repository, its branch and the domain, and Buildpusher reads it and proposes the
- * whole set-up on one page (a website and environment per app with its domain, database, workers, Redis and the
- * secrets still needed, and a server with room for it, existing or new at a size that fits). Launch then sets it all
- * up and deploys, and its page follows along.
+ * Launch from a repository: pick the repository from the provider's list and its branch, choose a website to seed the
+ * plan (one you already added, with its domain, or a new one), and Buildpusher reads the repository and proposes the
+ * whole set-up (a website and environment per app, database, workers, Redis and the secrets still needed, and a server
+ * with room for it). Each app can go onto a website you already have or a new one. Launch sets it all up and deploys.
  */
 definePageMeta({ layout: 'app', service: 'deploy' });
 const { t } = useT();
@@ -16,23 +16,34 @@ const project = computed(() => data.value.overview.project.id);
 const source = ref<string | null>(data.value.sources[0]?.value ?? null);
 const url = ref<string | null>('');
 const branch = ref<string | null>('main');
+const seed = ref<string>('');
 const domain = ref<string | null>('');
 const plan = ref<LaunchPlan | null>(null);
 const error = ref<string | null>(null);
 const busy = ref(false);
 const reachable = ref<Array<{ name: string; url: string; branch: string }>>([]);
+const typeUrl = ref(false);
+// Existing websites an app can go onto, plus "a new website" first.
+const websiteOptions = computed(() => [{ value: '', label: t('A new website (enter a domain)') }, ...data.value.websites.map((website) => ({ value: website.value, label: website.label }))]);
+const repoOptions = computed(() => reachable.value.map((repository) => ({ value: repository.url, label: repository.name })));
+// The domain that seeds the plan: the chosen website's, or the one typed for a new website.
+const seedDomain = computed(() => (seed.value ? (data.value.websites.find((website) => website.value === seed.value)?.domain ?? '') : (domain.value ?? '')));
 const server = reactive({ mode: 'existing', serverId: '', cloud: data.value.clouds[0]?.value ?? '', region: '', size: '', image: '' });
 const catalog = ref<{ regions: Array<{ id: string; label: string }>; sizes: Array<{ id: string; label: string }>; images: Array<{ id: string; label: string }> } | null>(null);
 const github = computed(() => data.value.sources.find((option) => option.value === source.value)?.label.includes('GitHub') ?? false);
 const choice = (items: Array<{ id: string; label: string }>) => items.map((item) => ({ value: item.id, label: item.label }));
 const statuses = computed<Record<string, string>>(() => ({ queued: t('Starting'), running: t('Running'), waiting: t('Running'), done: t('Done'), failed: t('Stopped') }));
 
-// The source's repositories, to pick from (or type one).
+// The source's repositories, to pick from the list (or type one).
 watch(source, async (provider) => {
     reachable.value = [];
     if (provider) {
         const result = await send<{ repositories: Array<{ name: string; url: string; branch: string }> }>('GET', `/projects/${project.value}/deploy/repositories/reachable?provider=${provider}`).catch(() => null);
         reachable.value = result?.repositories ?? [];
+        typeUrl.value = reachable.value.length === 0;
+        if (!typeUrl.value && !reachable.value.some((repository) => repository.url === url.value)) {
+            url.value = reachable.value[0]?.url ?? '';
+        }
     }
 }, { immediate: import.meta.client });
 watch(url, (value) => {
@@ -55,17 +66,19 @@ watch(() => [server.mode, server.cloud], async () => {
 
 /** Read the repository and propose a plan (again, when the domain, source or new server's provider changes). */
 async function read() {
-    if (!source.value || !url.value || !branch.value || !domain.value) {
+    if (!source.value || !url.value || !branch.value || !seedDomain.value) {
         return;
     }
     busy.value = true;
     error.value = null;
     try {
         const result = await send<{ plan: LaunchPlan }>('POST', `/projects/${project.value}/deploy/launch/plan`, {
-            provider_id: Number(source.value), url: url.value, branch: branch.value, domain: domain.value,
+            provider_id: Number(source.value), url: url.value, branch: branch.value, domain: seedDomain.value,
             cloud_id: server.mode === 'new' && server.cloud ? Number(server.cloud) : null, region: server.mode === 'new' ? server.region || null : null,
         });
         plan.value = result.plan;
+        // Each app defaults onto an existing website whose domain matches its proposed one, else a new website.
+        plan.value.apps.forEach((app) => (app.websiteId = data.value.websites.find((website) => website.domain === app.domain)?.value ?? ''));
         server.serverId = server.serverId || String(result.plan.servers.find((option) => option.fits)?.id ?? result.plan.servers[0]?.id ?? '');
         server.mode = result.plan.servers.length === 0 ? 'new' : server.mode;
         server.size = result.plan.recommendedSize?.id ?? server.size;
@@ -84,10 +97,11 @@ async function launch() {
     error.value = null;
     try {
         const result = await send<{ redirect: string }>('POST', `/projects/${project.value}/deploy/launches`, {
-            provider_id: Number(source.value), url: url.value, branch: branch.value, domain: domain.value,
+            provider_id: Number(source.value), url: url.value, branch: branch.value, domain: seedDomain.value,
             server: server.mode === 'existing' ? { mode: 'existing', server_id: Number(server.serverId) } : { mode: 'new', provider_id: Number(server.cloud), region: server.region, size: server.size, image: server.image },
             apps: plan.value.apps.map((app) => ({
-                name: app.name, domain: app.domain, environment: app.environment, mysql: app.mysql, redis: app.redis, queue: app.queue, scheduler: app.scheduler,
+                name: app.name, website_id: app.websiteId ? Number(app.websiteId) : null, domain: app.websiteId ? null : app.domain,
+                environment: app.environment, mysql: app.mysql, redis: app.redis, queue: app.queue, scheduler: app.scheduler,
                 githubActions: app.githubActions ?? false, secretValues: app.secretValues ?? {},
             })),
         });
@@ -107,12 +121,16 @@ async function launch() {
             <AcmeCard :title="t('Repository')">
                 <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="read">
                     <SelectField id="launch-source" v-model="source" name="provider_id" :label="t('Git provider')" :options="data.sources" required />
-                    <div>
-                        <InputField id="launch-url" v-model="url" name="url" :label="t('Repository')" placeholder="github.com/acme/shop" list="launch-repositories" required />
-                        <datalist id="launch-repositories"><option v-for="repository in reachable" :key="repository.url" :value="repository.url">{{ repository.name }}</option></datalist>
+                    <div class="min-w-0">
+                        <SelectField v-if="repoOptions.length > 0 && !typeUrl" id="launch-repo" v-model="url" name="url" :label="t('Repository')" :options="repoOptions" required />
+                        <InputField v-else id="launch-url" v-model="url" name="url" :label="t('Repository')" placeholder="github.com/acme/shop" required />
+                        <button v-if="repoOptions.length > 0" type="button" class="mt-1 text-xs font-medium text-accent hover:underline" @click="typeUrl = !typeUrl">{{ typeUrl ? t('Pick from the list') : t('Enter an address instead') }}</button>
                     </div>
                     <InputField id="launch-branch" v-model="branch" name="branch" :label="t('Branch')" required />
-                    <InputField id="launch-domain" v-model="domain" name="domain" :label="t('Domain')" placeholder="example.com" :description="t('The website’s address. An API in the repository gets api. in front.')" required />
+                    <div class="min-w-0">
+                        <SelectField id="launch-seed" v-model="seed" name="seed" :label="t('Website')" :options="websiteOptions" :description="t('Which website to build the plan around. Pick one you already added, or a new one.')" />
+                        <InputField v-if="seed === ''" id="launch-domain" v-model="domain" name="domain" :label="t('Domain')" placeholder="example.com" :description="t('The new website’s address. An API in the repository gets api. in front.')" class="mt-3" required />
+                    </div>
                     <div class="sm:col-span-2"><UiButton type="submit" variant="primary" :disabled="busy">{{ plan ? t('Read it again') : t('Read the repository') }}</UiButton></div>
                 </form>
             </AcmeCard>
@@ -124,8 +142,9 @@ async function launch() {
                 <AcmeCard v-for="app in plan.apps" :key="app.path" :title="app.label" :description="app.path === '' ? t('At the top of the repository') : t('In :folder/', { folder: app.path })">
                     <div class="grid gap-4 sm:grid-cols-3">
                         <InputField :id="`launch-${app.path}-name`" v-model="app.name" name="name" :label="t('Name')" />
-                        <InputField :id="`launch-${app.path}-domain`" v-model="app.domain" name="domain" :label="t('Domain')" />
-                        <InputField :id="`launch-${app.path}-environment`" v-model="app.environment" name="environment" :label="t('Environment')" />
+                        <SelectField :id="`launch-${app.path}-website`" v-model="app.websiteId" name="website_id" :label="t('Website')" :options="websiteOptions" :description="app.websiteId ? t('Deploys onto this website.') : t('A new website is created.')" />
+                        <InputField v-if="!app.websiteId" :id="`launch-${app.path}-domain`" v-model="app.domain" name="domain" :label="t('Domain')" />
+                        <InputField v-if="!app.websiteId" :id="`launch-${app.path}-environment`" v-model="app.environment" name="environment" :label="t('Environment')" />
                     </div>
                     <div class="mt-4 grid gap-3 sm:grid-cols-2">
                         <ToggleField v-if="app.canUseMysql" :id="`launch-${app.path}-mysql`" name="mysql" :label="t('Use MySQL')" :checked="app.mysql" :description="t('Its own database on the server, connected through a managed resource.')" @toggle="app.mysql = $event" />

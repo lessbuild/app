@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-24', 'title' => 'Launch onto a website you already have', 'changes' => [
+        'Launch from a repository now picks the repository from a list of the ones your provider can reach, instead of typing its address.',
+        'Add a website in the setup guide, then point an app straight at it on the launch page: each app has a Website selector of the ones you’ve added (with their domains), or “a new website” to create one by domain. An app on an existing website keeps that website’s environment.',
+    ]],
     ['date' => '2026-10-24', 'title' => 'Clearer launch domain errors', 'changes' => [
         'Launch from a repository now says which domain is already taken and suggests a free one (payeio.com → payeio-2.com), instead of telling you to “use a domain no other website has, such as payeio.com” — the very domain that was taken. An invalid domain gets its own message.',
     ]],

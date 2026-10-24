@@ -52,22 +52,32 @@ final class StartLaunch
         $plan = $this->planner->plan($project, $provider, (string) $data['url'], (string) $data['branch'], (string) $data['domain']);
         $apps = [];
         $domains = [];
+        $websiteIds = [];
         foreach ($plan['apps'] as $index => $app) {
             $choice = (array) ($data['apps'][$index] ?? []);
-            $domain = strtolower(trim((string) ($choice['domain'] ?? $app['domain'])));
-            $field = "apps.{$index}.domain";
-            if (! preg_match('/\A(?=.{1,253}\z)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\z/', $domain)) {
-                throw ValidationException::withMessages([$field => __('Enter a valid domain, such as :example.', ['example' => 'shop.example.com'])]);
+            $websiteId = null;
+            if (filled($choice['website_id'] ?? null)) {
+                $website = $this->existingWebsite($actor, $project, (int) $choice['website_id'], $index, $websiteIds);
+                $websiteIds[] = $website->id;
+                $websiteId = $website->id;
+                $domain = $website->url;
+            } else {
+                $domain = strtolower(trim((string) ($choice['domain'] ?? $app['domain'])));
+                $field = "apps.{$index}.domain";
+                if (! preg_match('/\A(?=.{1,253}\z)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\z/', $domain)) {
+                    throw ValidationException::withMessages([$field => __('Enter a valid domain, such as :example.', ['example' => 'shop.example.com'])]);
+                }
+                if (in_array($domain, $domains, true) || Website::query()->where('url', $domain)->exists() || WebsiteDomain::query()->where('hostname', $domain)->exists()) {
+                    throw ValidationException::withMessages([$field => __(':domain already belongs to another website. Use one no other website has, such as :example.', ['domain' => $domain, 'example' => $this->freeDomain($domain, $domains)])]);
+                }
+                $domains[] = $domain;
             }
-            if (in_array($domain, $domains, true) || Website::query()->where('url', $domain)->exists() || WebsiteDomain::query()->where('hostname', $domain)->exists()) {
-                throw ValidationException::withMessages([$field => __(':domain already belongs to another website. Use one no other website has, such as :example.', ['domain' => $domain, 'example' => $this->freeDomain($domain, $domains)])]);
-            }
-            $domains[] = $domain;
             $secrets = array_intersect_key(array_map(fn (mixed $value): string => trim((string) $value), (array) ($choice['secretValues'] ?? [])), array_flip($app['secrets']));
             $apps[] = [
                 ...$app,
                 'name' => mb_substr(trim((string) ($choice['name'] ?? $app['name'])) ?: (string) $app['name'], 0, 255),
                 'domain' => $domain,
+                'websiteId' => $websiteId,
                 'environment' => mb_substr(trim((string) ($choice['environment'] ?? $app['environment'])) ?: (string) $app['environment'], 0, 60),
                 'mysql' => $app['canUseMysql'] && (bool) ($choice['mysql'] ?? $app['mysql']),
                 'redis' => (bool) ($choice['redis'] ?? $app['redis']),
@@ -89,6 +99,34 @@ final class StartLaunch
         RunLaunch::dispatch($launch->id);
 
         return $launch;
+    }
+
+    /**
+     * Resolve and check an existing website an app is going onto: it's one of the project's, the person may use it,
+     * no earlier app in this launch chose it, and no repository deploys to it yet.
+     *
+     * @param  User  $actor
+     * @param  Project  $project
+     * @param  int  $websiteId
+     * @param  int  $index  The app's place, for the error field.
+     * @param  list<int>  $chosen  Website ids earlier apps already took.
+     * @return Website
+     */
+    private function existingWebsite(User $actor, Project $project, int $websiteId, int $index, array $chosen): Website
+    {
+        $field = "apps.{$index}.website_id";
+        $website = Website::query()->where('account_id', $project->account_id)->find($websiteId);
+        if ($website === null || ! app(ProjectResources::class)->mayUseWebsite($actor, $website, $project->id)) {
+            throw ValidationException::withMessages([$field => __('Choose one of this project’s websites.')]);
+        }
+        if (in_array($website->id, $chosen, true)) {
+            throw ValidationException::withMessages([$field => __('Each app needs its own website.')]);
+        }
+        if (Repository::query()->where('website_id', $website->id)->exists()) {
+            throw ValidationException::withMessages([$field => __(':website already has a repository deploying to it.', ['website' => $website->url])]);
+        }
+
+        return $website;
     }
 
     /**

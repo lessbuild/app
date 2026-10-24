@@ -38,6 +38,7 @@ final class StoreLaunchController
             'server.image' => ['nullable', 'string', 'max:100'],
             'apps' => ['required', 'array', 'max:10'],
             'apps.*.name' => ['nullable', 'string', 'max:255'],
+            'apps.*.website_id' => ['nullable', 'integer'],
             'apps.*.domain' => ['nullable', 'string', 'max:253'],
             'apps.*.environment' => ['nullable', 'string', 'max:60'],
             'apps.*.mysql' => ['nullable', 'boolean'],

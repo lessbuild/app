@@ -226,4 +226,59 @@ final class LaunchTest extends TestCase
         $run();
         $this->assertSame(2, Build::query()->count(), 'Merged, so it deploys.');
     }
+
+    /**
+     * An app can launch onto a website you already added (with its domain), rather than a new one: the launch form
+     * offers it, launching uses it instead of making another, keeps its environment, and connects the repository to it.
+     *
+     * @return void
+     */
+    public function test_an_app_can_launch_onto_a_website_you_already_have(): void
+    {
+        // A website added earlier through the setup guide: on the project's Production environment, nothing deploying to it.
+        $production = $this->project->environments()->where('slug', 'production')->firstOrFail();
+        $existing = Website::factory()->create([
+            'account_id' => $this->project->account_id, 'server_id' => $this->server->id, 'environment_id' => $production->id,
+            'url' => 'shop.example.com', 'deployment_slug' => 'shop-site', 'provisioning_status' => Website::STATUS_ACTIVE, 'name' => 'Shop',
+        ]);
+
+        // It shows on the launch form as a target an app can go onto.
+        $this->actingAs($this->owner)->getJson("{$this->base}/launch")->assertOk()->assertJsonPath('websites.0.domain', 'shop.example.com');
+
+        Queue::fake();
+        $this->actingAs($this->owner)->postJson("{$this->base}/launches", [
+            'provider_id' => $this->github->id, 'url' => 'github.com/acme/shop', 'branch' => 'main', 'domain' => 'shop.example.com',
+            'server' => ['mode' => 'existing', 'server_id' => $this->server->id],
+            'apps' => [['domain' => 'api.shop.example.com'], ['website_id' => $existing->id]],
+        ])->assertOk();
+        $launch = Launch::query()->sole();
+        $run = fn () => (new RunLaunch($launch->id))->handle();
+
+        $run();
+        $this->assertSame(1, Website::query()->where('url', 'shop.example.com')->count(), 'No second website is made for the chosen domain.');
+        Website::query()->whereIn('url', ['api.shop.example.com', 'shop.example.com'])->update(['provisioning_status' => Website::STATUS_ACTIVE]);
+        $run();
+
+        $this->assertSame($production->id, $existing->refresh()->environment_id, 'The chosen website keeps its environment.');
+        $this->assertSame(1, Repository::query()->where('website_id', $existing->id)->where('environment_id', $production->id)->count(), 'The repository is connected to it.');
+    }
+
+    /**
+     * A website already serving a repository isn't offered on the launch form, and choosing one anyway is refused.
+     *
+     * @return void
+     */
+    public function test_a_website_that_already_has_a_repository_cannot_be_launched_onto(): void
+    {
+        $production = $this->project->environments()->where('slug', 'production')->firstOrFail();
+        $taken = Website::factory()->create(['account_id' => $this->project->account_id, 'server_id' => $this->server->id, 'environment_id' => $production->id, 'url' => 'taken.example.com', 'provisioning_status' => Website::STATUS_ACTIVE]);
+        Repository::factory()->create(['project_id' => $this->project->id, 'provider_id' => $this->github->id, 'website_id' => $taken->id, 'environment_id' => $production->id]);
+
+        $this->actingAs($this->owner)->getJson("{$this->base}/launch")->assertOk()->assertJsonMissing(['domain' => 'taken.example.com']);
+        $this->actingAs($this->owner)->postJson("{$this->base}/launches", [
+            'provider_id' => $this->github->id, 'url' => 'github.com/acme/shop', 'branch' => 'main', 'domain' => 'example.com',
+            'server' => ['mode' => 'existing', 'server_id' => $this->server->id],
+            'apps' => [[], ['website_id' => $taken->id]],
+        ])->assertJsonValidationErrors('apps.1.website_id');
+    }
 }

@@ -369,7 +369,11 @@ export type LaunchPlanApp = {
     notes: string[];
     githubActions?: boolean;
     secretValues?: Record<string, string>;
+    websiteId?: string;
 };
+
+/** An existing website an app can launch onto, with its domain. */
+export type LaunchWebsite = { value: string; label: string; domain: string; server: string | null; environment: string | null };
 
 /** How Buildpusher proposes to launch a repository. */
 export type LaunchPlan = {
@@ -384,6 +388,7 @@ export type LaunchFormPage = {
     overview: ProjectOverview;
     sources: Option[];
     clouds: Option[];
+    websites: LaunchWebsite[];
     launches: Array<{ id: number; repository: string; status: string; createdAt: string | null }>;
 };
 
