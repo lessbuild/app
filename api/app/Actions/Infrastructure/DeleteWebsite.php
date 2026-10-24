@@ -43,6 +43,9 @@ final class DeleteWebsite
             Gate::forUser($actor)->authorize('delete', $website);
             $locked = Website::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($website->id);
             StateConflict::unless(! Preview::query()->where('website_id', $locked->id)->where('status', '!=', Preview::STATUS_CLOSED)->exists(), __('This website belongs to an open preview. Close the preview instead.'));
+            // Free its hostnames so the domain can be used again; a soft-deleted website is otherwise excluded from
+            // the url checks, but its domain rows would linger and keep reserving the name.
+            $locked->domains()->delete();
             $locked->delete();
             $this->health->sync($locked, $actor);
             // The stale copy first, so a failure never takes down the live one before the deletion can finish.

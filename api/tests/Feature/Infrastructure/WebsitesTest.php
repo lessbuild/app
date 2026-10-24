@@ -222,9 +222,12 @@ final class WebsitesTest extends TestCase
         $this->assertSame(['legacy.example.com', Website::STATUS_ACTIVE], [$website->url, $website->provisioning_status]);
         $this->assertSame([], $this->scripts->started);
 
+        $this->assertTrue(WebsiteDomain::query()->where('hostname', 'legacy.example.com')->exists());
         $this->actingAs($this->owner)->deleteJson("{$this->base}/{$website->id}")->assertJsonRedirect($this->base);
         $this->assertSoftDeleted($website);
         $this->assertStringContainsString('DROP DATABASE IF EXISTS `legacy`', (string) (collect($this->shell->ran)->last()['command'] ?? ''));
+        // Deleting frees the domain, so it doesn't stay reserved by a website that's gone.
+        $this->assertFalse(WebsiteDomain::query()->where('hostname', 'legacy.example.com')->exists());
     }
 
     /**
