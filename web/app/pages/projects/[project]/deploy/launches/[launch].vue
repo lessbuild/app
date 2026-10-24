@@ -15,6 +15,9 @@ const launch = computed(() => data.value.launch);
 const base = computed(() => `/api/app/projects/${data.value.overview.project.id}/deploy/launches/${launch.value.id}`);
 const stepTone = (state: string) => acmeTone(state === 'done' ? 'success' : state === 'failed' ? 'danger' : state === 'current' ? 'info' : 'neutral');
 const stepLabel = (state: string) => state === 'done' ? t('Done') : state === 'failed' ? t('Stopped') : state === 'current' ? t('Working on it') : t('Next');
+const buildLabel = (status: string) => (({ queued: t('Queued'), awaiting_approval: t('Awaiting approval'), rejected: t('Rejected'), deploying: t('Deploying'), running: t('Deploying'), succeeded: t('Deployed'), failed: t('Failed'), canceled: t('Canceled') }) as Record<string, string>)[status] ?? status;
+const buildTone = (status: string) => acmeTone(status === 'succeeded' ? 'success' : ['failed', 'rejected'].includes(status) ? 'danger' : ['deploying', 'running', 'queued'].includes(status) ? 'info' : status === 'awaiting_approval' ? 'warning' : 'neutral');
+const deploying = (status: string) => ['deploying', 'running'].includes(status);
 const checklistDone = computed(() => launch.value.apps.every((app) => app.checklist.every((item) => item.done)));
 let timer: number | undefined;
 
@@ -55,6 +58,10 @@ onBeforeUnmount(() => window.clearInterval(timer));
                     {{ t('It builds on GitHub Actions: merge the pull request with the workflow and its deploy starts.') }}
                     <a v-if="app.workflow.url" :href="app.workflow.url" target="_blank" rel="noopener" class="ml-1 font-medium underline">{{ t('Open the pull request') }}</a>
                 </AcmeAlert>
+                <div v-if="app.build" class="mb-4 flex flex-wrap items-center gap-2 text-sm">
+                    <AcmeBadge :tone="buildTone(app.build.status)" dot>{{ buildLabel(app.build.status) }}</AcmeBadge>
+                    <span v-if="deploying(app.build.status) && app.build.stage" class="text-muted">{{ t('Step :n of :total', { n: app.build.step, total: app.build.steps }) }} · {{ app.build.stage }}</span>
+                </div>
                 <ul class="grid gap-2">
                     <li v-for="item in app.checklist" :key="item.key" class="flex items-center gap-2 text-sm">
                         <AcmeIcon :name="item.done ? 'check' : 'clock'" :size="16" :class="item.done ? 'text-success' : 'text-muted'" />

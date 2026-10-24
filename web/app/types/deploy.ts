@@ -410,7 +410,7 @@ export type LaunchPage = {
             website: { status: string; url: string } | null;
             repository: string | null;
             environment: string | null;
-            build: { status: string; url: string } | null;
+            build: { status: string; url: string; stage: string | null; step: number; steps: number } | null;
             workflow: { url: string | null; error: string | null; waiting: boolean } | null;
             checklist: Array<{ key: string; label: string; done: boolean }>;
         }>;

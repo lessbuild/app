@@ -12,6 +12,7 @@ use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
 use App\Queries\Projects\ProjectOverviewQuery;
+use App\Services\Deploy\RepositoryDeploymentPlan;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
@@ -75,13 +76,32 @@ final class ShowLaunchController
             'website' => $website === null ? null : ['status' => $website->provisioning_status, 'url' => "/projects/{$project->id}/infrastructure/websites/{$website->id}"],
             'repository' => isset($made['repository_id']) ? "/projects/{$project->id}/deploy/repositories/{$made['repository_id']}" : null,
             'environment' => isset($made['environment_id']) ? "/projects/{$project->id}/deploy/environments/{$made['environment_id']}" : null,
-            'build' => $build === null ? null : ['status' => $build->status, 'url' => "/projects/{$project->id}/deploy/builds/{$build->id}"],
+            'build' => $build === null ? null : $this->build($project, $build),
             'workflow' => (bool) ($app['githubActions'] ?? false) ? ['url' => $made['workflow'] ?? null, 'error' => $made['workflowError'] ?? null, 'waiting' => (bool) ($made['waitingForWorkflow'] ?? false)] : null,
             'checklist' => [
                 ['key' => 'dns', 'label' => $server?->public_ip !== null ? __('Point :domain at :ip (an A record)', ['domain' => $domain, 'ip' => $server->public_ip]) : __('Point :domain at the server', ['domain' => $domain]), 'done' => $server?->public_ip !== null && in_array($server->public_ip, $addresses, true)],
                 ['key' => 'deploy', 'label' => __('First deploy live'), 'done' => $build?->status === Build::STATUS_SUCCEEDED],
                 ['key' => 'health', 'label' => __('Answering over HTTPS (Caddy gets the certificate once DNS points here)'), 'done' => $website?->health_status === 'up'],
             ],
+        ];
+    }
+
+    /**
+     * Describe an app's deploy: its status, which stage it's on and of how many, and a link to the full log, so the
+     * launch page shows what the deploy is doing rather than only "working on it".
+     *
+     * @param  Project  $project
+     * @param  Build  $build
+     * @return array<string, mixed>
+     */
+    private function build(Project $project, Build $build): array
+    {
+        $scripts = app(RepositoryDeploymentPlan::class)->scripts();
+        $stage = $build->setup_stage >= 1 && $build->setup_stage <= count($scripts) ? __($scripts[$build->setup_stage - 1]::TITLE) : null;
+
+        return [
+            'status' => $build->status, 'url' => "/projects/{$project->id}/deploy/builds/{$build->id}",
+            'stage' => $stage, 'step' => $build->setup_stage, 'steps' => count($scripts),
         ];
     }
 }
