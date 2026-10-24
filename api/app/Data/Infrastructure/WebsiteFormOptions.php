@@ -22,6 +22,7 @@ final readonly class WebsiteFormOptions
      * @param  list<array{value: string, label: string}>  $environments  The account's environments, as "Shop / Production".
      * @param  list<int>  $healthIntervals  Minutes between health checks.
      * @param  list<int>  $failureThresholds  Failed checks before an incident.
+     * @param  string|null  $defaultEnvironment  The environment a new website defaults to (the project's production one).
      */
     public function __construct(
         public array $hosts,
@@ -36,6 +37,7 @@ final readonly class WebsiteFormOptions
      *
      * @param  WebsitesQuery  $websites
      * @param  Account  $account
+     * @param  Project|null  $project  The project the form is for, used to default the environment.
      * @return self
      */
     public static function for(WebsitesQuery $websites, Account $account, ?Project $project = null): self

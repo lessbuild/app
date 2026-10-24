@@ -65,7 +65,7 @@ final class WebsitesTest extends TestCase
         $this->assertSame($production->id, $website->environment_id);
 
         // The project's setup guide now recognises it (not just the account-wide list).
-        $step = collect($this->actingAs($this->owner)->getJson("/api/app/projects/{$this->project->id}/setup")->assertOk()->json('setup.steps'))->firstWhere('key', 'website');
+        $step = collect((array) $this->actingAs($this->owner)->getJson("/api/app/projects/{$this->project->id}/setup")->assertOk()->json('setup.steps'))->firstWhere('key', 'website');
         $this->assertStringContainsString('Shop', (string) $step['detail']);
     }
 
