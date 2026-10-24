@@ -29,7 +29,7 @@ return new class extends Migration
             return;
         }
         DB::table('feature_requests')->updateOrInsert(['title' => self::TITLE], [
-            'description' => 'Launch from a repository lets you pick the repository from a list and send each app to a website you’ve already added (with its domain), or create a new one — instead of typing the repository address and a domain by hand.',
+            'description' => 'Launch from a repository lets you pick the repository from a list and send each app to a website you’ve already added under Infrastructure (with its domain), instead of typing the repository address and a domain by hand.',
             'status' => 'shipped', 'votes_count' => 0, 'created_at' => now(), 'updated_at' => now(),
         ]);
     }

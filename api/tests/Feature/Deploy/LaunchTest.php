@@ -86,41 +86,54 @@ final class LaunchTest extends TestCase
     }
 
     /**
-     * The plan proposes the API on api.example.com and the site on example.com, each with its environment, and
-     * the server it fits on; launching sets everything up in order as the server and websites come up, deploys
-     * the API before the site, and the page then shows the checklist.
+     * A website already added under Infrastructure, ready for an app to launch onto: in the project, on the server,
+     * with no repository deploying to it yet.
+     *
+     * @param  string  $url
+     * @param  string  $slug
+     * @return Website
+     */
+    private function bareWebsite(string $url, string $slug): Website
+    {
+        return Website::factory()->create([
+            'account_id' => $this->project->account_id, 'server_id' => $this->server->id, 'environment_id' => null,
+            'url' => $url, 'deployment_slug' => $slug, 'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+    }
+
+    /**
+     * The plan proposes the API on api.example.com and the site on example.com, each with its environment; launching
+     * sends each app onto a website you already added, sets up the environments, deploys the API before the site, and
+     * the page then shows the checklist.
      *
      * @return void
      */
     public function test_a_repository_launches_in_one_go(): void
     {
-        $this->actingAs($this->owner)->getJson("{$this->base}/launch")->assertOk()->assertJsonPath('sources.0.value', (string) $this->github->id);
+        $api = $this->bareWebsite('api.example.com', 'api');
+        $web = $this->bareWebsite('www.example.com', 'web');
+        $this->actingAs($this->owner)->getJson("{$this->base}/launch")->assertOk()->assertJsonPath('sources.0.value', (string) $this->github->id)->assertJsonCount(2, 'websites');
         $plan = $this->actingAs($this->owner)->postJson("{$this->base}/launch/plan", ['provider_id' => $this->github->id, 'url' => 'github.com/acme/shop', 'branch' => 'main', 'domain' => 'example.com'])->assertOk()->json('plan');
 
-        [$api, $web] = $plan['apps'];
-        $this->assertSame(['Laravel 12', 'api.example.com', 'Production', true, true, true, ['STRIPE_KEY', 'STRIPE_SECRET'], ['api/**']], [$api['label'], $api['domain'], $api['environment'], $api['mysql'], $api['queue'], $api['scheduler'], $api['secrets'], $api['includePaths']]);
-        $this->assertSame(['Nuxt 4', 'example.com', 'Production-web', false], [$web['label'], $web['domain'], $web['environment'], $web['mysql']]);
+        [$apiPlan, $webPlan] = $plan['apps'];
+        $this->assertSame(['Laravel 12', 'api.example.com', 'Production', true, true, true, ['STRIPE_KEY', 'STRIPE_SECRET'], ['api/**']], [$apiPlan['label'], $apiPlan['domain'], $apiPlan['environment'], $apiPlan['mysql'], $apiPlan['queue'], $apiPlan['scheduler'], $apiPlan['secrets'], $apiPlan['includePaths']]);
+        $this->assertSame(['Nuxt 4', 'example.com', 'Production-web', false], [$webPlan['label'], $webPlan['domain'], $webPlan['environment'], $webPlan['mysql']]);
         $this->assertSame([$this->server->id], array_column($plan['servers'], 'id'));
 
         Queue::fake();
         $this->actingAs($this->owner)->postJson("{$this->base}/launches", [
             'provider_id' => $this->github->id, 'url' => 'github.com/acme/shop', 'branch' => 'main', 'domain' => 'example.com',
             'server' => ['mode' => 'existing', 'server_id' => $this->server->id],
-            'apps' => [['secretValues' => ['STRIPE_SECRET' => 'sk_live_1', 'NOT_ASKED' => 'x']], ['domain' => 'www.example.com']],
+            'apps' => [['website_id' => $api->id, 'secretValues' => ['STRIPE_SECRET' => 'sk_live_1', 'NOT_ASKED' => 'x']], ['website_id' => $web->id]],
         ])->assertOk();
         $launch = Launch::query()->sole();
         Queue::assertPushed(RunLaunch::class);
 
+        // The websites already exist and are active, so the launch goes straight on to wiring and deploying them.
         $run = fn () => (new RunLaunch($launch->id))->handle();
         $run();
-        $this->assertSame(['waiting', 'websites'], [$launch->refresh()->status, $launch->step]);
-        $websites = Website::query()->whereIn('url', ['api.example.com', 'www.example.com'])->get();
-        $this->assertTrue(Website::query()->where('url', 'api.example.com')->sole()->has_database);
-        $this->assertFalse(Website::query()->where('url', 'www.example.com')->sole()->has_database, 'The Nuxt site gets no database.');
-
-        Website::query()->whereKey($websites->pluck('id'))->update(['provisioning_status' => Website::STATUS_ACTIVE]);
-        $run();
         $this->assertSame(['waiting', 'deploys'], [$launch->refresh()->status, $launch->step]);
+        $this->assertSame(2, Website::query()->whereIn('url', ['api.example.com', 'www.example.com'])->count(), 'No websites were created; the chosen ones are used.');
         $environments = Environment::query()->where('project_id', $this->project->id)->get()->keyBy('name')->all();
         $production = $environments['Production'];
         $this->assertSame(['php', 'node'], [$production->runtime_type, $environments['Production-web']->runtime_type]);
@@ -150,35 +163,34 @@ final class LaunchTest extends TestCase
     }
 
     /**
-     * A website that fails stops the launch with the reason; Try again carries on, keeping what it made. A domain
-     * another website has, or a new server without a provider, is turned down before anything starts.
+     * A website that goes unhealthy stops the launch with the reason; Try again carries on. An app without a chosen
+     * website, or a new server without a provider, is turned down before anything starts.
      *
      * @return void
      */
     public function test_a_launch_that_stops_can_carry_on(): void
     {
+        $api = $this->bareWebsite('api.example.com', 'api');
+        $web = $this->bareWebsite('www.example.com', 'web');
         $start = fn (array $overrides = []) => $this->actingAs($this->owner)->postJson("{$this->base}/launches", [
             'provider_id' => $this->github->id, 'url' => 'github.com/acme/shop', 'branch' => 'main', 'domain' => 'example.com',
-            'server' => ['mode' => 'existing', 'server_id' => $this->server->id], 'apps' => [[], []], ...$overrides,
+            'server' => ['mode' => 'existing', 'server_id' => $this->server->id], 'apps' => [['website_id' => $api->id], ['website_id' => $web->id]], ...$overrides,
         ]);
-        Website::factory()->create(['url' => 'api.taken.com']);
-        $message = (string) $start(['domain' => 'taken.com'])->assertJsonValidationErrors('apps.0.domain')->json('errors')['apps.0.domain'][0];
-        $this->assertStringContainsString('api.taken.com already belongs to another website', $message, 'The error names the taken domain.');
-        $this->assertStringContainsString('api-2.taken.com', $message, 'The error suggests a free domain, not the taken one.');
-        $start(['domain' => 'not a domain'])->assertJsonValidationErrors(['apps.0.domain' => 'Enter a valid domain']);
+        // An app with no website is refused, and so is a new server without a provider.
+        $start(['apps' => [[], ['website_id' => $web->id]]])->assertJsonValidationErrors('apps.0.website_id');
         $start(['server' => ['mode' => 'new']])->assertJsonValidationErrors('server.provider_id');
 
         Queue::fake();
         $start()->assertOk();
         $launch = Launch::query()->sole();
-        (new RunLaunch($launch->id))->handle();
-        Website::query()->where('url', 'api.example.com')->update(['provisioning_status' => Website::STATUS_FAILED]);
+        $api->forceFill(['provisioning_status' => Website::STATUS_FAILED])->save();
         (new RunLaunch($launch->id))->handle();
         $this->assertSame(['failed', 'The website api.example.com couldn’t be set up. Open it to see why.'], [$launch->refresh()->status, $launch->error]);
 
+        $api->forceFill(['provisioning_status' => Website::STATUS_ACTIVE])->save();
         $this->actingAs($this->owner)->postJson("{$this->base}/launches/{$launch->id}/retry")->assertOk();
         $this->assertSame('queued', $launch->refresh()->status);
-        $this->assertSame(2, Website::query()->whereIn('url', ['api.example.com', 'example.com'])->count(), 'Nothing was made twice.');
+        $this->assertSame(2, Website::query()->whereIn('url', ['api.example.com', 'www.example.com'])->count(), 'Nothing was made twice.');
     }
 
     /**
@@ -204,15 +216,16 @@ final class LaunchTest extends TestCase
             'api.github.com/repos/acme/shop/git/refs' => Http::response([], 201),
             'api.github.com/repos/acme/shop/pulls*' => fn (\Illuminate\Http\Client\Request $request) => $request->method() === 'GET' ? Http::response([]) : Http::response(['html_url' => 'https://github.com/acme/shop/pull/9'], 201),
         ]);
+        $api = $this->bareWebsite('api.example.com', 'api');
+        $web = $this->bareWebsite('www.example.com', 'web');
         Queue::fake();
         $this->actingAs($this->owner)->postJson("{$this->base}/launches", [
             'provider_id' => $this->github->id, 'url' => 'github.com/acme/shop', 'branch' => 'main', 'domain' => 'example.com',
-            'server' => ['mode' => 'existing', 'server_id' => $this->server->id], 'apps' => [[], ['githubActions' => true]],
+            'server' => ['mode' => 'existing', 'server_id' => $this->server->id], 'apps' => [['website_id' => $api->id], ['website_id' => $web->id, 'githubActions' => true]],
         ])->assertOk();
         $launch = Launch::query()->sole();
         $run = fn () => (new RunLaunch($launch->id))->handle();
-        $run();
-        Website::query()->update(['provisioning_status' => Website::STATUS_ACTIVE]);
+        // The websites already exist and are active, so the first run reaches the deploys and starts the API.
         $run();
         Build::query()->update(['status' => Build::STATUS_SUCCEEDED]);
         $run();
@@ -228,39 +241,36 @@ final class LaunchTest extends TestCase
     }
 
     /**
-     * An app can launch onto a website you already added (with its domain), rather than a new one: the launch form
-     * offers it, launching uses it instead of making another, keeps its environment, and connects the repository to it.
+     * An app launched onto a website that already belongs to an environment keeps that environment (the repository is
+     * connected to it, nothing new is made), while another app on an unassigned website gets its own environment.
      *
      * @return void
      */
-    public function test_an_app_can_launch_onto_a_website_you_already_have(): void
+    public function test_an_app_keeps_the_environment_of_the_website_it_launches_onto(): void
     {
-        // A website added earlier through the setup guide: on the project's Production environment, nothing deploying to it.
+        // One website already on the project's Production environment, and one not yet assigned to any environment.
         $production = $this->project->environments()->where('slug', 'production')->firstOrFail();
-        $existing = Website::factory()->create([
+        $web = Website::factory()->create([
             'account_id' => $this->project->account_id, 'server_id' => $this->server->id, 'environment_id' => $production->id,
-            'url' => 'shop.example.com', 'deployment_slug' => 'shop-site', 'provisioning_status' => Website::STATUS_ACTIVE, 'name' => 'Shop',
+            'url' => 'shop.example.com', 'deployment_slug' => 'shop', 'provisioning_status' => Website::STATUS_ACTIVE, 'name' => 'Shop',
         ]);
+        $api = $this->bareWebsite('api.shop.example.com', 'api');
 
-        // It shows on the launch form as a target an app can go onto.
-        $this->actingAs($this->owner)->getJson("{$this->base}/launch")->assertOk()->assertJsonPath('websites.0.domain', 'shop.example.com');
+        $this->actingAs($this->owner)->getJson("{$this->base}/launch")->assertOk()->assertJsonCount(2, 'websites');
 
         Queue::fake();
         $this->actingAs($this->owner)->postJson("{$this->base}/launches", [
             'provider_id' => $this->github->id, 'url' => 'github.com/acme/shop', 'branch' => 'main', 'domain' => 'shop.example.com',
             'server' => ['mode' => 'existing', 'server_id' => $this->server->id],
-            'apps' => [['domain' => 'api.shop.example.com'], ['website_id' => $existing->id]],
+            'apps' => [['website_id' => $api->id], ['website_id' => $web->id]],
         ])->assertOk();
         $launch = Launch::query()->sole();
-        $run = fn () => (new RunLaunch($launch->id))->handle();
+        (new RunLaunch($launch->id))->handle();
 
-        $run();
-        $this->assertSame(1, Website::query()->where('url', 'shop.example.com')->count(), 'No second website is made for the chosen domain.');
-        Website::query()->whereIn('url', ['api.shop.example.com', 'shop.example.com'])->update(['provisioning_status' => Website::STATUS_ACTIVE]);
-        $run();
-
-        $this->assertSame($production->id, $existing->refresh()->environment_id, 'The chosen website keeps its environment.');
-        $this->assertSame(1, Repository::query()->where('website_id', $existing->id)->where('environment_id', $production->id)->count(), 'The repository is connected to it.');
+        // The Nuxt app kept Production; the API got its own environment rather than landing on Production too.
+        $this->assertSame($production->id, $web->refresh()->environment_id, 'The chosen website keeps its environment.');
+        $this->assertSame(1, Repository::query()->where('website_id', $web->id)->where('environment_id', $production->id)->count(), 'The repository is connected to it.');
+        $this->assertNotSame($production->id, $api->refresh()->environment_id, 'The other app got its own environment.');
     }
 
     /**
@@ -274,11 +284,13 @@ final class LaunchTest extends TestCase
         $taken = Website::factory()->create(['account_id' => $this->project->account_id, 'server_id' => $this->server->id, 'environment_id' => $production->id, 'url' => 'taken.example.com', 'provisioning_status' => Website::STATUS_ACTIVE]);
         Repository::factory()->create(['project_id' => $this->project->id, 'provider_id' => $this->github->id, 'website_id' => $taken->id, 'environment_id' => $production->id]);
 
+        $free = $this->bareWebsite('api.example.com', 'api');
+
         $this->actingAs($this->owner)->getJson("{$this->base}/launch")->assertOk()->assertJsonMissing(['domain' => 'taken.example.com']);
         $this->actingAs($this->owner)->postJson("{$this->base}/launches", [
             'provider_id' => $this->github->id, 'url' => 'github.com/acme/shop', 'branch' => 'main', 'domain' => 'example.com',
             'server' => ['mode' => 'existing', 'server_id' => $this->server->id],
-            'apps' => [[], ['website_id' => $taken->id]],
+            'apps' => [['website_id' => $free->id], ['website_id' => $taken->id]],
         ])->assertJsonValidationErrors('apps.1.website_id');
     }
 }

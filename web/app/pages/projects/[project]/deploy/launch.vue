@@ -3,10 +3,10 @@ import type { LaunchFormPage, LaunchPlan } from '~/types/deploy';
 import { ValidationError } from '~/utils/client';
 
 /**
- * Launch from a repository: pick the repository from the provider's list and its branch, choose a website to seed the
- * plan (one you already added, with its domain, or a new one), and Buildpusher reads the repository and proposes the
- * whole set-up (a website and environment per app, database, workers, Redis and the secrets still needed, and a server
- * with room for it). Each app can go onto a website you already have or a new one. Launch sets it all up and deploys.
+ * Launch from a repository: pick the repository from the provider's list and its branch, and a website you've already
+ * added under Infrastructure to build the plan around. Buildpusher reads the repository and proposes the set-up (an
+ * environment per app, database, workers, Redis and the secrets still needed, and a server with room for it). Each app
+ * goes onto one of your websites (add more under Infrastructure). Launch sets it all up and deploys.
  */
 definePageMeta({ layout: 'app', service: 'deploy' });
 const { t } = useT();
@@ -16,18 +16,19 @@ const project = computed(() => data.value.overview.project.id);
 const source = ref<string | null>(data.value.sources[0]?.value ?? null);
 const url = ref<string | null>('');
 const branch = ref<string | null>('main');
-const seed = ref<string>('');
-const domain = ref<string | null>('');
+const seed = ref<string>(data.value.websites[0]?.value ?? '');
 const plan = ref<LaunchPlan | null>(null);
 const error = ref<string | null>(null);
 const busy = ref(false);
 const reachable = ref<Array<{ name: string; url: string; branch: string }>>([]);
 const typeUrl = ref(false);
-// Existing websites an app can go onto, plus "a new website" first.
-const websiteOptions = computed(() => [{ value: '', label: t('A new website (enter a domain)') }, ...data.value.websites.map((website) => ({ value: website.value, label: website.label }))]);
+// Websites an app can go onto — added under Infrastructure, not here.
+const hasWebsites = computed(() => data.value.websites.length > 0);
+const websiteOptions = computed(() => data.value.websites.map((website) => ({ value: website.value, label: website.label })));
+const addWebsiteLink = computed(() => `/projects/${project.value}/infrastructure/websites/create`);
 const repoOptions = computed(() => reachable.value.map((repository) => ({ value: repository.url, label: repository.name })));
-// The domain that seeds the plan: the chosen website's, or the one typed for a new website.
-const seedDomain = computed(() => (seed.value ? (data.value.websites.find((website) => website.value === seed.value)?.domain ?? '') : (domain.value ?? '')));
+// The domain that seeds the plan: the website chosen to build it around.
+const seedDomain = computed(() => data.value.websites.find((website) => website.value === seed.value)?.domain ?? '');
 const server = reactive({ mode: 'existing', serverId: '', cloud: data.value.clouds[0]?.value ?? '', region: '', size: '', image: '' });
 const catalog = ref<{ regions: Array<{ id: string; label: string }>; sizes: Array<{ id: string; label: string }>; images: Array<{ id: string; label: string }> } | null>(null);
 const github = computed(() => data.value.sources.find((option) => option.value === source.value)?.label.includes('GitHub') ?? false);
@@ -77,7 +78,7 @@ async function read() {
             cloud_id: server.mode === 'new' && server.cloud ? Number(server.cloud) : null, region: server.mode === 'new' ? server.region || null : null,
         });
         plan.value = result.plan;
-        // Each app defaults onto an existing website whose domain matches its proposed one, else a new website.
+        // Each app defaults onto the website whose domain matches its proposed one (the seed for the first app); pick the rest.
         plan.value.apps.forEach((app) => (app.websiteId = data.value.websites.find((website) => website.domain === app.domain)?.value ?? ''));
         server.serverId = server.serverId || String(result.plan.servers.find((option) => option.fits)?.id ?? result.plan.servers[0]?.id ?? '');
         server.mode = result.plan.servers.length === 0 ? 'new' : server.mode;
@@ -100,7 +101,7 @@ async function launch() {
             provider_id: Number(source.value), url: url.value, branch: branch.value, domain: seedDomain.value,
             server: server.mode === 'existing' ? { mode: 'existing', server_id: Number(server.serverId) } : { mode: 'new', provider_id: Number(server.cloud), region: server.region, size: server.size, image: server.image },
             apps: plan.value.apps.map((app) => ({
-                name: app.name, website_id: app.websiteId ? Number(app.websiteId) : null, domain: app.websiteId ? null : app.domain,
+                name: app.name, website_id: app.websiteId ? Number(app.websiteId) : null,
                 environment: app.environment, mysql: app.mysql, redis: app.redis, queue: app.queue, scheduler: app.scheduler,
                 githubActions: app.githubActions ?? false, secretValues: app.secretValues ?? {},
             })),
@@ -118,7 +119,10 @@ async function launch() {
         <ProjectHeader :overview="data.overview" :title="t('Launch from a repository')" :description="t('Buildpusher reads the repository and proposes the whole set-up: websites, environments, database, workers, production settings and a server with room for it. Change anything, then launch.')" />
         <div class="grid gap-6">
             <AcmeAlert v-if="data.sources.length === 0" tone="info">{{ t('Connect GitHub, GitLab or Bitbucket under Account → Providers first.') }}</AcmeAlert>
-            <AcmeCard :title="t('Repository')">
+            <AcmeAlert v-else-if="!hasWebsites" tone="info">
+                {{ t('Add a website first, then launch a repository onto it.') }} <NuxtLink :to="addWebsiteLink" class="font-medium text-ink underline">{{ t('Add a website') }}</NuxtLink>
+            </AcmeAlert>
+            <AcmeCard v-if="hasWebsites" :title="t('Repository')">
                 <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="read">
                     <SelectField id="launch-source" v-model="source" name="provider_id" :label="t('Git provider')" :options="data.sources" required />
                     <div class="min-w-0">
@@ -128,8 +132,8 @@ async function launch() {
                     </div>
                     <InputField id="launch-branch" v-model="branch" name="branch" :label="t('Branch')" required />
                     <div class="min-w-0">
-                        <SelectField id="launch-seed" v-model="seed" name="seed" :label="t('Website')" :options="websiteOptions" :description="t('Which website to build the plan around. Pick one you already added, or a new one.')" />
-                        <InputField v-if="seed === ''" id="launch-domain" v-model="domain" name="domain" :label="t('Domain')" placeholder="example.com" :description="t('The new website’s address. An API in the repository gets api. in front.')" class="mt-3" required />
+                        <SelectField id="launch-seed" v-model="seed" name="seed" :label="t('Website')" :options="websiteOptions" :description="t('Which of your websites to build the plan around. Each app’s website can be changed below.')" required />
+                        <NuxtLink :to="addWebsiteLink" class="mt-1 inline-block text-xs font-medium text-accent hover:underline">{{ t('Add a website') }}</NuxtLink>
                     </div>
                     <div class="sm:col-span-2"><UiButton type="submit" variant="primary" :disabled="busy">{{ plan ? t('Read it again') : t('Read the repository') }}</UiButton></div>
                 </form>
@@ -140,11 +144,12 @@ async function launch() {
 
             <template v-if="plan">
                 <AcmeCard v-for="app in plan.apps" :key="app.path" :title="app.label" :description="app.path === '' ? t('At the top of the repository') : t('In :folder/', { folder: app.path })">
-                    <div class="grid gap-4 sm:grid-cols-3">
+                    <div class="grid gap-4 sm:grid-cols-2">
                         <InputField :id="`launch-${app.path}-name`" v-model="app.name" name="name" :label="t('Name')" />
-                        <SelectField :id="`launch-${app.path}-website`" v-model="app.websiteId" name="website_id" :label="t('Website')" :options="websiteOptions" :description="app.websiteId ? t('Deploys onto this website.') : t('A new website is created.')" />
-                        <InputField v-if="!app.websiteId" :id="`launch-${app.path}-domain`" v-model="app.domain" name="domain" :label="t('Domain')" />
-                        <InputField v-if="!app.websiteId" :id="`launch-${app.path}-environment`" v-model="app.environment" name="environment" :label="t('Environment')" />
+                        <div class="min-w-0">
+                            <SelectField :id="`launch-${app.path}-website`" v-model="app.websiteId" name="website_id" :label="t('Website')" :options="websiteOptions" :placeholder="t('Choose a website')" :description="t('The website this app deploys onto.')" required />
+                            <NuxtLink :to="addWebsiteLink" class="mt-1 inline-block text-xs font-medium text-accent hover:underline">{{ t('Add a website') }}</NuxtLink>
+                        </div>
                     </div>
                     <div class="mt-4 grid gap-3 sm:grid-cols-2">
                         <ToggleField v-if="app.canUseMysql" :id="`launch-${app.path}-mysql`" name="mysql" :label="t('Use MySQL')" :checked="app.mysql" :description="t('Its own database on the server, connected through a managed resource.')" @toggle="app.mysql = $event" />

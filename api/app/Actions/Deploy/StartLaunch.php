@@ -14,7 +14,6 @@ use App\Models\Repository;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
-use App\Models\WebsiteDomain;
 use App\Services\Deploy\LaunchPlanner;
 use App\Services\Projects\ProjectResources;
 use Illuminate\Support\Facades\Gate;
@@ -51,33 +50,21 @@ final class StartLaunch
         $server = $this->server($actor, $project, (array) $data['server']);
         $plan = $this->planner->plan($project, $provider, (string) $data['url'], (string) $data['branch'], (string) $data['domain']);
         $apps = [];
-        $domains = [];
         $websiteIds = [];
         foreach ($plan['apps'] as $index => $app) {
             $choice = (array) ($data['apps'][$index] ?? []);
-            $websiteId = null;
-            if (filled($choice['website_id'] ?? null)) {
-                $website = $this->existingWebsite($actor, $project, (int) $choice['website_id'], $index, $websiteIds);
-                $websiteIds[] = $website->id;
-                $websiteId = $website->id;
-                $domain = $website->url;
-            } else {
-                $domain = strtolower(trim((string) ($choice['domain'] ?? $app['domain'])));
-                $field = "apps.{$index}.domain";
-                if (! preg_match('/\A(?=.{1,253}\z)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\z/', $domain)) {
-                    throw ValidationException::withMessages([$field => __('Enter a valid domain, such as :example.', ['example' => 'shop.example.com'])]);
-                }
-                if (in_array($domain, $domains, true) || Website::query()->where('url', $domain)->exists() || WebsiteDomain::query()->where('hostname', $domain)->exists()) {
-                    throw ValidationException::withMessages([$field => __(':domain already belongs to another website. Use one no other website has, such as :example.', ['domain' => $domain, 'example' => $this->freeDomain($domain, $domains)])]);
-                }
-                $domains[] = $domain;
+            if (! filled($choice['website_id'] ?? null)) {
+                throw ValidationException::withMessages(["apps.{$index}.website_id" => __('Choose a website for this app. Add one under Infrastructure → Websites first.')]);
             }
+            $website = $this->existingWebsite($actor, $project, (int) $choice['website_id'], $index, $websiteIds);
+            $websiteIds[] = $website->id;
+            $domain = $website->url;
             $secrets = array_intersect_key(array_map(fn (mixed $value): string => trim((string) $value), (array) ($choice['secretValues'] ?? [])), array_flip($app['secrets']));
             $apps[] = [
                 ...$app,
                 'name' => mb_substr(trim((string) ($choice['name'] ?? $app['name'])) ?: (string) $app['name'], 0, 255),
                 'domain' => $domain,
-                'websiteId' => $websiteId,
+                'websiteId' => $website->id,
                 'environment' => mb_substr(trim((string) ($choice['environment'] ?? $app['environment'])) ?: (string) $app['environment'], 0, 60),
                 'mysql' => $app['canUseMysql'] && (bool) ($choice['mysql'] ?? $app['mysql']),
                 'redis' => (bool) ($choice['redis'] ?? $app['redis']),
@@ -127,29 +114,6 @@ final class StartLaunch
         }
 
         return $website;
-    }
-
-    /**
-     * Suggest a domain like the taken one that no website uses yet, by numbering its first label (payeio.com →
-     * payeio-2.com, api.payeio.com → api-2.payeio.com), so the error points at something that will actually work.
-     *
-     * @param  string  $domain  The domain that's already taken.
-     * @param  list<string>  $used  Domains already chosen earlier in this launch.
-     * @return string
-     */
-    private function freeDomain(string $domain, array $used): string
-    {
-        $dot = strpos($domain, '.');
-        $label = $dot === false ? $domain : substr($domain, 0, $dot);
-        $rest = $dot === false ? '' : substr($domain, $dot);
-        for ($n = 2; $n <= 99; $n++) {
-            $candidate = "{$label}-{$n}{$rest}";
-            if (! in_array($candidate, $used, true) && ! Website::query()->where('url', $candidate)->exists() && ! WebsiteDomain::query()->where('hostname', $candidate)->exists()) {
-                return $candidate;
-            }
-        }
-
-        return 'shop.example.com';
     }
 
     /**
