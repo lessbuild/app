@@ -29,6 +29,8 @@ const addWebsiteLink = computed(() => `/projects/${project.value}/infrastructure
 const repoOptions = computed(() => reachable.value.map((repository) => ({ value: repository.url, label: repository.name })));
 // The domain that seeds the plan: the website chosen to build it around.
 const seedDomain = computed(() => data.value.websites.find((website) => website.value === seed.value)?.domain ?? '');
+// Launch is only ready once every app has a website chosen.
+const appsNeedWebsite = computed(() => (plan.value?.apps ?? []).some((app) => !app.websiteId));
 const server = reactive({ mode: 'existing', serverId: '', cloud: data.value.clouds[0]?.value ?? '', region: '', size: '', image: '' });
 const catalog = ref<{ regions: Array<{ id: string; label: string }>; sizes: Array<{ id: string; label: string }>; images: Array<{ id: string; label: string }> } | null>(null);
 const github = computed(() => data.value.sources.find((option) => option.value === source.value)?.label.includes('GitHub') ?? false);
@@ -78,8 +80,16 @@ async function read() {
             cloud_id: server.mode === 'new' && server.cloud ? Number(server.cloud) : null, region: server.mode === 'new' ? server.region || null : null,
         });
         plan.value = result.plan;
-        // Each app defaults onto the website whose domain matches its proposed one (the seed for the first app); pick the rest.
-        plan.value.apps.forEach((app) => (app.websiteId = data.value.websites.find((website) => website.domain === app.domain)?.value ?? ''));
+        // Default each app onto a distinct website: the one whose domain matches its proposed one, else the next not
+        // already taken by an earlier app, so when there are enough websites nothing is left unselected.
+        const taken = new Set<string>();
+        plan.value.apps.forEach((app) => {
+            const match = data.value.websites.find((website) => website.domain === app.domain && !taken.has(website.value)) ?? data.value.websites.find((website) => !taken.has(website.value));
+            app.websiteId = match?.value ?? '';
+            if (match) {
+                taken.add(match.value);
+            }
+        });
         server.serverId = server.serverId || String(result.plan.servers.find((option) => option.fits)?.id ?? result.plan.servers[0]?.id ?? '');
         server.mode = result.plan.servers.length === 0 ? 'new' : server.mode;
         server.size = result.plan.recommendedSize?.id ?? server.size;
@@ -198,8 +208,11 @@ async function launch() {
                 </AcmeCard>
 
                 <div class="flex flex-wrap items-center gap-3">
-                    <UiButton variant="primary" size="lg" :disabled="busy || (server.mode === 'existing' ? !server.serverId : !server.size)" @click="launch">{{ t('Launch') }}</UiButton>
-                    <p class="text-sm text-muted">{{ t('Sets everything up in order, then deploys the API first and the rest after it.') }}</p>
+                    <UiButton variant="primary" size="lg" :disabled="busy || appsNeedWebsite || (server.mode === 'existing' ? !server.serverId : !server.size)" @click="launch">{{ t('Launch') }}</UiButton>
+                    <p v-if="appsNeedWebsite" class="text-sm text-muted">
+                        {{ t('Choose a website for each app above.') }} <NuxtLink :to="addWebsiteLink" class="font-medium text-ink underline">{{ t('Add a website') }}</NuxtLink>
+                    </p>
+                    <p v-else class="text-sm text-muted">{{ t('Sets everything up in order, then deploys the API first and the rest after it.') }}</p>
                 </div>
             </template>
 

@@ -1311,6 +1311,7 @@
     "Choose a verified member of this account, or one of its on-call schedules.": "Choisissez un membre vérifié de ce compte, ou l’une de ses astreintes.",
     "Choose a verified member of this account.": "Choisissez un membre vérifié de ce compte.",
     "Choose a website": "Choisissez un site web",
+    "Choose a website for each app above.": "Choisissez un site web pour chaque application ci-dessus.",
     "Choose a website for this app. Add one under Infrastructure → Websites first.": "Choisissez un site web pour cette application. Ajoutez-en un sous Infrastructure → Sites web d’abord.",
     "Choose a website in this account.": "Choisissez un site web de ce compte.",
     "Choose a website one of this environment’s repositories deploys to.": "Choisissez un site web vers lequel déploie l’un des dépôts de cet environnement.",
