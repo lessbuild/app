@@ -6123,6 +6123,8 @@
     "You’ll get an email when part of :app stops working, and again when it’s fixed.": "Receberá um email quando parte do :app deixar de funcionar, e outro quando for corrigida.",
     "You’ll get an email when this page posts an update.": "Você vai receber um e-mail quando esta página publicar uma atualização.",
     "You’re all caught up.": "Tudo em dia.",
+    "You’re doing that too fast. Try again in :seconds seconds.": "Você está fazendo isso rápido demais. Tente novamente em :seconds segundos.",
+    "You’re doing that too fast. Wait a moment and try again.": "Você está fazendo isso rápido demais. Aguarde um momento e tente novamente.",
     "You’re invited to :account on :app": "Você foi convidado para :account no :app",
     "You’re not in an account": "Você não está em nenhuma conta",
     "You’re set up. The quickest way in is to create a project: its setup guide takes you from connecting a cloud provider to a deployed, monitored site, one step at a time.": "Tudo pronto. O jeito mais rápido de começar é criar um projeto: o guia de configuração dele leva você, passo a passo, de conectar um provedor de nuvem até um site implantado e monitorado.",

@@ -924,7 +924,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::post('/storage/{bucket}/attach', AttachStorageBucketController::class)->whereNumber('bucket')->middleware('throttle:20,1')->name('storage.attach');
         Route::delete('/storage/{bucket}', DeleteStorageBucketController::class)->whereNumber('bucket')->middleware('throttle:20,1')->name('storage.destroy');
         Route::put('/costs/budget', UpdateInfrastructureBudgetController::class)->middleware(['can:manageCosts,App\\Models\\Server,project', 'throttle:20,1'])->name('costs.budget');
-        Route::post('/costs/refresh', RefreshServerCostsController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:3,1'])->name('costs.refresh');
+        Route::post('/costs/refresh', RefreshServerCostsController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:10,1'])->name('costs.refresh');
         Route::put('/costs/servers/{server}', UpdateServerMonthlyCostController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:20,1'])->name('costs.servers.update');
         Route::get('/moves', ShowToolMovesController::class)->middleware('can:create,App\\Models\\Server,project')->name('moves');
         Route::post('/moves', StoreToolMoveController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:6,1'])->name('moves.store');

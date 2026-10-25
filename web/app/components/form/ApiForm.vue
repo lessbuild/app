@@ -80,6 +80,12 @@ async function submit(event: SubmitEvent) {
         window.location.reload();
         return;
     }
+    if (response.status === 429) {
+        // Rate limited: say so plainly rather than showing Laravel's raw "Too Many Attempts.".
+        const retry = Number(response.headers.get('Retry-After') ?? 0);
+        fail({ _form: [retry > 0 ? t('You’re doing that too fast. Try again in :seconds seconds.', { seconds: retry }) : t('You’re doing that too fast. Wait a moment and try again.')] });
+        return;
+    }
     if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { message?: string } | null;
         fail({ _form: [payload?.message || t('Something went wrong. Try again.')] });
