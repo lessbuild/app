@@ -90,12 +90,13 @@ final class DatabaseCommands
     public function reset(Website $website): string
     {
         $database = $this->identifier($website->databaseIdentifier());
+        // Each name is qualified with the database (`db`.`table`) because the command selects no default database.
         $sql = 'SET FOREIGN_KEY_CHECKS = 0;'
             .' SET SESSION group_concat_max_len = 1073741824;'
-            ." SET @views = (SELECT GROUP_CONCAT('`', table_name, '`') FROM information_schema.views WHERE table_schema = '{$database}');"
+            ." SET @views = (SELECT GROUP_CONCAT('`{$database}`.`', table_name, '`') FROM information_schema.views WHERE table_schema = '{$database}');"
             ." SET @drop_views = IF(@views IS NULL, 'DO 0', CONCAT('DROP VIEW IF EXISTS ', @views));"
             .' PREPARE drop_views FROM @drop_views; EXECUTE drop_views; DEALLOCATE PREPARE drop_views;'
-            ." SET @tables = (SELECT GROUP_CONCAT('`', table_name, '`') FROM information_schema.tables WHERE table_schema = '{$database}' AND table_type = 'BASE TABLE');"
+            ." SET @tables = (SELECT GROUP_CONCAT('`{$database}`.`', table_name, '`') FROM information_schema.tables WHERE table_schema = '{$database}' AND table_type = 'BASE TABLE');"
             ." SET @drop_tables = IF(@tables IS NULL, 'DO 0', CONCAT('DROP TABLE IF EXISTS ', @tables));"
             .' PREPARE drop_tables FROM @drop_tables; EXECUTE drop_tables; DEALLOCATE PREPARE drop_tables;'
             .' SET FOREIGN_KEY_CHECKS = 1;';

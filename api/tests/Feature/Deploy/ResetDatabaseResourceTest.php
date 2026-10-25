@@ -81,7 +81,8 @@ final class ResetDatabaseResourceTest extends TestCase
         $last = collect($this->shell->ran)->last();
         $this->assertNotNull($last, 'A command ran on the server.');
         $this->assertStringContainsString('DROP TABLE', (string) $last['command']);
-        $this->assertStringContainsString('api_payeio', (string) $last['command'], 'It targets the website’s database.');
+        // Names are qualified with the database, because the command selects no default one.
+        $this->assertStringContainsString('`api_payeio`.`', (string) $last['command'], 'It targets the website’s database by name.');
         $this->assertSame($this->server->id, $last['server']);
     }
 
