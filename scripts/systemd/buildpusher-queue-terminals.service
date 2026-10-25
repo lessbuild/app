@@ -1,0 +1,22 @@
+# Production worker for the troubleshooting terminal (holds an SSH shell per session on the `terminals` queue).
+# Without it, opening a server terminal stays stuck on "Connecting". Install once, as root:
+#   cp scripts/systemd/buildpusher-queue-terminals.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now buildpusher-queue-terminals
+# Each open terminal holds this one worker until it closes (up to the 30-minute session limit); run a second copy
+# (a drop-in with a different name) if you need two terminals open at once.
+[Unit]
+Description=BuildPusher v3 queue worker (terminals)
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/buildpusher/current/api
+# One worker: a terminal job runs for the whole session (up to session_minutes), longer than the database queue's
+# retry_after, so a second worker would open the session twice. --timeout covers the 30-minute session plus a margin.
+ExecStart=/root/.local/share/buildpusher/php-8.5/bin/php artisan queue:work --queue=terminals --sleep=1 --tries=1 --timeout=1920 --max-time=3600
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
