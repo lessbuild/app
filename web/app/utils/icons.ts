@@ -4,6 +4,11 @@
 export type IconDefinition = { viewBox: string; body: string; stroke: boolean };
 
 export const icons: Record<string, IconDefinition> = {
+    "resize": {
+        "viewBox": "0 0 24 24",
+        "body": "<path d=\"M15 3h6v6\" /><path d=\"M9 21H3v-6\" /><path d=\"M21 3l-7 7\" /><path d=\"M3 21l7-7\" />",
+        "stroke": true
+    },
     "cloud-upload": {
         "viewBox": "0 0 24 24",
         "body": "<path d=\"M17.5 19H9a6 6 0 1 1 1.8-11.72A5 5 0 0 1 20 10.5 4.5 4.5 0 0 1 17.5 19Z\" /><path d=\"M12 17V9M9 12l3-3 3 3\" />",
