@@ -13,6 +13,8 @@ const project = computed(() => data.value.overview.project);
 const base = computed(() => `/api/app/projects/${project.value.id}/infrastructure/servers/${data.value.server.id}/terminal/${data.value.terminal.id}`);
 const screen = ref<HTMLElement | null>(null);
 const state = ref(t('Connecting…'));
+// Copy and Paste, exposed for the on-screen buttons (phones have no keyboard shortcuts or right-click).
+const clipboard = ref<{ copy: () => void; paste: () => void } | null>(null);
 let open = true;
 let dispose: (() => void) | undefined;
 
@@ -41,9 +43,21 @@ onMounted(async () => {
         }
     };
     const pasteClipboard = () => {
+        terminal.focus();
         if (navigator.clipboard?.readText) {
             void navigator.clipboard.readText().then((text) => text && terminal.paste(text)).catch(() => {});
         }
+    };
+    // On a phone there's no selection to copy, so the Copy button grabs the whole buffer when nothing is selected.
+    clipboard.value = {
+        copy: () => {
+            if (!terminal.hasSelection()) {
+                terminal.selectAll();
+            }
+            copySelection();
+            terminal.clearSelection();
+        },
+        paste: pasteClipboard,
     };
     terminal.attachCustomKeyEventHandler((event) => {
         if (event.type !== 'keydown') {
@@ -145,9 +159,13 @@ onBeforeUnmount(() => dispose?.());
         <section v-else class="ui-card grid gap-2 overflow-hidden p-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <p class="text-xs text-muted" role="status" aria-live="polite">{{ state }}</p>
-                <p class="text-xs text-muted">{{ t('Select to copy with ⌘/Ctrl+Shift+C; paste with ⌘/Ctrl+V or right-click.') }}</p>
+                <div v-if="clipboard" class="flex items-center gap-2">
+                    <UiButton size="sm" variant="secondary" @click="clipboard.copy()">{{ t('Copy') }}</UiButton>
+                    <UiButton size="sm" variant="secondary" @click="clipboard.paste()">{{ t('Paste') }}</UiButton>
+                </div>
             </div>
             <div class="overflow-x-auto rounded-control bg-[#0b1020] p-2"><div ref="screen" /></div>
+            <p class="hidden text-xs text-muted sm:block">{{ t('Select to copy with ⌘/Ctrl+Shift+C; paste with ⌘/Ctrl+V or right-click.') }}</p>
         </section>
         <div class="flex flex-wrap gap-3">
             <ApiForm v-if="data.terminal.active" :action="base" method="DELETE"><SubmitButton variant="secondary">{{ t('Close terminal') }}</SubmitButton></ApiForm>
