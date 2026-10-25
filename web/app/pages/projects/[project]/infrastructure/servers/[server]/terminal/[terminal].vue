@@ -32,6 +32,47 @@ onMounted(async () => {
     });
     terminal.open(screen.value);
     terminal.focus();
+
+    // Copy the selection, and paste the clipboard, the way a terminal is expected to.
+    const copySelection = () => {
+        const selection = terminal.getSelection();
+        if (selection !== '' && navigator.clipboard) {
+            void navigator.clipboard.writeText(selection).catch(() => {});
+        }
+    };
+    const pasteClipboard = () => {
+        if (navigator.clipboard?.readText) {
+            void navigator.clipboard.readText().then((text) => text && terminal.paste(text)).catch(() => {});
+        }
+    };
+    terminal.attachCustomKeyEventHandler((event) => {
+        if (event.type !== 'keydown') {
+            return true;
+        }
+        const key = event.key.toLowerCase();
+        // Copy on ⌘C (macOS) or Ctrl/⌘+Shift+C; plain Ctrl+C stays the interrupt.
+        if (key === 'c' && ((event.metaKey && !event.ctrlKey) || ((event.ctrlKey || event.metaKey) && event.shiftKey))) {
+            if (terminal.hasSelection()) {
+                copySelection();
+            }
+
+            return false;
+        }
+        // Paste on ⌘V, Ctrl+V, or Ctrl/⌘+Shift+V.
+        if (key === 'v' && (event.metaKey || event.ctrlKey)) {
+            pasteClipboard();
+
+            return false;
+        }
+
+        return true;
+    });
+    // Right-click pastes, like a traditional terminal.
+    screen.value?.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        pasteClipboard();
+    });
+
     let after = 0;
     let pending = '';
     let sending = false;
@@ -102,7 +143,10 @@ onBeforeUnmount(() => dispose?.());
         <AcmeAlert v-if="!data.ownBrowser" tone="warning">{{ t('This terminal was opened in another browser or tab session. Open a new one from the server page.') }}</AcmeAlert>
         <AcmeAlert v-else-if="!data.terminal.active" tone="info">{{ t('This terminal has closed (:reason).', { reason: data.terminal.closeReason ?? data.terminal.status }) }}</AcmeAlert>
         <section v-else class="ui-card grid gap-2 overflow-hidden p-3">
-            <p class="text-xs text-muted" role="status" aria-live="polite">{{ state }}</p>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="text-xs text-muted" role="status" aria-live="polite">{{ state }}</p>
+                <p class="text-xs text-muted">{{ t('Select to copy with ⌘/Ctrl+Shift+C; paste with ⌘/Ctrl+V or right-click.') }}</p>
+            </div>
             <div class="overflow-x-auto rounded-control bg-[#0b1020] p-2"><div ref="screen" /></div>
         </section>
         <div class="flex flex-wrap gap-3">

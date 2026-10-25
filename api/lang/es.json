@@ -4578,6 +4578,7 @@
     "Seen by everyone who can see this deploy. Leave empty to remove it.": "La ve cualquiera que pueda ver este despliegue. Déjala vacía para quitarla.",
     "Select :title": "Seleccionar :title",
     "Select all": "Seleccionar todo",
+    "Select to copy with ⌘/Ctrl+Shift+C; paste with ⌘/Ctrl+V or right-click.": "Selecciona para copiar con ⌘/Ctrl+Mayús+C; pega con ⌘/Ctrl+V o con clic derecho.",
     "Selected notifications": "Notificaciones seleccionadas",
     "Send :account’s events (deploys, incidents, servers, backups, security findings, billing and more) to your own automation as signed JSON.": "Envía los eventos de :account (despliegues, incidentes, servidores, copias de seguridad, hallazgos de seguridad, facturación y más) a tu propia automatización como JSON firmado.",
     "Send Referrer-Policy: strict-origin-when-cross-origin.": "Envía Referrer-Policy: strict-origin-when-cross-origin.",
