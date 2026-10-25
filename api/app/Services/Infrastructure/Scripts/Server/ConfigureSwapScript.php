@@ -33,13 +33,13 @@ class ConfigureSwapScript implements ServerScript
         if [ -f /swapfile ]; then
             echo "Swap exists."
         else
-            # Size swap so RAM + swap reaches about 3 GB, so builds (Node, especially) have room on a small server;
-            # keep at least 1 GB, and cap at a quarter of the free disk and 4 GB so a small disk isn't filled.
+            # Size swap so RAM + swap reaches about 4 GB, so builds (Node, especially) have room on a small server;
+            # keep at least 1 GB, cap at 4 GB, and never use the last 2 GB of free disk so the disk isn't filled.
             RAM_MB=\$(awk '/^MemTotal:/{printf "%d", \$2/1024}' /proc/meminfo)
-            SWAP_MB=\$((3072 - RAM_MB))
+            SWAP_MB=\$((4096 - RAM_MB))
             [ "\$SWAP_MB" -lt 1024 ] && SWAP_MB=1024
-            DISK_MB=\$(df -Pm / | awk 'NR==2{print \$4}')
-            DISK_CAP=\$((DISK_MB / 4))
+            DISK_FREE_MB=\$(df -Pm / | awk 'NR==2{print \$4}')
+            DISK_CAP=\$((DISK_FREE_MB - 2048))
             [ "\$SWAP_MB" -gt "\$DISK_CAP" ] && SWAP_MB=\$DISK_CAP
             [ "\$SWAP_MB" -gt 4096 ] && SWAP_MB=4096
             [ "\$SWAP_MB" -lt 512 ] && SWAP_MB=512

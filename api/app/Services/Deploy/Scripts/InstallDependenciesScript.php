@@ -85,17 +85,17 @@ class InstallDependenciesScript extends BuildProvisioningScript
             RUNTIME_TYPE={$runtimeType}
             RUNTIME_VERSION={$runtimeVersion}
 
-            # Give Node's build a heap ceiling from the server's memory (RAM + swap, three-quarters of it, capped at
-            # 4 GB) so a build on a small server uses the swap instead of V8 capping its own heap low and failing.
-            # Skipped when NODE_OPTIONS already sets a heap size, so a chosen value wins.
+            # Give Node's build a heap ceiling from the server's memory (RAM + swap) so a build on a small server uses
+            # the swap instead of V8 capping its own heap low and failing. Reserve 2 GB for the OS, the database and the
+            # app that run beside the build, and keep it between 1 and 4 GB. Skipped when NODE_OPTIONS already sets a
+            # heap size, so a chosen value wins.
             case "\${NODE_OPTIONS:-}" in
                 *max-old-space-size*) ;;
                 *)
-                    NODE_HEAP_MB="\$(awk '/^MemTotal:/{m=\$2} /^SwapTotal:/{s=\$2} END{printf "%d", (m+s)*3/4/1024}' /proc/meminfo 2>/dev/null || echo 0)"
-                    if [ "\${NODE_HEAP_MB:-0}" -ge 512 ] 2>/dev/null; then
-                        [ "\$NODE_HEAP_MB" -gt 4096 ] && NODE_HEAP_MB=4096
-                        export NODE_OPTIONS="--max-old-space-size=\$NODE_HEAP_MB \${NODE_OPTIONS:-}"
-                    fi
+                    NODE_HEAP_MB="\$(awk '/^MemTotal:/{m=\$2} /^SwapTotal:/{s=\$2} END{printf "%d", (m+s)/1024 - 2048}' /proc/meminfo 2>/dev/null || echo 0)"
+                    [ "\${NODE_HEAP_MB:-0}" -lt 1024 ] 2>/dev/null && NODE_HEAP_MB=1024
+                    [ "\$NODE_HEAP_MB" -gt 4096 ] && NODE_HEAP_MB=4096
+                    export NODE_OPTIONS="--max-old-space-size=\$NODE_HEAP_MB \${NODE_OPTIONS:-}"
                     ;;
             esac
 
