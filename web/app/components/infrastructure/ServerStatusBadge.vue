@@ -14,6 +14,8 @@ const badge = computed<{ tone: Tone; label: string }>(() => {
             return { tone: 'info', label: t('Queued') };
         case 'waiting_for_ip':
             return { tone: 'info', label: t('Waiting for an IP') };
+        case 'resizing':
+            return { tone: 'warning', label: t('Resizing') };
         default:
             return { tone: 'info', label: t('Provisioning') };
     }

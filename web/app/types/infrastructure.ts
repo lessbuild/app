@@ -64,6 +64,8 @@ export type ServerPage = {
         hostFingerprint: string | null;
         hasHostKey: boolean;
         size: string | null;
+        canResize: boolean;
+        providerId: string | null;
         image: string | null;
         databaseEngine: string | null;
         nodeVersion: string | null;

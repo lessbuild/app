@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-25', 'title' => 'Resize a server', 'changes' => [
+        'A cloud server now has a Resize button on its page: pick a new plan (and optionally grow the disk), and Buildpusher powers it off, resizes it and powers it back on — a few minutes of downtime, no logging in to the cloud console. Available for DigitalOcean to start with; other providers can’t be resized from here yet.',
+    ]],
     ['date' => '2026-10-25', 'title' => 'Builds fit on small servers', 'changes' => [
         'Deploys now set a Node build-memory ceiling from the server’s memory (RAM plus swap, keeping 2 GB back for the OS, database and app, between 1 and 4 GB), so a front-end build (Nuxt, Vite and the like) on a small server uses the swap instead of running out of memory and failing. Set NODE_OPTIONS yourself to override it.',
         'New servers get swap sized to reach about 4 GB of RAM-plus-swap (up to 4 GB, never using the last 2 GB of disk) instead of a flat 1 GB, so there’s room to build.',

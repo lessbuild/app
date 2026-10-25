@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Infrastructure;
 
+use App\Contracts\Infrastructure\ResizableServerProvider;
 use App\Contracts\Infrastructure\ServerProvider;
 use App\Contracts\Infrastructure\SnapshotsServers;
 use App\Data\Infrastructure\CloudServerData;
@@ -11,7 +12,7 @@ use App\Data\Infrastructure\CloudSshKeyData;
 use RuntimeException;
 
 /** A cloud that records what it was asked to do. Set `$failCreate` or `$failDelete` to make it refuse. */
-final class FakeServerProvider implements ServerProvider, SnapshotsServers
+final class FakeServerProvider implements ResizableServerProvider, ServerProvider, SnapshotsServers
 {
     /** @var list<array<string, mixed>> */
     public array $created = [];
@@ -127,5 +128,52 @@ final class FakeServerProvider implements ServerProvider, SnapshotsServers
         $this->deletedSnapshots[] = $snapshot;
 
         return true;
+    }
+
+    /**
+     * The resize steps recorded, in order: ['off', id], ['resize', id, size, disk], ['on', id].
+     *
+     * @var list<array<int, mixed>>
+     */
+    public array $resizeSteps = [];
+
+    public bool $failResize = false;
+
+    /**
+     * Record a power-off.
+     *
+     * @param  int|string  $identifier
+     * @return void
+     */
+    public function powerOffServer(int|string $identifier): void
+    {
+        $this->resizeSteps[] = ['off', $identifier];
+    }
+
+    /**
+     * Record a resize, or fail when asked to.
+     *
+     * @param  int|string  $identifier
+     * @param  string  $size
+     * @param  bool  $resizeDisk
+     * @return void
+     */
+    public function resizeServer(int|string $identifier, string $size, bool $resizeDisk): void
+    {
+        if ($this->failResize) {
+            throw new RuntimeException('Fake Cloud resize failed.');
+        }
+        $this->resizeSteps[] = ['resize', $identifier, $size, $resizeDisk];
+    }
+
+    /**
+     * Record a power-on.
+     *
+     * @param  int|string  $identifier
+     * @return void
+     */
+    public function powerOnServer(int|string $identifier): void
+    {
+        $this->resizeSteps[] = ['on', $identifier];
     }
 }

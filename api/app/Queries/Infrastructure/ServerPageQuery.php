@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Queries\Infrastructure;
 
 use App\Actions\Infrastructure\ChangeRuntimeVersion;
+use App\Contracts\Infrastructure\ResizableServerProvider;
 use App\Enums\ServerType;
 use App\Models\BackupDestination;
 use App\Models\DatabaseBackupPlan;
@@ -24,6 +25,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Services\Infrastructure\DiskCleanup;
 use App\Services\Infrastructure\ServerLogs;
+use App\Services\Infrastructure\ServerProviderResolver;
 use App\Services\Infrastructure\ServerProvisioningPlan;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -87,6 +89,9 @@ final readonly class ServerPageQuery
                 'hostFingerprint' => $server->ssh_host_fingerprint,
                 'hasHostKey' => $server->ssh_host_key !== null,
                 'size' => $server->size,
+                'canResize' => $active && $server->provider !== null && $server->identifier !== null && $viewer->can('update', $server)
+                    && app(ServerProviderResolver::class)->resolve($server->provider) instanceof ResizableServerProvider,
+                'providerId' => $server->provider_id,
                 'image' => $server->image,
                 'databaseEngine' => $server->database_engine,
                 'nodeVersion' => $server->node_version,

@@ -156,6 +156,7 @@ return [
                 ['Choose what it’s for', 'Pick a provider, the server type (an app server runs PHP, Node, Caddy, MySQL and Redis together), a region and a size. Add recipes to run your own scripts once it’s set up.'],
                 ['Watch it come up', 'The server page follows setup live: first waiting for the provider to give it an address, then each installation step. It usually takes a few minutes.'],
                 ['Already have a server?', 'Choose Import a server to bring in an Ubuntu server over SSH instead; we check it before managing it.'],
+                ['Resize later', 'On a cloud server’s page, Resize moves it to a bigger (or smaller) plan: pick the new size, optionally grow the disk (permanent), and Buildpusher powers it off, resizes it and powers it back on — a few minutes of downtime, no cloud console needed. DigitalOcean to start with.'],
             ],
         ],
         'add-a-website' => [

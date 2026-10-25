@@ -232,6 +232,7 @@ use App\Http\Controllers\Infrastructure\RefreshServerCostsController;
 use App\Http\Controllers\Infrastructure\RefreshServerLogController;
 use App\Http\Controllers\Infrastructure\RenameServerController;
 use App\Http\Controllers\Infrastructure\RerunServerCommandController;
+use App\Http\Controllers\Infrastructure\ResizeServerController;
 use App\Http\Controllers\Infrastructure\RestartServerProcessController;
 use App\Http\Controllers\Infrastructure\RestoreDatabaseController;
 use App\Http\Controllers\Infrastructure\RestoreWebsiteBackupController;
@@ -839,6 +840,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
         Route::get('/servers/create', CreateServerController::class)->middleware('can:create,App\\Models\\Server,project')->name('servers.create');
         Route::post('/servers', StoreServerController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:10,1'])->name('servers.store');
         Route::match(['PUT', 'POST'], '/servers/{server}/snapshots', UpdateServerSnapshotsController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.snapshots');
+        Route::post('/servers/{server}/resize', ResizeServerController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:5,1'])->name('servers.resize');
         Route::post('/servers/{server}/disk', ScanServerDiskController::class)->whereNumber('server')->middleware(['can:runCommands,server', 'throttle:10,1'])->name('servers.disk');
         Route::match(['PUT', 'DELETE'], '/servers/{server}/log-shipping', UpdateServerLogShippingController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.log-shipping');
         Route::get('/servers/{server}', ShowServerController::class)->whereNumber('server')->middleware('can:view,server')->name('servers.show');

@@ -73,6 +73,7 @@ enum AuditAction: string
     case ServerCreated = 'server.created';
     case ServerImported = 'server.imported';
     case ServerRenamed = 'server.renamed';
+    case ServerResized = 'server.resized';
     case ServerDeleted = 'server.deleted';
     case ServerTaskSaved = 'server_task.saved';
     case MaintenanceStarted = 'maintenance.started';
@@ -230,6 +231,7 @@ enum AuditAction: string
             self::MaintenanceEnded => __('Brought :environment out of maintenance mode', ['environment' => $value('environment')]),
             self::MigrationsApproved => __('Approved destructive migrations in deploy #:build (:revision)', ['build' => $value('build'), 'revision' => $value('revision')]),
             self::ServerTaskRemoved => __('Removed :task from the server :server', ['task' => $value('task'), 'server' => $value('server')]),
+            self::ServerResized => __('Resized the server :server to :size', ['server' => $value('server'), 'size' => $value('size')]),
             self::ServerDeleted => __('Deleted the server :server', ['server' => $value('server')]),
             self::WebsiteCreated => __('Created the website :website on :server', ['website' => $value('website'), 'server' => $value('server')]),
             self::WebsiteImported => __('Imported the website :website on :server', ['website' => $value('website'), 'server' => $value('server')]),

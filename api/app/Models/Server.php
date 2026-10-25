@@ -98,6 +98,8 @@ class Server extends Model
 
     public const STATUS_ACTIVE = 'active';
 
+    public const STATUS_RESIZING = 'resizing';
+
     public const STATUS_FAILED = 'failed';
 
     public const PROVISIONING_STATUSES = [self::STATUS_QUEUED, self::STATUS_WAITING_FOR_IP, self::STATUS_PROVISIONING];

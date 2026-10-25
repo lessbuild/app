@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Infrastructure;
 
+use App\Contracts\Infrastructure\ResizableServerProvider;
 use App\Contracts\Infrastructure\ServerProvider;
 use App\Contracts\Infrastructure\SnapshotsServers;
 use App\Data\Infrastructure\CloudServerData;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
 use RuntimeException;
 
-class DigitalOcean implements ServerProvider, SnapshotsServers
+class DigitalOcean implements ResizableServerProvider, ServerProvider, SnapshotsServers
 {
     private const DROPLETS = 'https://api.digitalocean.com/v2/droplets';
 
@@ -532,5 +533,126 @@ class DigitalOcean implements ServerProvider, SnapshotsServers
         }
 
         return in_array($this->delete('https://api.digitalocean.com/v2/snapshots/'.rawurlencode((string) $found['id']))->status(), [204, 404], true);
+    }
+
+    /**
+     * Power the droplet off (gracefully, then forcibly if needed) and wait until it's off.
+     *
+     * @param  int|string  $identifier
+     * @return void
+     */
+    public function powerOffServer(int|string $identifier): void
+    {
+        if (($this->getDroplet($identifier)['status'] ?? null) === 'off') {
+            return;
+        }
+        $this->dropletAction($identifier, ['type' => 'shutdown']);
+        if ($this->waitForStatus($identifier, 'off', 150)) {
+            return;
+        }
+        // A graceful shutdown can hang on a busy server; cut the power.
+        $this->dropletAction($identifier, ['type' => 'power_off']);
+        if (! $this->waitForStatus($identifier, 'off', 90)) {
+            throw new RuntimeException('DigitalOcean: the server didn’t power off in time.');
+        }
+    }
+
+    /**
+     * Resize the droplet and wait for the action to finish.
+     *
+     * @param  int|string  $identifier
+     * @param  string  $size
+     * @param  bool  $resizeDisk
+     * @return void
+     */
+    public function resizeServer(int|string $identifier, string $size, bool $resizeDisk): void
+    {
+        $action = $this->dropletAction($identifier, ['type' => 'resize', 'size' => $size, 'disk' => $resizeDisk]);
+        if (! $this->waitForAction($identifier, $action, 900)) {
+            throw new RuntimeException('DigitalOcean: the resize didn’t finish in time.');
+        }
+    }
+
+    /**
+     * Power the droplet back on and wait until it's active.
+     *
+     * @param  int|string  $identifier
+     * @return void
+     */
+    public function powerOnServer(int|string $identifier): void
+    {
+        if (($this->getDroplet($identifier)['status'] ?? null) === 'active') {
+            return;
+        }
+        $this->dropletAction($identifier, ['type' => 'power_on']);
+        if (! $this->waitForStatus($identifier, 'active', 150)) {
+            throw new RuntimeException('DigitalOcean: the server didn’t power back on in time.');
+        }
+    }
+
+    /**
+     * Start a droplet action and return its ID.
+     *
+     * @param  int|string  $identifier
+     * @param  array<string, mixed>  $params
+     * @return int
+     */
+    private function dropletAction(int|string $identifier, array $params): int
+    {
+        $response = $this->post(self::DROPLETS.'/'.rawurlencode((string) $identifier).'/actions', $params);
+        if (! $response->successful()) {
+            throw new RuntimeException('DigitalOcean '.((string) ($params['type'] ?? 'action')).' failed with HTTP '.$response->status().'.');
+        }
+
+        return (int) ($response->json('action.id') ?? 0);
+    }
+
+    /**
+     * Poll the droplet's status until it matches, or the time runs out.
+     *
+     * @param  int|string  $identifier
+     * @param  string  $status
+     * @param  int  $seconds
+     * @return bool
+     */
+    private function waitForStatus(int|string $identifier, string $status, int $seconds): bool
+    {
+        $deadline = time() + $seconds;
+        while (true) {
+            if (($this->getDroplet($identifier)['status'] ?? null) === $status) {
+                return true;
+            }
+            if (time() >= $deadline) {
+                return false;
+            }
+            sleep(5);
+        }
+    }
+
+    /**
+     * Poll a droplet action until it completes, errors, or the time runs out.
+     *
+     * @param  int|string  $identifier
+     * @param  int  $action
+     * @param  int  $seconds
+     * @return bool
+     */
+    private function waitForAction(int|string $identifier, int $action, int $seconds): bool
+    {
+        if ($action === 0) {
+            return false;
+        }
+        $deadline = time() + $seconds;
+        while (true) {
+            $response = $this->get(self::DROPLETS.'/'.rawurlencode((string) $identifier).'/actions/'.$action);
+            $status = $response->successful() ? (string) $response->json('action.status') : '';
+            if ($status === 'completed') {
+                return true;
+            }
+            if ($status === 'errored' || time() >= $deadline) {
+                return false;
+            }
+            sleep(5);
+        }
     }
 }

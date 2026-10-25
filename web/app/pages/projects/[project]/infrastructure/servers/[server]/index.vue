@@ -41,6 +41,33 @@ const description = computed(() => [server.value.typeLabel, server.value.provide
 const project = computed(() => data.value.overview.project.id);
 let timer: number | undefined;
 
+// Resize: the provider's sizes are loaded when the dialog opens, and the page follows the resize until it's active.
+const resizeSizes = ref<Array<{ value: string; label: string }>>([]);
+const resizeLoading = ref(false);
+let resizeTimer: number | undefined;
+async function loadResizeSizes() {
+    resizeSizes.value = [];
+    if (!server.value.providerId) {
+        return;
+    }
+    resizeLoading.value = true;
+    const form = await send<{ catalog: { sizes: Array<{ id: string; label: string }> } | null }>('GET', `/projects/${project.value}/infrastructure/servers/create?provider=${server.value.providerId}`).catch(() => null);
+    resizeSizes.value = (form?.catalog?.sizes ?? []).filter((item) => item.id !== server.value.size).map((item) => ({ value: item.id, label: item.label }));
+    resizeLoading.value = false;
+}
+watch(() => server.value.status === 'resizing' && server.value.id, (resizing) => {
+    window.clearInterval(resizeTimer);
+    resizeTimer = resizing && import.meta.client
+        ? window.setInterval(async () => {
+            await refreshPage();
+            if (server.value.status !== 'resizing') {
+                window.clearInterval(resizeTimer);
+            }
+        }, 15000)
+        : undefined;
+}, { immediate: import.meta.client });
+onBeforeUnmount(() => window.clearInterval(resizeTimer));
+
 /** Ask how provisioning is going; once it's done, load the whole page again. */
 async function poll() {
     try {
@@ -94,6 +121,20 @@ onBeforeUnmount(stop);
                     <input type="hidden" name="rows" value="32">
                     <SubmitButton variant="secondary">{{ t('Open terminal') }}</SubmitButton>
                 </ApiForm>
+                <FormDialog
+                    v-if="server.canResize"
+                    id="resize-server"
+                    :title="t('Resize :server', { server: server.label })"
+                    :description="t('Change the server’s plan. It powers off, resizes and powers back on, so expect a few minutes of downtime.')"
+                    :action="`${base}/resize`"
+                    :submit="t('Resize server')"
+                >
+                    <template #trigger="{ open }"><AcmeBtn icon="resize" variant="secondary" @click="loadResizeSizes(); open()">{{ t('Resize') }}</AcmeBtn></template>
+                    <AcmeAlert tone="warning" class="mb-3">{{ t('The server restarts during the resize, and growing the disk can’t be undone.') }}</AcmeAlert>
+                    <p v-if="resizeLoading" class="text-sm text-muted" role="status">{{ t('Loading sizes…') }}</p>
+                    <SelectField v-else id="resize-size" name="size" :label="t('New size')" :options="resizeSizes" required />
+                    <CheckboxField id="resize-disk" name="resize_disk" :label="t('Also grow the disk (permanent)')" class="mt-3" />
+                </FormDialog>
             </template>
         </ProjectHeader>
         <div class="space-y-6">
@@ -117,6 +158,12 @@ onBeforeUnmount(stop);
                     <span v-if="waitingReason" class="mt-1 block">{{ t('Latest check: :reason', { reason: waitingReason }) }}</span>
                 </p>
                 <AcmeProgress :value="finalStage > 0 ? (stage / finalStage) * 100 : 0" :label="t('Provisioning progress')" class="mt-4" />
+            </section>
+            <section v-else-if="server.status === 'resizing'" class="rounded-2xl border border-amber-500/30 bg-amber-500/[.05] p-5" aria-busy="true">
+                <p class="flex items-center gap-2 font-semibold text-ink" role="status" aria-live="polite">
+                    <span class="size-2 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+                    {{ t('Resizing the server. It restarts during the change, which can take a few minutes.') }}
+                </p>
             </section>
             <section v-else-if="server.status === 'failed'" class="space-y-3 rounded-2xl border border-rose-500/30 bg-rose-500/[.04] p-5">
                 <p class="flex items-center gap-2 font-semibold text-ink"><ServerStatusBadge :status="status" />{{ server.error }}</p>
