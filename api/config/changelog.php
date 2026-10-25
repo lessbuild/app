@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-25', 'title' => 'Reset a managed database', 'changes' => [
+        'A managed MySQL or PostgreSQL database now has a Reset database button on the environment’s Resources tab: it drops every table so the next deploy runs the migrations from scratch. It’s for recovering a database a failed first deploy left half-migrated — no SSH needed. It asks to confirm, keeps the empty database and its users, and can’t be undone.',
+    ]],
     ['date' => '2026-10-24', 'title' => 'Deleting a website frees its domain', 'changes' => [
         'After you delete a website, its domain can be used again straight away — adding a website on that domain no longer says it’s already taken by the one you removed.',
     ]],

@@ -80,6 +80,48 @@ final class DatabaseCommands
     }
 
     /**
+     * Drop every table and view in a website's MySQL database, leaving the empty database (and its users) in place, so
+     * the next deploy's migrations run from scratch. Used to recover a database left half-migrated by a failed first
+     * deploy.
+     *
+     * @param  Website  $website
+     * @return string
+     */
+    public function reset(Website $website): string
+    {
+        $database = $this->identifier($website->databaseIdentifier());
+        $sql = 'SET FOREIGN_KEY_CHECKS = 0;'
+            .' SET SESSION group_concat_max_len = 1073741824;'
+            ." SET @views = (SELECT GROUP_CONCAT('`', table_name, '`') FROM information_schema.views WHERE table_schema = '{$database}');"
+            ." SET @drop_views = IF(@views IS NULL, 'DO 0', CONCAT('DROP VIEW IF EXISTS ', @views));"
+            .' PREPARE drop_views FROM @drop_views; EXECUTE drop_views; DEALLOCATE PREPARE drop_views;'
+            ." SET @tables = (SELECT GROUP_CONCAT('`', table_name, '`') FROM information_schema.tables WHERE table_schema = '{$database}' AND table_type = 'BASE TABLE');"
+            ." SET @drop_tables = IF(@tables IS NULL, 'DO 0', CONCAT('DROP TABLE IF EXISTS ', @tables));"
+            .' PREPARE drop_tables FROM @drop_tables; EXECUTE drop_tables; DEALLOCATE PREPARE drop_tables;'
+            .' SET FOREIGN_KEY_CHECKS = 1;';
+
+        return $this->mysql($website, $sql);
+    }
+
+    /**
+     * Empty a managed PostgreSQL database by dropping and recreating its public schema as the superuser, giving it back
+     * to the role that owns it, so the next deploy's migrations run from scratch.
+     *
+     * @param  string  $database  The database name from the managed resource.
+     * @param  string  $username  The role that owns it.
+     * @return string
+     */
+    public function resetPostgres(string $database, string $username): string
+    {
+        $database = $this->identifier($database);
+        $username = $this->identifier($username);
+
+        return "sudo -u postgres psql --set=ON_ERROR_STOP=1 -d {$database} <<'BUILDPUSHER_SQL'\n"
+            ."DROP SCHEMA IF EXISTS public CASCADE;\nCREATE SCHEMA public;\nALTER SCHEMA public OWNER TO \"{$username}\";\n"
+            ."GRANT ALL ON SCHEMA public TO \"{$username}\";\nGRANT ALL ON SCHEMA public TO public;\nBUILDPUSHER_SQL";
+    }
+
+    /**
      * The rows a sample copy takes from each table.
      *
      * @var int

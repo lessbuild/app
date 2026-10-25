@@ -18,9 +18,18 @@ const types = computed(() => Object.entries(props.page.resourceTypes).map(([valu
                     <span class="font-bold">{{ resource.name }}</span>
                     <span class="text-xs text-muted"> · {{ resource.type }} · {{ resource.managed ? t('managed') : t('external') }}<template v-if="resource.database"> · {{ t('database :name', { name: resource.database }) }}</template><template v-if="resource.variables.length > 0"> · <span class="font-mono">{{ resource.variables.join(', ') }}</span></template></span>
                 </span>
-                <ApiForm v-if="page.canManage" :action="`${base}/resources/${resource.id}`" method="DELETE" :confirm="t('Remove :name?', { name: resource.name })">
-                    <SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton>
-                </ApiForm>
+                <span v-if="page.canManage" class="flex shrink-0 gap-2">
+                    <ApiForm
+                        v-if="resource.managed && ['mysql', 'postgresql'].includes(resource.type)"
+                        :action="`${base}/resources/${resource.id}/reset`"
+                        :confirm="t('Empty the :name database? Every table is dropped. Deploy again to re-run its migrations. This can’t be undone.', { name: resource.name })"
+                    >
+                        <SubmitButton variant="quiet" size="sm">{{ t('Reset database') }}</SubmitButton>
+                    </ApiForm>
+                    <ApiForm :action="`${base}/resources/${resource.id}`" method="DELETE" :confirm="t('Remove :name?', { name: resource.name })">
+                        <SubmitButton variant="quiet" size="sm">{{ t('Remove') }}</SubmitButton>
+                    </ApiForm>
+                </span>
             </div>
             <p v-if="page.resources.length === 0" class="text-sm text-muted">{{ t('No resources yet.') }}</p>
             <FormDialog

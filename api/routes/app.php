@@ -136,6 +136,7 @@ use App\Http\Controllers\Deploy\PromoteBuildController;
 use App\Http\Controllers\Deploy\RedeployBuildController;
 use App\Http\Controllers\Deploy\RefreshEnvironmentRecipeController;
 use App\Http\Controllers\Deploy\ReplaceEnvironmentVariablesController;
+use App\Http\Controllers\Deploy\ResetDatabaseResourceController;
 use App\Http\Controllers\Deploy\RetryLaunchController;
 use App\Http\Controllers\Deploy\RetryPreviewCleanupController;
 use App\Http\Controllers\Deploy\ReviewBuildController;
@@ -787,6 +788,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
             Route::post('/environments/{environment}/processes', StoreEnvironmentProcessController::class)->name('environments.processes.store');
             Route::post('/environments/{environment}/production-check', FixProductionIssuesController::class)->middleware('throttle:20,1')->name('environments.production-check.fix');
             Route::post('/environments/{environment}/resources', StoreEnvironmentResourceController::class)->name('environments.resources.store');
+            Route::post('/environments/{environment}/resources/{resource}/reset', ResetDatabaseResourceController::class)->whereNumber('resource')->middleware('throttle:10,1')->name('environments.resources.reset');
             Route::post('/environments/{environment}/deployment-schedules', StoreDeploymentScheduleController::class)->name('environments.deployment-schedules.store');
             Route::post('/environments/{environment}/scaling-schedules', StoreScalingScheduleController::class)->name('environments.scaling-schedules.store');
             Route::post('/environments/{environment}/tasks', StoreScheduledTaskController::class)->name('environments.tasks.store');
