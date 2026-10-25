@@ -4215,6 +4215,7 @@
     "Resize": "Redimensionner",
     "Resize :server": "Redimensionner :server",
     "Resize server": "Redimensionner le serveur",
+    "Resized the server :server to :size": "A redimensionné le serveur :server en :size",
     "Resizing": "Redimensionnement",
     "Resizing the server. It restarts during the change, which can take a few minutes.": "Redimensionnement du serveur. Il redémarre pendant le changement, ce qui peut prendre quelques minutes.",
     "Resolve": "Résoudre",
