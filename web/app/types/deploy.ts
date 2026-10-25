@@ -314,7 +314,7 @@ export type EnvironmentPage = {
     secretSyncs: Array<{ id: number; name: string; provider: string; lastSyncedAt: string | null; lastError: string | null; lastResult: { added: number; updated: number; removed: number; skipped: string[] } | null }>;
     secretProviders: Record<string, string>;
     processes: Array<{ id: number; name: string; command: string; type: string; replicas: number; enabled: boolean }>;
-    resources: Array<{ id: number; name: string; type: string; managed: boolean; variables: string[]; database: string | null }>;
+    resources: Array<{ id: number; name: string; type: string; managed: boolean; resettable: boolean; variables: string[]; database: string | null }>;
     databaseWebsites: Option[];
     resourceTypes: Record<string, string>;
     deploySchedules: Array<{ id: number; name: string; cron: string; timezone: string; nextRunAt: string | null; lastResult: string | null }>;

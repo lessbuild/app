@@ -156,6 +156,7 @@ final class DeployEnvironmentPageQuery
                 'name' => $resource->name,
                 'type' => EnvironmentResource::TYPES[$resource->type] ?? $resource->type,
                 'managed' => (bool) $resource->is_managed,
+                'resettable' => (bool) $resource->is_managed && in_array($resource->type, ['mysql', 'postgresql'], true),
                 'variables' => array_keys($resource->configuration['variables'] ?? []),
                 'database' => $resource->type === 'mysql' && $resource->is_managed ? ($resource->configuration['variables']['DB_DATABASE'] ?? null) : null,
             ])->values(),

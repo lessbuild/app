@@ -20,7 +20,7 @@ const types = computed(() => Object.entries(props.page.resourceTypes).map(([valu
                 </span>
                 <span v-if="page.canManage" class="flex shrink-0 gap-2">
                     <ApiForm
-                        v-if="resource.managed && ['mysql', 'postgresql'].includes(resource.type)"
+                        v-if="resource.resettable"
                         :action="`${base}/resources/${resource.id}/reset`"
                         :confirm="t('Empty the :name database? Every table is dropped. Deploy again to re-run its migrations. This can’t be undone.', { name: resource.name })"
                     >
