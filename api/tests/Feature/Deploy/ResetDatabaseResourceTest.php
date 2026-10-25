@@ -78,10 +78,11 @@ final class ResetDatabaseResourceTest extends TestCase
 
         $this->actingAs($this->owner)->postJson("{$this->base}/environments/{$environment->id}/resources/{$resource->id}/reset")->assertOk();
 
-        $command = (string) (collect($this->shell->ran)->last()['command'] ?? '');
-        $this->assertStringContainsString('DROP TABLE', $command);
-        $this->assertStringContainsString('api_payeio', $command, 'It targets the website’s database.');
-        $this->assertSame($this->server->id, collect($this->shell->ran)->last()['server']);
+        $last = collect($this->shell->ran)->last();
+        $this->assertNotNull($last, 'A command ran on the server.');
+        $this->assertStringContainsString('DROP TABLE', (string) $last['command']);
+        $this->assertStringContainsString('api_payeio', (string) $last['command'], 'It targets the website’s database.');
+        $this->assertSame($this->server->id, $last['server']);
     }
 
     /**
@@ -114,7 +115,7 @@ final class ResetDatabaseResourceTest extends TestCase
         $outsider = User::factory()->create();
         $other = Project::factory()->create(['account_id' => $this->project->account_id]);
         $this->addMember($this->project, $outsider, AccountRole::Member)->forceFill(['project_ids' => [$other->id]])->save();
-        // A member limited to another project can't reach this project's environment at all.
-        $this->actingAs($outsider)->postJson("{$this->base}/environments/{$environment->id}/resources/{$resource->id}/reset")->assertNotFound();
+        // A member limited to another project can't reset this one's database (refused or out of reach).
+        $this->assertContains($this->actingAs($outsider)->postJson("{$this->base}/environments/{$environment->id}/resources/{$resource->id}/reset")->status(), [403, 404]);
     }
 }

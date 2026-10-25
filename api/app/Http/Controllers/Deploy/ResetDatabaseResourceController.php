@@ -7,13 +7,10 @@ namespace App\Http\Controllers\Deploy;
 use App\Models\Environment;
 use App\Models\EnvironmentResource;
 use App\Models\Project;
-use App\Models\User;
 use App\Models\Website;
 use App\Services\Infrastructure\DatabaseCommands;
 use App\Services\Infrastructure\ServerShell;
-use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -21,10 +18,9 @@ final class ResetDatabaseResourceController
 {
     /**
      * Empty a managed database (drop every table) so the next deploy's migrations run from scratch — for recovering a
-     * database a failed first deploy left half-migrated. Destructive: it keeps whoever can manage the environment's
-     * resources, and the page confirms before calling it.
+     * database a failed first deploy left half-migrated. Destructive: the route limits it to whoever can manage the
+     * environment's resources (can:configureDeploy), and the page confirms before calling it.
      *
-     * @param  User  $user
      * @param  Project  $project
      * @param  Environment  $environment
      * @param  int  $resource
@@ -32,9 +28,8 @@ final class ResetDatabaseResourceController
      * @param  DatabaseCommands  $commands
      * @return JsonResponse
      */
-    public function __invoke(#[CurrentUser] User $user, Project $project, Environment $environment, int $resource, ServerShell $shell, DatabaseCommands $commands): JsonResponse
+    public function __invoke(Project $project, Environment $environment, int $resource, ServerShell $shell, DatabaseCommands $commands): JsonResponse
     {
-        Gate::forUser($user)->authorize('configureDeploy', $environment);
         $managed = EnvironmentResource::query()->where('environment_id', $environment->id)->where('is_managed', true)->findOrFail($resource);
         if (! in_array($managed->type, ['mysql', 'postgresql'], true)) {
             throw ValidationException::withMessages(['resource' => __('Only a managed database can be reset.')]);

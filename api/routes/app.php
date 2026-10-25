@@ -788,7 +788,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->prefix('/projects/{
             Route::post('/environments/{environment}/processes', StoreEnvironmentProcessController::class)->name('environments.processes.store');
             Route::post('/environments/{environment}/production-check', FixProductionIssuesController::class)->middleware('throttle:20,1')->name('environments.production-check.fix');
             Route::post('/environments/{environment}/resources', StoreEnvironmentResourceController::class)->name('environments.resources.store');
-            Route::post('/environments/{environment}/resources/{resource}/reset', ResetDatabaseResourceController::class)->whereNumber('resource')->middleware('throttle:10,1')->name('environments.resources.reset');
+            Route::post('/environments/{environment}/resources/{resource}/reset', ResetDatabaseResourceController::class)->whereNumber('resource')->middleware(['can:configureDeploy,environment', 'throttle:10,1'])->name('environments.resources.reset');
             Route::post('/environments/{environment}/deployment-schedules', StoreDeploymentScheduleController::class)->name('environments.deployment-schedules.store');
             Route::post('/environments/{environment}/scaling-schedules', StoreScalingScheduleController::class)->name('environments.scaling-schedules.store');
             Route::post('/environments/{environment}/tasks', StoreScheduledTaskController::class)->name('environments.tasks.store');
