@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-25', 'title' => 'Builds fit on small servers', 'changes' => [
+        'Deploys now set a Node build-memory ceiling from the server’s memory (RAM plus swap), so a front-end build (Nuxt, Vite and the like) on a small server uses the swap instead of running out of memory and failing. Set NODE_OPTIONS yourself to override it.',
+        'New servers get swap sized to their memory (around 3 GB of RAM-plus-swap, capped to the disk) instead of a flat 1 GB, so there’s room to build.',
+    ]],
     ['date' => '2026-10-25', 'title' => 'Reset a managed database', 'changes' => [
         'A managed MySQL or PostgreSQL database now has a Reset database button on the environment’s Resources tab: it drops every table so the next deploy runs the migrations from scratch. It’s for recovering a database a failed first deploy left half-migrated — no SSH needed. It asks to confirm, keeps the empty database and its users, and can’t be undone.',
     ]],

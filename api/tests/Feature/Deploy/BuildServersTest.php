@@ -124,6 +124,7 @@ final class BuildServersTest extends TestCase
         $buildPart = $this->scripts->started[0];
         $this->assertSame($this->builder->id, $buildPart['server']);
         $this->assertStringContainsString('git clone', $buildPart['script']);
+        $this->assertStringContainsString('max-old-space-size', $buildPart['script'], 'The build caps Node’s heap from the server’s memory.');
         $this->assertStringContainsString("--upload-file '/tmp/lessbuild-artifact-{$build->id}.tar.gz' 'https://storage.example.test/shop-builds/buildpusher-builds/shop/{$build->id}.tar.gz?X-Amz-Algorithm=AWS4-HMAC-SHA256", $buildPart['script']);
         $this->assertStringContainsString('/deployment/callback/artifact', $buildPart['script']);
         $this->assertStringNotContainsString('/var/www/shop/.env', $buildPart['script']);
