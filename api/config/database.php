@@ -42,7 +42,7 @@ return [
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
             // The web server, queue workers and scheduler share one file: wait for a write lock rather than failing with
             // "database is locked", and let reads carry on during writes (write-ahead logging).
-            'busy_timeout' => (int) env('DB_BUSY_TIMEOUT', 10000),
+            'busy_timeout' => (int) env('DB_BUSY_TIMEOUT', 15000),
             'journal_mode' => env('DB_JOURNAL_MODE', 'wal'),
             'synchronous' => env('DB_SYNCHRONOUS', 'normal'),
             // A deferred transaction that reads and then writes can't wait for another writer: SQLite fails it at once

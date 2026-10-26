@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-26', 'title' => 'Deleting a project destroys its servers', 'changes' => [
+        'Deleting a project now also destroys the servers only that project uses and removes its websites, so you’re not left paying for a cloud server with nothing attached to it. A server shared with another project is left alone.',
+        'The servers go first: if your provider can’t destroy one, the project isn’t deleted — so you never end up with the project gone but its server still running and billing. The delete form lists exactly which servers and websites will be destroyed before you confirm.',
+    ]],
     ['date' => '2026-10-25', 'title' => 'Resize a server', 'changes' => [
         'A cloud server now has a Resize button on its page: pick a new plan (and optionally grow the disk), and Buildpusher powers it off, resizes it and powers it back on — a few minutes of downtime, no logging in to the cloud console. Available for DigitalOcean to start with; other providers can’t be resized from here yet.',
     ]],

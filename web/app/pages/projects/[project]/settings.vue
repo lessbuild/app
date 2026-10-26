@@ -9,7 +9,7 @@ import type { Option } from '~/types/ui';
 definePageMeta({ layout: 'app' });
 const { t } = useT();
 const route = useRoute();
-const { data } = await useApi<{ overview: ProjectOverview; kinds: Option[] }>(() => `/projects/${route.params.project}/settings`);
+const { data } = await useApi<{ overview: ProjectOverview; kinds: Option[]; teardown: { servers: { name: string; size: string | null; ip: string | null }[]; websites: { url: string }[] } }>(() => `/projects/${route.params.project}/settings`);
 const project = computed(() => data.value.overview.project);
 const base = computed(() => `/api/app/projects/${project.value.id}`);
 const name = ref(project.value.name);
@@ -22,6 +22,7 @@ watch(project, (value) => {
 const sources = computed(() => [{ value: '', label: t('Start empty') }, ...data.value.overview.environments.map((environment) => ({ value: environment.id, label: environment.name }))]);
 const source = ref('');
 const confirmName = ref('');
+const teardown = computed(() => data.value.teardown);
 </script>
 
 <template>
@@ -82,6 +83,14 @@ const confirmName = ref('');
             <section v-if="data.overview.canManage" class="rounded-2xl border border-rose-500/30 bg-rose-500/[.03] p-5 sm:p-6" aria-labelledby="danger-title">
                 <h2 id="danger-title" class="font-semibold text-rose-700 dark:text-rose-300">{{ t('Delete this project') }}</h2>
                 <p class="mt-1 text-sm text-muted">{{ t('Deletes its environments and service settings. Services remove their data for this project. This can’t be undone.') }}</p>
+                <div v-if="teardown.servers.length || teardown.websites.length" class="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/[.06] p-3 text-sm">
+                    <p class="font-medium text-rose-700 dark:text-rose-300">{{ t('Deleting it also permanently destroys the servers and websites only this project uses:') }}</p>
+                    <ul class="mt-2 space-y-1 text-muted">
+                        <li v-for="s in teardown.servers" :key="`srv-${s.name}`">{{ t('Server') }}: {{ s.name }}<template v-if="s.size"> · {{ s.size }}</template><template v-if="s.ip"> · {{ s.ip }}</template></li>
+                        <li v-for="w in teardown.websites" :key="`web-${w.url}`">{{ t('Website') }}: {{ w.url }}</li>
+                    </ul>
+                    <p class="mt-2 text-xs text-muted">{{ t('A server is destroyed at your cloud provider; if that fails, the project isn’t deleted.') }}</p>
+                </div>
                 <ApiForm :action="base" method="DELETE" class="mt-4 !flex flex-wrap items-end gap-3">
                     <InputField id="delete-confirm" v-model="confirmName" name="confirm_name" :label="t('Type :name to confirm', { name: project.name })" autocomplete="off" required class="w-full sm:w-72" />
                     <SubmitButton variant="danger" :disabled="confirmName !== project.name">{{ t('Delete project') }}</SubmitButton>
