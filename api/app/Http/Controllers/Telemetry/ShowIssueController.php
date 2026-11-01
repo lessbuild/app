@@ -47,6 +47,8 @@ final class ShowIssueController
                 ...(array) IssueRow::from($issue->loadMissing(['assignee', 'environment'])),
                 'version' => $issue->state_version,
                 'details' => $issue->details,
+                'exceptionType' => is_string($issue->metadata['exception.type'] ?? null)
+                    ? $redactor->redact(['type' => $issue->metadata['exception.type']])['type'] : null,
                 'firstSeenAt' => $issue->first_seen_at->toIso8601String(),
                 'snoozedUntil' => $issue->snoozed_until?->toIso8601String(),
                 'assigneeId' => $issue->assignee_id,

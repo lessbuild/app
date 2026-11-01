@@ -6,35 +6,79 @@ namespace App\Queries\Telemetry;
 
 use App\Enums\IssueStatus;
 use App\Models\Issue;
-use App\Models\Project;
 use App\Models\TelemetryEvent;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Builder;
 
 final class IssueActivityQuery
 {
     /**
-     * Sum up a project's issues: how many are open, how many were first seen today, their occurrences over the last
-     * day by the hour (with the day before, for a trend), and how many people the open ones affected.
+     * Summarise matching issues: open and new counts, event totals over the last day and the day before, and affected
+     * people. Status is intentionally ignored so these counts stay useful while filtering issue state.
      *
-     * @param  Project  $project
+     * @param  Builder<Issue>  $matchingIssues  The issues matching search, severity, ownership and environment filters; status is intentionally ignored.
+     * @param  string|null  $environmentId  Restrict event counts to this environment as well.
      * @return array{open: int, newToday: int, events: int, eventsBefore: int, hourly: list<int>, users: int}
      */
-    public function stats(Project $project): array
+    public function stats(Builder $matchingIssues, ?string $environmentId = null): array
     {
         $now = CarbonImmutable::now('UTC');
-        $issues = Issue::query()->where('project_id', $project->id);
-        $occurred = TelemetryEvent::query()->whereIn('issue_id', Issue::query()->where('project_id', $project->id)->select('id'))
-            ->where('occurred_at', '>=', $now->subHours(48))->pluck('occurred_at');
+        $issues = clone $matchingIssues;
+        $open = (clone $issues)->where('status', IssueStatus::Open);
+        $events = TelemetryEvent::query()->whereIn('issue_id', (clone $issues)->select('issues.id'))
+            ->when($environmentId !== null, fn (Builder $query): Builder => $query->where('environment_id', $environmentId))
+            ->where('occurred_at', '>=', $now->subHours(48));
+
+        $selects = [
+            'COUNT(CASE WHEN occurred_at >= ? THEN 1 END) AS events',
+            'COUNT(CASE WHEN occurred_at < ? THEN 1 END) AS events_before',
+        ];
+        $bindings = [$now->subDay(), $now->subDay()];
+        for ($index = 0; $index < 24; $index++) {
+            $from = $now->subHours(24 - $index);
+            $until = $from->addHour();
+            $selects[] = "COUNT(CASE WHEN occurred_at >= ? AND occurred_at < ? THEN 1 END) AS hour_{$index}";
+            $bindings[] = $from;
+            $bindings[] = $until;
+        }
+        $counts = $events->selectRaw(implode(', ', $selects), $bindings)->first();
 
         return [
-            'open' => (clone $issues)->where('status', IssueStatus::Open)->count(),
+            'open' => $open->count(),
             'newToday' => (clone $issues)->where('first_seen_at', '>=', $now->startOfDay())->count(),
-            'events' => $occurred->filter(fn ($at): bool => CarbonImmutable::parse($at)->greaterThanOrEqualTo($now->subDay()))->count(),
-            'eventsBefore' => $occurred->filter(fn ($at): bool => CarbonImmutable::parse($at)->lessThan($now->subDay()))->count(),
-            'hourly' => $this->hourly($occurred, $now, 24),
-            'users' => (int) (clone $issues)->where('status', IssueStatus::Open)->sum('affected_users'),
+            'events' => (int) ($counts?->events ?? 0),
+            'eventsBefore' => (int) ($counts?->events_before ?? 0),
+            'hourly' => array_map(fn (int $index): int => (int) ($counts?->{"hour_{$index}"} ?? 0), range(0, 23)),
+            'users' => (int) $open->sum('affected_users'),
         ];
+    }
+
+    /**
+     * Add recent exception counts and sort high-impact issues first. The default order favors active volume; callers
+     * can still choose newest-first from the issues page.
+     *
+     * @param  Builder<Issue>  $issues
+     * @param  array<string, mixed>  $filters
+     * @return Builder<Issue>
+     */
+    public function prioritize(Builder $issues, array $filters): Builder
+    {
+        $now = CarbonImmutable::now('UTC');
+        $current = TelemetryEvent::query()->selectRaw('COUNT(*)')->whereColumn('issue_id', 'issues.id')
+            ->where('type', 'exception')->where('occurred_at', '>=', $now->subHour())
+            ->when(isset($filters['environment']), fn (Builder $query): Builder => $query->where('environment_id', $filters['environment']));
+        $previous = TelemetryEvent::query()->selectRaw('COUNT(*)')->whereColumn('issue_id', 'issues.id')
+            ->where('type', 'exception')->where('occurred_at', '>=', $now->subHours(2))->where('occurred_at', '<', $now->subHour())
+            ->when(isset($filters['environment']), fn (Builder $query): Builder => $query->where('environment_id', $filters['environment']));
+
+        $issues->addSelect('issues.*')->selectSub($current, 'events_last_hour')->selectSub($previous, 'events_previous_hour');
+        if (($filters['sort'] ?? 'impact') === 'newest') {
+            return $issues->orderByDesc('last_seen_at')->orderByDesc('id');
+        }
+
+        return $issues->orderByDesc('events_last_hour')
+            ->orderByRaw("CASE severity WHEN 'critical' THEN 0 WHEN 'error' THEN 1 WHEN 'warning' THEN 2 WHEN 'info' THEN 3 ELSE 4 END")
+            ->orderByDesc('affected_users')->orderByDesc('last_seen_at')->orderByDesc('id');
     }
 
     /**
@@ -42,21 +86,33 @@ final class IssueActivityQuery
      *
      * @param  list<int>  $issueIds
      * @param  int  $hours
+     * @param  string|null  $environmentId
      * @return array<int, list<int>>
      */
-    public function trends(array $issueIds, int $hours = 12): array
+    public function trends(array $issueIds, int $hours = 12, ?string $environmentId = null): array
     {
         if ($issueIds === []) {
             return [];
         }
         $now = CarbonImmutable::now('UTC');
-        $events = TelemetryEvent::query()->whereIn('issue_id', $issueIds)->where('occurred_at', '>=', $now->subHours($hours))->get(['issue_id', 'occurred_at'])->groupBy('issue_id');
+        $selects = ['issue_id'];
+        $bindings = [];
+        for ($index = 0; $index < $hours; $index++) {
+            $from = $now->subHours($hours - $index);
+            $until = $from->addHour();
+            $selects[] = "COUNT(CASE WHEN occurred_at >= ? AND occurred_at < ? THEN 1 END) AS hour_{$index}";
+            $bindings[] = $from;
+            $bindings[] = $until;
+        }
+        $events = TelemetryEvent::query()->whereIn('issue_id', $issueIds)->where('type', 'exception')
+            ->when($environmentId !== null, fn (Builder $query): Builder => $query->where('environment_id', $environmentId))
+            ->where('occurred_at', '>=', $now->subHours($hours))
+            ->selectRaw(implode(', ', $selects), $bindings)->groupBy('issue_id')->get()->keyBy('issue_id');
 
         $trends = [];
         foreach ($issueIds as $id) {
-            /** @var Collection<int, TelemetryEvent> $own */
-            $own = $events->get($id) ?? collect();
-            $trends[$id] = $this->hourly($own->pluck('occurred_at'), $now, $hours);
+            $row = $events->get($id);
+            $trends[$id] = array_map(fn (int $index): int => (int) ($row?->{"hour_{$index}"} ?? 0), range(0, $hours - 1));
         }
 
         return $trends;
@@ -88,24 +144,4 @@ final class IssueActivityQuery
         ];
     }
 
-    /**
-     * Count timestamps into hourly buckets ending now, oldest first.
-     *
-     * @param  Collection<int, mixed>  $times
-     * @param  CarbonImmutable  $now
-     * @param  int  $hours
-     * @return list<int>
-     */
-    private function hourly(Collection $times, CarbonImmutable $now, int $hours): array
-    {
-        $buckets = array_fill(0, $hours, 0);
-        foreach ($times as $at) {
-            $ago = (int) floor(CarbonImmutable::parse($at)->diffInSeconds($now, true) / 3600);
-            if ($ago < $hours) {
-                $buckets[$hours - 1 - $ago]++;
-            }
-        }
-
-        return array_values($buckets);
-    }
 }

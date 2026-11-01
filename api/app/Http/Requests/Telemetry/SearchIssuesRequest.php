@@ -31,7 +31,9 @@ final class SearchIssuesRequest extends FormRequest
             'status' => ['nullable', 'string', Rule::in(['all', ...array_column(IssueStatus::cases(), 'value')])],
             'q' => ['nullable', 'string', 'max:255'],
             'severity' => ['nullable', 'string', Rule::in(['debug', 'info', 'warning', 'error', 'critical'])],
+            'environment' => ['nullable', 'string', 'max:36'],
             'ownership' => ['nullable', 'string', Rule::in(['any', 'mine', 'unassigned'])],
+            'sort' => ['nullable', 'string', Rule::in(['impact', 'newest'])],
             'page' => ['nullable', 'integer', 'between:1,100000'],
             'events_page' => ['nullable', 'integer', 'between:1,100000'],
             'activity_page' => ['nullable', 'integer', 'between:1,100000'],
@@ -45,6 +47,6 @@ final class SearchIssuesRequest extends FormRequest
      */
     public function filters(): array
     {
-        return array_replace(['status' => 'open', 'ownership' => 'any'], array_filter($this->validated(), fn (mixed $value): bool => $value !== null && $value !== ''));
+        return array_replace(['status' => 'open', 'ownership' => 'any', 'sort' => 'impact'], array_filter($this->validated(), fn (mixed $value): bool => $value !== null && $value !== ''));
     }
 }

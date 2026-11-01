@@ -33,9 +33,9 @@ const switcher = computed<MenuItem[]>(() => {
 
 <template>
     <div v-if="!panel">
-        <header class="flex flex-wrap items-end justify-between gap-4 pb-6">
-            <div class="min-w-0">
-                <h1 class="text-2xl font-semibold tracking-tight text-ink sm:text-[1.75rem]">{{ title }}</h1>
+        <header class="flex min-w-0 flex-wrap items-end justify-between gap-4 pb-6">
+            <div class="min-w-0 max-w-full flex-1">
+                <h1 class="min-w-0 max-w-full break-words [overflow-wrap:anywhere] text-2xl font-semibold tracking-tight text-ink sm:text-[1.75rem]">{{ title }}</h1>
                 <p v-if="subtitle" class="mt-1 text-muted">{{ subtitle }}</p>
             </div>
             <div v-if="switcher.length > 0 || $slots.actions" class="flex flex-wrap gap-2">

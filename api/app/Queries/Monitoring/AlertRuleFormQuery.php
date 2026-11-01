@@ -45,6 +45,11 @@ final readonly class AlertRuleFormQuery
                     AlertMetric::MetricAnomaly => 'series',
                     default => null,
                 },
+                'description' => match ($metric) {
+                    AlertMetric::ExceptionIncrease => __('The threshold is how many more exceptions must arrive than in the previous window of the same length.'),
+                    AlertMetric::CriticalIssueCount => __('Counts newly detected critical issues in the selected environment.'),
+                    default => null,
+                },
                 'disabled' => ($metric->isTelemetryGuardrail() && ! $plan->has('monitoring.guardrails')) || ($metric->isSloBurnRate() && ! $plan->has('monitoring.slo_burn_rate'))
                     || ($metric->isAnomaly() && ! $plan->has('monitoring.anomalies')) || ($metric === AlertMetric::LogPatternCount && ! $plan->has('monitoring.log_patterns')),
             ], AlertMetric::cases()),

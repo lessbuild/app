@@ -59,7 +59,7 @@ export type AlertRuleSummary = { id: number; name: string; condition: string; wi
 
 /** The alert rule form's choices and, when editing, the rule's settings. */
 export type AlertRuleForm = {
-    metrics: Array<Option & { disabled: boolean; needs: 'match' | 'objective' | 'numeric' | 'series' | null }>;
+    metrics: Array<Option & { disabled: boolean; needs: 'match' | 'objective' | 'numeric' | 'series' | null; description?: string | null }>;
     windows: Option[];
     objectives: Option[];
     series: Option[];

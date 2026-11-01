@@ -6,6 +6,7 @@ namespace App\Services\Monitoring;
 
 use App\Enums\AlertMetric;
 use App\Models\AlertRule;
+use App\Models\Issue;
 use App\Models\ServiceLevelObjective;
 use App\Models\TelemetryEvent;
 use App\Support\Telemetry\EventTime;
@@ -98,6 +99,13 @@ final class AlertObservation
             ];
         }
 
+        if ($rule->metric === AlertMetric::ExceptionIncrease) {
+            return [...$this->exceptionIncrease($rule, $from, $until), ...$window];
+        }
+        if ($rule->metric === AlertMetric::CriticalIssueCount) {
+            return [...$this->criticalIssues($rule, $from, $until), ...$window];
+        }
+
         $query = $this->events($rule)
             ->where('occurred_at', '>=', EventTime::boundary($from))
             ->where('occurred_at', '<', EventTime::boundary($until));
@@ -129,6 +137,59 @@ final class AlertObservation
             'state' => $samples < $rule->minimum_samples || $value === null
                 ? 'no_data' : ($value >= $rule->threshold ? 'breaching' : 'healthy'),
             'value' => $value, 'samples' => $samples, ...$window,
+        ];
+    }
+
+    /**
+     * Compare exception events in this window with the preceding window. The value is the absolute increase, so a
+     * threshold of 10 opens an incident when there are at least 10 more exceptions than in the previous window.
+     * Other telemetry in the current window counts as samples, allowing the alert to recover when exceptions stop.
+     *
+     * @param  AlertRule  $rule
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
+     * @return array{state: string, value: float|null, samples: int}
+     */
+    private function exceptionIncrease(AlertRule $rule, CarbonImmutable $from, CarbonImmutable $until): array
+    {
+        $previousFrom = $from->subMinutes($rule->window_minutes);
+        $row = $this->events($rule)->where('occurred_at', '>=', EventTime::boundary($previousFrom))
+            ->where('occurred_at', '<', EventTime::boundary($until))
+            ->selectRaw('COUNT(CASE WHEN type = ? AND occurred_at >= ? THEN 1 END) AS current_exceptions', ['exception', EventTime::boundary($from)])
+            ->selectRaw('COUNT(CASE WHEN type = ? AND occurred_at < ? THEN 1 END) AS previous_exceptions', ['exception', EventTime::boundary($from)])
+            ->selectRaw('COUNT(CASE WHEN occurred_at >= ? THEN 1 END) AS samples', [EventTime::boundary($from)])->first();
+        $samples = (int) ($row?->samples ?? 0);
+        $increase = max(0, (int) ($row?->current_exceptions ?? 0) - (int) ($row?->previous_exceptions ?? 0));
+
+        return [
+            'state' => $samples < $rule->minimum_samples ? 'no_data' : ($increase >= $rule->threshold ? 'breaching' : 'healthy'),
+            'value' => (float) $increase, 'samples' => $samples,
+        ];
+    }
+
+    /**
+     * Count critical issues first seen in this rule's environment during the window. Telemetry in the environment is
+     * the sample count, so a quiet window with incoming traffic is healthy rather than no-data.
+     *
+     * @param  AlertRule  $rule
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
+     * @return array{state: string, value: float|null, samples: int}
+     */
+    private function criticalIssues(AlertRule $rule, CarbonImmutable $from, CarbonImmutable $until): array
+    {
+        $samples = $this->events($rule)->where('occurred_at', '>=', EventTime::boundary($from))
+            ->where('occurred_at', '<', EventTime::boundary($until))->count();
+        $count = Issue::query()->where('type', 'exception')->where('severity', 'critical')
+            ->where('first_seen_at', '>=', EventTime::boundary($from))->where('first_seen_at', '<', EventTime::boundary($until))
+            ->whereHas('telemetryEvents', fn (Builder $events): Builder => $events->where('environment_id', $rule->environment_id)
+                ->where('type', 'exception')->when($rule->service !== null, fn (Builder $query): Builder => $query->where('service', $rule->service))
+                ->where('occurred_at', '>=', EventTime::boundary($from))->where('occurred_at', '<', EventTime::boundary($until)))
+            ->count();
+
+        return [
+            'state' => $samples < $rule->minimum_samples ? 'no_data' : ($count >= $rule->threshold ? 'breaching' : 'healthy'),
+            'value' => (float) $count, 'samples' => $samples,
         ];
     }
 

@@ -9,6 +9,8 @@ enum AlertMetric: string
     case RequestErrorRate = 'request_error_rate';
     case RequestDuration = 'request_duration';
     case ExceptionCount = 'exception_count';
+    case ExceptionIncrease = 'exception_increase';
+    case CriticalIssueCount = 'critical_issue_count';
     case ErrorLogCount = 'error_log_count';
     case LogPatternCount = 'log_pattern_count';
     case TelemetryVolume = 'telemetry_volume';
@@ -28,6 +30,8 @@ enum AlertMetric: string
             self::RequestErrorRate => __('Request error rate (%)'),
             self::RequestDuration => __('Average request duration (ms)'),
             self::ExceptionCount => __('Exception count'),
+            self::ExceptionIncrease => __('Exception increase over previous window'),
+            self::CriticalIssueCount => __('New critical issues'),
             self::ErrorLogCount => __('Error / critical log count'),
             self::LogPatternCount => __('Matching log / event count'),
             self::TelemetryVolume => __('Telemetry volume (events)'),
@@ -65,7 +69,7 @@ enum AlertMetric: string
      */
     public function hasWholeNumberThreshold(): bool
     {
-        return in_array($this, [self::ExceptionCount, self::ErrorLogCount, self::LogPatternCount, self::TelemetryVolume, self::TelemetryFreshness], true);
+        return in_array($this, [self::ExceptionCount, self::ExceptionIncrease, self::CriticalIssueCount, self::ErrorLogCount, self::LogPatternCount, self::TelemetryVolume, self::TelemetryFreshness], true);
     }
 
     /**

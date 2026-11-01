@@ -25,6 +25,7 @@ final class IssuesQuery
         $query = Issue::query()->whereBelongsTo($project);
         $query->when($filters['status'] !== 'all', fn (Builder $query): Builder => $query->where('status', $filters['status']));
         $query->when($filters['severity'] ?? null, fn (Builder $query, string $severity): Builder => $query->where('severity', $severity));
+        $query->when($filters['environment'] ?? null, fn (Builder $query, string $environment): Builder => $query->whereHas('telemetryEvents', fn (Builder $events): Builder => $events->where('environment_id', $environment)));
 
         if ($filters['ownership'] === 'mine') {
             $query->where('assignee_id', $user->id);

@@ -22,7 +22,7 @@ final class SavedViewPages
         'audit-log' => ['route' => 'account.audit-log', 'parameters' => [], 'keys' => ['project', 'person', 'category', 'from', 'to']],
         'notifications' => ['route' => 'notifications.index', 'parameters' => [], 'keys' => ['filter', 'type', 'q']],
         'monitoring.events' => ['route' => 'monitoring.events', 'parameters' => ['project'], 'keys' => ['environment', 'q', 'range', 'severity', 'sort', 'trace', 'type']],
-        'monitoring.issues' => ['route' => 'monitoring.issues', 'parameters' => ['project'], 'keys' => ['environment', 'ownership', 'q', 'status']],
+        'monitoring.issues' => ['route' => 'monitoring.issues', 'parameters' => ['project'], 'keys' => ['environment', 'ownership', 'q', 'severity', 'sort', 'status']],
         'monitoring.metrics' => ['route' => 'monitoring.metrics', 'parameters' => ['project'], 'keys' => ['environment', 'kind', 'q']],
     ];
 

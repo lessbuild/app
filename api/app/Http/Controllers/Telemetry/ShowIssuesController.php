@@ -14,13 +14,14 @@ use App\Queries\Projects\ProjectOverviewQuery;
 use App\Queries\Telemetry\IssueActivityQuery;
 use App\Queries\Telemetry\IssuesQuery;
 use App\Services\Monitoring\TelemetryRedactor;
+use Carbon\CarbonImmutable;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 
 final class ShowIssuesController
 {
     /**
-     * List the project's errors grouped into issues (`?q=`, `?status=`, `?ownership=any|mine|unassigned`, `?page=`).
+     * List the project's errors grouped into issues, with search, status, severity, environment, ownership and sort filters.
      *
      * @param  SearchIssuesRequest  $request
      * @param  User  $user
@@ -34,25 +35,36 @@ final class ShowIssuesController
     public function __invoke(SearchIssuesRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, IssuesQuery $search, TelemetryRedactor $redactor, IssueActivityQuery $activity): JsonResponse
     {
         $filters = $request->filters();
-        $issues = $search->handle($project, $user, $filters)->with('assignee')
-            ->orderByDesc('last_seen_at')->orderByDesc('id')
+        $now = CarbonImmutable::now('UTC');
+        $issuesQuery = $search->handle($project, $user, $filters)->with(['assignee', 'environment']);
+        $matchingIssues = $search->handle($project, $user, [...$filters, 'status' => 'all']);
+        $issues = $activity->prioritize($issuesQuery, $filters)
             ->paginate(20, ['*'], 'page', (int) ($filters['page'] ?? 1));
 
-        $trends = $activity->trends(array_values(array_map(fn (Issue $issue): int => $issue->id, $issues->items())));
+        $trends = $activity->trends(array_values(array_map(fn (Issue $issue): int => $issue->id, $issues->items())), environmentId: $filters['environment'] ?? null);
 
         return response()->json([
             'overview' => $overview->handle($project, $user),
             'issues' => collect($issues->items())->map(fn (Issue $issue): array => [
                 ...(array) IssueRow::from($issue->forceFill($redactor->redact($issue->only(['title', 'location'])))),
+                'exceptionType' => is_string($issue->metadata['exception.type'] ?? null)
+                    ? $redactor->redact(['type' => $issue->metadata['exception.type']])['type'] : null,
                 'users' => $issue->affected_users,
                 'firstSeenAt' => $issue->first_seen_at->toIso8601String(),
+                'environment' => $issue->environment?->name,
+                'eventsLastHour' => (int) ($issue->events_last_hour ?? 0),
+                'eventsPreviousHour' => (int) ($issue->events_previous_hour ?? 0),
+                'isNew' => $issue->first_seen_at->greaterThanOrEqualTo($now->subDay()),
+                'spiking' => (int) ($issue->events_last_hour ?? 0) >= 5
+                    && (int) ($issue->events_last_hour ?? 0) >= max(5, (int) ($issue->events_previous_hour ?? 0) * 2),
                 'trend' => $trends[$issue->id] ?? [],
             ])->values(),
-            'stats' => $activity->stats($project),
+            'stats' => $activity->stats($matchingIssues, $filters['environment'] ?? null),
             'page' => $issues->currentPage(),
             'lastPage' => $issues->lastPage(),
             'filters' => $filters,
             'statuses' => array_map(fn (IssueStatus $status): array => ['value' => $status->value, 'label' => $status->label()], IssueStatus::cases()),
+            'canUpdate' => $user->can('manageService', [$project, 'monitoring']),
         ]);
     }
 }

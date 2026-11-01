@@ -12,6 +12,7 @@ definePageMeta({ layout: 'app', service: 'monitoring' });
 type IssuePage = {
     overview: ProjectOverview;
     issue: IssueRow & {
+        exceptionType: string | null;
         version: number;
         details: string | null;
         firstSeenAt: string | null;
@@ -39,6 +40,9 @@ const route = useRoute();
 const { data } = await useApi<IssuePage>(() => `/projects/${route.params.project}/monitoring/issues/${route.params.issue}`);
 const project = computed(() => data.value.overview.project);
 const issue = computed(() => data.value.issue);
+const fullTitle = computed(() => issue.value.exceptionType ? `${issue.value.exceptionType}: ${issue.value.title}` : issue.value.title);
+const displayTitle = computed(() => fullTitle.value.length > 140 ? `${fullTitle.value.slice(0, 137)}…` : fullTitle.value);
+const titleIsTruncated = computed(() => displayTitle.value !== fullTitle.value);
 const base = computed(() => `/api/app/projects/${project.value.id}/monitoring/issues/${issue.value.id}`);
 const assignee = ref<string | null>(issue.value.assigneeId ?? '');
 const tracker = ref<string | null>(data.value.trackers[0]?.value ?? null);
@@ -51,7 +55,7 @@ const hours = computed(() => issue.value.trend.map((value, index) => ({ label: `
 
 <template>
     <div>
-        <ProjectHeader :overview="data.overview" :title="issue.title" :description="`${issue.location ?? t('Unknown location')} · ${issue.statusLabel}`">
+        <ProjectHeader :overview="data.overview" :title="displayTitle" :description="`${issue.location ?? t('Unknown location')} · ${issue.statusLabel}`">
             <template v-if="data.canUpdate" #actions>
                 <template v-if="issue.open">
                     <FormDialog id="resolve-issue" :title="t('Resolve this issue?')" :description="t('A new occurrence reopens it.')" :action="base" method="PATCH" :submit="t('Resolve')">
@@ -79,6 +83,10 @@ const hours = computed(() => issue.value.trend.map((value, index) => ({ label: `
                 </ApiForm>
             </template>
         </ProjectHeader>
+
+        <AcmeCard v-if="titleIsTruncated" :title="t('Full exception message')" class="mb-6">
+            <CodeBlock :code="fullTitle" class="max-h-48 overflow-auto whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-xs" />
+        </AcmeCard>
 
         <div class="space-y-6">
             <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">

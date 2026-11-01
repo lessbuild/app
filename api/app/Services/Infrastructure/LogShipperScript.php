@@ -19,7 +19,7 @@ final class LogShipperScript
     private const AGENT = <<<'PYTHON'
 #!/usr/bin/env python3
 # BuildPusher log agent: journal warnings and Laravel logs to Monitoring.
-import glob, json, os, queue, re, socket, subprocess, threading, time, urllib.request, uuid
+import glob, hashlib, json, os, queue, re, socket, subprocess, threading, time, urllib.request, uuid
 
 CONFIG = json.load(open('/etc/buildpusher/logs.json'))
 HOST = socket.gethostname()
@@ -33,10 +33,15 @@ def put(event):
     except queue.Full:
         pass
 
-def event(severity, service, message, source, details=None):
-    return {'id': str(uuid.uuid4()), 'type': 'log', 'severity': severity, 'service': service[:100], 'name': message[:255],
-            'details': (details or message)[:10000], 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-            'attributes': {'host.name': HOST, 'log.source': source}}
+def event(severity, service, message, source, details=None, event_type='log', title=None, fingerprint=None, attributes=None):
+    record = {'id': str(uuid.uuid4()), 'type': event_type, 'severity': severity, 'service': service[:100], 'name': message[:255],
+              'details': (details or message)[:10000], 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+              'attributes': {'host.name': HOST, 'log.source': source, **(attributes or {})}}
+    if title is not None:
+        record['title'] = title[:255]
+    if fingerprint is not None:
+        record['fingerprint'] = fingerprint
+    return record
 
 def journal():
     while True:
@@ -89,7 +94,20 @@ def files():
 def flush_pending(pending, path, site):
     item = pending.pop(path, None)
     if item:
-        put(event(item[0], 'app:' + site, item[1].strip() or 'Log entry', 'laravel', '\n'.join(item[2])))
+        message = item[1].strip() or 'Log entry'
+        details = '\n'.join(item[2])
+        # Laravel's default formatter puts Throwable context in a JSON "exception" field. These records otherwise look
+        # like plain logs to the telemetry API, so they never become grouped issues or count toward exception alerts.
+        marker = re.search(r'\s+\{"exception"\s*:\s*"\[object\]\s*\(', message)
+        exception = re.search(r'\[object\]\s*\(([^(:\s]+)(?:\([^)]*\))?:', details)
+        if marker and exception:
+            title = message[:marker.start()].strip() or exception.group(1)
+            exception_type = exception.group(1)
+            fingerprint = hashlib.sha256(('laravel|' + site + '|' + title).encode()).hexdigest()
+            put(event(item[0], 'app:' + site, title, 'laravel', details, event_type='exception', title=title,
+                      fingerprint=fingerprint, attributes={'exception.type': exception_type}))
+        else:
+            put(event(item[0], 'app:' + site, message, 'laravel', details))
 
 def send(events):
     body = json.dumps({'batch_id': str(uuid.uuid4()), 'events': events}).encode()
