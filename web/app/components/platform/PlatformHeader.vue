@@ -33,12 +33,12 @@ const switcher = computed<MenuItem[]>(() => {
 
 <template>
     <div v-if="!panel">
-        <header class="flex min-w-0 flex-wrap items-end justify-between gap-4 pb-6">
-            <div class="min-w-0 max-w-full flex-1">
+        <header class="flex min-w-0 flex-col items-stretch justify-between gap-4 pb-6 md:flex-row md:items-end">
+            <div class="min-w-0 w-full max-w-full flex-1 md:w-auto">
                 <h1 class="min-w-0 max-w-full break-words [overflow-wrap:anywhere] text-2xl font-semibold tracking-tight text-ink sm:text-[1.75rem]">{{ title }}</h1>
-                <p v-if="subtitle" class="mt-1 text-muted">{{ subtitle }}</p>
+                <p v-if="subtitle" class="mt-1 max-w-3xl break-words text-muted [overflow-wrap:anywhere]">{{ subtitle }}</p>
             </div>
-            <div v-if="switcher.length > 0 || $slots.actions" class="flex flex-wrap gap-2">
+            <div v-if="switcher.length > 0 || $slots.actions" class="flex w-full flex-wrap justify-start gap-2 md:w-auto md:shrink-0 md:justify-end">
                 <AcmeMenu v-if="switcher.length > 0" :items="switcher" :label="t('Switch project')" align="right">
                     <template #trigger="{ attrs }">
                         <button v-bind="attrs" type="button" class="flex h-9 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm text-ink shadow-card hover:bg-black/[.02] dark:hover:bg-white/[.04]">
