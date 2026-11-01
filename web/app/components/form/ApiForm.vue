@@ -92,7 +92,8 @@ async function submit(event: SubmitEvent) {
         return;
     }
 
-    if (!(response.headers.get('content-type') ?? '').includes('application/json')) {
+    // A successful 204 has no content type, but it is an empty form response, not a downloadable file.
+    if (response.status !== 204 && !(response.headers.get('content-type') ?? '').includes('application/json')) {
         // A download, such as an export: save it.
         const blob = await response.blob();
         const name = /filename="?([^";]+)"?/.exec(response.headers.get('content-disposition') ?? '')?.[1] ?? 'download';

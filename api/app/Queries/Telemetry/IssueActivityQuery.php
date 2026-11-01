@@ -7,6 +7,7 @@ namespace App\Queries\Telemetry;
 use App\Enums\IssueStatus;
 use App\Models\Issue;
 use App\Models\TelemetryEvent;
+use App\Support\Telemetry\EventTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -27,28 +28,30 @@ final class IssueActivityQuery
         $open = (clone $issues)->where('status', IssueStatus::Open);
         $events = TelemetryEvent::query()->whereIn('issue_id', (clone $issues)->select('issues.id'))
             ->when($environmentId !== null, fn (Builder $query): Builder => $query->where('environment_id', $environmentId))
-            ->where('occurred_at', '>=', $now->subHours(48));
+            ->where('occurred_at', '>=', EventTime::boundary($now->subHours(48)));
 
         $selects = [
             'COUNT(CASE WHEN occurred_at >= ? THEN 1 END) AS events',
             'COUNT(CASE WHEN occurred_at < ? THEN 1 END) AS events_before',
         ];
-        $bindings = [$now->subDay(), $now->subDay()];
+        $bindings = [EventTime::boundary($now->subDay()), EventTime::boundary($now->subDay())];
         for ($index = 0; $index < 24; $index++) {
             $from = $now->subHours(24 - $index);
             $until = $from->addHour();
             $selects[] = "COUNT(CASE WHEN occurred_at >= ? AND occurred_at < ? THEN 1 END) AS hour_{$index}";
-            $bindings[] = $from;
-            $bindings[] = $until;
+            $bindings[] = EventTime::boundary($from);
+            $bindings[] = EventTime::boundary($until);
         }
-        $counts = $events->selectRaw(implode(', ', $selects), $bindings)->first();
+        /** @var literal-string $select */
+        $select = implode(', ', $selects);
+        $counts = (array) $events->selectRaw($select, $bindings)->toBase()->first();
 
         return [
             'open' => $open->count(),
-            'newToday' => (clone $issues)->where('first_seen_at', '>=', $now->startOfDay())->count(),
-            'events' => (int) ($counts?->events ?? 0),
-            'eventsBefore' => (int) ($counts?->events_before ?? 0),
-            'hourly' => array_map(fn (int $index): int => (int) ($counts?->{"hour_{$index}"} ?? 0), range(0, 23)),
+            'newToday' => (clone $issues)->where('first_seen_at', '>=', EventTime::boundary($now->startOfDay()))->count(),
+            'events' => (int) ($counts['events'] ?? 0),
+            'eventsBefore' => (int) ($counts['events_before'] ?? 0),
+            'hourly' => array_map(fn (int $index): int => (int) ($counts["hour_{$index}"] ?? 0), range(0, 23)),
             'users' => (int) $open->sum('affected_users'),
         ];
     }
@@ -65,10 +68,10 @@ final class IssueActivityQuery
     {
         $now = CarbonImmutable::now('UTC');
         $current = TelemetryEvent::query()->selectRaw('COUNT(*)')->whereColumn('issue_id', 'issues.id')
-            ->where('type', 'exception')->where('occurred_at', '>=', $now->subHour())
+            ->where('type', 'exception')->where('occurred_at', '>=', EventTime::boundary($now->subHour()))
             ->when(isset($filters['environment']), fn (Builder $query): Builder => $query->where('environment_id', $filters['environment']));
         $previous = TelemetryEvent::query()->selectRaw('COUNT(*)')->whereColumn('issue_id', 'issues.id')
-            ->where('type', 'exception')->where('occurred_at', '>=', $now->subHours(2))->where('occurred_at', '<', $now->subHour())
+            ->where('type', 'exception')->where('occurred_at', '>=', EventTime::boundary($now->subHours(2)))->where('occurred_at', '<', EventTime::boundary($now->subHour()))
             ->when(isset($filters['environment']), fn (Builder $query): Builder => $query->where('environment_id', $filters['environment']));
 
         $issues->addSelect('issues.*')->selectSub($current, 'events_last_hour')->selectSub($previous, 'events_previous_hour');
@@ -101,18 +104,20 @@ final class IssueActivityQuery
             $from = $now->subHours($hours - $index);
             $until = $from->addHour();
             $selects[] = "COUNT(CASE WHEN occurred_at >= ? AND occurred_at < ? THEN 1 END) AS hour_{$index}";
-            $bindings[] = $from;
-            $bindings[] = $until;
+            $bindings[] = EventTime::boundary($from);
+            $bindings[] = EventTime::boundary($until);
         }
         $events = TelemetryEvent::query()->whereIn('issue_id', $issueIds)->where('type', 'exception')
             ->when($environmentId !== null, fn (Builder $query): Builder => $query->where('environment_id', $environmentId))
-            ->where('occurred_at', '>=', $now->subHours($hours))
-            ->selectRaw(implode(', ', $selects), $bindings)->groupBy('issue_id')->get()->keyBy('issue_id');
+            ->where('occurred_at', '>=', EventTime::boundary($now->subHours($hours)));
+        /** @var literal-string $select */
+        $select = implode(', ', $selects);
+        $events = $events->selectRaw($select, $bindings)->groupBy('issue_id')->toBase()->get()->keyBy('issue_id');
 
         $trends = [];
         foreach ($issueIds as $id) {
-            $row = $events->get($id);
-            $trends[$id] = array_map(fn (int $index): int => (int) ($row?->{"hour_{$index}"} ?? 0), range(0, $hours - 1));
+            $row = (array) $events->get($id);
+            $trends[$id] = array_map(fn (int $index): int => (int) ($row["hour_{$index}"] ?? 0), range(0, $hours - 1));
         }
 
         return $trends;

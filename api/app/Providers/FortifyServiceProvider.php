@@ -8,7 +8,6 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
-use App\Http\Responses\TwoFactorLoginResponse as AppTwoFactorLoginResponse;
 use App\Listeners\RecordSignInActivity;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
@@ -19,7 +18,6 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
-use Laravel\Fortify\Contracts\TwoFactorLoginResponse as TwoFactorLoginResponseContract;
 use Laravel\Fortify\Events\TwoFactorAuthenticationFailed;
 use Laravel\Fortify\Fortify;
 
@@ -38,8 +36,6 @@ final class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
-        $this->app->singleton(TwoFactorLoginResponseContract::class, AppTwoFactorLoginResponse::class);
-
         Event::listen(Login::class, [RecordSignInActivity::class, 'login']);
         Event::listen(Failed::class, [RecordSignInActivity::class, 'failed']);
         Event::listen(TwoFactorAuthenticationFailed::class, [RecordSignInActivity::class, 'twoFactorFailed']);

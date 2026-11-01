@@ -157,9 +157,11 @@ final class AlertObservation
             ->where('occurred_at', '<', EventTime::boundary($until))
             ->selectRaw('COUNT(CASE WHEN type = ? AND occurred_at >= ? THEN 1 END) AS current_exceptions', ['exception', EventTime::boundary($from)])
             ->selectRaw('COUNT(CASE WHEN type = ? AND occurred_at < ? THEN 1 END) AS previous_exceptions', ['exception', EventTime::boundary($from)])
-            ->selectRaw('COUNT(CASE WHEN occurred_at >= ? THEN 1 END) AS samples', [EventTime::boundary($from)])->first();
-        $samples = (int) ($row?->samples ?? 0);
-        $increase = max(0, (int) ($row?->current_exceptions ?? 0) - (int) ($row?->previous_exceptions ?? 0));
+            ->selectRaw('COUNT(CASE WHEN occurred_at >= ? THEN 1 END) AS samples', [EventTime::boundary($from)])
+            ->toBase()->first();
+        $values = (array) $row;
+        $samples = (int) ($values['samples'] ?? 0);
+        $increase = max(0, (int) ($values['current_exceptions'] ?? 0) - (int) ($values['previous_exceptions'] ?? 0));
 
         return [
             'state' => $samples < $rule->minimum_samples ? 'no_data' : ($increase >= $rule->threshold ? 'breaching' : 'healthy'),
